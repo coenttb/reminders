@@ -15,34 +15,39 @@ extension Lists {
 }
 
 extension Lists.Detail: Identifiable {
-    /// A stable string, also the key preferences are stored under.
-    public var id: String {
+    public typealias ID = Tagged<Lists.Detail, String>
+
+    /// Tag titles are free text, so the tag key joins them with the unit separator; the tags are
+    /// sorted so the same set of tags shares one key whatever order it was opened in.
+    private static let separator = "\u{1F}"
+
+    /// A stable key, also the one preferences are stored under.
+    public var id: ID {
         switch self {
         case .all: "all"
         case .completed: "completed"
         case .flagged: "flagged"
-        case let .list(id): "list_\(id.rawValue.uuidString)"
+        case let .list(id): ID("list_\(id.rawValue.uuidString)")
         case .scheduled: "scheduled"
-        case let .tags(tags): "tags_" + tags.map(\.rawValue).joined(separator: ",")
+        case let .tags(tags): ID("tags_" + tags.sorted().map(\.rawValue).joined(separator: Self.separator))
         case .today: "today"
         }
     }
 
-    public init?(id: String) {
-        switch id {
+    public init?(id: ID) {
+        switch id.rawValue {
         case "all": self = .all
         case "completed": self = .completed
         case "flagged": self = .flagged
         case "scheduled": self = .scheduled
         case "today": self = .today
+        case let raw where raw.hasPrefix("list_"):
+            guard let uuid = UUID(uuidString: String(raw.dropFirst(5))) else { return nil }
+            self = .list(Reminder.List.ID(uuid))
+        case let raw where raw.hasPrefix("tags_"):
+            self = .tags(raw.dropFirst(5).split(separator: Self.separator).map { Tag.ID(String($0)) })
         default:
-            if id.hasPrefix("list_"), let uuid = UUID(uuidString: String(id.dropFirst(5))) {
-                self = .list(Reminder.List.ID(uuid))
-            } else if id.hasPrefix("tags_") {
-                self = .tags(id.dropFirst(5).split(separator: ",").map { Tag.ID(String($0)) })
-            } else {
-                return nil
-            }
+            return nil
         }
     }
 }
@@ -103,9 +108,11 @@ extension Lists {
             case .today: reminder.dueToday(at: now)
             }
         }
-        let shown = preference.showCompleted ? members : members.filter { !$0.completed }
+        // A reminder in its grace period stays on screen, in place, so the tap can be undone;
+        // completed ones sort last only when the detail shows them.
+        let shown = preference.showCompleted ? members : members.filter { $0.status != .completed }
         return shown.sorted { lhs, rhs in
-            if lhs.completed != rhs.completed { return !lhs.completed }
+            if preference.showCompleted, lhs.completed != rhs.completed { return !lhs.completed }
             return Lists.precedes(lhs, rhs, by: preference.ordering)
         }
     }
@@ -127,7 +134,7 @@ extension Lists {
         switch ordering {
         case .dueDate:
             switch (lhs.due, rhs.due) {
-            case let (l?, r?): return l < r
+            case let (l?, r?): return l == r ? lhs.position < rhs.position : l < r
             case (.some, nil): return true
             case (nil, .some): return false
             case (nil, nil): return lhs.position < rhs.position
@@ -137,7 +144,12 @@ extension Lists {
             let l = (lhs.priority?.rawValue ?? 0, lhs.flagged ? 1 : 0)
             let r = (rhs.priority?.rawValue ?? 0, rhs.flagged ? 1 : 0)
             return l == r ? lhs.position < rhs.position : l > r
-        case .title: return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        case .title:
+            switch lhs.title.localizedCaseInsensitiveCompare(rhs.title) {
+            case .orderedAscending: return true
+            case .orderedDescending: return false
+            case .orderedSame: return lhs.position < rhs.position
+            }
         }
     }
 }

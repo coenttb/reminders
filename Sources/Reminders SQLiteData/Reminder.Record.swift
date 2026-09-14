@@ -12,6 +12,7 @@ extension Reminder {
         public var title = ""
         public var notes = ""
         public var due: Date?
+        public var hasTime = false
         public var flagged = false
         public var priority: Int?
         public var status = 0
@@ -23,6 +24,7 @@ extension Reminder {
             title = reminder.title
             notes = reminder.notes
             due = reminder.due
+            hasTime = reminder.hasTime
             flagged = reminder.flagged
             priority = reminder.priority?.rawValue
             status = reminder.status.rawValue
@@ -47,6 +49,7 @@ extension Reminder.Record {
             title: title,
             notes: notes,
             due: due,
+            hasTime: hasTime,
             flagged: flagged,
             priority: priority.flatMap(Reminder.Priority.init(rawValue:)),
             status: Reminder.Status(rawValue: status) ?? .incomplete,

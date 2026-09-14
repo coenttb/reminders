@@ -3,7 +3,7 @@ public import Reminders
 public import SwiftUI
 
 extension Lists {
-    /// The home sections inside the app's list: the smart-group grid, the user's
+    /// The home sections inside the app's list: the smart-group tiles, the user's
     /// lists, and the tags in use. Every tap is a callback; the value is read-only.
     public struct View: SwiftUI.View {
         private var lists: Lists
@@ -38,22 +38,19 @@ extension Lists.View {
     @ViewBuilder public var body: some SwiftUI.View {
         let stats = lists.stats(at: now)
         Section {
-            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 16) {
-                GridRow {
-                    Lists.Stats.Cell("Today", systemImage: "calendar.circle.fill", color: .blue, count: stats.today) { open(.today) }
-                    Lists.Stats.Cell("Scheduled", systemImage: "calendar.circle.fill", color: .red, count: stats.scheduled) { open(.scheduled) }
+            // Flagged appears only while something is flagged, as in iOS 27.
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                Lists.Stats.Cell("Today", systemImage: "calendar", color: .blue, count: stats.today) { open(.today) }
+                Lists.Stats.Cell("Scheduled", systemImage: "calendar.badge.clock", color: .red, count: stats.scheduled) { open(.scheduled) }
+                Lists.Stats.Cell("All", systemImage: "tray.fill", color: Color(.darkGray), count: stats.all) { open(.all) }
+                if stats.flagged > 0 {
+                    Lists.Stats.Cell("Flagged", systemImage: "flag.fill", color: .orange, count: stats.flagged) { open(.flagged) }
                 }
-                GridRow {
-                    Lists.Stats.Cell("All", systemImage: "tray.circle.fill", color: .gray, count: stats.all) { open(.all) }
-                    Lists.Stats.Cell("Flagged", systemImage: "flag.circle.fill", color: .orange, count: stats.flagged) { open(.flagged) }
-                }
-                GridRow {
-                    Lists.Stats.Cell("Completed", systemImage: "checkmark.circle.fill", color: .gray, count: nil) { open(.completed) }
-                }
+                Lists.Stats.Cell("Completed", systemImage: "checkmark", color: .gray, count: nil) { open(.completed) }
             }
             .buttonStyle(.plain)
             .listRowBackground(Color.clear)
-            .padding(.horizontal, -20)
+            .listRowInsets(EdgeInsets())
         }
         Section {
             ForEach(lists.orderedLists) { list in
@@ -64,29 +61,32 @@ extension Lists.View {
                 .foregroundStyle(.primary)
             }
             .onMove(perform: move)
+            .onDelete { offsets in
+                for offset in offsets { delete(lists.orderedLists[offset].id) }
+            }
         } header: {
             header("My Lists")
         }
-        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-        Section {
-            ForEach(lists.usedTags) { tag in
-                Button { open(.tags([tag.id])) } label: { Tag.Row(tag) }.foregroundStyle(.primary)
+        if !lists.usedTags.isEmpty {
+            Section {
+                ForEach(lists.usedTags) { tag in
+                    Button { open(.tags([tag.id])) } label: { Tag.Row(tag) }.foregroundStyle(.primary)
+                }
+                .onDelete { offsets in
+                    for offset in offsets { deleteTag(lists.usedTags[offset].id) }
+                }
+            } header: {
+                header("Tags")
             }
-            .onDelete { offsets in
-                for offset in offsets { deleteTag(lists.usedTags[offset].id) }
-            }
-        } header: {
-            header("Tags")
         }
-        .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
     }
 
     private func header(_ title: String) -> some SwiftUI.View {
         Text(title)
-            .font(.system(.title2, design: .rounded, weight: .bold))
+            .font(.title2.weight(.bold))
             .foregroundStyle(.primary)
             .textCase(nil)
-            .padding(.top, -16)
-            .padding(.horizontal, 4)
+            .padding(.top, -4)
+            .padding(.leading, -4)
     }
 }

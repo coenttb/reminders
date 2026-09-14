@@ -1,12 +1,13 @@
 public import Reminders
 public import SQLiteData
+public import Tagged
 
 extension Lists {
     /// One row holding which detail is open.
     @Table("listsState")
     public struct Record: Identifiable, Sendable {
         public let id: Int
-        public var detail: String?
+        public var detail: Lists.Detail.ID?
 
         public init(id: Int = 1, detail: Lists.Detail?) {
             self.id = id
@@ -20,13 +21,13 @@ extension Lists.Detail.Preference {
     @Table("preferences")
     public struct Record: Identifiable, Sendable {
         @Column(primaryKey: true)
-        public var detailID: String
+        public var detailID: Lists.Detail.ID
         public var ordering = ""
         public var showCompleted = false
 
-        public var id: String { detailID }
+        public var id: Lists.Detail.ID { detailID }
 
-        public init(detailID: String, _ preference: Lists.Detail.Preference) {
+        public init(detailID: Lists.Detail.ID, _ preference: Lists.Detail.Preference) {
             self.detailID = detailID
             ordering = preference.ordering.rawValue
             showCompleted = preference.showCompleted

@@ -10,6 +10,8 @@ public struct Reminder: Identifiable, Hashable, Sendable {
     public var title: String
     public var notes: String
     public var due: Date?
+    /// Whether the due date's time of day matters; without it the reminder is due some time that day.
+    public var hasTime: Bool
     public var flagged: Bool
     public var priority: Priority?
     public var status: Status
@@ -22,6 +24,7 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         title: String = "",
         notes: String = "",
         due: Date? = nil,
+        hasTime: Bool = false,
         flagged: Bool = false,
         priority: Priority? = nil,
         status: Status = .incomplete,
@@ -33,6 +36,7 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         self.title = title
         self.notes = notes
         self.due = due
+        self.hasTime = hasTime
         self.flagged = flagged
         self.priority = priority
         self.status = status
@@ -75,6 +79,23 @@ extension Reminder {
     public func dueToday(at now: Date) -> Bool {
         guard !completed, let due else { return false }
         return Calendar.current.isDate(due, inSameDayAs: now)
+    }
+
+    /// Turning the time on needs a date; turning the date off drops the time.
+    public mutating func set(due date: Date?) {
+        due = date
+        if date == nil { hasTime = false }
+    }
+
+    /// Turning the time on proposes the next full hour, on the due day if there is one.
+    public mutating func set(hasTime: Bool, at now: Date) {
+        self.hasTime = hasTime
+        guard hasTime else { return }
+        let calendar = Calendar.current
+        let nextHour = calendar.nextDate(after: now, matching: DateComponents(minute: 0), matchingPolicy: .nextTime) ?? now
+        let time = calendar.dateComponents([.hour, .minute], from: nextHour)
+        let day = due ?? now
+        due = calendar.date(bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: 0, of: day) ?? day
     }
 
     /// The circle tap: incomplete starts completing; completing or completed reverts to incomplete.

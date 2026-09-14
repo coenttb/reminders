@@ -8,7 +8,7 @@ extension Lists {
         #if DEBUG
         migrator.eraseDatabaseOnSchemaChange = true
         #endif
-        migrator.registerMigration("Create lists, reminders, tags, remindersTags, preferences, and listsState") { db in
+        migrator.registerMigration("Create lists, reminders (with hasTime), tags, remindersTags, preferences, and listsState") { db in
             try #sql("""
                 CREATE TABLE "lists" (
                   "id" TEXT PRIMARY KEY NOT NULL,
@@ -24,6 +24,7 @@ extension Lists {
                   "title" TEXT NOT NULL DEFAULT '',
                   "notes" TEXT NOT NULL DEFAULT '',
                   "due" TEXT,
+                  "hasTime" INTEGER NOT NULL DEFAULT 0,
                   "flagged" INTEGER NOT NULL DEFAULT 0,
                   "priority" INTEGER,
                   "status" INTEGER NOT NULL DEFAULT 0,

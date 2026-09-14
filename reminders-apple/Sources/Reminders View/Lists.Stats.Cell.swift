@@ -2,7 +2,8 @@ public import SwiftUI
 public import Reminders
 
 extension Lists.Stats {
-    /// One tile of the home grid: icon, name, and an optional count.
+    /// One tile of the home grid, solid in its color: the white icon top-leading,
+    /// the count top-trailing, the name bottom-leading.
     public struct Cell: SwiftUI.View {
         private var title: String
         private var systemImage: String
@@ -23,22 +24,26 @@ extension Lists.Stats {
 extension Lists.Stats.Cell {
     public var body: some SwiftUI.View {
         Button(action: action) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top) {
                     Image(systemName: systemImage)
-                        .font(.largeTitle).bold()
-                        .foregroundStyle(color)
-                        .background(Color.white.clipShape(Circle()).padding(4))
-                    Text(title).font(.headline).foregroundStyle(.gray).bold().padding(.leading, 4)
+                        .font(.title2.weight(.semibold))
+                        .frame(width: 34, height: 34)
+                        .background(.white.opacity(0.25), in: .rect(cornerRadius: 8))
+                    Spacer()
+                    if let count {
+                        Text("\(count)").font(.title.weight(.bold)).fontDesign(.rounded).monospacedDigit()
+                    }
                 }
-                Spacer()
-                if let count {
-                    Text("\(count)").font(.largeTitle).fontDesign(.rounded).bold().foregroundStyle(.primary)
-                }
+                Text(title).font(.headline)
             }
-            .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-            .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(10)
+            .foregroundStyle(.white)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(color.gradient.opacity(0.9), in: .rect(cornerRadius: 16))
+            .saturation(0.85)
+            .contentShape(.rect(cornerRadius: 16))
         }
+        .accessibilityLabel(count.map { "\(title), \($0) reminders" } ?? title)
     }
 }

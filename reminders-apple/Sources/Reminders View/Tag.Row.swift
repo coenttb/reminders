@@ -14,14 +14,16 @@ extension Tag {
 
 extension Tag.Row {
     public var body: some SwiftUI.View {
-        HStack {
-            Image(systemName: "number.circle.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.gray)
-                .background(Color.white.clipShape(Circle()).padding(4))
+        HStack(spacing: 14) {
+            Image(systemName: "number")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Color.gray.gradient, in: .circle)
             Text(tag.title)
             Spacer()
-            Image(systemName: "chevron.right").foregroundStyle(.gray).font(.footnote)
+            Image(systemName: "chevron.forward").foregroundStyle(.tertiary).font(.footnote.weight(.semibold))
         }
+        .padding(.vertical, 4)
     }
 }

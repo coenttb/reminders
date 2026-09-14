@@ -49,6 +49,11 @@ extension Lists {
 
     public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first { $0.id == id } }
 
+    /// The tag with this title in any case; tags are unique case-insensitively.
+    public func tag(titled title: String) -> Tag? {
+        tags.first { $0.title.caseInsensitiveCompare(title) == .orderedSame }
+    }
+
     /// Incomplete reminders in a list.
     public func count(in list: Reminder.List.ID) -> Int {
         reminders.filter { $0.list == list && !$0.completed }.count

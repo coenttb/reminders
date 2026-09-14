@@ -4,9 +4,9 @@ public import SwiftUI
 import Tagged
 
 extension Reminder {
-    /// One reminder in a detail or search: the completion circle, title with
-    /// priority marks, notes, due date, and tags; flag, delete, and details are
-    /// swipe actions. Text may carry Markdown emphasis from a search highlight.
+    /// One reminder in a detail or search: the completion circle, the title with
+    /// priority marks and flag, and one gray line of due date, notes, and tags.
+    /// Tapping the text opens details; flag, delete, and details are swipe actions.
     public struct Row: SwiftUI.View {
         private var reminder: Reminder
         private var color: Color
@@ -38,52 +38,61 @@ extension Reminder {
 
 extension Reminder.Row {
     public var body: some SwiftUI.View {
-        HStack {
-            HStack(alignment: .firstTextBaseline) {
-                Button(action: complete) {
-                    Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
-                        .foregroundStyle(reminder.completed ? color : .gray)
-                        .font(.title2)
-                        .padding(.trailing, 5)
-                }
-                VStack(alignment: .leading) {
-                    HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .top, spacing: 12) {
+            Button(action: complete) {
+                Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
+                    .foregroundStyle(reminder.completed ? color : Color(.systemGray3))
+                    .font(.title2)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(reminder.completed ? "Completed" : "Complete")
+            Button(action: details) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
                         if let priority = reminder.priority {
                             Text(String(repeating: "!", count: priority.rawValue))
-                                .foregroundStyle(reminder.completed ? .gray : color)
+                                .foregroundStyle(reminder.completed ? .secondary : color)
                         }
-                        Text(reminder.title).foregroundStyle(reminder.completed ? .gray : .primary)
+                        Text(reminder.title).foregroundStyle(reminder.completed ? .secondary : .primary)
+                        Spacer(minLength: 0)
+                        if reminder.flagged, !reminder.completed {
+                            Image(systemName: "flag.fill").foregroundStyle(.orange).font(.footnote)
+                        }
                     }
-                    .font(.title3)
-                    if !reminder.notes.isEmpty {
-                        Text(reminder.notes.replacingOccurrences(of: "\n", with: " "))
-                            .font(.subheadline).foregroundStyle(.gray).lineLimit(2)
+                    .font(.body)
+                    if subtitle != nil || !reminder.notes.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            if !reminder.notes.isEmpty {
+                                Text(reminder.notes.replacingOccurrences(of: "\n", with: " ")).lineLimit(2)
+                            }
+                            if let subtitle { subtitle }
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
-                    subtitle
                 }
+                .contentShape(.rect)
             }
-            Spacer()
-            if !reminder.completed {
-                HStack {
-                    if reminder.flagged { Image(systemName: "flag.fill").foregroundStyle(.orange) }
-                    Button(action: details) { Image(systemName: "info.circle") }.tint(color)
-                }
-            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.borderless)
+        .padding(.vertical, 2)
         .swipeActions {
-            Button("Delete", role: .destructive, action: delete)
-            Button(reminder.flagged ? "Unflag" : "Flag", action: flag).tint(.orange)
-            Button("Details", action: details)
+            Button("Delete", systemImage: "trash", role: .destructive, action: delete)
+            Button(reminder.flagged ? "Unflag" : "Flag", systemImage: "flag", action: flag).tint(.orange)
+            Button("Details", systemImage: "info.circle", action: details).tint(.gray)
         }
     }
 
-    private var subtitle: Text {
-        let due = reminder.due.map { date in
-            Text(date.formatted(date: .numeric, time: .shortened))
-                .foregroundStyle(reminder.pastDue(at: now) ? .red : .gray)
-        } ?? Text("")
-        let tags = Text(reminder.sortedTags.map { "#\($0)" }.joined(separator: " ")).foregroundStyle(.gray)
-        return Text("\(due)\(reminder.due == nil ? "" : " ")\(tags)").font(.callout)
+    private var subtitle: Text? {
+        let due = reminder.dueDescription(at: now).map { text in
+            Text(text).foregroundStyle(reminder.pastDue(at: now) ? Color.red : Color.secondary)
+        }
+        let tags = reminder.sortedTags.map { "#\($0)" }.joined(separator: " ")
+        switch (due, tags.isEmpty) {
+        case (nil, true): return nil
+        case let (due?, true): return due
+        case (nil, false): return Text(tags)
+        case let (due?, false): return Text("\(due)  \(tags)")
+        }
     }
 }

@@ -34,6 +34,9 @@ import Tagged
         lists.toggle(groceries)
         #expect(lists.completing == [groceries])
         #expect(lists.stats(at: now).all == 7)
+        let personal = Lists.Detail.list(lists.reminders[0].list)
+        #expect(lists.reminders(in: personal, at: now).map(\.id).contains(groceries))
+        #expect(lists.reminders(in: personal, at: now).last?.id == groceries)
         lists.toggle(groceries)
         #expect(lists.completing.isEmpty)
         lists.toggle(groceries)
@@ -88,9 +91,27 @@ import Tagged
 
     @Test func `details round-trip through their identifiers`() {
         let id = Reminder.List.ID(UUID())
-        for detail in [Lists.Detail.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b"]), .today] {
+        for detail in [Lists.Detail.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b, c"]), .today] {
             #expect(Lists.Detail(id: detail.id) == detail)
         }
+        #expect(Lists.Detail.tags(["b", "a"]).id == Lists.Detail.tags(["a", "b"]).id)
+        #expect(Lists.Detail(id: "list_not-a-uuid") == nil)
         #expect(Reminder.List.Color(hex: 0x4a99ef).hex == 0x4a99ef)
+    }
+
+    @Test func `a time needs a date and a date can stand alone`() {
+        let calendar = Calendar.current
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20))!
+        let nextHour = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 10))!
+        var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "x")
+        reminder.set(hasTime: true, at: now)
+        #expect(reminder.due == nextHour && reminder.hasTime)
+        reminder.set(due: nil)
+        #expect(reminder.due == nil && !reminder.hasTime)
+        let day = calendar.date(from: DateComponents(year: 2026, month: 9, day: 20))!
+        reminder.set(due: day)
+        #expect(reminder.due == day && !reminder.hasTime)
+        reminder.set(hasTime: true, at: now)
+        #expect(reminder.due == calendar.date(from: DateComponents(year: 2026, month: 9, day: 20, hour: 10)) && reminder.hasTime)
     }
 }

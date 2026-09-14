@@ -2,6 +2,7 @@ import Foundation
 import Reminders
 import Reminders_View
 import SwiftUI
+import Tagged
 import Testing
 
 @Suite struct `Lists presentation` {
@@ -16,9 +17,27 @@ import Testing
         _ = Reminder.Row(reminder, color: .blue, now: now, complete: {}, flag: {}, delete: {}, details: {})
         _ = Reminder.List.Row(lists.orderedLists[0], count: 4, details: {}, delete: {})
         _ = Tag.Row(lists.usedTags[0])
-        _ = Reminder.Form(reminder: .constant(reminder), lists: lists.orderedLists, tags: lists.rankedTags, addTag: { _ in }, renameTag: { _, _ in }, deleteTag: { _ in }, save: {}, cancel: {})
+        _ = Reminder.Form(reminder: .constant(reminder), isNew: false, isDirty: true, lists: lists.orderedLists, tags: lists.rankedTags, now: now, addTag: { _ in }, renameTag: { _, _ in }, deleteTag: { _ in }, save: {}, cancel: {})
         _ = Reminder.List.Form(list: .constant(lists.orderedLists[0]), save: {}, cancel: {})
         _ = Tag.Picker(selection: .constant([]), tags: lists.rankedTags, add: { _ in }, rename: { _, _ in }, delete: { _ in })
+    }
+
+    @Test func `the due date reads as a day, a weekday, or a date, with the time only when it matters`() {
+        let calendar = Calendar.current
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9))!
+        let list = Reminder.List.ID(UUID())
+        var reminder = Reminder(id: Reminder.ID(UUID()), list: list, title: "x", due: now)
+        #expect(reminder.dueDescription(at: now) == "Today")
+        reminder.due = calendar.date(byAdding: .day, value: 1, to: now)
+        #expect(reminder.dueDescription(at: now) == "Tomorrow")
+        reminder.due = calendar.date(byAdding: .day, value: 3, to: now)
+        #expect(reminder.dueDescription(at: now) == reminder.due!.formatted(.dateTime.weekday(.wide)))
+        reminder.due = calendar.date(byAdding: .day, value: 30, to: now)
+        #expect(reminder.dueDescription(at: now) == reminder.due!.formatted(date: .abbreviated, time: .omitted))
+        reminder.hasTime = true
+        #expect(reminder.dueDescription(at: now)!.hasSuffix(reminder.due!.formatted(date: .omitted, time: .shortened)))
+        reminder.set(due: nil)
+        #expect(reminder.hasTime == false && reminder.dueDescription(at: now) == nil)
     }
 
     @Test func `the list color round-trips through SwiftUI`() {

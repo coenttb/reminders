@@ -55,11 +55,12 @@ extension Lists.Detail.View {
         List {
             GeometryReader { proxy in
                 Text(lists.title(of: detail))
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .font(.largeTitle.weight(.bold))
                     .foregroundStyle(color)
                     .onAppear { titleHeight = proxy.size.height }
             }
             .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             ForEach(lists.reminders(in: detail, at: now)) { reminder in
                 Reminder.Row(
                     reminder,
@@ -74,6 +75,7 @@ extension Lists.Detail.View {
             .onMove(perform: move)
         }
         .listStyle(.plain)
+        .animation(.default, value: lists)
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top > titleHeight
         } action: { _, visible in
@@ -87,15 +89,13 @@ extension Lists.Detail.View {
                     .animation(.default.speed(2), value: titleVisible)
             }
             if detail.isList {
+                ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
-                    HStack {
-                        Button(action: newReminder) {
-                            Label("New Reminder", systemImage: "plus.circle.fill").bold().font(.title3)
-                        }
-                        Spacer()
-                    }
-                    .tint(color)
+                    Button("New Reminder", systemImage: "plus", action: newReminder)
+                        .buttonStyle(.glassProminent)
+                        .tint(color)
                 }
+                .visibilityPriority(.high)
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -116,9 +116,8 @@ extension Lists.Detail.View {
                         Image(systemName: preference.showCompleted ? "eye.slash.fill" : "eye")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Label("More", systemImage: "ellipsis")
                 }
-                .tint(color)
             }
         }
         .toolbarTitleDisplayMode(.inline)

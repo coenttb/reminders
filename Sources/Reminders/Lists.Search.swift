@@ -46,7 +46,7 @@ extension Lists.Search {
 }
 
 extension Lists {
-    /// Every reminder the search matches, completed ones included, in list order then position.
+    /// Every reminder the search matches, completed ones included, open ones first and by due date.
     public func matches(_ search: Lists.Search) -> [Reminder] {
         guard search.isActive else { return [] }
         let text = search.tagPrefix == nil ? search.text : ""
@@ -59,7 +59,10 @@ extension Lists {
                 }
             }
         }
-        .sorted { ($0.completed ? 1 : 0, $0.position) < ($1.completed ? 1 : 0, $1.position) }
+        .sorted { lhs, rhs in
+            if lhs.completed != rhs.completed { return !lhs.completed }
+            return Lists.precedes(lhs, rhs, by: .dueDate)
+        }
     }
 
     /// Tags completing the typed prefix, excluding ones already tokenized.
