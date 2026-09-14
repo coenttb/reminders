@@ -84,15 +84,13 @@ extension Reminder.List.Form {
                 Button("Cancel", systemImage: "xmark") {
                     if isDirty { discardPresented = true } else { cancel() }
                 }
+                .discardPrompt(discardTitle, isPresented: $discardPresented, discard: cancel)
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done", systemImage: "checkmark", action: save)
                     .buttonStyle(.glassProminent)
                     .disabled(list.title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-        }
-        .confirmationDialog(discardTitle, isPresented: $discardPresented, titleVisibility: .visible) {
-            Button("Discard Changes", role: .destructive, action: cancel)
         }
         .onAppear { nameFocused = isNew }
     }
