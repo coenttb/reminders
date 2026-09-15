@@ -49,7 +49,7 @@ extension Tag.Picker {
                     } label: {
                         HStack {
                             Image(systemName: selection.contains(tag.id) ? "checkmark.circle.fill" : "circle").foregroundStyle(.blue)
-                            Text("#\(tag.title)").foregroundStyle(.primary)
+                            Text(tag.hashtag).foregroundStyle(.primary)
                         }
                     }
                     .swipeActions {

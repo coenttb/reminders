@@ -87,7 +87,7 @@ extension Reminder {
         }
 
         /// The start of the preset's day: today, tomorrow, the coming Saturday, the coming Monday.
-        public func date(at now: Date, calendar: Calendar = .current) -> Date {
+        public func date(at now: Date, calendar: Calendar) -> Date {
             let today = calendar.startOfDay(for: now)
             let day: Date? = switch self {
             case .today: today
@@ -122,6 +122,15 @@ extension Reminder {
         case low = 1
         case medium
         case high
+
+        /// The exclamation marks a row shows before the title.
+        public var marks: String {
+            switch self {
+            case .low: "!"
+            case .medium: "!!"
+            case .high: "!!!"
+            }
+        }
     }
 
     /// Completing is the grace period after tapping the circle, during which the tap can be undone.
@@ -139,8 +148,11 @@ extension Reminder {
     /// Tags in a stable, display order.
     public var sortedTags: [Tag.ID] { tags.sorted() }
 
+    /// The tags as one line of hashtags; empty for none.
+    public var hashtags: String { sortedTags.map(Tag.hashtag).joined(separator: " ") }
+
     /// Incomplete and due on a day before today.
-    public func pastDue(at now: Date, calendar: Calendar = .current) -> Bool {
+    public func pastDue(at now: Date, calendar: Calendar) -> Bool {
         guard !completed, let due else { return false }
         return calendar.compare(due, to: now, toGranularity: .day) == .orderedAscending
     }
@@ -152,7 +164,7 @@ extension Reminder {
     }
 
     /// Turning the time on proposes the next full hour, on the due day if there is one.
-    public mutating func set(hasTime: Bool, at now: Date, calendar: Calendar = .current) {
+    public mutating func set(hasTime: Bool, at now: Date, calendar: Calendar) {
         self.hasTime = hasTime
         guard hasTime else { return }
         let day = due ?? now
@@ -160,14 +172,14 @@ extension Reminder {
     }
 
     /// A preset day keeps the time of day if one was set; none clears the date and the time.
-    public mutating func set(datePreset preset: DatePreset?, at now: Date, calendar: Calendar = .current) {
+    public mutating func set(datePreset preset: DatePreset?, at now: Date, calendar: Calendar) {
         guard let preset else { return set(due: nil) }
         let day = preset.date(at: now, calendar: calendar)
         due = hasTime ? due.flatMap { calendar.date(day: day, time: $0) } ?? day : day
     }
 
     /// A preset time turns the time on, on the due day or today; none turns the time off and keeps the day.
-    public mutating func set(timePreset preset: TimePreset?, at now: Date, calendar: Calendar = .current) {
+    public mutating func set(timePreset preset: TimePreset?, at now: Date, calendar: Calendar) {
         guard let preset else {
             if let due { self.due = calendar.startOfDay(for: due) }
             hasTime = false

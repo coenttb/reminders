@@ -45,6 +45,13 @@ import Tagged
         #expect(Lists.Detail.all.defaultPreference == Lists.Detail.Preference(ordering: .dueDate, showCompleted: false))
     }
 
+    @Test func `tags show as hashtags and priorities as marks`() {
+        let reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), tags: ["kids", "car"])
+        #expect(Tag(title: "kids").hashtag == "#kids" && reminder.hashtags == "#car #kids")
+        #expect(Reminder(id: reminder.id, list: reminder.list).hashtags.isEmpty)
+        #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
+    }
+
     @Test func `a title of only whitespace is blank for reminders and lists`() {
         #expect(Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: " \n").isBlank)
         #expect(Reminder.List(id: Reminder.List.ID(UUID()), title: " \n").isBlank)

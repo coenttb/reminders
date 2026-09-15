@@ -50,6 +50,7 @@ let package = Package(
             name: "Reminders View Tests",
             dependencies: [
                 "Reminders View",
+                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),

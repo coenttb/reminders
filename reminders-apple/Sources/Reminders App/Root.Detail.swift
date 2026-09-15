@@ -14,6 +14,7 @@ extension Root {
         private var detail: Lists.Detail
         private var store: StoreOf<Lists.Feature>
         @Dependency(\.date.now) private var now
+        @Dependency(\.calendar) private var calendar
         @Environment(\.scenePhase) private var scenePhase
 
         init(_ detail: Lists.Detail, store: StoreOf<Lists.Feature>) {
@@ -28,6 +29,7 @@ extension Root {
                 contents: store.contents,
                 editing: store.editing?.id,
                 now: now,
+                calendar: calendar,
                 draft: { $store[dynamicMember: \.[draft: $0]] },
                 rows: rows,
                 editor: editor,

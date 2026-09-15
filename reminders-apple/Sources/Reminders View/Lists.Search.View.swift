@@ -10,6 +10,7 @@ extension Lists.Search {
         private var search: Lists.Search
         private var results: Lists.Search.Results
         private var now: Date
+        private var calendar: Calendar
         private var rows: Reminder.Row.Actions
         private var addTag: (Tag.ID) -> Void
         private var toggleCompleted: () -> Void
@@ -19,6 +20,7 @@ extension Lists.Search {
             _ search: Lists.Search,
             results: Lists.Search.Results,
             now: Date,
+            calendar: Calendar,
             rows: Reminder.Row.Actions,
             addTag: @escaping (Tag.ID) -> Void,
             toggleCompleted: @escaping () -> Void,
@@ -27,6 +29,7 @@ extension Lists.Search {
             self.search = search
             self.results = results
             self.now = now
+            self.calendar = calendar
             self.rows = rows
             self.addTag = addTag
             self.toggleCompleted = toggleCompleted
@@ -45,7 +48,7 @@ extension Lists.Search.View {
                 ScrollView(.horizontal) {
                     HStack {
                         ForEach(suggestions) { tag in
-                            Button("#\(tag.title)") { addTag(tag.id) }.buttonStyle(.glass)
+                            Button(tag.hashtag) { addTag(tag.id) }.buttonStyle(.glass)
                         }
                     }
                 }
@@ -79,7 +82,7 @@ extension Lists.Search.View {
         ForEach(results.sections) { section in
             Section {
                 ForEach(section.reminders) { reminder in
-                    Reminder.Row(reminder, color: section.list.color.swiftUI, now: now, actions: rows)
+                    Reminder.Row(reminder, color: section.list.color.swiftUI, now: now, calendar: calendar, actions: rows)
                 }
             } header: {
                 Text(section.list.title)

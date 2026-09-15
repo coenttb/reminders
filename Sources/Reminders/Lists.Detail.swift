@@ -82,7 +82,7 @@ extension Lists.Detail {
         case .flagged: "Flagged"
         case .list: nil
         case .scheduled: "Scheduled"
-        case let .tags(tags): tags.count == 1 ? "#\(tags[0])" : tags.isEmpty ? "Tags" : "\(tags.count) tags"
+        case let .tags(tags): tags.count == 1 ? Tag.hashtag(tags[0]) : tags.isEmpty ? "Tags" : "\(tags.count) tags"
         case .today: "Today"
         }
     }

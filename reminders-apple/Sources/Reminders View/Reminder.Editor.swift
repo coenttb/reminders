@@ -17,6 +17,7 @@ extension Reminder {
         @Binding private var reminder: Reminder
         private var color: Color
         private var now: Date
+        private var calendar: Calendar
         private var focus: FocusState<Reminder.Focus?>.Binding
         private var actions: Actions
 
@@ -24,12 +25,14 @@ extension Reminder {
             reminder: Binding<Reminder>,
             color: Color,
             now: Date,
+            calendar: Calendar,
             focus: FocusState<Reminder.Focus?>.Binding,
             actions: Actions
         ) {
             self._reminder = reminder
             self.color = color
             self.now = now
+            self.calendar = calendar
             self.focus = focus
             self.actions = actions
         }
@@ -74,7 +77,7 @@ extension Reminder.Editor {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     if let priority = reminder.priority {
-                        Text(String(repeating: "!", count: priority.rawValue)).foregroundStyle(color)
+                        Text(priority.marks).foregroundStyle(color)
                     }
                     TextField("", text: $reminder.title)
                         .focused(focus, equals: .title(reminder.id))
@@ -125,14 +128,14 @@ extension Reminder.Editor {
             Divider()
             ForEach(Reminder.DatePreset.allCases, id: \.self) { preset in
                 Button { actions.setDate(reminder.id, preset) } label: {
-                    let current = reminder.due.map { Calendar.current.isDate($0, inSameDayAs: preset.date(at: now)) } ?? false
+                    let current = reminder.due.map { calendar.isDate($0, inSameDayAs: preset.date(at: now, calendar: calendar)) } ?? false
                     Label(preset.title, systemImage: current ? "checkmark" : "calendar")
                 }
             }
             Button("Custom", systemImage: "ellipsis") { actions.details(reminder.id) }
         } label: {
             chip(tinted: reminder.due != nil) {
-                if let day = reminder.dayDescription(at: now) {
+                if let day = reminder.dayDescription(at: now, calendar: calendar) {
                     Label(day, systemImage: "calendar")
                 } else {
                     Label("Date", systemImage: "calendar").labelStyle(.iconOnly)
@@ -149,8 +152,8 @@ extension Reminder.Editor {
             Divider()
             ForEach(Reminder.TimePreset.allCases, id: \.self) { preset in
                 Button { actions.setTime(reminder.id, preset) } label: {
-                    let current = reminder.hasTime && reminder.due.map { Calendar.current.component(.hour, from: $0) == preset.hour && Calendar.current.component(.minute, from: $0) == 0 } == true
-                    Text(preset.hour.formatted(.number.precision(.integerLength(2))) + ":00")
+                    let current = reminder.hasTime && reminder.due.map { calendar.component(.hour, from: $0) == preset.hour && calendar.component(.minute, from: $0) == 0 } == true
+                    Text(preset.description(on: now, calendar: calendar) ?? preset.title)
                     Text(preset.title)
                     Image(systemName: current ? "checkmark" : "clock")
                 }

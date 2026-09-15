@@ -12,6 +12,7 @@ extension Lists.Detail {
         private var contents: Lists.Detail.Contents
         private var editing: Reminder.ID?
         private var now: Date
+        private var calendar: Calendar
         private var draft: (Reminder.ID) -> Binding<Reminder>
         private var rows: Reminder.Row.Actions
         private var editor: Reminder.Editor.Actions
@@ -30,6 +31,7 @@ extension Lists.Detail {
             contents: Lists.Detail.Contents,
             editing: Reminder.ID?,
             now: Date,
+            calendar: Calendar,
             draft: @escaping (Reminder.ID) -> Binding<Reminder>,
             rows: Reminder.Row.Actions,
             editor: Reminder.Editor.Actions,
@@ -44,6 +46,7 @@ extension Lists.Detail {
             self.contents = contents
             self.editing = editing
             self.now = now
+            self.calendar = calendar
             self.draft = draft
             self.rows = rows
             self.editor = editor
@@ -73,9 +76,9 @@ extension Lists.Detail.View {
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             ForEach(contents.rows) { row in
                 if row.id == editing {
-                    Reminder.Editor(reminder: draft(row.id), color: row.color.swiftUI, now: now, focus: $focus, actions: editor)
+                    Reminder.Editor(reminder: draft(row.id), color: row.color.swiftUI, now: now, calendar: calendar, focus: $focus, actions: editor)
                 } else {
-                    Reminder.Row(row.reminder, color: row.color.swiftUI, now: now, actions: rowActions)
+                    Reminder.Row(row.reminder, color: row.color.swiftUI, now: now, calendar: calendar, actions: rowActions)
                 }
             }
             .onMove(perform: move)

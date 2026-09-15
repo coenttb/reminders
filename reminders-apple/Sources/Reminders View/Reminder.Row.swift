@@ -12,12 +12,14 @@ extension Reminder {
         private var reminder: Reminder
         private var color: Color
         private var now: Date
+        private var calendar: Calendar
         private var actions: Actions
 
-        public init(_ reminder: Reminder, color: Color, now: Date, actions: Actions) {
+        public init(_ reminder: Reminder, color: Color, now: Date, calendar: Calendar, actions: Actions) {
             self.reminder = reminder
             self.color = color
             self.now = now
+            self.calendar = calendar
             self.actions = actions
         }
     }
@@ -59,7 +61,7 @@ extension Reminder.Row {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         if let priority = reminder.priority {
-                            Text(String(repeating: "!", count: priority.rawValue))
+                            Text(priority.marks)
                                 .foregroundStyle(reminder.completed ? .secondary : color)
                         }
                         Text(reminder.title).foregroundStyle(reminder.completed ? .secondary : .primary)
@@ -92,15 +94,14 @@ extension Reminder.Row {
     }
 
     private var subtitle: Text? {
-        let due = reminder.dueDescription(at: now).map { text in
-            Text(text).foregroundStyle(reminder.pastDue(at: now) ? Color.red : Color.secondary)
+        let due = reminder.dueDescription(at: now, calendar: calendar).map { text in
+            Text(text).foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? Color.red : Color.secondary)
         }
-        let tags = reminder.sortedTags.map { "#\($0)" }.joined(separator: " ")
-        switch (due, tags.isEmpty) {
+        switch (due, reminder.hashtags.isEmpty) {
         case (nil, true): return nil
         case let (due?, true): return due
-        case (nil, false): return Text(tags)
-        case let (due?, false): return Text("\(due)  \(tags)")
+        case (nil, false): return Text(reminder.hashtags)
+        case let (due?, false): return Text("\(due)  \(reminder.hashtags)")
         }
     }
 }

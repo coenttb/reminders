@@ -18,6 +18,7 @@ extension Reminder {
         private var lists: [Reminder.List]
         private var tags: [Tag]
         private var now: Date
+        private var calendar: Calendar
         private var addTag: (String) -> Void
         private var renameTag: (Tag.ID, String) -> Void
         private var deleteTag: (Tag.ID) -> Void
@@ -36,6 +37,7 @@ extension Reminder {
             lists: [Reminder.List],
             tags: [Tag],
             now: Date,
+            calendar: Calendar,
             addTag: @escaping (String) -> Void,
             renameTag: @escaping (Tag.ID, String) -> Void,
             deleteTag: @escaping (Tag.ID) -> Void,
@@ -49,6 +51,7 @@ extension Reminder {
             self.lists = lists
             self.tags = tags
             self.now = now
+            self.calendar = calendar
             self.addTag = addTag
             self.renameTag = renameTag
             self.deleteTag = deleteTag
@@ -73,8 +76,8 @@ extension Reminder.Form {
                     .lineLimit(1...6)
             }
             Section("Date & Time") {
-                Toggle(isOn: $reminder.dueOn(now).animation()) {
-                    row("Date", systemImage: "calendar", subtitle: reminder.dayDescription(at: now)) {
+                Toggle(isOn: $reminder.dueOn(now, calendar: calendar).animation()) {
+                    row("Date", systemImage: "calendar", subtitle: reminder.dayDescription(at: now, calendar: calendar)) {
                         if reminder.due != nil { expanded = expanded == .date ? nil : .date }
                     }
                 }
@@ -82,7 +85,7 @@ extension Reminder.Form {
                     DatePicker("Date", selection: $reminder.due[or: due], displayedComponents: .date)
                         .datePickerStyle(.graphical)
                 }
-                Toggle(isOn: $reminder.timeOn(now).animation()) {
+                Toggle(isOn: $reminder.timeOn(now, calendar: calendar).animation()) {
                     row("Time", systemImage: "clock", subtitle: reminder.timeDescription()) {
                         if reminder.hasTime { expanded = expanded == .time ? nil : .time }
                     }
@@ -202,7 +205,7 @@ extension Reminder.Form {
             LabeledContent {
                 HStack(spacing: 6) {
                     if !reminder.tags.isEmpty {
-                        Text(reminder.sortedTags.map { "#\($0)" }.joined(separator: " ")).lineLimit(1).truncationMode(.tail)
+                        Text(reminder.hashtags).lineLimit(1).truncationMode(.tail)
                     }
                     Image(systemName: "chevron.forward").font(.footnote.weight(.semibold))
                 }
@@ -232,22 +235,22 @@ extension Reminder.Form {
 
 extension Reminder {
     /// The Date row: on means due today, off clears the date and the time with it.
-    fileprivate subscript(dueOn now: Date) -> Bool {
+    fileprivate subscript(dueOn now: Date, calendar calendar: Calendar) -> Bool {
         get { due != nil }
-        set { set(due: newValue ? Calendar.current.startOfDay(for: now) : nil) }
+        set { set(due: newValue ? calendar.startOfDay(for: now) : nil) }
     }
 
     /// The Time row: on proposes the next full hour and turns the date on with it.
-    fileprivate subscript(timeOn now: Date) -> Bool {
+    fileprivate subscript(timeOn now: Date, calendar calendar: Calendar) -> Bool {
         get { hasTime }
-        set { set(hasTime: newValue, at: now) }
+        set { set(hasTime: newValue, at: now, calendar: calendar) }
     }
 }
 
 extension Binding<Reminder> {
     /// The toggles as key-path projections of the draft, so SwiftUI keeps their transaction.
-    fileprivate func dueOn(_ now: Date) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now]] }
-    fileprivate func timeOn(_ now: Date) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now]] }
+    fileprivate func dueOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now, calendar: calendar]] }
+    fileprivate func timeOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now, calendar: calendar]] }
 }
 
 extension Optional {
