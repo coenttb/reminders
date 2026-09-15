@@ -25,11 +25,14 @@ import Tagged
         lists.detail = personal
         lists.rename(tag: "social", to: "friends")
         lists.delete(list: lists.orderedLists[2].id)
-        lists.upsert(Reminder(id: Reminder.ID(UUID()), list: lists.orderedLists[0].id, title: "New", due: now, hasTime: true, tags: ["fresh"]))
+        let new = Reminder.ID(UUID())
+        lists.upsert(Reminder(id: new, list: lists.orderedLists[0].id, title: "New", due: now, hasTime: true, tags: ["fresh"], location: .gettingInCar, repeats: .weekly))
+        lists.editing = new
         try database.write { db in try Lists.persist(lists, in: db) }
         let stored = try database.read { db in try Lists.load(db) }
         #expect(stored == lists)
-        #expect(stored?.reminders.contains { $0.title == "New" && $0.hasTime } == true)
+        #expect(stored?.reminders.contains { $0.title == "New" && $0.hasTime && $0.location == .gettingInCar && $0.repeats == .weekly } == true)
+        #expect(stored?.editing == new)
         #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == lists.reminders.reduce(0) { $0 + $1.tags.count })
     }
 }

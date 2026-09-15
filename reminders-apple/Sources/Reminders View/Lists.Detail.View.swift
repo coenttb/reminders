@@ -4,11 +4,18 @@ public import SwiftUI
 
 extension Lists.Detail {
     /// The pushed screen for one detail: its colored title, the reminders it
-    /// shows, the sort and show-completed menu, and New Reminder for a list.
+    /// shows with one of them possibly edited in place, the sort and
+    /// show-completed menu, and New Reminder for a list. While a row is edited
+    /// the menu gives way to Done and the plus hides, as in iOS 27.
     public struct View: SwiftUI.View {
         private var detail: Lists.Detail
         private var lists: Lists
         private var now: Date
+        private var draft: (Reminder.ID) -> Binding<Reminder>
+        private var edit: (Reminder.ID) -> Void
+        private var submit: () -> Void
+        private var done: () -> Void
+        private var backgroundTapped: () -> Void
         private var complete: (Reminder.ID) -> Void
         private var flag: (Reminder.ID) -> Void
         private var delete: (Reminder.ID) -> Void
@@ -19,11 +26,17 @@ extension Lists.Detail {
         private var newReminder: () -> Void
         @State private var titleVisible = false
         @State private var titleHeight: CGFloat = 36
+        @FocusState private var focus: Reminder.Focus?
 
         public init(
             _ detail: Lists.Detail,
             lists: Lists,
             now: Date,
+            draft: @escaping (Reminder.ID) -> Binding<Reminder>,
+            edit: @escaping (Reminder.ID) -> Void,
+            submit: @escaping () -> Void,
+            done: @escaping () -> Void,
+            backgroundTapped: @escaping () -> Void,
             complete: @escaping (Reminder.ID) -> Void,
             flag: @escaping (Reminder.ID) -> Void,
             delete: @escaping (Reminder.ID) -> Void,
@@ -36,6 +49,11 @@ extension Lists.Detail {
             self.detail = detail
             self.lists = lists
             self.now = now
+            self.draft = draft
+            self.edit = edit
+            self.submit = submit
+            self.done = done
+            self.backgroundTapped = backgroundTapped
             self.complete = complete
             self.flag = flag
             self.delete = delete
@@ -52,6 +70,7 @@ extension Lists.Detail.View {
     @ViewBuilder public var body: some SwiftUI.View {
         let color = detail.color(in: lists)
         let preference = lists.preference(for: detail)
+        ScrollViewReader { proxy in
         List {
             GeometryReader { proxy in
                 Text(lists.title(of: detail))
@@ -62,20 +81,53 @@ extension Lists.Detail.View {
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             ForEach(lists.reminders(in: detail, at: now)) { reminder in
-                Reminder.Row(
-                    reminder,
-                    color: lists.list(reminder.list)?.color.swiftUI ?? color,
-                    now: now,
-                    complete: { complete(reminder.id) },
-                    flag: { flag(reminder.id) },
-                    delete: { delete(reminder.id) },
-                    details: { details(reminder.id) }
-                )
+                if reminder.id == lists.editing {
+                    Reminder.Editor(
+                        reminder: draft(reminder.id),
+                        color: lists.list(reminder.list)?.color.swiftUI ?? color,
+                        now: now,
+                        focus: $focus,
+                        complete: { complete(reminder.id) },
+                        submit: submit,
+                        details: { details(reminder.id) }
+                    )
+                } else {
+                    Reminder.Row(
+                        reminder,
+                        color: lists.list(reminder.list)?.color.swiftUI ?? color,
+                        now: now,
+                        complete: { complete(reminder.id) },
+                        flag: { flag(reminder.id) },
+                        delete: { delete(reminder.id) },
+                        details: { details(reminder.id) },
+                        edit: detail.isList ? { edit(reminder.id) } : nil
+                    )
+                }
             }
             .onMove(perform: move)
+            // The empty part of a list: a tap there ends editing, or starts a new row.
+            Color.clear
+                .frame(height: 320)
+                .contentShape(.rect)
+                .onTapGesture(perform: backgroundTapped)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets())
+                // Transparent, so the shadow of a card in the last row is not covered.
+                .listRowBackground(Color.clear)
         }
         .listStyle(.plain)
         .animation(.default, value: lists)
+        .onChange(of: lists.editing, initial: true) { _, editing in
+            focus = editing.map(Reminder.Focus.title)
+            // The row being edited comes up above the keyboard.
+            if let editing {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(80))
+                    withAnimation { proxy.scrollTo(editing, anchor: .center) }
+                }
+            }
+        }
+        }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top > titleHeight
         } action: { _, visible in
@@ -88,7 +140,7 @@ extension Lists.Detail.View {
                     .opacity(titleVisible ? 1 : 0)
                     .animation(.default.speed(2), value: titleVisible)
             }
-            if detail.isList {
+            if detail.isList, lists.editing == nil {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
                     Button("New Reminder", systemImage: "plus", action: newReminder)
@@ -96,6 +148,13 @@ extension Lists.Detail.View {
                         .tint(color)
                 }
                 .visibilityPriority(.high)
+            }
+            if lists.editing != nil {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", systemImage: "checkmark", action: done)
+                        .buttonStyle(.glassProminent)
+                        .tint(color)
+                }
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {

@@ -31,7 +31,9 @@ extension Lists {
 
         public enum Action {
             case addListButtonTapped
+            case backgroundTapped
             case deleteCompletedButtonTapped(olderThanMonths: Int?)
+            case doneButtonTapped
             case destination(Destination.Action)
             case listDeleted(Reminder.List.ID)
             case listDetailsButtonTapped(Reminder.List.ID)
@@ -43,6 +45,7 @@ extension Lists {
             case reminderDeleted(Reminder.ID)
             case reminderDetailsButtonTapped(Reminder.ID)
             case reminderFlagButtonTapped(Reminder.ID)
+            case reminderTapped(Reminder.ID)
             case remindersMoved(IndexSet, Int)
             case searchCompletedButtonTapped
             case searchTagTapped(Tag.ID)
@@ -51,6 +54,7 @@ extension Lists {
             case statTapped(Lists.Detail)
             case tagDeleted(Tag.ID)
             case tagTapped(Tag.ID)
+            case titleSubmitted
         }
 
         @Dependency(\.continuousClock) var clock
@@ -65,6 +69,15 @@ extension Lists {
                 switch action {
                 case .addListButtonTapped:
                     state.destination = .list(Reminder.List.Feature.State(list: Reminder.List(id: Reminder.List.ID(uuid()))))
+                // A tap on the empty part of a list ends editing, or starts a new row in an idle list.
+                case .backgroundTapped:
+                    if state.lists.editing != nil {
+                        state.lists.endEditing()
+                    } else if case let .list(list) = state.lists.detail {
+                        state.lists.startNewReminder(in: list, id: Reminder.ID(uuid()))
+                    }
+                case .doneButtonTapped:
+                    state.lists.endEditing()
                 case let .deleteCompletedButtonTapped(months):
                     state.lists.deleteCompleted(matching: state.search, olderThanMonths: months, at: now)
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
@@ -104,12 +117,13 @@ extension Lists {
                     state.lists.detail = .list(id)
                 case let .listsMoved(source, destination):
                     state.lists.move(lists: source, to: destination)
+                // Inside a list the new reminder is a row edited in place; from the home it is the sheet.
                 case .newReminderButtonTapped:
-                    let list = state.lists.detail.flatMap { detail -> Reminder.List.ID? in
-                        if case let .list(id) = detail { id } else { nil }
+                    if case let .list(list) = state.lists.detail {
+                        state.lists.startNewReminder(in: list, id: Reminder.ID(uuid()))
+                    } else if let list = state.lists.orderedLists.first?.id {
+                        state.destination = .reminder(Reminder.Feature.State(reminder: Reminder(id: Reminder.ID(uuid()), list: list)))
                     }
-                    guard let list = list ?? state.lists.orderedLists.first?.id else { return }
-                    state.destination = .reminder(Reminder.Feature.State(reminder: Reminder(id: Reminder.ID(uuid()), list: list)))
                 case let .orderingSelected(ordering):
                     if let detail = state.lists.detail { state.lists.set(ordering: ordering, for: detail) }
                 case let .reminderCompleteButtonTapped(id):
@@ -117,9 +131,12 @@ extension Lists {
                 case let .reminderDeleted(id):
                     state.lists.delete(reminder: id)
                 case let .reminderDetailsButtonTapped(id):
+                    state.lists.endEditing()
                     if let reminder = state.lists.reminder(id) { state.destination = .reminder(Reminder.Feature.State(reminder: reminder)) }
                 case let .reminderFlagButtonTapped(id):
                     state.lists.flag(id)
+                case let .reminderTapped(id):
+                    state.lists.edit(id)
                 case let .remindersMoved(source, destination):
                     if let detail = state.lists.detail { state.lists.move(reminders: source, to: destination, in: detail, at: now) }
                 case .searchCompletedButtonTapped:
@@ -136,6 +153,8 @@ extension Lists {
                     state.lists.delete(tag: id)
                 case let .tagTapped(tag):
                     state.lists.detail = .tags([tag])
+                case .titleSubmitted:
+                    state.lists.continueEditing(id: Reminder.ID(uuid()))
                 }
             }
             .ifLet(\.destination, action: \.destination) {
@@ -152,6 +171,10 @@ extension Lists {
                         try await database.write { db in try Lists.seed(sample, in: db) }
                     }
                 }
+            }
+            // Leaving the detail commits the row being edited, as the stock app does.
+            .onChange(of: store.lists.detail) { _, _, state in
+                state.lists.endEditing()
             }
             .onChange(of: store.lists) { _, current, _ in
                 store.addTask {

@@ -8,7 +8,7 @@ extension Lists {
         #if DEBUG
         migrator.eraseDatabaseOnSchemaChange = true
         #endif
-        migrator.registerMigration("Create lists, reminders (with hasTime), tags, remindersTags, preferences, and listsState") { db in
+        migrator.registerMigration("Create lists, reminders (with hasTime, location, repeats), tags, remindersTags, preferences, and listsState (with editing)") { db in
             try #sql("""
                 CREATE TABLE "lists" (
                   "id" TEXT PRIMARY KEY NOT NULL,
@@ -28,7 +28,9 @@ extension Lists {
                   "flagged" INTEGER NOT NULL DEFAULT 0,
                   "priority" INTEGER,
                   "status" INTEGER NOT NULL DEFAULT 0,
-                  "position" INTEGER NOT NULL DEFAULT 0
+                  "position" INTEGER NOT NULL DEFAULT 0,
+                  "location" TEXT,
+                  "repeats" TEXT NOT NULL DEFAULT 'never'
                 ) STRICT
                 """).execute(db)
             try #sql("""
@@ -53,7 +55,8 @@ extension Lists {
             try #sql("""
                 CREATE TABLE "listsState" (
                   "id" INTEGER PRIMARY KEY NOT NULL,
-                  "detail" TEXT
+                  "detail" TEXT,
+                  "editing" TEXT
                 ) STRICT
                 """).execute(db)
             try #sql(#"CREATE INDEX "idx_reminders_listID" ON "reminders"("listID")"#).execute(db)
@@ -73,7 +76,8 @@ extension Lists {
             reminders: try Reminder.Record.order(by: \.position).fetchAll(db).map { $0.reminder(tags: tagsByReminder[$0.id] ?? []) },
             tags: Set(try Tag.Record.all.fetchAll(db).map(\.tag)),
             preferences: Dictionary(uniqueKeysWithValues: try Lists.Detail.Preference.Record.all.fetchAll(db).map { ($0.detailID, $0.preference) }),
-            detail: state.detail.flatMap(Lists.Detail.init(id:))
+            detail: state.detail.flatMap(Lists.Detail.init(id:)),
+            editing: state.editing
         )
     }
 
@@ -106,6 +110,6 @@ extension Lists {
             try Lists.Detail.Preference.Record.upsert { Lists.Detail.Preference.Record(detailID: detailID, preference) }.execute(db)
         }
         try Lists.Detail.Preference.Record.where { !$0.detailID.in(Array(lists.preferences.keys)) }.delete().execute(db)
-        try Lists.Record.upsert { Lists.Record(detail: lists.detail) }.execute(db)
+        try Lists.Record.upsert { Lists.Record(detail: lists.detail, editing: lists.editing) }.execute(db)
     }
 }

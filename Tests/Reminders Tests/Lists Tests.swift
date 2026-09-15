@@ -99,6 +99,58 @@ import Tagged
         #expect(Reminder.List.Color(hex: 0x4a99ef).hex == 0x4a99ef)
     }
 
+    @Test func `inline editing starts a row, chains on return, and drops blank rows`() {
+        var lists = Lists.sample(at: now)
+        let personal = lists.orderedLists[0].id
+        let first = Reminder.ID(UUID())
+        lists.startNewReminder(in: personal, id: first)
+        #expect(lists.editing == first && lists.reminder(first)?.list == personal)
+        lists.continueEditing(id: Reminder.ID(UUID()))
+        #expect(lists.editing == nil && lists.reminder(first) == nil)
+        lists.startNewReminder(in: personal, id: first)
+        lists.upsert({ var r = lists.reminder(first)!; r.title = "Milk"; return r }())
+        let second = Reminder.ID(UUID())
+        lists.continueEditing(id: second)
+        #expect(lists.editing == second && lists.reminder(first)?.title == "Milk")
+        #expect(lists.reminder(second)?.position == lists.reminder(first)!.position + 1)
+        // The new row sits beneath its anchor under due-date ordering, and the anchor keeps its
+        // place while a date is set on it, until editing ends.
+        lists.set(ordering: .dueDate, for: .list(personal))
+        var shown = lists.reminders(in: .list(personal), at: now).map(\.id)
+        #expect(shown.firstIndex(of: second) == shown.firstIndex(of: first).map { $0 + 1 })
+        lists.edit(first)
+        let before = lists.reminders(in: .list(personal), at: now).map(\.id).firstIndex(of: first)
+        lists.upsert({ var r = lists.reminder(first)!; r.due = now.addingTimeInterval(-400_000); return r }())
+        shown = lists.reminders(in: .list(personal), at: now).map(\.id)
+        #expect(shown.firstIndex(of: first) == before)
+        lists.endEditing()
+        #expect(lists.reminders(in: .list(personal), at: now).first?.id == first)
+        lists.edit(first)
+        #expect(lists.editing == first && lists.reminder(second) == nil)
+        lists.endEditing()
+        #expect(lists.editing == nil && lists.reminder(first) != nil)
+        lists.delete(reminder: first)
+        lists.edit(first)
+        #expect(lists.editing == nil)
+    }
+
+    @Test func `date and time presets resolve against now`() {
+        let calendar = Calendar.current
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 15, hour: 8, minute: 30))!
+        #expect(Reminder.DatePreset.today.date(at: now) == calendar.startOfDay(for: now))
+        #expect(calendar.component(.weekday, from: Reminder.DatePreset.thisWeekend.date(at: now)) == 7)
+        #expect(calendar.component(.weekday, from: Reminder.DatePreset.nextWeek.date(at: now)) == 2)
+        var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "x")
+        reminder.set(timePreset: .evening, at: now)
+        #expect(reminder.hasTime && calendar.component(.hour, from: reminder.due!) == 18)
+        reminder.set(datePreset: .tomorrow, at: now)
+        #expect(calendar.isDateInTomorrow(reminder.due!) && calendar.component(.hour, from: reminder.due!) == 18)
+        reminder.set(timePreset: nil, at: now)
+        #expect(!reminder.hasTime && calendar.isDateInTomorrow(reminder.due!))
+        reminder.set(datePreset: nil, at: now)
+        #expect(reminder.due == nil)
+    }
+
     @Test func `a time needs a date and a date can stand alone`() {
         let calendar = Calendar.current
         let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20))!

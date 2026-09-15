@@ -4,9 +4,10 @@ public import SwiftUI
 import Tagged
 
 extension Reminder {
-    /// One reminder in a detail or search: the completion circle, the title with
+    /// One reminder at rest in a detail or search: the completion circle, the title with
     /// priority marks and flag, and one gray line of due date, notes, and tags.
-    /// Tapping the text opens details; flag, delete, and details are swipe actions.
+    /// Tapping the text edits the row in place where the caller offers it, otherwise
+    /// opens details; Details and Delete are the swipe actions, as in iOS 27.
     public struct Row: SwiftUI.View {
         private var reminder: Reminder
         private var color: Color
@@ -15,6 +16,7 @@ extension Reminder {
         private var flag: () -> Void
         private var delete: () -> Void
         private var details: () -> Void
+        private var edit: (() -> Void)?
 
         public init(
             _ reminder: Reminder,
@@ -23,7 +25,8 @@ extension Reminder {
             complete: @escaping () -> Void,
             flag: @escaping () -> Void,
             delete: @escaping () -> Void,
-            details: @escaping () -> Void
+            details: @escaping () -> Void,
+            edit: (() -> Void)? = nil
         ) {
             self.reminder = reminder
             self.color = color
@@ -32,6 +35,7 @@ extension Reminder {
             self.flag = flag
             self.delete = delete
             self.details = details
+            self.edit = edit
         }
     }
 }
@@ -46,7 +50,7 @@ extension Reminder.Row {
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(reminder.completed ? "Completed" : "Complete")
-            Button(action: details) {
+            Button(action: edit ?? details) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         if let priority = reminder.priority {
@@ -78,7 +82,6 @@ extension Reminder.Row {
         .padding(.vertical, 2)
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive, action: delete)
-            Button(reminder.flagged ? "Unflag" : "Flag", systemImage: "flag", action: flag).tint(.orange)
             Button("Details", systemImage: "info.circle", action: details).tint(.gray)
         }
     }

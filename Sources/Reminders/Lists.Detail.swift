@@ -111,9 +111,14 @@ extension Lists {
         // A reminder in its grace period stays on screen, in place, so the tap can be undone;
         // completed ones sort last only when the detail shows them.
         let shown = preference.showCompleted ? members : members.filter { $0.status != .completed }
+        // The row being edited keeps its place until editing ends.
+        func placed(_ reminder: Reminder) -> Reminder {
+            reminder.id == editing ? editingPlace ?? reminder : reminder
+        }
         return shown.sorted { lhs, rhs in
-            if preference.showCompleted, lhs.completed != rhs.completed { return !lhs.completed }
-            return Lists.precedes(lhs, rhs, by: preference.ordering)
+            let (l, r) = (placed(lhs), placed(rhs))
+            if preference.showCompleted, l.completed != r.completed { return !l.completed }
+            return Lists.precedes(l, r, by: preference.ordering)
         }
     }
 

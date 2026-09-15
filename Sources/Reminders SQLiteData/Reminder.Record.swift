@@ -17,6 +17,8 @@ extension Reminder {
         public var priority: Int?
         public var status = 0
         public var position = 0
+        public var location: String?
+        public var repeats = "never"
 
         public init(_ reminder: Reminder) {
             id = reminder.id
@@ -29,6 +31,8 @@ extension Reminder {
             priority = reminder.priority?.rawValue
             status = reminder.status.rawValue
             position = reminder.position
+            location = reminder.location?.rawValue
+            repeats = reminder.repeats.rawValue
         }
     }
 
@@ -54,7 +58,9 @@ extension Reminder.Record {
             priority: priority.flatMap(Reminder.Priority.init(rawValue:)),
             status: Reminder.Status(rawValue: status) ?? .incomplete,
             tags: tags,
-            position: position
+            position: position,
+            location: location.flatMap(Reminder.Location.init(rawValue:)),
+            repeats: Reminder.Repeat(rawValue: repeats) ?? .never
         )
     }
 }

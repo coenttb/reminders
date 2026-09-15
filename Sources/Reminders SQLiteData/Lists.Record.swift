@@ -3,15 +3,17 @@ public import SQLiteData
 public import Tagged
 
 extension Lists {
-    /// One row holding which detail is open.
+    /// One row holding which detail is open and which reminder is being edited in place.
     @Table("listsState")
     public struct Record: Identifiable, Sendable {
         public let id: Int
         public var detail: Lists.Detail.ID?
+        public var editing: Reminder.ID?
 
-        public init(id: Int = 1, detail: Lists.Detail?) {
+        public init(id: Int = 1, detail: Lists.Detail?, editing: Reminder.ID?) {
             self.id = id
             self.detail = detail?.id
+            self.editing = editing
         }
     }
 }

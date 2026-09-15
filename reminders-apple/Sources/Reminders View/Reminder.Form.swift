@@ -89,6 +89,15 @@ extension Reminder.Form {
                         .labelsHidden()
                 }
             }
+            if reminder.due != nil {
+                Section {
+                    Picker(selection: $reminder.repeats) {
+                        ForEach(Reminder.Repeat.allCases, id: \.self) { Text($0.title).tag($0) }
+                    } label: {
+                        Label("Repeat", systemImage: "repeat").foregroundStyle(.primary, .secondary)
+                    }
+                }
+            }
             if isNew {
                 Section("More Options") { listPicker }
                 Section {
@@ -202,6 +211,13 @@ extension Reminder.Form {
         }
         Toggle(isOn: $reminder.flagged) {
             Label("Flag", systemImage: "flag").foregroundStyle(.primary, .secondary)
+        }
+        Picker(selection: $reminder.location) {
+            Text("None").tag(Reminder.Location?.none)
+            Divider()
+            ForEach(Reminder.Location.allCases, id: \.self) { Text($0.title).tag(Optional($0)) }
+        } label: {
+            Label("Location", systemImage: "location").foregroundStyle(.primary, .secondary)
         }
     }
 

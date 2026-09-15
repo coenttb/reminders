@@ -2,27 +2,74 @@ public import Foundation
 public import Tagged
 
 /// Everything the Reminders app owns: the lists, their reminders, the known tags,
-/// the per-detail preferences, and which detail is open. Pure value; the rules
-/// that filter, order, search, and count live here so every platform shares them.
+/// the per-detail preferences, which detail is open, and which reminder is being
+/// edited in place. Pure value; the rules that filter, order, search, and count
+/// live here so every platform shares them.
 public struct Lists: Equatable, Sendable {
     public var lists: [Reminder.List]
     public var reminders: [Reminder]
     public var tags: Set<Tag>
     public var preferences: [Detail.ID: Detail.Preference]
     public var detail: Detail?
+    /// The reminder whose row is open for editing in the detail, if any.
+    public var editing: Reminder.ID?
+    /// The row being edited keeps the place it had when editing began; this is the value
+    /// it is sorted by until editing ends. Not stored: a relaunch sorts the row afresh.
+    public var editingPlace: Reminder?
 
     public init(
         lists: [Reminder.List],
         reminders: [Reminder] = [],
         tags: Set<Tag> = [],
         preferences: [Detail.ID: Detail.Preference] = [:],
-        detail: Detail? = nil
+        detail: Detail? = nil,
+        editing: Reminder.ID? = nil
     ) {
         self.lists = lists
         self.reminders = reminders
         self.tags = tags
         self.preferences = preferences
         self.detail = detail
+        self.editing = editing
+    }
+}
+
+extension Lists {
+    /// Opens a reminder's row for editing, committing whatever was being edited.
+    public mutating func edit(_ id: Reminder.ID) {
+        endEditing()
+        guard let reminder = reminder(id) else { return }
+        editing = id
+        editingPlace = reminder
+    }
+
+    /// Adds an empty reminder at the end of a list and opens it for editing.
+    public mutating func startNewReminder(in list: Reminder.List.ID, id: Reminder.ID) {
+        endEditing()
+        upsert(Reminder(id: id, list: list))
+        editing = id
+        editingPlace = reminder(id)
+    }
+
+    /// Commits the row being edited: a blank one is removed, any other one stays as typed.
+    public mutating func endEditing() {
+        if let editing, let reminder = reminder(editing), reminder.isBlank { delete(reminder: editing) }
+        editing = nil
+        editingPlace = nil
+    }
+
+    /// Return in the title: a blank row ends editing; a titled row is committed and an
+    /// empty row opens directly beneath it, in the same list, sorted as its neighbour
+    /// until editing ends so it stays beneath under any ordering.
+    public mutating func continueEditing(id: Reminder.ID) {
+        guard let current = editing, let anchor = reminder(current), !anchor.isBlank else { return endEditing() }
+        for index in reminders.indices where reminders[index].position > anchor.position { reminders[index].position += 1 }
+        reminders.append(Reminder(id: id, list: anchor.list, position: anchor.position + 1))
+        editing = id
+        var place = anchor
+        place.id = id
+        place.position = anchor.position + 1
+        editingPlace = place
     }
 }
 
@@ -104,6 +151,7 @@ extension Lists {
 
     public mutating func delete(reminder id: Reminder.ID) {
         reminders.removeAll { $0.id == id }
+        if editing == id { editing = nil; editingPlace = nil }
     }
 
     /// Removes the tag everywhere it is used.
