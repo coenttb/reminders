@@ -16,10 +16,10 @@ Open `reminders.xcworkspace`. Its shared scheme `reminders.xcworkspace`, named a
 
 ```sh
 xcodebuild -workspace reminders.xcworkspace -scheme reminders.xcworkspace -configuration Debug \
-  -destination "platform=iOS Simulator,id=$(Tools/simulator.sh create)" build-for-testing
+  -destination 'platform=iOS Simulator,name=iPhone 17e · <example>' build-for-testing
 ```
 
-This example is one unit of work: a lane opens this workspace, and no other, and works on a simulator of its own. `Tools/simulator.sh create` creates and boots `iPhone 17e · reminders` (pass another device type as the second argument), `udid` prints it, `delete` removes it; never install on, drive, or reset a simulator you did not create. Xcode keys its derived data by workspace path, so lanes on different examples share no build state; do not pass a shared `-derivedDataPath`. `Tools/generate_project.py` regenerates the host, the project, the host scheme, and this workspace after a package target changes (deterministic, byte-identical on re-run).
+This example is one unit of work: a lane opens this workspace, and no other, and works on a simulator of its own: create one with `xcrun simctl create "iPhone 17e · <example>" "iPhone 17e" <runtime>` and delete it when done; never install on, drive, or reset a simulator you did not create. Xcode keys its derived data by workspace path, so lanes on different examples share no build state; do not pass a shared `-derivedDataPath`. The umbrella's `Tools/generate_project.py`, run from a copy placed in this repository's `Tools/` or pointed at it, regenerates the host, the project, the host scheme, and this workspace after a package target changes (deterministic, byte-identical on re-run).
 
 Dependencies are declared by URL only, never by path: `reminders-apple` depends on `https://github.com/coenttb/reminders` and `https://github.com/coenttb/accessory`, and both packages on `https://github.com/pointfreeco/TCA26.git` (traits `Dependencies` and `Clocks`). The workspace resolves each URL to a local checkout by referencing it: the two packages here, the sibling `../accessory` checkout, and the `pointfreeco/TCA26` checkout (`../../pointfreeco/TCA26` beside a standalone checkout, `../../../pointfreeco/TCA26` inside the `apple-apps` umbrella; the generator probes both). Without a sibling checkout the URL is fetched instead.
 
