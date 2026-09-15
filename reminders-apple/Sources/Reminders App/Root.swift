@@ -92,7 +92,7 @@ extension Root {
             }
         }
         .observingDivision()
-        .sheet(item: $store.scope(\.destination, action: \.destination).reminder) { form in
+        .sheet(item: $store.scope(\.destination).reminder) { form in
             @Bindable var form = form
             NavigationStack {
                 Reminder.Form(
@@ -116,7 +116,7 @@ extension Root {
             .interactiveDismissDisabled(form.isDirty)
             .presentationDetents([.large])
         }
-        .sheet(item: $store.scope(\.destination, action: \.destination).list) { form in
+        .sheet(item: $store.scope(\.destination).list) { form in
             @Bindable var form = form
             NavigationStack {
                 Reminder.List.Form(list: $form.list, isNew: form.isNew, isDirty: form.isDirty, save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })

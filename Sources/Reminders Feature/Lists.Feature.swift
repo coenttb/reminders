@@ -168,7 +168,7 @@ extension Lists {
                     state.lists.continueEditing(id: Reminder.ID(uuid()))
                 }
             }
-            .ifLet(\.destination, action: \.destination) {
+            .ifLet(\.destination) {
                 Destination.body
             }
             .onMount { state in
