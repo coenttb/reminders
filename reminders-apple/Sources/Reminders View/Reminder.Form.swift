@@ -69,7 +69,7 @@ extension Reminder.Form {
                     .lineLimit(1...6)
             }
             Section("Date & Time") {
-                Toggle(isOn: dateOn.animation()) {
+                Toggle(isOn: $reminder.dueOn(now).animation()) {
                     row("Date", systemImage: "calendar", subtitle: reminder.dayDescription(at: now)) {
                         if reminder.due != nil { expanded = expanded == .date ? nil : .date }
                     }
@@ -78,7 +78,7 @@ extension Reminder.Form {
                     DatePicker("Date", selection: $reminder.due[or: due], displayedComponents: .date)
                         .datePickerStyle(.graphical)
                 }
-                Toggle(isOn: timeOn.animation()) {
+                Toggle(isOn: $reminder.timeOn(now).animation()) {
                     row("Time", systemImage: "clock", subtitle: reminder.timeDescription()) {
                         if reminder.hasTime { expanded = expanded == .time ? nil : .time }
                     }
@@ -121,6 +121,17 @@ extension Reminder.Form {
             }
         }
         .onAppear { titleFocused = isNew }
+        // Turning a row on opens its picker and drops the keyboard; turning it off
+        // closes the picker. The toggles bind through key paths, so the view
+        // effects live here rather than in a binding's setter.
+        .onChange(of: reminder.due != nil) { _, on in
+            expanded = on ? .date : nil
+            titleFocused = false
+        }
+        .onChange(of: reminder.hasTime) { _, on in
+            expanded = on ? .time : nil
+            titleFocused = false
+        }
     }
 
     /// The question the sheet asks before an edited draft is discarded.
@@ -194,29 +205,26 @@ extension Reminder.Form {
         }
     }
 
-    /// Date on sets today and opens the calendar; off drops the time as well.
-    private var dateOn: Binding<Bool> {
-        Binding(
-            get: { reminder.due != nil },
-            set: { on in
-                reminder.set(due: on ? Calendar.current.startOfDay(for: now) : nil)
-                expanded = on ? .date : nil
-                titleFocused = false
-            }
-        )
+}
+
+extension Reminder {
+    /// The Date row: on means due today, off clears the date and the time with it.
+    fileprivate subscript(dueOn now: Date) -> Bool {
+        get { due != nil }
+        set { set(due: newValue ? Calendar.current.startOfDay(for: now) : nil) }
     }
 
-    /// Time on turns the date on too and opens the wheel; off closes it.
-    private var timeOn: Binding<Bool> {
-        Binding(
-            get: { reminder.hasTime },
-            set: { on in
-                reminder.set(hasTime: on, at: now)
-                expanded = on ? .time : nil
-                titleFocused = false
-            }
-        )
+    /// The Time row: on proposes the next full hour and turns the date on with it.
+    fileprivate subscript(timeOn now: Date) -> Bool {
+        get { hasTime }
+        set { set(hasTime: newValue, at: now) }
     }
+}
+
+extension Binding<Reminder> {
+    /// The toggles as key-path projections of the draft, so SwiftUI keeps their transaction.
+    fileprivate func dueOn(_ now: Date) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now]] }
+    fileprivate func timeOn(_ now: Date) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now]] }
 }
 
 extension Optional {
