@@ -1,6 +1,7 @@
 public import ComposableArchitecture2
 public import Dependencies
 public import Foundation
+import FoundationEssentials_Extensions
 import Standard_Library_Extensions
 public import Reminders
 import Reminders_SQLiteData
@@ -115,7 +116,7 @@ extension Lists {
                 case .addListButtonTapped:
                     state.destination = .list(Reminder.List.Feature.State(list: Reminder.List(id: Reminder.List.ID(uuid())), isNew: true, session: uuid()))
                 case .appActivated:
-                    state.today = Lists.day(containing: now, calendar: calendar)
+                    state.today = calendar.day(containing: now)
                 // A tap on the empty part of a list ends editing, or starts a new row in an idle list.
                 case .backgroundTapped:
                     if state.editing != nil {
@@ -335,7 +336,7 @@ extension Lists {
             // running when the app last quit resumes as soon as `completing` reads it. A read
             // that fails is a failure, not a first run.
             .onMount { state in
-                state.today = Lists.day(containing: now, calendar: calendar)
+                state.today = calendar.day(containing: now)
                 let sample = Lists.sample(at: now)
                 store.addTask {
                     try await attempt {
@@ -360,7 +361,7 @@ extension Lists {
                 store.addTask {
                     try await attempt { try await home.load(Lists.Home.Request(today: today)) }
                     try await clock.sleep(for: .seconds(max(today.upperBound.timeIntervalSince(now), 0)))
-                    try store.modify { $0.today = Lists.day(containing: now, calendar: calendar) }
+                    try store.modify { $0.today = calendar.day(containing: now) }
                 }
             }
             // Leaving a detail ends the row being edited, as the stock app does. A row is only

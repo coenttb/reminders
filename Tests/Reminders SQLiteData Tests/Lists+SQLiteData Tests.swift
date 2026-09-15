@@ -1,4 +1,5 @@
 import Foundation
+import FoundationEssentials_Extensions
 import Reminders
 import Reminders_SQLiteData
 import SQLiteData
@@ -8,7 +9,7 @@ import Tagged
 @Suite struct `Lists SQLite storage` {
     let now = Date(timeIntervalSince1970: 1_234_567_890)
     let calendar = Calendar(identifier: .gregorian)
-    var today: Range<Date> { Lists.day(containing: now, calendar: calendar) }
+    var today: Range<Date> { calendar.day(containing: now)! }
 
     /// The sample in a fresh in-memory database.
     func makeDatabase() throws -> (database: DatabaseQueue, sample: Lists.Sample) {
@@ -379,16 +380,16 @@ import Tagged
         }
         func today(_ calendar: Calendar) throws -> [String] {
             try database.read { db in
-                try Lists.Detail.Request(detail: .today, today: Lists.day(containing: now, calendar: calendar)).fetch(db).reminders.map(\.title)
+                try Lists.Detail.Request(detail: .today, today: calendar.day(containing: now)!).fetch(db).reminders.map(\.title)
             }
         }
         func count(_ calendar: Calendar) throws -> Int {
-            try database.read { db in try Lists.Home.Request(today: Lists.day(containing: now, calendar: calendar)).fetch(db).stats.today }
+            try database.read { db in try Lists.Home.Request(today: calendar.day(containing: now)!).fetch(db).stats.today }
         }
         #expect(try today(utc) == [] && count(utc) == 0)
         #expect(try today(tokyo) == ["Late"] && count(tokyo) == 1)
         // The day after, in UTC, it is today.
-        let tomorrow = Lists.day(containing: now.addingTimeInterval(3_600), calendar: utc)
+        let tomorrow = utc.day(containing: now.addingTimeInterval(3_600))!
         #expect(try database.read { db in try Lists.Home.Request(today: tomorrow).fetch(db).stats.today } == 1)
     }
 

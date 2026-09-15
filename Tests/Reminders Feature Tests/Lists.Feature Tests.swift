@@ -4,6 +4,7 @@ import ComposableArchitectureTestSupport
 import DebugSnapshots
 import Dependencies
 import DependenciesTestSupport
+import FoundationEssentials_Extensions
 import Foundation
 import Observation
 import Reminders
@@ -33,7 +34,7 @@ struct `Lists feature` {
     var personal: Reminder.List.ID { sample.lists[0].id }
     var groceries: Reminder { sample.reminders[0] }
     /// The day the feature computes at mount, by whatever calendar the test installed.
-    var today: Range<Date> { Lists.day(containing: now, calendar: calendar) }
+    var today: Range<Date> { calendar.day(containing: now)! }
 
     /// A mounted store on a clock the test controls; the mount sets the day, and restores
     /// whatever else the database says before anything else runs.
@@ -630,7 +631,7 @@ struct `Lists feature` {
         let start = Date(timeIntervalSince1970: 1_234_567_890)
         Self.tokyoDate.withLock { $0 = start }
         // 2009-02-13 23:31:30 UTC is 08:31 on the 14th in Tokyo: the day is Tokyo's, whatever the process time zone.
-        let day = Lists.day(containing: start, calendar: tokyo)
+        let day = tokyo.day(containing: start)!
         #expect(day.lowerBound == tokyo.date(from: DateComponents(year: 2009, month: 2, day: 14)))
         let store = try await makeStore(clock: clock)
         #expect(await store.state.today == day)
@@ -649,7 +650,7 @@ struct `Lists feature` {
         // Coming back to the foreground days later reads the day again without waiting for the clock.
         let later = start.addingTimeInterval(2 * 86_400)
         Self.tokyoDate.withLock { $0 = later }
-        await store.send(.appActivated) { $0.today = Lists.day(containing: later, calendar: tokyo) }
+        await store.send(.appActivated) { $0.today = tokyo.day(containing: later)! }
         await store.dismount()
     }
 

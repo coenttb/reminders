@@ -75,20 +75,6 @@ import Tagged
         #expect(Reminder.List.Color(hex: 0x4a99ef).hex == 0x4a99ef)
     }
 
-    @Test func `a day is bounded by the calendar it is asked in`() {
-        var utc = Calendar(identifier: .gregorian)
-        utc.timeZone = TimeZone(identifier: "UTC")!
-        var tokyo = utc
-        tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
-        // 2009-02-13 23:31:30 UTC is already the 14th in Tokyo.
-        let day = Lists.day(containing: now, calendar: utc)
-        #expect(day.lowerBound == utc.date(from: DateComponents(year: 2009, month: 2, day: 13)))
-        #expect(day.upperBound == utc.date(from: DateComponents(year: 2009, month: 2, day: 14)))
-        let ahead = Lists.day(containing: now, calendar: tokyo)
-        #expect(ahead.lowerBound == tokyo.date(from: DateComponents(year: 2009, month: 2, day: 14)))
-        #expect(ahead.contains(now) && day.contains(now))
-    }
-
     @Test func `date and time presets resolve against now`() {
         let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 15, hour: 8, minute: 30))!
         let tomorrow = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16))!

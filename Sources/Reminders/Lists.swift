@@ -40,13 +40,3 @@ extension Lists {
         public func list(_ id: Reminder.List.ID) -> Reminder.List? { lists.first { $0.id == id }?.list }
     }
 }
-
-extension Lists {
-    /// The calendar day a moment falls in, as half-open bounds, so "today" is decided by the
-    /// calendar the app is given rather than by the database's own idea of local time.
-    public static func day(containing now: Date, calendar: Calendar) -> Range<Date> {
-        let start = calendar.startOfDay(for: now)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
-        return start..<end
-    }
-}
