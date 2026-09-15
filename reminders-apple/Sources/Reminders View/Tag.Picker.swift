@@ -66,12 +66,20 @@ extension Tag.Picker {
             Button("Save") { add(title) }
             Button("Cancel", role: .cancel) {}
         }
-        .alert("Edit tag", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
+        .alert("Edit tag", isPresented: $editing.isPresent) {
             TextField("Tag name", text: $title)
             Button("Save") { if let editing { rename(editing, title) } }
             Button("Cancel", role: .cancel) {}
         }
         .toolbar { ToolbarItem { Button("Done") { dismiss() } } }
         .navigationTitle("Tags")
+    }
+}
+
+extension Optional {
+    /// Whether a value is present; setting it false clears the value, setting it true is a no-op.
+    fileprivate var isPresent: Bool {
+        get { self != nil }
+        set { if !newValue { self = nil } }
     }
 }
