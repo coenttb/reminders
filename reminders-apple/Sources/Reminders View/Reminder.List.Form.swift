@@ -74,7 +74,7 @@ extension Reminder.List.Form {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
-                ColorPicker("Custom", selection: $list.color.swiftUIBinding)
+                ColorPicker("Custom", selection: $list.color.swiftUI)
             }
         }
         .scrollDismissesKeyboard(.interactively)
@@ -98,12 +98,5 @@ extension Reminder.List.Form {
     /// The question the sheet asks before an edited draft is discarded.
     public var discardTitle: String {
         isNew ? "Are you sure you want to discard this new list?" : "Are you sure you want to discard your changes?"
-    }
-}
-
-extension Binding<Reminder.List.Color> {
-    /// The domain color as a SwiftUI color binding for the picker.
-    var swiftUIBinding: Binding<Color> {
-        Binding<Color>(get: { wrappedValue.swiftUI }, set: { wrappedValue = Reminder.List.Color($0) })
     }
 }

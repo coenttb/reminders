@@ -2,8 +2,12 @@ public import Reminders
 public import SwiftUI
 
 extension Reminder.List.Color {
-    /// The domain color as SwiftUI draws it.
-    public var swiftUI: SwiftUI.Color { SwiftUI.Color(red: red, green: green, blue: blue) }
+    /// The domain color as SwiftUI draws it; settable, so a picker binds to it through
+    /// a key path (`$list.color.swiftUI`) and SwiftUI keeps the transaction.
+    public var swiftUI: SwiftUI.Color {
+        get { SwiftUI.Color(red: red, green: green, blue: blue) }
+        set { self = Reminder.List.Color(newValue) }
+    }
 
     /// From a picked SwiftUI color, resolved in the default environment.
     public init(_ color: SwiftUI.Color) {
