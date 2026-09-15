@@ -1,6 +1,7 @@
 import Foundation
 public import Organizing
 public import Reminders
+import Reminders_Application
 import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
@@ -29,6 +30,7 @@ extension Reminder {
         @State private var discardPresented = false
         @State private var expanded: Expansion?
         @FocusState private var titleFocused: Bool
+        @FocusState private var notesFocused: Bool
 
         public init(
             reminder: Binding<Reminder>,
@@ -75,7 +77,10 @@ extension Reminder.Form {
                     .listRowSeparator(.hidden)
                 TextField("Notes", text: $reminder.notes, axis: .vertical)
                     .lineLimit(1...6)
+                    .focused($notesFocused)
             }
+            // The stock card sits 22 pt under the bar, not at the form's default.
+            .listSectionMargins(.top, 6)
             Section("Date & Time") {
                 Toggle(isOn: $reminder.dueOn(now, calendar: calendar).animation()) {
                     row("Date", systemImage: "calendar", subtitle: reminder.due?.dayDescription(at: now, calendar: calendar)) {
@@ -121,11 +126,23 @@ extension Reminder.Form {
                     }
                 }
             } else {
+                // Stock groups: Organisation holds List and Priority as separate cards, then
+                // Tags and Flag; Location is under Places & People (Evidence/Parity/details-sheet).
                 Section("Organisation") { listPicker }
-                Section { details }
+                Section { priorityPicker }
+                Section {
+                    tagsRow
+                    flagToggle
+                }
+                Section("Places & People") { locationPicker }
             }
         }
         .scrollDismissesKeyboard(.interactively)
+        // A keyboard-placed toolbar never appears inside this sheet, so the quick bar is a
+        // bottom bar shown while a field has the keyboard.
+        .safeAreaBar(edge: .bottom) {
+            if titleFocused || notesFocused { quickBar }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -154,6 +171,50 @@ extension Reminder.Form {
         }
     }
 
+    /// The quick bar above the keyboard, as stock: Date & Time, Location, Flag, Photos
+    /// (Evidence/Parity/new-reminder-sheet). Photos is out of scope and stays disabled.
+    private var quickBar: some SwiftUI.View {
+        HStack {
+            Menu {
+                ForEach(Reminder.Due.Preset.allCases, id: \.self) { preset in
+                    let date = preset.date(at: now, calendar: calendar)
+                    Button(preset.title, systemImage: "\(calendar.component(.day, from: date)).calendar") {
+                        reminder.set(datePreset: preset, at: now, calendar: calendar)
+                    }
+                }
+                Button("Custom", systemImage: "ellipsis") {
+                    if reminder.due == nil { reminder.set(datePreset: .today, at: now, calendar: calendar) }
+                    expanded = .date
+                }
+            } label: {
+                Label("Date & Time", systemImage: "calendar.badge.clock")
+            }
+            Spacer()
+            Menu {
+                Button("None") { reminder.location = nil }
+                ForEach(Reminder.Location.allCases, id: \.self) { location in
+                    Button(location.title) { reminder.location = location }
+                }
+            } label: {
+                Label("Location", systemImage: "location")
+            }
+            Spacer()
+            Button("Flag", systemImage: reminder.flagged ? "flag.fill" : "flag") { reminder.flagged.toggle() }
+                .disabled(reminder.isBlank)
+            Spacer()
+            Button("Photos", systemImage: "camera") {}
+                .disabled(true)
+        }
+        .labelStyle(.iconOnly)
+        .font(.title3)
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 22)
+        .frame(height: 50)
+        .glassEffect(.regular, in: .capsule)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 4)
+    }
+
     /// The question the sheet asks before an edited draft is discarded.
     public var discardTitle: String {
         isNew ? "Are you sure you want to discard this new reminder?" : "Are you sure you want to discard your changes?"
@@ -177,22 +238,45 @@ extension Reminder.Form {
         .buttonStyle(.plain)
     }
 
+    /// The List row names the list after the badge, as the stock row does; the pushed
+    /// screen lists every list with its badge and a checkmark on the current one.
     private var listPicker: some SwiftUI.View {
-        Picker(selection: $reminder.list) {
-            ForEach(lists) { list in
-                Label { Text(list.title) } icon: { Organizing.List<Reminder>.Badge(color: list.color.swiftUI, size: 28) }.tag(list.id)
+        NavigationLink {
+            SwiftUI.List(lists) { list in
+                Button { reminder.list = list.id } label: {
+                    HStack(spacing: 16) {
+                        Organizing.List<Reminder>.Badge(color: list.color.swiftUI)
+                        Text(list.title).foregroundStyle(.primary)
+                        Spacer()
+                        if list.id == reminder.list {
+                            Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold)
+                        }
+                    }
+                }
             }
+            .navigationTitle("List")
+            .navigationBarTitleDisplayMode(.inline)
         } label: {
-            Label {
-                Text("List")
-            } icon: {
-                Organizing.List<Reminder>.Badge(color: lists.first(id: reminder.list)?.color.swiftUI ?? .blue, size: 28)
+            LabeledContent {
+                Text(lists.first(id: reminder.list)?.title ?? "")
+            } label: {
+                Label {
+                    Text("List")
+                } icon: {
+                    Organizing.List<Reminder>.Badge(color: lists.first(id: reminder.list)?.color.swiftUI ?? .blue, size: 28)
+                }
             }
         }
-        .pickerStyle(.navigationLink)
     }
 
     @ViewBuilder private var details: some SwiftUI.View {
+        priorityPicker
+        tagsRow
+        flagToggle
+        locationPicker
+    }
+
+    private var priorityPicker: some SwiftUI.View {
         Picker(selection: $reminder.priority) {
             Text("None").tag(Reminder.Priority?.none)
             Divider()
@@ -200,6 +284,9 @@ extension Reminder.Form {
         } label: {
             Label("Priority", systemImage: "exclamationmark").foregroundStyle(.primary, .secondary)
         }
+    }
+
+    private var tagsRow: some SwiftUI.View {
         Button { tagsPresented = true } label: {
             LabeledContent {
                 HStack(spacing: 6) {
@@ -218,9 +305,15 @@ extension Reminder.Form {
                 Tag<Reminder>.Picker(selection: $reminder.tags, tags: tags, add: addTag, rename: renameTag, delete: deleteTag)
             }
         }
+    }
+
+    private var flagToggle: some SwiftUI.View {
         Toggle(isOn: $reminder.flagged) {
             Label("Flag", systemImage: "flag").foregroundStyle(.primary, .secondary)
         }
+    }
+
+    private var locationPicker: some SwiftUI.View {
         Picker(selection: $reminder.location) {
             Text("None").tag(Reminder.Location?.none)
             Divider()
@@ -229,7 +322,6 @@ extension Reminder.Form {
             Label("Location", systemImage: "location").foregroundStyle(.primary, .secondary)
         }
     }
-
 }
 
 extension Reminder {

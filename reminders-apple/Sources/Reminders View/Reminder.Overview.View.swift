@@ -1,3 +1,4 @@
+public import Foundation
 public import Organizing
 public import Reminders
 public import Reminders_Application
@@ -9,6 +10,8 @@ extension Reminder.Overview {
     /// lists, and the tags in use. Every tap is a callback; the value is read-only.
     public struct View: SwiftUI.View {
         private var overview: Reminder.Overview
+        private var now: Date
+        private var calendar: Calendar
         private var open: (Reminder.Filter) -> Void
         private var details: (Organizing.List<Reminder>.ID) -> Void
         private var delete: (Organizing.List<Reminder>.ID) -> Void
@@ -17,6 +20,8 @@ extension Reminder.Overview {
 
         public init(
             _ overview: Reminder.Overview,
+            now: Date,
+            calendar: Calendar,
             open: @escaping (Reminder.Filter) -> Void,
             details: @escaping (Organizing.List<Reminder>.ID) -> Void,
             delete: @escaping (Organizing.List<Reminder>.ID) -> Void,
@@ -24,6 +29,8 @@ extension Reminder.Overview {
             deleteTag: @escaping (Tag<Reminder>.ID) -> Void
         ) {
             self.overview = overview
+            self.now = now
+            self.calendar = calendar
             self.open = open
             self.details = details
             self.delete = delete
@@ -38,19 +45,22 @@ extension Reminder.Overview.View {
         let counts = overview.counts
         Section {
             // Flagged appears only while something is flagged, as in iOS 27.
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                Reminder.Filter.Tile(.today, systemImage: "calendar", color: .blue, count: counts.today, open: open)
-                Reminder.Filter.Tile(.scheduled, systemImage: "calendar.badge.clock", color: .red, count: counts.scheduled, open: open)
-                Reminder.Filter.Tile(.all, systemImage: "tray.fill", color: SwiftUI.Color(.darkGray), count: counts.all, open: open)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                Reminder.Filter.Tile(.today, glyph: .today(day: calendar.component(.day, from: now)), fill: .today, count: counts.today, open: open)
+                Reminder.Filter.Tile(.scheduled, glyph: .symbol("calendar"), fill: .scheduled, count: counts.scheduled, open: open)
+                Reminder.Filter.Tile(.all, glyph: .symbol("tray.fill"), fill: .all, count: counts.all, open: open)
                 if counts.flagged > 0 {
-                    Reminder.Filter.Tile(.flagged, systemImage: "flag.fill", color: .orange, count: counts.flagged, open: open)
+                    Reminder.Filter.Tile(.flagged, glyph: .symbol("flag.fill"), fill: .flagged, count: counts.flagged, open: open)
                 }
-                Reminder.Filter.Tile(.completed, systemImage: "checkmark", color: .gray, count: nil, open: open)
+                Reminder.Filter.Tile(.completed, glyph: .symbol("checkmark"), fill: .completed, count: nil, open: open)
             }
             .buttonStyle(.plain)
             .listRowBackground(SwiftUI.Color.clear)
             .listRowInsets(EdgeInsets())
         }
+        // The grid sits 16 pt under the bar, where the stock app puts it, not at the
+        // inset-grouped default.
+        .listSectionMargins(.top, 0)
         Section {
             ForEach(overview.lists) { entry in
                 Button { open(.list(entry.id)) } label: {
@@ -81,11 +91,12 @@ extension Reminder.Overview.View {
     }
 
     private func header(_ title: String) -> some SwiftUI.View {
+        // `.primary` inside a header resolves against the header's secondary style;
+        // the color itself keeps the stock black.
         Text(title)
             .font(.title2.weight(.bold))
-            .foregroundStyle(.primary)
+            .foregroundStyle(SwiftUI.Color.primary)
             .textCase(nil)
-            .padding(.top, -4)
             .padding(.leading, -4)
     }
 }

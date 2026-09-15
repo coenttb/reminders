@@ -22,16 +22,18 @@ extension Organizing.List {
 
 extension Organizing.List.Row {
     public var body: some SwiftUI.View {
-        HStack(spacing: 14) {
+        // Stock geometry: 62 pt rows, the badge 16 pt from the title, the count 10 pt from a body-size chevron.
+        HStack(spacing: 16) {
             Organizing.List<Element>.Badge(color: list.color.swiftUI)
             Text(list.title)
             Spacer()
-            Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
-            if editMode?.wrappedValue.isEditing != true {
-                Image(systemName: "chevron.forward").foregroundStyle(.tertiary).font(.footnote.weight(.semibold))
+            HStack(spacing: 10) {
+                Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
+                if editMode?.wrappedValue.isEditing != true {
+                    Image(systemName: "chevron.forward").foregroundStyle(.tertiary).font(.body.weight(.semibold))
+                }
             }
         }
-        .padding(.vertical, 4)
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive, action: delete)
             Button("Info", systemImage: "info.circle", action: details).tint(.gray)
@@ -52,10 +54,30 @@ extension Organizing.List {
 
         public var body: some SwiftUI.View {
             Image(systemName: "list.bullet")
-                .font(.system(size: size * 0.45, weight: .bold))
+                .font(.system(size: size * 0.5, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: size, height: size)
-                .background(color.gradient, in: .circle)
+                .background(color, in: .circle)
+        }
+    }
+}
+
+extension Organizing.List {
+    /// The Add List bar glyph as iOS 27 draws it: a bulleted page with a plus badge
+    /// bottom-trailing. No SF Symbol carries that badge, so the page and the badge are composed.
+    public struct AddGlyph: SwiftUI.View {
+        public init() {}
+
+        public var body: some SwiftUI.View {
+            Image(systemName: "list.bullet.rectangle.portrait")
+                .overlay(alignment: .bottomTrailing) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, .primary)
+                        .background(.background, in: .circle)
+                        .offset(x: 4, y: 3)
+                }
         }
     }
 }

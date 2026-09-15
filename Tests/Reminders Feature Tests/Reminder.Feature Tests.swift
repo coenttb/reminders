@@ -206,6 +206,15 @@ struct `Reminder feature` {
         await revived.dismount()
     }
 
+    @Test func `a relaunch onto an open list reads its rows`() async throws {
+        let store = try await makeStore()
+        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
+        await store.dismount()
+        let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
+        try await until(revived.state.$detail) { $0?.filter == .list(personal) && $0?.rows.count == 4 }
+        await revived.dismount()
+    }
+
     @Test func `a write that fails keeps the draft and its baseline, and the next write tries the whole difference again`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = try await makeStore()

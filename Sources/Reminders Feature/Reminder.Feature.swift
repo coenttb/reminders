@@ -340,19 +340,19 @@ extension Reminder {
             .onMount { state in
                 state.today = calendar.day(containing: now)
                 let sample = Reminder.sample(at: now)
-                store.addTask {
-                    try await attempt {
-                        let (stored, reminder) = try write { db in
-                            try sample.initialize(in: db)
-                            let stored = try Reminder.Session.Record.state.fetchOne(db)?.session
-                            let reminder = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db)?.value }
-                            return (stored, reminder)
-                        }
-                        try store.modify {
-                            if let filter = stored?.filter { $0.filter = filter }
-                            if let reminder { $0.editing = Reminder.Editing(reminder, session: uuid()) }
-                        }
+                // Restored synchronously, so the detail's first read already sees the filter: a
+                // filter set from a task after the mount left the detail unread on relaunch.
+                do {
+                    let (stored, reminder) = try write { db in
+                        try sample.initialize(in: db)
+                        let stored = try Reminder.Session.Record.state.fetchOne(db)?.session
+                        let reminder = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db)?.value }
+                        return (stored, reminder)
                     }
+                    if let filter = stored?.filter { state.filter = filter }
+                    if let reminder { state.editing = Reminder.Editing(reminder, session: uuid()) }
+                } catch {
+                    state.failure = error.localizedDescription
                 }
             }
             // The day decides the overview counts and the Today filter: it is read again when the

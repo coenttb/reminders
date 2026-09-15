@@ -74,13 +74,18 @@ extension Reminder.Filter.Detail.View {
                     .foregroundStyle(color)
                     .onAppear { titleHeight = proxy.size.height }
             }
+            // The first row starts 106 pt under the safe area, as the stock large title leaves it.
+            .frame(height: 48)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+            // Stock rows: no separators, 10 pt above and below the text, 42 pt for a title alone.
             ForEach(detail.rows) { row in
                 if row.id == editing {
                     Reminder.Editor(reminder: draft(row.id), color: row.color.swiftUI, now: now, calendar: calendar, focus: $focus, actions: editor)
                 } else {
                     Reminder.Row(row.reminder, color: row.color.swiftUI, now: now, calendar: calendar, actions: rowActions)
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                        .listRowSeparator(.hidden)
                 }
             }
             .onMove(perform: move)
@@ -95,6 +100,7 @@ extension Reminder.Filter.Detail.View {
                 .listRowBackground(SwiftUI.Color.clear)
         }
         .listStyle(.plain)
+        .environment(\.defaultMinListRowHeight, 42)
         // Rows animate when they appear, leave, or move; a keystroke in the edited row does not.
         .animation(.default, value: detail.rows.map(\.id))
         // The row being edited takes the keyboard and comes up above it; a new row is read back

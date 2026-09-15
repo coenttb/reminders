@@ -75,7 +75,9 @@ extension Reminder.Editor {
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            VStack(alignment: .leading, spacing: 6) {
+            // Stock card (Evidence/Parity/inline-edit): 107 pt tall, the circle centred 29 pt
+            // from the screen edge, the note 22 pt under the title, the chips 26 pt under the note.
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     if let priority = reminder.priority {
                         Text(priority.marks).foregroundStyle(color)
@@ -106,7 +108,7 @@ extension Reminder.Editor {
                 .scrollIndicators(.hidden)
             }
         }
-        .padding(EdgeInsets(top: 12, leading: 12, bottom: 14, trailing: 12))
+        .padding(EdgeInsets(top: 10, leading: 10, bottom: 12, trailing: 10))
         // The card is the content's own background, not the row's: a row background is
         // clipped to the row, which cut the shadow and the corners.
         .background(
@@ -129,8 +131,10 @@ extension Reminder.Editor {
             Divider()
             ForEach(Reminder.Due.Preset.allCases, id: \.self) { preset in
                 Button { actions.setDate(reminder.id, preset) } label: {
-                    let current = reminder.due.map { calendar.isDate($0.date, inSameDayAs: preset.date(at: now, calendar: calendar)) } ?? false
-                    Label(preset.title, systemImage: current ? "checkmark" : "calendar")
+                    // Each preset shows its day on a calendar page, as the stock menu does.
+                    let date = preset.date(at: now, calendar: calendar)
+                    let current = reminder.due.map { calendar.isDate($0.date, inSameDayAs: date) } ?? false
+                    Label(preset.title, systemImage: current ? "checkmark" : "\(calendar.component(.day, from: date)).calendar")
                 }
             }
             Button("Custom", systemImage: "ellipsis") { actions.details(reminder.id) }

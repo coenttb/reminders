@@ -47,6 +47,8 @@ extension Root {
                 } else {
                     Reminder.Overview.View(
                         store.overview,
+                        now: now,
+                        calendar: calendar,
                         open: { store.send(.filterTapped($0)) },
                         details: { store.send(.listDetailsButtonTapped($0)) },
                         delete: { store.send(.listDeleted($0)) },
@@ -66,7 +68,8 @@ extension Root {
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add List", systemImage: "text.badge.plus") { store.send(.addListButtonTapped) }
+                    Button { store.send(.addListButtonTapped) } label: { Organizing.List<Reminder>.AddGlyph() }
+                        .accessibilityLabel("Add List")
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) { EditButton() }
@@ -119,7 +122,11 @@ extension Root {
             // SwiftUI has no hook on the drag itself (dismissalConfirmationDialog wraps
             // the dismiss action, not the gesture), and UIKit bridges are out.
             .interactiveDismissDisabled(form.isDirty)
-            .presentationDetents([.large])
+            // Stock opens Details at the height of its content (624 of 874 pt on the
+            // iPhone 17) and grows to full height on a drag; New Reminder is full height.
+            .presentationDetents(form.isNew ? [.large] : [.fraction(0.715), .large])
+            .presentationDragIndicator(.hidden)
+            .presentationBackground(SwiftUI.Color(.systemGroupedBackground))
         }
         .sheet(item: $store.scope(\.destination).list) { form in
             @Bindable var form = form

@@ -55,11 +55,15 @@ extension Reminder.Row {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
                     .foregroundStyle(reminder.completed ? color : SwiftUI.Color(.systemGray3))
                     .font(.title2)
+                    // The circle overhangs the text line, as the stock 44 pt button does; a
+                    // title-only row stays 42 pt.
+                    .frame(width: 26, height: 20)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(reminder.completed ? "Completed" : "Complete")
             Button { (actions.edit ?? actions.details)(reminder.id) } label: {
-                VStack(alignment: .leading, spacing: 2) {
+                // Stock: the gray line sits 24 pt under the title's top.
+                VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         if let priority = reminder.priority {
                             Text(priority.marks)
@@ -87,7 +91,6 @@ extension Reminder.Row {
             }
             .buttonStyle(.plain)
         }
-        .padding(.vertical, 2)
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive) { actions.delete(reminder.id) }
             Button("Details", systemImage: "info.circle") { actions.details(reminder.id) }.tint(.gray)
