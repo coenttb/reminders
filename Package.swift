@@ -20,11 +20,13 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-issue-reporting", from: "2.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
+        .package(url: "https://github.com/swift-molecules/swift-foundation-extensions.git", branch: "main"),
     ],
     targets: [
         .target(
             name: "Reminders",
             dependencies: [
+                .product(name: "Foundation Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),

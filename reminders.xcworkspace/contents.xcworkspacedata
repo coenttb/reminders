@@ -6,5 +6,6 @@
       <FileRef location="group:reminders-apple"/>
    </Group>
    <FileRef location="group:../swiftui-extensions"/>
+   <FileRef location="group:../swift-institute/swift-molecules/swift-foundation-extensions"/>
    <FileRef location="group:../../pointfreeco/TCA26"/>
 </Workspace>
