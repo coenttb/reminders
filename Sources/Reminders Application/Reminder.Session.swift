@@ -2,7 +2,7 @@ public import Reminders
 
 extension Reminder {
     /// Where the user is: the open filter and the row being edited in place, kept across launches.
-    public struct Navigation: Hashable, Sendable {
+    public struct Session: Hashable, Sendable {
         public var filter: Filter?
         public var editing: Reminder.ID?
 

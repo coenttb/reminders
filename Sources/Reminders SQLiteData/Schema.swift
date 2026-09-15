@@ -58,15 +58,15 @@ extension Reminder.Schema {
                 """).execute(db)
             try #sql("""
                 CREATE TABLE "preferences" (
-                  "detailID" TEXT PRIMARY KEY NOT NULL,
+                  "key" TEXT PRIMARY KEY NOT NULL,
                   "ordering" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
                   "showCompleted" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0
                 ) STRICT
                 """).execute(db)
             try #sql("""
-                CREATE TABLE "listsState" (
+                CREATE TABLE "session" (
                   "id" INTEGER PRIMARY KEY NOT NULL,
-                  "detail" TEXT,
+                  "filter" TEXT,
                   "editing" TEXT
                 ) STRICT
                 """).execute(db)
@@ -177,7 +177,7 @@ extension Reminder.Sample {
     /// by the first initialisation and never deleted, so a database initialised before is left
     /// alone whatever it holds, and a failed read throws rather than counting as a first run.
     public static func initialize(with sample: Self, in db: Database) throws {
-        guard try Reminder.Navigation.Record.state.fetchCount(db) == 0 else { return }
+        guard try Reminder.Session.Record.state.fetchCount(db) == 0 else { return }
         try replace(with: sample, in: db)
     }
 
@@ -201,7 +201,7 @@ extension Reminder.Sample {
             try Reminder.Record.insert { Reminder.Record(reminder) }.execute(db)
             try Reminder.Tagging.attach(reminder.tags, to: reminder.id, in: db)
         }
-        try Reminder.Navigation.Record.upsert { Reminder.Navigation.Record(Reminder.Navigation()) }.execute(db)
+        try Reminder.Session.Record.upsert { Reminder.Session.Record(Reminder.Session()) }.execute(db)
     }
 
     public func replace(in db: Database) throws { try Self.replace(with: self, in: db) }

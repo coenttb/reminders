@@ -6,7 +6,7 @@ extension Reminder.Filter.Preference {
     /// One row per filter the user adjusted, keyed by the filter's stored form.
     @Table("preferences")
     public struct Record: Identifiable, Sendable {
-        @Column("detailID", primaryKey: true)
+        @Column(primaryKey: true)
         public var key: Reminder.Filter.Key
         public var ordering = ""
         public var showCompleted = false

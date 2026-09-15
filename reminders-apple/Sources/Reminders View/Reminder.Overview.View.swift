@@ -39,13 +39,13 @@ extension Reminder.Overview.View {
         Section {
             // Flagged appears only while something is flagged, as in iOS 27.
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                Reminder.Filter.Cell(.today, systemImage: "calendar", color: .blue, count: counts.today, open: open)
-                Reminder.Filter.Cell(.scheduled, systemImage: "calendar.badge.clock", color: .red, count: counts.scheduled, open: open)
-                Reminder.Filter.Cell(.all, systemImage: "tray.fill", color: SwiftUI.Color(.darkGray), count: counts.all, open: open)
+                Reminder.Filter.Tile(.today, systemImage: "calendar", color: .blue, count: counts.today, open: open)
+                Reminder.Filter.Tile(.scheduled, systemImage: "calendar.badge.clock", color: .red, count: counts.scheduled, open: open)
+                Reminder.Filter.Tile(.all, systemImage: "tray.fill", color: SwiftUI.Color(.darkGray), count: counts.all, open: open)
                 if counts.flagged > 0 {
-                    Reminder.Filter.Cell(.flagged, systemImage: "flag.fill", color: .orange, count: counts.flagged, open: open)
+                    Reminder.Filter.Tile(.flagged, systemImage: "flag.fill", color: .orange, count: counts.flagged, open: open)
                 }
-                Reminder.Filter.Cell(.completed, systemImage: "checkmark", color: .gray, count: nil, open: open)
+                Reminder.Filter.Tile(.completed, systemImage: "checkmark", color: .gray, count: nil, open: open)
             }
             .buttonStyle(.plain)
             .listRowBackground(SwiftUI.Color.clear)

@@ -99,6 +99,6 @@ import Tagged
         let row = Reminder.Filter.Detail.Row(reminder: reminder(), color: .default)
         let detail = Reminder.Filter.Detail(filter: .list(list), color: personal.color, preference: Reminder.Filter.Preference(), rows: [row])
         #expect(detail.reminders == [row.reminder] && row.id == row.reminder.id)
-        #expect(Reminder.Navigation().filter == nil && Reminder.Navigation(filter: .today, editing: row.id).editing == row.id)
+        #expect(Reminder.Session().filter == nil && Reminder.Session(filter: .today, editing: row.id).editing == row.id)
     }
 }

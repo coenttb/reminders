@@ -107,14 +107,14 @@ struct `Reminder feature` {
         await store.modify {
             if case var .reminder(form) = $0.destination { form.reminder.title = "Water plants"; $0.destination = .reminder(form) }
         } changes: {
-            if case var .reminder(form) = $0.destination { form.reminder.title = "Water plants"; $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.reminder.title = "Water plants"; $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.tagAdded("garden")))) {
-            if case var .reminder(form) = $0.destination { form.reminder.tags.insert("garden"); $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.reminder.tags.insert("garden"); $0.destination = .reminder(form) }
         }?.value
         // A tag that exists in another case attaches the existing tag, not a twin.
         await store.send(.destination(.reminder(.tagAdded("ADULTING")))) {
-            if case var .reminder(form) = $0.destination { form.reminder.tags.insert("adulting"); $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.reminder.tags.insert("adulting"); $0.destination = .reminder(form) }
         }?.value
         // The sheet closes only once the write has landed.
         await store.send(.destination(.reminder(.saveButtonTapped))) { $0.destination = nil }?.value
@@ -127,7 +127,7 @@ struct `Reminder feature` {
         #expect(saved?.tags == ["garden", "adulting"])
         let adulting = try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).count { $0.title.lowercased() == "adulting" } }
         #expect(adulting == 1)
-        let restored = try await database.read { db in try Reminder.Navigation.Record.state.fetchOne(db)?.navigation }
+        let restored = try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.session }
         #expect(restored?.filter == .list(personal))
         let preference = try await database.read { [personal] db in try Reminder.Filter.Preference.Record.preference(for: .list(personal)).fetchOne(db)?.preference }
         #expect(preference == Reminder.Filter.Preference(ordering: .title, showCompleted: true))
@@ -174,7 +174,7 @@ struct `Reminder feature` {
         try await until(store.state.$detail) { $0?.reminders.map(\.id).suffix(2) == [first, second] }
         await store.send(.doneButtonTapped) { $0.editing = nil }?.value
         #expect(try await stored(second) == nil)
-        #expect(try await database.read { db in try Reminder.Navigation.Record.state.fetchOne(db)?.editing } == nil)
+        #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == nil)
         await store.dismount()
     }
 
@@ -190,7 +190,7 @@ struct `Reminder feature` {
         }?.value
         // Quit without Done: the text and the row being edited are in the database.
         await store.dismount()
-        #expect(try await database.read { db in try Reminder.Navigation.Record.state.fetchOne(db)?.editing } == row)
+        #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == row)
         let bread = { var bread = blank; bread.title = "Bread"; return bread }()
         let revived = try await makeStore { [personal] in
             $0.filter = .list(personal)
@@ -202,7 +202,7 @@ struct `Reminder feature` {
             $0.filter = .today
             $0.editing = nil
         }?.value
-        #expect(try await database.read { db in try Reminder.Navigation.Record.state.fetchOne(db)?.editing } == nil)
+        #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == nil)
         await revived.dismount()
     }
 
@@ -424,7 +424,7 @@ struct `Reminder feature` {
             $0.editing = nil
         }?.value
         #expect(try await stored(row)?.notes == "Rye")
-        #expect(try await database.read { db in try Reminder.Navigation.Record.state.fetchOne(db)?.editing } == nil)
+        #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == nil)
         // A binding write after editing ended is dropped.
         await store.modify { $0[draft: row].title = "Late" }?.value
         #expect(try await stored(row)?.title == "Bread")
@@ -451,7 +451,7 @@ struct `Reminder feature` {
         await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircut, session: UUID(2)) }?.value
         await store.send(.reminderTapped(doctor.id)) { $0.editing = Reminder.Editing(doctor, session: UUID(3)) }?.value
         await store.send(.reminderTapped(doctor.id))?.value
-        #expect(try await database.read { db in try Reminder.Navigation.Record.state.fetchOne(db)?.editing } == doctor.id)
+        #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == doctor.id)
         await store.dismount()
     }
 
@@ -479,7 +479,7 @@ struct `Reminder feature` {
         await store.modify {
             if case var .list(form) = $0.destination { form.list.title = "Home"; $0.destination = .list(form) }
         } changes: {
-            if case var .list(form) = $0.destination { form.list.title = "Home"; $0.destination = .list(form) }
+            if case var .list(form) = $0.destination { form.draft.list.title = "Home"; $0.destination = .list(form) }
         }?.value
         // Done while a save is under way is ignored: the writes are synchronous, so the state is
         // put in that condition here, and nothing is written for the second tap.
@@ -502,13 +502,13 @@ struct `Reminder feature` {
         }?.value
         await store.send(.destination(.reminder(.tagRenamed("someday", "later")))) {
             if case var .reminder(form) = $0.destination {
-                form.reminder.tags.remove("someday")
-                form.reminder.tags.insert("later")
+                form.draft.reminder.tags.remove("someday")
+                form.draft.reminder.tags.insert("later")
                 $0.destination = .reminder(form)
             }
         }?.value
         await store.send(.destination(.reminder(.tagDeleted("optional")))) {
-            if case var .reminder(form) = $0.destination { form.reminder.tags.remove("optional"); $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.reminder.tags.remove("optional"); $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
         #expect(try await database.read { db in try Reminder.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("later")) }.fetchCount(db) } == 2)
@@ -589,7 +589,7 @@ struct `Reminder feature` {
         await store.modify {
             if case var .reminder(form) = $0.destination { form.reminder.title = "Orphan"; $0.destination = .reminder(form) }
         } changes: {
-            if case var .reminder(form) = $0.destination { form.reminder.title = "Orphan"; $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.reminder.title = "Orphan"; $0.destination = .reminder(form) }
         }?.value
         try await database.write { [personal] db in try List<Reminder>.Record.find(personal).delete().execute(db) }
         await store.send(.destination(.reminder(.saveButtonTapped)))?.value

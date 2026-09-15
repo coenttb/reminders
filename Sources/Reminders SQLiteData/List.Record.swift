@@ -4,7 +4,9 @@ public import SQLiteData
 public import Tagged
 
 extension List where Element == Reminder {
-    /// The stored form of a list; the color is its `0xRRGGBB` integer.
+    /// The stored form of a list; the color is its `0xRRGGBB` integer. The table is this
+    /// app's, so the record is declared for its element only; `@Table` cannot expand under a
+    /// phantom generic anyway.
     @Table("lists")
     public struct Record: Identifiable, Sendable {
         public let id: List<Reminder>.ID

@@ -4,7 +4,7 @@ public import SwiftUI
 extension Reminder.Filter {
     /// One tile of the home grid, solid in its color: the white icon top-leading,
     /// the count top-trailing, the filter's name bottom-leading.
-    public struct Cell: SwiftUI.View {
+    public struct Tile: SwiftUI.View {
         private var filter: Reminder.Filter
         private var systemImage: String
         private var color: SwiftUI.Color
@@ -21,7 +21,7 @@ extension Reminder.Filter {
     }
 }
 
-extension Reminder.Filter.Cell {
+extension Reminder.Filter.Tile {
     @ViewBuilder public var body: some SwiftUI.View {
         let title = filter.title ?? ""
         Button { open(filter) } label: {

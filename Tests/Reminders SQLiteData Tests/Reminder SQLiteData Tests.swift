@@ -43,13 +43,13 @@ import Tagged
 
     @Test func `the first run seeds the sample once, a later run leaves the database alone, and a reset replaces everything`() throws {
         let database = try Reminder.Schema.inMemoryDatabase()
-        #expect(try database.read { db in try Reminder.Navigation.Record.state.fetchCount(db) } == 0)
+        #expect(try database.read { db in try Reminder.Session.Record.state.fetchCount(db) } == 0)
         let sample = Reminder.sample(at: now)
         try database.write { db in
             try sample.initialize(in: db)
             try sample.initialize(in: db)
         }
-        #expect(try database.read { db in try Reminder.Navigation.Record.state.fetchCount(db) } == 1)
+        #expect(try database.read { db in try Reminder.Session.Record.state.fetchCount(db) } == 1)
         #expect(try overview(database).counts == Reminder.Filter.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         // Initialising again leaves a changed database alone; a reset does not.
         try database.write { db in try Reminder.Record.find(sample.reminders[0].id).delete().execute(db) }
