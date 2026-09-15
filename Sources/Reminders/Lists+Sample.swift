@@ -1,4 +1,5 @@
 public import Foundation
+import FoundationEssentials_Extensions
 public import Tagged
 
 extension Lists {
@@ -26,7 +27,7 @@ extension Lists {
             // A fixture identifier sits in a segment the incrementing test generator never fills.
             return UUID(uuidString: "00000000-0000-0000-000A-" + String(repeating: "0", count: 12 - hex.count) + hex)!
         }
-        func day(_ offset: Double) -> Date { now.addingTimeInterval(60 * 60 * 24 * offset) }
+        func day(_ offset: Double) -> Date { now.addingTimeInterval(offset.days) }
         let personal = Reminder.List.ID(id(0)), family = Reminder.List.ID(id(1)), business = Reminder.List.ID(id(2))
         return Sample(
             lists: [

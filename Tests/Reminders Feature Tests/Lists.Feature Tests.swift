@@ -275,7 +275,7 @@ struct `Lists feature` {
         }?.value
         let draft = try #require(await store.state.editing?.draft)
         #expect(draft.hasTime)
-        #expect(calendar.isDate(draft.due!, inSameDayAs: now.addingTimeInterval(86_400)))
+        #expect(calendar.isDate(draft.due!, inSameDayAs: now.addingTimeInterval(.day)))
         #expect(calendar.component(.hour, from: draft.due!) == 18)
         #expect(try await stored(row) == draft)
         await store.send(.timePresetSelected(row, nil)) { [now, calendar] in
@@ -610,11 +610,7 @@ struct `Lists feature` {
         }
     }
 
-    static let tokyo: Calendar = {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
-        return calendar
-    }()
+    static let tokyo = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "Asia/Tokyo")!)
     static let tokyoClock = TestClock()
     static let tokyoDate = Mutex(Date(timeIntervalSince1970: 1_234_567_890))
 
@@ -639,7 +635,7 @@ struct `Lists feature` {
         try await until(store.state.$contents) { $0.reminders.map(\.title) == ["Doctor appointment", "Buy concert tickets"] }
         // Midnight, Tokyo time, with no write anywhere: the day, the count, and the detail move on.
         let untilMidnight = day.upperBound.timeIntervalSince(start)
-        let next = day.upperBound..<tokyo.date(byAdding: .day, value: 1, to: day.upperBound)!
+        let next = try #require(tokyo.day(containing: day.upperBound))
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
         await clock.advance(by: .seconds(untilMidnight))
         // The task of a day change is the next midnight timer: it is not awaited, the dismount cancels it.
@@ -648,7 +644,7 @@ struct `Lists feature` {
         try await until($home) { $0.stats.today == 0 }
         try await until(store.state.$contents) { $0.rows.isEmpty }
         // Coming back to the foreground days later reads the day again without waiting for the clock.
-        let later = start.addingTimeInterval(2 * 86_400)
+        let later = start.addingTimeInterval(2.days)
         Self.tokyoDate.withLock { $0 = later }
         await store.send(.appActivated) { $0.today = tokyo.day(containing: later)! }
         await store.dismount()

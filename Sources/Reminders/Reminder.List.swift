@@ -1,4 +1,5 @@
 public import Foundation
+import FoundationEssentials_Extensions
 public import Tagged
 
 extension Reminder {
@@ -30,7 +31,7 @@ extension Reminder.List {
     }
 
     /// A name of only whitespace is no list.
-    public var isBlank: Bool { title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    public var isBlank: Bool { title.trimmed.isEmpty }
 }
 
 extension Reminder.List {

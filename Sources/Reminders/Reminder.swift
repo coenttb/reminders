@@ -1,4 +1,6 @@
 public import Foundation
+import FoundationEssentials_Extensions
+import FoundationInternationalization_Extensions
 public import Tagged
 
 /// One reminder: what to do, in which list, by when, how urgent, and its tags.
@@ -86,12 +88,13 @@ extension Reminder {
         /// The start of the preset's day: today, tomorrow, the coming Saturday, the coming Monday.
         public func date(at now: Date, calendar: Calendar = .current) -> Date {
             let today = calendar.startOfDay(for: now)
-            switch self {
-            case .today: return today
-            case .tomorrow: return calendar.date(byAdding: .day, value: 1, to: today) ?? today
-            case .thisWeekend: return calendar.nextDate(after: today, matching: DateComponents(weekday: 7), matchingPolicy: .nextTime) ?? today
-            case .nextWeek: return calendar.nextDate(after: today, matching: DateComponents(weekday: 2), matchingPolicy: .nextTime) ?? today
+            let day: Date? = switch self {
+            case .today: today
+            case .tomorrow: calendar.day(containing: now)?.upperBound
+            case .thisWeekend: today.next(.saturday, in: calendar)
+            case .nextWeek: today.next(.monday, in: calendar)
             }
+            return day ?? today
         }
     }
 
@@ -138,7 +141,7 @@ extension Reminder {
     /// Incomplete and due on a day before today.
     public func pastDue(at now: Date, calendar: Calendar = .current) -> Bool {
         guard !completed, let due else { return false }
-        return calendar.startOfDay(for: due) < calendar.startOfDay(for: now)
+        return calendar.compare(due, to: now, toGranularity: .day) == .orderedAscending
     }
 
     /// Turning the time on needs a date; turning the date off drops the time.
@@ -151,22 +154,15 @@ extension Reminder {
     public mutating func set(hasTime: Bool, at now: Date, calendar: Calendar = .current) {
         self.hasTime = hasTime
         guard hasTime else { return }
-        let nextHour = calendar.nextDate(after: now, matching: DateComponents(minute: 0), matchingPolicy: .nextTime) ?? now
-        let time = calendar.dateComponents([.hour, .minute], from: nextHour)
         let day = due ?? now
-        due = calendar.date(bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: 0, of: day) ?? day
+        due = calendar.nextHour(after: now).flatMap { calendar.date(day: day, time: $0) } ?? day
     }
 
     /// A preset day keeps the time of day if one was set; none clears the date and the time.
     public mutating func set(datePreset preset: DatePreset?, at now: Date, calendar: Calendar = .current) {
         guard let preset else { return set(due: nil) }
         let day = preset.date(at: now, calendar: calendar)
-        if hasTime, let due {
-            let time = calendar.dateComponents([.hour, .minute], from: due)
-            self.due = calendar.date(bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: 0, of: day) ?? day
-        } else {
-            due = day
-        }
+        due = hasTime ? due.flatMap { calendar.date(day: day, time: $0) } ?? day : day
     }
 
     /// A preset time turns the time on, on the due day or today; none turns the time off and keeps the day.
@@ -182,7 +178,7 @@ extension Reminder {
     }
 
     /// A title of only whitespace is no reminder.
-    public var isBlank: Bool { title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    public var isBlank: Bool { title.trimmed.isEmpty }
 
     /// The circle tap: incomplete starts completing; completing or completed reverts to incomplete.
     public mutating func toggle() {

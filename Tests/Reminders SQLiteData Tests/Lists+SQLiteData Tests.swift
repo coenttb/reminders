@@ -366,10 +366,8 @@ import Tagged
 
     @Test func `today is decided by the calendar's day, not the process time zone`() throws {
         let (database, sample) = try makeDatabase()
-        var utc = Calendar(identifier: .gregorian)
-        utc.timeZone = TimeZone(identifier: "UTC")!
-        var tokyo = utc
-        tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        let utc = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "UTC")!)
+        let tokyo = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "Asia/Tokyo")!)
         // A reminder due at 01:00 on the 14th UTC is due today in Tokyo (10:00 on the 14th, the same
         // Tokyo day as now) and tomorrow in UTC.
         let due = utc.date(from: DateComponents(year: 2009, month: 2, day: 14, hour: 1))!
@@ -389,7 +387,7 @@ import Tagged
         #expect(try today(utc) == [] && count(utc) == 0)
         #expect(try today(tokyo) == ["Late"] && count(tokyo) == 1)
         // The day after, in UTC, it is today.
-        let tomorrow = utc.day(containing: now.addingTimeInterval(3_600))!
+        let tomorrow = utc.day(containing: now.addingTimeInterval(.hour))!
         #expect(try database.read { db in try Lists.Home.Request(today: tomorrow).fetch(db).stats.today } == 1)
     }
 

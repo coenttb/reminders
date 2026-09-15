@@ -1,4 +1,5 @@
 public import Foundation
+import FoundationEssentials_Extensions
 public import Reminders
 
 extension Reminder {
@@ -13,8 +14,7 @@ extension Reminder {
     public func dayDescription(at now: Date, calendar: Calendar = .current) -> String? {
         guard let due else { return nil }
         // Relative to the given now, not the wall clock, so the wording is testable and stable.
-        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: due)).day ?? 0
-        switch days {
+        switch now.daysBetween(due, in: calendar) ?? 0 {
         case 0: return "Today"
         case 1: return "Tomorrow"
         case -1: return "Yesterday"

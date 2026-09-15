@@ -1,4 +1,5 @@
 import Foundation
+import FoundationEssentials_Extensions
 public import Tagged
 
 extension Lists {
@@ -45,9 +46,8 @@ extension Lists.Search {
     /// Submitting the field commits the trimmed text as a near token; a tag prefix is
     /// left for the suggestions.
     public mutating func commitText() {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard tagPrefix == nil, !trimmed.isEmpty else { return }
-        tokens.append(.near(trimmed))
+        guard tagPrefix == nil, !text.trimmed.isEmpty else { return }
+        tokens.append(.near(text.trimmed))
         text = ""
     }
 

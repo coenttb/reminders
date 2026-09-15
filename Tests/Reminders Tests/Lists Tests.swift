@@ -1,4 +1,5 @@
 import Foundation
+import FoundationEssentials_Extensions
 import Reminders
 import Testing
 import Tagged
@@ -8,7 +9,7 @@ import Tagged
     let calendar = Calendar(identifier: .gregorian)
 
     @Test func `only incomplete reminders before today are past due`() {
-        var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "Call", due: now.addingTimeInterval(-86_400))
+        var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "Call", due: now.addingTimeInterval(-.day))
         #expect(reminder.pastDue(at: now, calendar: calendar))
         reminder.status = .completed
         #expect(!reminder.pastDue(at: now, calendar: calendar))
@@ -75,9 +76,9 @@ import Tagged
         #expect(Reminder.List.Color(hex: 0x4a99ef).hex == 0x4a99ef)
     }
 
-    @Test func `date and time presets resolve against now`() {
-        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 15, hour: 8, minute: 30))!
-        let tomorrow = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16))!
+    @Test func `date and time presets resolve against now`() throws {
+        let now = try #require(Date(year: 2026, month: 9, day: 15, hour: 8, minute: 30, in: calendar))
+        let tomorrow = try #require(Date(year: 2026, month: 9, day: 16, in: calendar))
         #expect(Reminder.DatePreset.today.date(at: now, calendar: calendar) == calendar.startOfDay(for: now))
         #expect(calendar.component(.weekday, from: Reminder.DatePreset.thisWeekend.date(at: now, calendar: calendar)) == 7)
         #expect(calendar.component(.weekday, from: Reminder.DatePreset.nextWeek.date(at: now, calendar: calendar)) == 2)
@@ -92,18 +93,18 @@ import Tagged
         #expect(reminder.due == nil)
     }
 
-    @Test func `a time needs a date and a date can stand alone`() {
-        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20))!
-        let nextHour = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 10))!
+    @Test func `a time needs a date and a date can stand alone`() throws {
+        let now = try #require(Date(year: 2026, month: 9, day: 14, hour: 9, minute: 20, in: calendar))
+        let nextHour = try #require(Date(year: 2026, month: 9, day: 14, hour: 10, in: calendar))
         var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "x")
         reminder.set(hasTime: true, at: now, calendar: calendar)
         #expect(reminder.due == nextHour && reminder.hasTime)
         reminder.set(due: nil)
         #expect(reminder.due == nil && !reminder.hasTime)
-        let day = calendar.date(from: DateComponents(year: 2026, month: 9, day: 20))!
+        let day = try #require(Date(year: 2026, month: 9, day: 20, in: calendar))
         reminder.set(due: day)
         #expect(reminder.due == day && !reminder.hasTime)
         reminder.set(hasTime: true, at: now, calendar: calendar)
-        #expect(reminder.due == calendar.date(from: DateComponents(year: 2026, month: 9, day: 20, hour: 10)) && reminder.hasTime)
+        #expect(reminder.due == Date(year: 2026, month: 9, day: 20, hour: 10, in: calendar) && reminder.hasTime)
     }
 }

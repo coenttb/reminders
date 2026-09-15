@@ -26,6 +26,8 @@ let package = Package(
         .target(
             name: "Reminders",
             dependencies: [
+                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
+                .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -54,6 +56,7 @@ let package = Package(
             name: "Reminders Tests",
             dependencies: [
                 "Reminders",
+                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
             ]
         ),
         .testTarget(

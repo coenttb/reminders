@@ -128,7 +128,7 @@ extension Lists {
                     if state.editing?.id == id { state.editing?.draft.set(datePreset: preset, at: now, calendar: calendar) }
                 case let .deleteCompletedButtonTapped(months):
                     let search = state.search
-                    let cutoff = months.map { calendar.date(byAdding: .month, value: -$0, to: now) ?? now }
+                    let cutoff = months.map { now.subtracting($0.months, in: calendar) ?? now }
                     perform { db in try Reminder.Record.deleteCompleted(matching: search, dueBefore: cutoff).execute(db) }
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
                     state.destination = nil
