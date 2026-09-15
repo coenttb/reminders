@@ -28,6 +28,7 @@ let package = Package(
             dependencies: [
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -36,6 +37,7 @@ let package = Package(
             dependencies: [
                 "Reminders",
                 .product(name: "SQLiteData", package: "sqlite-data"),
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),

@@ -1,5 +1,6 @@
 import Foundation
 import FoundationEssentials_Extensions
+import Standard_Library_Extensions
 public import Tagged
 
 extension Lists {
@@ -30,7 +31,7 @@ extension Lists.Search {
 
     /// Typed `#` starts tag completion.
     public var tagPrefix: String? {
-        text.hasPrefix("#") ? String(text.dropFirst()) : nil
+        text.removing(prefix: "#").map(String.init)
     }
 
     /// Whether the search names reminders at all: a tag prefix alone offers suggestions, not the

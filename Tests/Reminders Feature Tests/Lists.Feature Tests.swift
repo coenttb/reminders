@@ -123,7 +123,7 @@ struct `Lists feature` {
         let saved = try await stored(draft.id)
         #expect(saved?.title == "Water plants")
         #expect(saved?.tags == ["garden", "adulting"])
-        let adulting = try await database.read { db in try Tag.Record.all.fetchAll(db).filter { $0.title.lowercased() == "adulting" }.count }
+        let adulting = try await database.read { db in try Tag.Record.all.fetchAll(db).count { $0.title.lowercased() == "adulting" } }
         #expect(adulting == 1)
         let restored = try await database.read { db in try Lists.Record.state.fetchOne(db) }
         #expect(restored?.openDetail == .list(personal))

@@ -1,5 +1,6 @@
 public import Foundation
 import FoundationEssentials_Extensions
+import Standard_Library_Extensions
 public import Tagged
 
 extension Reminder {
@@ -63,7 +64,7 @@ extension Reminder.List.Color {
 
     /// As `0xRRGGBB`; the stored form keeps this integer.
     public var hex: Int64 {
-        func byte(_ component: Double) -> Int64 { Int64((min(max(component, 0), 1) * 0xFF).rounded()) }
+        func byte(_ component: Double) -> Int64 { Int64((component.clamped(to: 0...1) * 0xFF).rounded()) }
         return byte(red) << 16 | byte(green) << 8 | byte(blue)
     }
 }

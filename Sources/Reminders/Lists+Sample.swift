@@ -1,5 +1,6 @@
 public import Foundation
 import FoundationEssentials_Extensions
+import Standard_Library_Extensions
 public import Tagged
 
 extension Lists {
@@ -16,7 +17,7 @@ extension Lists {
             self.tags = tags
         }
 
-        public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first { $0.id == id } }
+        public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first(id: id) }
     }
 
     /// The reference fixture relative to a given now, so tests can fix the calendar: three

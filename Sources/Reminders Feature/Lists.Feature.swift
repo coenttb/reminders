@@ -182,7 +182,7 @@ extension Lists {
                             guard let renamed = try write({ db in try Tag.Record.rename(id, to: title, in: db) }) else { return }
                             try store.modify {
                                 $0.modifyReminderForm(form.session) { form in
-                                    if form.reminder.tags.remove(id) != nil { form.reminder.tags.insert(renamed) }
+                                    form.reminder.tags.replace(id, with: renamed)
                                     form.failure = nil
                                 }
                             }

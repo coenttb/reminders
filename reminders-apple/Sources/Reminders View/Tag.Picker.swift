@@ -1,4 +1,5 @@
 public import Reminders
+import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
 
@@ -44,7 +45,7 @@ extension Tag.Picker {
             Section {
                 ForEach(tags) { tag in
                     Button {
-                        if selection.remove(tag.id) == nil { selection.insert(tag.id) }
+                        selection.toggle(tag.id)
                     } label: {
                         HStack {
                             Image(systemName: selection.contains(tag.id) ? "checkmark.circle.fill" : "circle").foregroundStyle(.blue)

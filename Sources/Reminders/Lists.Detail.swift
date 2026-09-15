@@ -1,4 +1,5 @@
 import Foundation
+import Standard_Library_Extensions
 public import Tagged
 
 extension Lists {
@@ -18,7 +19,7 @@ extension Lists.Detail: Identifiable {
 
     /// Tag titles are free text, so the tag key joins them with the unit separator; the tags are
     /// sorted so the same set of tags shares one key whatever order it was opened in.
-    private static let separator = "\u{1F}"
+    private static let separator = String(Character.unitSeparator)
 
     /// A stable key, also the one preferences are stored under.
     public var id: Tagged<Lists.Detail, String> {
@@ -40,13 +41,14 @@ extension Lists.Detail: Identifiable {
         case "flagged": self = .flagged
         case "scheduled": self = .scheduled
         case "today": self = .today
-        case let raw where raw.hasPrefix("list_"):
-            guard let uuid = UUID(uuidString: String(raw.dropFirst(5))) else { return nil }
-            self = .list(Reminder.List.ID(uuid))
-        case let raw where raw.hasPrefix("tags_"):
-            self = .tags(raw.dropFirst(5).split(separator: Self.separator).map { Tag.ID(String($0)) })
-        default:
-            return nil
+        case let raw:
+            if let uuid = raw.removing(prefix: "list_").flatMap({ UUID(uuidString: String($0)) }) {
+                self = .list(Reminder.List.ID(uuid))
+            } else if let tags = raw.removing(prefix: "tags_") {
+                self = .tags(tags.split(separator: Character.unitSeparator).map { Tag.ID(String($0)) })
+            } else {
+                return nil
+            }
         }
     }
 }

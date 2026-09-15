@@ -1,5 +1,6 @@
 import Foundation
 public import Reminders
+import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
 
@@ -181,7 +182,7 @@ extension Reminder.Form {
             Label {
                 Text("List")
             } icon: {
-                Reminder.List.Badge(color: lists.first { $0.id == reminder.list }?.color.swiftUI ?? .blue, size: 28)
+                Reminder.List.Badge(color: lists.first(id: reminder.list)?.color.swiftUI ?? .blue, size: 28)
             }
         }
         .pickerStyle(.navigationLink)

@@ -1,6 +1,7 @@
 public import Foundation
 import FoundationEssentials_Extensions
 import FoundationInternationalization_Extensions
+import Standard_Library_Extensions
 public import Tagged
 
 /// One reminder: what to do, in which list, by when, how urgent, and its tags.
@@ -69,7 +70,7 @@ extension Reminder {
     public enum Repeat: String, CaseIterable, Hashable, Sendable {
         case never, daily, weekly, monthly, yearly
 
-        public var title: String { rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
+        public var title: String { rawValue.uppercasingFirst }
     }
 
     /// The days the inline Date chip offers.

@@ -1,4 +1,5 @@
 public import Foundation
+import Standard_Library_Extensions
 public import Tagged
 
 /// The Reminders domain: the screens the app shows (the home, a detail, the search) and
@@ -37,6 +38,6 @@ extension Lists {
             }
         }
 
-        public func list(_ id: Reminder.List.ID) -> Reminder.List? { lists.first { $0.id == id }?.list }
+        public func list(_ id: Reminder.List.ID) -> Reminder.List? { lists.first(id: id)?.list }
     }
 }

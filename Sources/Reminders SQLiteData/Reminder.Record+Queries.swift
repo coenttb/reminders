@@ -1,6 +1,7 @@
 public import Foundation
 public import Reminders
 public import SQLiteData
+import Standard_Library_Extensions
 import Tagged
 
 extension Reminder.Record.TableColumns {
@@ -78,7 +79,7 @@ extension Reminder.Record.TableColumns {
 }
 
 extension Reminder.Record {
-    static let tagSeparator = "\u{1F}"
+    static let tagSeparator = String(Character.unitSeparator)
 
     static func tags(from list: String?) -> Set<Tag.ID> {
         Set((list ?? "").split(separator: tagSeparator).map { Tag.ID(String($0)) })
