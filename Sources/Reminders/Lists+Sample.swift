@@ -9,7 +9,8 @@ extension Lists {
     public static func sample(at now: Date) -> Lists {
         func id(_ n: Int) -> UUID {
             let hex = String(n, radix: 16, uppercase: true)
-            return UUID(uuidString: "00000000-0000-0000-0000-" + String(repeating: "0", count: 12 - hex.count) + hex)!
+            // A fixture identifier sits in a segment the incrementing test generator never fills.
+            return UUID(uuidString: "00000000-0000-0000-000A-" + String(repeating: "0", count: 12 - hex.count) + hex)!
         }
         func day(_ offset: Double) -> Date { now.addingTimeInterval(60 * 60 * 24 * offset) }
         let personal = Reminder.List.ID(id(0)), family = Reminder.List.ID(id(1)), business = Reminder.List.ID(id(2))
