@@ -49,6 +49,14 @@ extension Lists {
 
     public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first { $0.id == id } }
 
+    /// A reminder as a draft for editing in place: the stored one, or an empty one in the
+    /// first list when it is gone; writing upserts. A subscript, so a view binds to it
+    /// through a key path (`$lists[draft: id]`) rather than a closure-built binding.
+    public subscript(draft id: Reminder.ID) -> Reminder {
+        get { reminder(id) ?? Reminder(id: id, list: orderedLists.first?.id ?? Reminder.List.ID(UUID())) }
+        set { upsert(newValue) }
+    }
+
     /// The tag with this title in any case; tags are unique case-insensitively.
     public func tag(titled title: String) -> Tag? {
         tags.first { $0.title.caseInsensitiveCompare(title) == .orderedSame }
