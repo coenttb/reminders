@@ -16,13 +16,13 @@ extension Lists {
         }
     }
 
-    public func stats(at now: Date) -> Stats {
+    public func stats(at now: Date, calendar: Calendar = .current) -> Stats {
         let open = reminders.filter { !$0.completed }
         return Stats(
             all: open.count,
             flagged: open.filter(\.flagged).count,
             scheduled: open.filter(\.scheduled).count,
-            today: open.filter { $0.dueToday(at: now) }.count
+            today: open.filter { $0.dueToday(at: now, calendar: calendar) }.count
         )
     }
 }

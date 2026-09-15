@@ -32,7 +32,7 @@ extension Reminder {
             isDirty: Bool = false,
             lists: [Reminder.List],
             tags: [Tag],
-            now: Date = Date(),
+            now: Date,
             addTag: @escaping (String) -> Void,
             renameTag: @escaping (Tag.ID, String) -> Void,
             deleteTag: @escaping (Tag.ID) -> Void,

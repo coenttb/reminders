@@ -21,6 +21,15 @@ public struct Root: View {
 }
 
 extension Root {
+    /// What a search result row can ask: search rows open details rather than editing in place.
+    private var rows: Reminder.Row.Actions {
+        Reminder.Row.Actions(
+            complete: { store.send(.reminderCompleteButtonTapped($0)) },
+            delete: { store.send(.reminderDeleted($0)) },
+            details: { store.send(.reminderDetailsButtonTapped($0)) }
+        )
+    }
+
     public var body: some View {
         NavigationStack {
             List {
@@ -29,12 +38,10 @@ extension Root {
                         store.search,
                         lists: store.lists,
                         now: now,
+                        rows: rows,
                         addTag: { store.send(.searchTagTapped($0)) },
                         toggleCompleted: { store.send(.searchCompletedButtonTapped) },
-                        deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) },
-                        complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                        delete: { store.send(.reminderDeleted($0)) },
-                        details: { store.send(.reminderDetailsButtonTapped($0)) }
+                        deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) }
                     )
                 } else {
                     Lists.View(
@@ -87,11 +94,10 @@ extension Root {
         .observingDivision()
         .sheet(item: $store.scope(\.destination, action: \.destination).reminder) { form in
             @Bindable var form = form
-            let isNew = store.lists.reminder(form.reminder.id) == nil
             NavigationStack {
                 Reminder.Form(
                     reminder: $form.reminder,
-                    isNew: isNew,
+                    isNew: form.isNew,
                     isDirty: form.isDirty,
                     lists: store.lists.orderedLists,
                     tags: store.lists.rankedTags,
@@ -102,7 +108,7 @@ extension Root {
                     save: { form.send(.saveButtonTapped) },
                     cancel: { form.send(.cancelButtonTapped) }
                 )
-                .navigationTitle(isNew ? "New Reminder" : "Details")
+                .navigationTitle(form.isNew ? "New Reminder" : "Details")
             }
             // An edited draft cannot be swiped away; the form's X asks before discarding.
             // SwiftUI has no hook on the drag itself (dismissalConfirmationDialog wraps
@@ -112,10 +118,9 @@ extension Root {
         }
         .sheet(item: $store.scope(\.destination, action: \.destination).list) { form in
             @Bindable var form = form
-            let isNew = store.lists.list(form.list.id) == nil
             NavigationStack {
-                Reminder.List.Form(list: $form.list, isNew: isNew, isDirty: form.isDirty, save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
-                    .navigationTitle(isNew ? "New List" : "List Info")
+                Reminder.List.Form(list: $form.list, isNew: form.isNew, isDirty: form.isDirty, save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
+                    .navigationTitle(form.isNew ? "New List" : "List Info")
             }
             .interactiveDismissDisabled(form.isDirty)
             .presentationDetents([.large])

@@ -17,6 +17,14 @@ public struct Lists: Equatable, Sendable {
     /// it is sorted by until editing ends. Not stored: a relaunch sorts the row afresh.
     public var editingPlace: Reminder?
 
+    /// The value as the stored form keeps it: everything but the editing place. The
+    /// feature persists on changes to this, so re-sorting state alone writes nothing.
+    public var stored: Lists {
+        var stored = self
+        stored.editingPlace = nil
+        return stored
+    }
+
     public init(
         lists: [Reminder.List],
         reminders: [Reminder] = [],
@@ -183,6 +191,18 @@ extension Lists {
         tags.insert(Tag(title: title))
     }
 
+    /// The inline Date chip: a preset day for one reminder, on the feature's clock.
+    public mutating func set(datePreset preset: Reminder.DatePreset?, for id: Reminder.ID, at now: Date, calendar: Calendar = .current) {
+        guard let index = reminders.firstIndex(where: { $0.id == id }) else { return }
+        reminders[index].set(datePreset: preset, at: now, calendar: calendar)
+    }
+
+    /// The inline Time chip: a preset time for one reminder, on the feature's clock.
+    public mutating func set(timePreset preset: Reminder.TimePreset?, for id: Reminder.ID, at now: Date, calendar: Calendar = .current) {
+        guard let index = reminders.firstIndex(where: { $0.id == id }) else { return }
+        reminders[index].set(timePreset: preset, at: now, calendar: calendar)
+    }
+
     /// Renaming onto a title another tag already has, in any case, merges into that tag.
     public mutating func rename(tag id: Tag.ID, to title: String) {
         guard !title.isEmpty, tags.remove(Tag(id)) != nil else { return }
@@ -213,8 +233,8 @@ extension Lists {
     }
 
     /// Reorders the reminders shown in a detail as the user dragged them, and switches that detail to manual ordering.
-    public mutating func move(reminders source: IndexSet, to destination: Int, in detail: Detail, at now: Date) {
-        var shown = reminders(in: detail, at: now)
+    public mutating func move(reminders source: IndexSet, to destination: Int, in detail: Detail, at now: Date, calendar: Calendar = .current) {
+        var shown = reminders(in: detail, at: now, calendar: calendar)
         shown.move(offsets: source, to: destination)
         var positions = shown.map(\.position).sorted()
         for reminder in shown {

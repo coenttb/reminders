@@ -10,10 +10,13 @@ extension Reminder.List {
 
             public var list: Reminder.List
             public let original: Reminder.List
+            /// Whether the form creates the list or edits one the lists hold; the parent decides at presentation.
+            public let isNew: Bool
 
-            public init(list: Reminder.List) {
+            public init(list: Reminder.List, isNew: Bool) {
                 self.list = list
                 self.original = list
+                self.isNew = isNew
             }
 
             public var isDirty: Bool { list != original }

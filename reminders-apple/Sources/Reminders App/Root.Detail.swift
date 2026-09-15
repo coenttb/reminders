@@ -29,13 +29,10 @@ extension Root {
                 lists: store.lists,
                 now: now,
                 draft: { $store.lists.draft($0) },
-                edit: { store.send(.reminderTapped($0)) },
-                submit: { store.send(.titleSubmitted) },
+                rows: rows,
+                editor: editor,
                 done: { store.send(.doneButtonTapped) },
                 backgroundTapped: { store.send(.backgroundTapped) },
-                complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                delete: { store.send(.reminderDeleted($0)) },
-                details: { store.send(.reminderDetailsButtonTapped($0)) },
                 move: { store.send(.remindersMoved($0, $1)) },
                 order: { store.send(.orderingSelected($0)) },
                 toggleCompleted: { store.send(.showCompletedButtonTapped) },
@@ -46,6 +43,29 @@ extension Root {
                 if phase == .background, store.lists.editing != nil { store.send(.doneButtonTapped) }
             }
         }
+    }
+}
+
+extension Root.Detail {
+    /// A detail's rows edit in place on a tap.
+    private var rows: Reminder.Row.Actions {
+        Reminder.Row.Actions(
+            complete: { store.send(.reminderCompleteButtonTapped($0)) },
+            delete: { store.send(.reminderDeleted($0)) },
+            details: { store.send(.reminderDetailsButtonTapped($0)) },
+            edit: { store.send(.reminderTapped($0)) }
+        )
+    }
+
+    /// The card's intents, each one action; the chips run on the feature's clock.
+    private var editor: Reminder.Editor.Actions {
+        Reminder.Editor.Actions(
+            complete: { store.send(.reminderCompleteButtonTapped($0)) },
+            details: { store.send(.reminderDetailsButtonTapped($0)) },
+            submit: { store.send(.titleSubmitted) },
+            setDate: { store.send(.datePresetSelected($0, $1)) },
+            setTime: { store.send(.timePresetSelected($0, $1)) }
+        )
     }
 }
 

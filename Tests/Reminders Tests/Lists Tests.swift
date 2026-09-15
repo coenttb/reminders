@@ -5,6 +5,7 @@ import Tagged
 
 @Suite struct `Lists rules` {
     let now = Date(timeIntervalSince1970: 1_234_567_890)
+    let calendar = Calendar(identifier: .gregorian)
 
     @Test func `the home counts open reminders only`() {
         let lists = Lists.sample(at: now)
@@ -182,35 +183,34 @@ import Tagged
     }
 
     @Test func `date and time presets resolve against now`() {
-        let calendar = Calendar.current
         let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 15, hour: 8, minute: 30))!
-        #expect(Reminder.DatePreset.today.date(at: now) == calendar.startOfDay(for: now))
-        #expect(calendar.component(.weekday, from: Reminder.DatePreset.thisWeekend.date(at: now)) == 7)
-        #expect(calendar.component(.weekday, from: Reminder.DatePreset.nextWeek.date(at: now)) == 2)
+        let tomorrow = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16))!
+        #expect(Reminder.DatePreset.today.date(at: now, calendar: calendar) == calendar.startOfDay(for: now))
+        #expect(calendar.component(.weekday, from: Reminder.DatePreset.thisWeekend.date(at: now, calendar: calendar)) == 7)
+        #expect(calendar.component(.weekday, from: Reminder.DatePreset.nextWeek.date(at: now, calendar: calendar)) == 2)
         var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "x")
-        reminder.set(timePreset: .evening, at: now)
+        reminder.set(timePreset: .evening, at: now, calendar: calendar)
         #expect(reminder.hasTime && calendar.component(.hour, from: reminder.due!) == 18)
-        reminder.set(datePreset: .tomorrow, at: now)
-        #expect(calendar.isDateInTomorrow(reminder.due!) && calendar.component(.hour, from: reminder.due!) == 18)
-        reminder.set(timePreset: nil, at: now)
-        #expect(!reminder.hasTime && calendar.isDateInTomorrow(reminder.due!))
-        reminder.set(datePreset: nil, at: now)
+        reminder.set(datePreset: .tomorrow, at: now, calendar: calendar)
+        #expect(calendar.isDate(reminder.due!, inSameDayAs: tomorrow) && calendar.component(.hour, from: reminder.due!) == 18)
+        reminder.set(timePreset: nil, at: now, calendar: calendar)
+        #expect(!reminder.hasTime && calendar.isDate(reminder.due!, inSameDayAs: tomorrow))
+        reminder.set(datePreset: nil, at: now, calendar: calendar)
         #expect(reminder.due == nil)
     }
 
     @Test func `a time needs a date and a date can stand alone`() {
-        let calendar = Calendar.current
         let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20))!
         let nextHour = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 10))!
         var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "x")
-        reminder.set(hasTime: true, at: now)
+        reminder.set(hasTime: true, at: now, calendar: calendar)
         #expect(reminder.due == nextHour && reminder.hasTime)
         reminder.set(due: nil)
         #expect(reminder.due == nil && !reminder.hasTime)
         let day = calendar.date(from: DateComponents(year: 2026, month: 9, day: 20))!
         reminder.set(due: day)
         #expect(reminder.due == day && !reminder.hasTime)
-        reminder.set(hasTime: true, at: now)
+        reminder.set(hasTime: true, at: now, calendar: calendar)
         #expect(reminder.due == calendar.date(from: DateComponents(year: 2026, month: 9, day: 20, hour: 10)) && reminder.hasTime)
     }
 }

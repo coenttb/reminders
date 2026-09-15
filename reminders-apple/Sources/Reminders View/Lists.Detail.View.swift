@@ -12,13 +12,10 @@ extension Lists.Detail {
         private var lists: Lists
         private var now: Date
         private var draft: (Reminder.ID) -> Binding<Reminder>
-        private var edit: (Reminder.ID) -> Void
-        private var submit: () -> Void
+        private var rows: Reminder.Row.Actions
+        private var editor: Reminder.Editor.Actions
         private var done: () -> Void
         private var backgroundTapped: () -> Void
-        private var complete: (Reminder.ID) -> Void
-        private var delete: (Reminder.ID) -> Void
-        private var details: (Reminder.ID) -> Void
         private var move: (IndexSet, Int) -> Void
         private var order: (Lists.Ordering) -> Void
         private var toggleCompleted: () -> Void
@@ -32,13 +29,10 @@ extension Lists.Detail {
             lists: Lists,
             now: Date,
             draft: @escaping (Reminder.ID) -> Binding<Reminder>,
-            edit: @escaping (Reminder.ID) -> Void,
-            submit: @escaping () -> Void,
+            rows: Reminder.Row.Actions,
+            editor: Reminder.Editor.Actions,
             done: @escaping () -> Void,
             backgroundTapped: @escaping () -> Void,
-            complete: @escaping (Reminder.ID) -> Void,
-            delete: @escaping (Reminder.ID) -> Void,
-            details: @escaping (Reminder.ID) -> Void,
             move: @escaping (IndexSet, Int) -> Void,
             order: @escaping (Lists.Ordering) -> Void,
             toggleCompleted: @escaping () -> Void,
@@ -48,13 +42,10 @@ extension Lists.Detail {
             self.lists = lists
             self.now = now
             self.draft = draft
-            self.edit = edit
-            self.submit = submit
+            self.rows = rows
+            self.editor = editor
             self.done = done
             self.backgroundTapped = backgroundTapped
-            self.complete = complete
-            self.delete = delete
-            self.details = details
             self.move = move
             self.order = order
             self.toggleCompleted = toggleCompleted
@@ -79,25 +70,9 @@ extension Lists.Detail.View {
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             ForEach(lists.reminders(in: detail, at: now)) { reminder in
                 if reminder.id == lists.editing {
-                    Reminder.Editor(
-                        reminder: draft(reminder.id),
-                        color: lists.list(reminder.list)?.color.swiftUI ?? color,
-                        now: now,
-                        focus: $focus,
-                        complete: { complete(reminder.id) },
-                        submit: submit,
-                        details: { details(reminder.id) }
-                    )
+                    Reminder.Editor(reminder: draft(reminder.id), color: lists.list(reminder.list)?.color.swiftUI ?? color, now: now, focus: $focus, actions: editor)
                 } else {
-                    Reminder.Row(
-                        reminder,
-                        color: lists.list(reminder.list)?.color.swiftUI ?? color,
-                        now: now,
-                        complete: { complete(reminder.id) },
-                        delete: { delete(reminder.id) },
-                        details: { details(reminder.id) },
-                        edit: detail.isList ? { edit(reminder.id) } : nil
-                    )
+                    Reminder.Row(reminder, color: lists.list(reminder.list)?.color.swiftUI ?? color, now: now, actions: rowActions)
                 }
             }
             .onMove(perform: move)
@@ -176,6 +151,15 @@ extension Lists.Detail.View {
             }
         }
         .toolbarTitleDisplayMode(.inline)
+    }
+}
+
+extension Lists.Detail.View {
+    /// Rows edit in place only inside a list; elsewhere a tap opens details.
+    private var rowActions: Reminder.Row.Actions {
+        var actions = rows
+        if !detail.isList { actions.edit = nil }
+        return actions
     }
 }
 

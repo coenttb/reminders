@@ -81,8 +81,8 @@ extension Lists {
 
     /// Deletes completed reminders the search matches, optionally only those due more than
     /// some months ago. A reminder still in its grace period is kept, so the tap can be undone.
-    public mutating func deleteCompleted(matching search: Lists.Search, olderThanMonths months: Int?, at now: Date) {
-        let cutoff = months.map { Calendar.current.date(byAdding: .month, value: -$0, to: now) ?? now }
+    public mutating func deleteCompleted(matching search: Lists.Search, olderThanMonths months: Int?, at now: Date, calendar: Calendar = .current) {
+        let cutoff = months.map { calendar.date(byAdding: .month, value: -$0, to: now) ?? now }
         let doomed = Set(matches(search).filter { reminder in
             guard reminder.status == .completed else { return false }
             guard let cutoff else { return true }

@@ -48,4 +48,19 @@ import Tagged
         #expect(stored?.tags.contains(Tag(title: "Social")) == true)
         #expect(stored?.reminders.filter { $0.tags.contains("Social") }.count == 3)
     }
+
+    @Test func `persisting an unchanged value writes nothing and a changed row writes only itself`() throws {
+        let database = try DatabaseQueue()
+        try Lists.migrate(database)
+        // A live clock carries microseconds; the rows keep milliseconds. That is not a change.
+        var lists = Lists.sample(at: now.addingTimeInterval(0.000_456))
+        try database.write { db in try Lists.seed(lists, in: db) }
+        let changes = try database.read { db in try Int.fetchOne(db, sql: "SELECT total_changes()") } ?? 0
+        try database.write { db in try Lists.persist(lists, in: db) }
+        #expect(try database.read { db in try Int.fetchOne(db, sql: "SELECT total_changes()") } == changes)
+        lists.upsert({ var r = lists.reminders[0]; r.title = "Groceries and more"; return r }())
+        try database.write { db in try Lists.persist(lists, in: db) }
+        #expect(try database.read { db in try Lists.load(db) }?.reminders[0].title == "Groceries and more")
+        #expect(try database.read { db in try Int.fetchOne(db, sql: "SELECT total_changes()") } == changes + 1)
+    }
 }

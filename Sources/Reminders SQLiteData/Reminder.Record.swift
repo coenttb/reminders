@@ -37,15 +37,37 @@ extension Reminder {
     }
 
     /// One reminder-to-tag link; the many-to-many the domain expresses as `Reminder.tags`.
+    /// The pair is the key, so there is no surrogate to grow.
     @Table("remindersTags")
-    public struct Tagging: Identifiable, Sendable {
-        public let id: Int
+    public struct Tagging: Sendable {
         public var reminderID: Reminder.ID
         public var tagID: Tag.ID
+
+        public init(reminderID: Reminder.ID, tagID: Tag.ID) {
+            self.reminderID = reminderID
+            self.tagID = tagID
+        }
     }
 }
 
 extension Reminder.Record {
+    /// Whether a row already holds this reminder. Dates are stored to the millisecond, so a
+    /// value that differs from the row only below that is the same row, not a change.
+    public func isStored(as other: Reminder.Record) -> Bool {
+        id == other.id && listID == other.listID && title == other.title && notes == other.notes
+            && hasTime == other.hasTime && flagged == other.flagged && priority == other.priority
+            && status == other.status && position == other.position && location == other.location
+            && repeats == other.repeats && sameInstant(due, other.due)
+    }
+
+    private func sameInstant(_ lhs: Date?, _ rhs: Date?) -> Bool {
+        switch (lhs, rhs) {
+        case (nil, nil): true
+        case let (l?, r?): Swift.abs(l.timeIntervalSince(r)) < 0.001
+        default: false
+        }
+    }
+
     public func reminder(tags: Set<Tag.ID>) -> Reminder {
         Reminder(
             id: id,

@@ -86,8 +86,7 @@ extension Reminder {
         }
 
         /// The start of the preset's day: today, tomorrow, the coming Saturday, the coming Monday.
-        public func date(at now: Date) -> Date {
-            let calendar = Calendar.current
+        public func date(at now: Date, calendar: Calendar = .current) -> Date {
             let today = calendar.startOfDay(for: now)
             switch self {
             case .today: return today
@@ -141,15 +140,15 @@ extension Reminder {
     public var sortedTags: [Tag.ID] { tags.sorted() }
 
     /// Incomplete and due on a day before today.
-    public func pastDue(at now: Date) -> Bool {
+    public func pastDue(at now: Date, calendar: Calendar = .current) -> Bool {
         guard !completed, let due else { return false }
-        return Calendar.current.startOfDay(for: due) < Calendar.current.startOfDay(for: now)
+        return calendar.startOfDay(for: due) < calendar.startOfDay(for: now)
     }
 
     /// Incomplete and due today.
-    public func dueToday(at now: Date) -> Bool {
+    public func dueToday(at now: Date, calendar: Calendar = .current) -> Bool {
         guard !completed, let due else { return false }
-        return Calendar.current.isDate(due, inSameDayAs: now)
+        return calendar.isDate(due, inSameDayAs: now)
     }
 
     /// Turning the time on needs a date; turning the date off drops the time.
@@ -159,10 +158,9 @@ extension Reminder {
     }
 
     /// Turning the time on proposes the next full hour, on the due day if there is one.
-    public mutating func set(hasTime: Bool, at now: Date) {
+    public mutating func set(hasTime: Bool, at now: Date, calendar: Calendar = .current) {
         self.hasTime = hasTime
         guard hasTime else { return }
-        let calendar = Calendar.current
         let nextHour = calendar.nextDate(after: now, matching: DateComponents(minute: 0), matchingPolicy: .nextTime) ?? now
         let time = calendar.dateComponents([.hour, .minute], from: nextHour)
         let day = due ?? now
@@ -170,26 +168,26 @@ extension Reminder {
     }
 
     /// A preset day keeps the time of day if one was set; none clears the date and the time.
-    public mutating func set(datePreset preset: DatePreset?, at now: Date) {
+    public mutating func set(datePreset preset: DatePreset?, at now: Date, calendar: Calendar = .current) {
         guard let preset else { return set(due: nil) }
-        let day = preset.date(at: now)
+        let day = preset.date(at: now, calendar: calendar)
         if hasTime, let due {
-            let time = Calendar.current.dateComponents([.hour, .minute], from: due)
-            self.due = Calendar.current.date(bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: 0, of: day) ?? day
+            let time = calendar.dateComponents([.hour, .minute], from: due)
+            self.due = calendar.date(bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: 0, of: day) ?? day
         } else {
             due = day
         }
     }
 
     /// A preset time turns the time on, on the due day or today; none turns the time off and keeps the day.
-    public mutating func set(timePreset preset: TimePreset?, at now: Date) {
+    public mutating func set(timePreset preset: TimePreset?, at now: Date, calendar: Calendar = .current) {
         guard let preset else {
-            if let due { self.due = Calendar.current.startOfDay(for: due) }
+            if let due { self.due = calendar.startOfDay(for: due) }
             hasTime = false
             return
         }
         let day = due ?? now
-        due = Calendar.current.date(bySettingHour: preset.hour, minute: 0, second: 0, of: day) ?? day
+        due = calendar.date(bySettingHour: preset.hour, minute: 0, second: 0, of: day) ?? day
         hasTime = true
     }
 

@@ -10,33 +10,27 @@ extension Lists.Search {
         private var search: Lists.Search
         private var lists: Lists
         private var now: Date
+        private var rows: Reminder.Row.Actions
         private var addTag: (Tag.ID) -> Void
         private var toggleCompleted: () -> Void
         private var deleteCompleted: (Int?) -> Void
-        private var complete: (Reminder.ID) -> Void
-        private var delete: (Reminder.ID) -> Void
-        private var details: (Reminder.ID) -> Void
 
         public init(
             _ search: Lists.Search,
             lists: Lists,
             now: Date,
+            rows: Reminder.Row.Actions,
             addTag: @escaping (Tag.ID) -> Void,
             toggleCompleted: @escaping () -> Void,
-            deleteCompleted: @escaping (Int?) -> Void,
-            complete: @escaping (Reminder.ID) -> Void,
-            delete: @escaping (Reminder.ID) -> Void,
-            details: @escaping (Reminder.ID) -> Void
+            deleteCompleted: @escaping (Int?) -> Void
         ) {
             self.search = search
             self.lists = lists
             self.now = now
+            self.rows = rows
             self.addTag = addTag
             self.toggleCompleted = toggleCompleted
             self.deleteCompleted = deleteCompleted
-            self.complete = complete
-            self.delete = delete
-            self.details = details
         }
     }
 }
@@ -89,14 +83,7 @@ extension Lists.Search.View {
             if !rows.isEmpty {
                 Section {
                     ForEach(rows) { reminder in
-                        Reminder.Row(
-                            reminder,
-                            color: list.color.swiftUI,
-                            now: now,
-                            complete: { complete(reminder.id) },
-                            delete: { delete(reminder.id) },
-                            details: { details(reminder.id) }
-                        )
+                        Reminder.Row(reminder, color: list.color.swiftUI, now: now, actions: self.rows)
                     }
                 } header: {
                     Text(list.title)

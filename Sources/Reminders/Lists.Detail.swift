@@ -102,7 +102,7 @@ extension Lists {
     }
 
     /// The reminders a detail shows, filtered by its membership and its preference, ordered by its preference.
-    public func reminders(in detail: Detail, at now: Date) -> [Reminder] {
+    public func reminders(in detail: Detail, at now: Date, calendar: Calendar = .current) -> [Reminder] {
         let preference = preference(for: detail)
         let members = reminders.filter { reminder in
             switch detail {
@@ -112,7 +112,7 @@ extension Lists {
             case let .list(id): reminder.list == id
             case .scheduled: reminder.scheduled
             case let .tags(tags): !reminder.tags.isDisjoint(with: tags)
-            case .today: reminder.dueToday(at: now)
+            case .today: reminder.dueToday(at: now, calendar: calendar)
             }
         }
         // A reminder in its grace period stays on screen, in place, so the tap can be undone;

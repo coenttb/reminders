@@ -1,7 +1,7 @@
 public import Foundation
 public import Reminders
 public import SwiftUI
-import Tagged
+public import Tagged
 
 extension Reminder {
     /// One reminder at rest in a detail or search: the completion circle, the title with
@@ -12,23 +12,31 @@ extension Reminder {
         private var reminder: Reminder
         private var color: Color
         private var now: Date
-        private var complete: () -> Void
-        private var delete: () -> Void
-        private var details: () -> Void
-        private var edit: (() -> Void)?
+        private var actions: Actions
 
-        public init(
-            _ reminder: Reminder,
-            color: Color,
-            now: Date,
-            complete: @escaping () -> Void,
-            delete: @escaping () -> Void,
-            details: @escaping () -> Void,
-            edit: (() -> Void)? = nil
-        ) {
+        public init(_ reminder: Reminder, color: Color, now: Date, actions: Actions) {
             self.reminder = reminder
             self.color = color
             self.now = now
+            self.actions = actions
+        }
+    }
+}
+
+extension Reminder.Row {
+    /// What a row asks of its owner, keyed by the reminder; `edit` only where rows edit in place.
+    public struct Actions {
+        public var complete: (Reminder.ID) -> Void
+        public var delete: (Reminder.ID) -> Void
+        public var details: (Reminder.ID) -> Void
+        public var edit: ((Reminder.ID) -> Void)?
+
+        public init(
+            complete: @escaping (Reminder.ID) -> Void,
+            delete: @escaping (Reminder.ID) -> Void,
+            details: @escaping (Reminder.ID) -> Void,
+            edit: ((Reminder.ID) -> Void)? = nil
+        ) {
             self.complete = complete
             self.delete = delete
             self.details = details
@@ -40,14 +48,14 @@ extension Reminder {
 extension Reminder.Row {
     public var body: some SwiftUI.View {
         HStack(alignment: .top, spacing: 12) {
-            Button(action: complete) {
+            Button { actions.complete(reminder.id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
                     .foregroundStyle(reminder.completed ? color : Color(.systemGray3))
                     .font(.title2)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(reminder.completed ? "Completed" : "Complete")
-            Button(action: edit ?? details) {
+            Button { (actions.edit ?? actions.details)(reminder.id) } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         if let priority = reminder.priority {
@@ -78,8 +86,8 @@ extension Reminder.Row {
         }
         .padding(.vertical, 2)
         .swipeActions {
-            Button("Delete", systemImage: "trash", role: .destructive, action: delete)
-            Button("Details", systemImage: "info.circle", action: details).tint(.gray)
+            Button("Delete", systemImage: "trash", role: .destructive) { actions.delete(reminder.id) }
+            Button("Details", systemImage: "info.circle") { actions.details(reminder.id) }.tint(.gray)
         }
     }
 

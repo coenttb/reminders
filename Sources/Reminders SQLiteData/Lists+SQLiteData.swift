@@ -8,7 +8,7 @@ extension Lists {
         #if DEBUG
         migrator.eraseDatabaseOnSchemaChange = true
         #endif
-        migrator.registerMigration("Create lists, reminders (with hasTime, location, repeats), tags, remindersTags, preferences, and listsState (with editing)") { db in
+        migrator.registerMigration("Create the Reminders tables") { db in
             try #sql("""
                 CREATE TABLE "lists" (
                   "id" TEXT PRIMARY KEY NOT NULL,
@@ -40,9 +40,9 @@ extension Lists {
                 """).execute(db)
             try #sql("""
                 CREATE TABLE "remindersTags" (
-                  "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                   "reminderID" TEXT NOT NULL REFERENCES "reminders"("id") ON DELETE CASCADE,
-                  "tagID" TEXT NOT NULL REFERENCES "tags"("title") ON DELETE CASCADE ON UPDATE CASCADE
+                  "tagID" TEXT NOT NULL REFERENCES "tags"("title") ON DELETE CASCADE ON UPDATE CASCADE,
+                  PRIMARY KEY ("reminderID", "tagID")
                 ) STRICT
                 """).execute(db)
             try #sql("""
@@ -86,32 +86,52 @@ extension Lists {
         try persist(lists, in: db)
     }
 
-    /// Writes the whole value: rows are upserted and rows absent from the value are deleted.
+    /// Writes the value: rows that differ from what the database holds are upserted, rows
+    /// absent from the value are deleted, and nothing else is touched. The comparison reads
+    /// the stored value inside the same transaction, so a write that was cancelled and rolled
+    /// back before this one cannot leave a change behind; a baseline carried in memory could.
     public static func persist(_ lists: Lists, in db: Database) throws {
-        for list in lists.lists {
+        let stored = try load(db)
+        for list in lists.lists where stored?.list(list.id) != list {
             try Reminder.List.Record.upsert { Reminder.List.Record(list) }.execute(db)
         }
-        try Reminder.List.Record.where { !$0.id.in(lists.lists.map(\.id)) }.delete().execute(db)
-        // The key is case-insensitive, so a tag renamed only in case conflicts with its own
-        // row; the update writes the new spelling instead of keeping the old one.
-        for tag in lists.tags {
+        let goneLists = Set((stored?.lists ?? []).map(\.id)).subtracting(lists.lists.map(\.id))
+        if !goneLists.isEmpty {
+            try Reminder.List.Record.where { $0.id.in(goneLists) }.delete().execute(db)
+        }
+        // Tags gone from the value go first: the key is case-insensitive, so a tag renamed
+        // only in case would otherwise be deleted along with its old spelling.
+        let goneTags = (stored?.tags ?? []).subtracting(lists.tags)
+        if !goneTags.isEmpty {
+            try Tag.Record.where { $0.title.in(goneTags.map(\.title)) }.delete().execute(db)
+        }
+        for tag in lists.tags.subtracting(stored?.tags ?? []) {
             try Tag.Record.insert { Tag.Record(tag) } onConflictDoUpdate: { $0.title = $1.title }.execute(db)
         }
-        try Tag.Record.where { !$0.title.in(lists.tags.map(\.title)) }.delete().execute(db)
         for reminder in lists.reminders {
-            try Reminder.Record.upsert { Reminder.Record(reminder) }.execute(db)
+            let record = Reminder.Record(reminder)
+            guard stored?.reminder(reminder.id).map({ Reminder.Record($0).isStored(as: record) }) != true else { continue }
+            try Reminder.Record.upsert { record }.execute(db)
         }
-        try Reminder.Record.where { !$0.id.in(lists.reminders.map(\.id)) }.delete().execute(db)
-        try Reminder.Tagging.delete().execute(db)
-        for reminder in lists.reminders {
+        let goneReminders = Set((stored?.reminders ?? []).map(\.id)).subtracting(lists.reminders.map(\.id))
+        if !goneReminders.isEmpty {
+            try Reminder.Record.where { $0.id.in(goneReminders) }.delete().execute(db)
+        }
+        for reminder in lists.reminders where stored?.reminder(reminder.id)?.tags != reminder.tags {
+            try Reminder.Tagging.where { $0.reminderID.eq(reminder.id) }.delete().execute(db)
             for tag in reminder.sortedTags {
-                try Reminder.Tagging.insert { Reminder.Tagging.Draft(reminderID: reminder.id, tagID: tag) }.execute(db)
+                try Reminder.Tagging.insert { Reminder.Tagging(reminderID: reminder.id, tagID: tag) }.execute(db)
             }
         }
-        for (detailID, preference) in lists.preferences {
+        for (detailID, preference) in lists.preferences where stored?.preferences[detailID] != preference {
             try Lists.Detail.Preference.Record.upsert { Lists.Detail.Preference.Record(detailID: detailID, preference) }.execute(db)
         }
-        try Lists.Detail.Preference.Record.where { !$0.detailID.in(Array(lists.preferences.keys)) }.delete().execute(db)
-        try Lists.Record.upsert { Lists.Record(detail: lists.detail, editing: lists.editing) }.execute(db)
+        let gonePreferences = Set(stored.map { Array($0.preferences.keys) } ?? []).subtracting(lists.preferences.keys)
+        if !gonePreferences.isEmpty {
+            try Lists.Detail.Preference.Record.where { $0.detailID.in(gonePreferences) }.delete().execute(db)
+        }
+        if stored == nil || stored?.detail != lists.detail || stored?.editing != lists.editing {
+            try Lists.Record.upsert { Lists.Record(detail: lists.detail, editing: lists.editing) }.execute(db)
+        }
     }
 }

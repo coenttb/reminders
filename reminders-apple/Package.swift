@@ -44,20 +44,14 @@ let package = Package(
         .testTarget(
             name: "Reminders View Tests",
             dependencies: [
-                .product(name: "Reminders", package: "reminders"),
                 "Reminders View",
-                .product(name: "Tagged", package: "swift-tagged"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
         .testTarget(
             name: "Reminders App Tests",
             dependencies: [
-                .product(name: "Reminders", package: "reminders"),
-                .product(name: "Reminders Feature", package: "reminders"),
                 "Reminders App",
-                .product(name: "ComposableArchitecture2", package: "TCA26"),
-                .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self)]

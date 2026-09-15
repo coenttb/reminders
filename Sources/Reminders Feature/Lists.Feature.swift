@@ -24,7 +24,8 @@ extension Lists {
             /// The form sheet being shown, if any.
             public var destination: Destination.State?
 
-            public init(lists: Lists = .sample) {
+            /// Empty until the mount loads or seeds; a default that read the clock would be uncontrolled.
+            public init(lists: Lists = Lists(lists: [])) {
                 self.lists = lists
             }
         }
@@ -32,9 +33,10 @@ extension Lists {
         public enum Action {
             case addListButtonTapped
             case backgroundTapped
+            case datePresetSelected(Reminder.ID, Reminder.DatePreset?)
             case deleteCompletedButtonTapped(olderThanMonths: Int?)
-            case doneButtonTapped
             case destination(Destination.Action)
+            case doneButtonTapped
             case listDeleted(Reminder.List.ID)
             case listDetailsButtonTapped(Reminder.List.ID)
             case listTapped(Reminder.List.ID)
@@ -54,9 +56,11 @@ extension Lists {
             case statTapped(Lists.Detail)
             case tagDeleted(Tag.ID)
             case tagTapped(Tag.ID)
+            case timePresetSelected(Reminder.ID, Reminder.TimePreset?)
             case titleSubmitted
         }
 
+        @Dependency(\.calendar) var calendar
         @Dependency(\.continuousClock) var clock
         @Dependency(\.date.now) var now
         @Dependency(\.defaultDatabase) var database
@@ -68,7 +72,7 @@ extension Lists {
             Update { state, action in
                 switch action {
                 case .addListButtonTapped:
-                    state.destination = .list(Reminder.List.Feature.State(list: Reminder.List(id: Reminder.List.ID(uuid()))))
+                    state.destination = .list(Reminder.List.Feature.State(list: Reminder.List(id: Reminder.List.ID(uuid())), isNew: true))
                 // A tap on the empty part of a list ends editing, or starts a new row in an idle list.
                 case .backgroundTapped:
                     if state.lists.editing != nil {
@@ -76,10 +80,10 @@ extension Lists {
                     } else if case let .list(list) = state.lists.detail {
                         state.lists.startNewReminder(in: list, id: Reminder.ID(uuid()))
                     }
-                case .doneButtonTapped:
-                    state.lists.endEditing()
+                case let .datePresetSelected(id, preset):
+                    state.lists.set(datePreset: preset, for: id, at: now, calendar: calendar)
                 case let .deleteCompletedButtonTapped(months):
-                    state.lists.deleteCompleted(matching: state.search, olderThanMonths: months, at: now)
+                    state.lists.deleteCompleted(matching: state.search, olderThanMonths: months, at: now, calendar: calendar)
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
                     state.destination = nil
                 // A blank name is no list and no reminder: the sheet stays up.
@@ -111,11 +115,13 @@ extension Lists {
                         form.reminder.tags.insert(state.lists.tag(titled: title)?.id ?? id)
                         state.destination = .reminder(form)
                     }
+                case .doneButtonTapped:
+                    state.lists.endEditing()
                 case let .listDeleted(id):
                     state.lists.delete(list: id)
                     if state.lists.isEmpty { state.lists.upsert(.default(id: Reminder.List.ID(uuid()))) }
                 case let .listDetailsButtonTapped(id):
-                    if let list = state.lists.list(id) { state.destination = .list(Reminder.List.Feature.State(list: list)) }
+                    if let list = state.lists.list(id) { state.destination = .list(Reminder.List.Feature.State(list: list, isNew: false)) }
                 case let .listTapped(id):
                     state.lists.detail = .list(id)
                 case let .listsMoved(source, destination):
@@ -125,7 +131,7 @@ extension Lists {
                     if case let .list(list) = state.lists.detail {
                         state.lists.startNewReminder(in: list, id: Reminder.ID(uuid()))
                     } else if let list = state.lists.orderedLists.first?.id {
-                        state.destination = .reminder(Reminder.Feature.State(reminder: Reminder(id: Reminder.ID(uuid()), list: list)))
+                        state.destination = .reminder(Reminder.Feature.State(reminder: Reminder(id: Reminder.ID(uuid()), list: list), isNew: true))
                     }
                 case let .orderingSelected(ordering):
                     if let detail = state.lists.detail { state.lists.set(ordering: ordering, for: detail) }
@@ -135,11 +141,11 @@ extension Lists {
                     state.lists.delete(reminder: id)
                 case let .reminderDetailsButtonTapped(id):
                     state.lists.endEditing()
-                    if let reminder = state.lists.reminder(id) { state.destination = .reminder(Reminder.Feature.State(reminder: reminder)) }
+                    if let reminder = state.lists.reminder(id) { state.destination = .reminder(Reminder.Feature.State(reminder: reminder, isNew: false)) }
                 case let .reminderTapped(id):
                     state.lists.edit(id)
                 case let .remindersMoved(source, destination):
-                    if let detail = state.lists.detail { state.lists.move(reminders: source, to: destination, in: detail, at: now) }
+                    if let detail = state.lists.detail { state.lists.move(reminders: source, to: destination, in: detail, at: now, calendar: calendar) }
                 case .searchCompletedButtonTapped:
                     state.search.showCompleted.toggle()
                 case .searchSubmitted:
@@ -156,6 +162,8 @@ extension Lists {
                     state.lists.delete(tag: id)
                 case let .tagTapped(tag):
                     state.lists.detail = .tags([tag])
+                case let .timePresetSelected(id, preset):
+                    state.lists.set(timePreset: preset, for: id, at: now, calendar: calendar)
                 case .titleSubmitted:
                     state.lists.continueEditing(id: Reminder.ID(uuid()))
                 }
@@ -179,7 +187,8 @@ extension Lists {
             .onChange(of: store.lists.detail) { _, _, state in
                 state.lists.endEditing()
             }
-            .onChange(of: store.lists) { _, current, _ in
+            // Only the stored part of the value: the editing place is sorting state, not data.
+            .onChange(of: store.lists.stored) { _, current, _ in
                 store.addTask {
                     try await database.write { db in try Lists.persist(current, in: db) }
                 }

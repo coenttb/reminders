@@ -13,10 +13,13 @@ extension Reminder {
             public var reminder: Reminder
             /// The value the form opened with; the sheet asks before discarding a draft that differs.
             public let original: Reminder
+            /// Whether the form creates the reminder or edits one the lists hold; the parent decides at presentation.
+            public let isNew: Bool
 
-            public init(reminder: Reminder) {
+            public init(reminder: Reminder, isNew: Bool) {
                 self.reminder = reminder
                 self.original = reminder
+                self.isNew = isNew
             }
 
             public var isDirty: Bool { reminder != original }

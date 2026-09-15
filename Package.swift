@@ -52,30 +52,20 @@ let package = Package(
             name: "Reminders Tests",
             dependencies: [
                 "Reminders",
-                .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
         .testTarget(
             name: "Reminders SQLiteData Tests",
             dependencies: [
-                "Reminders",
                 "Reminders SQLiteData",
-                .product(name: "SQLiteData", package: "sqlite-data"),
-                .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
         .testTarget(
             name: "Reminders Feature Tests",
             dependencies: [
-                "Reminders",
-                "Reminders SQLiteData",
                 "Reminders Feature",
-                .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "ComposableArchitectureTestSupport", package: "TCA26"),
-                .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
-                .product(name: "SQLiteData", package: "sqlite-data"),
-                .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
     ],
