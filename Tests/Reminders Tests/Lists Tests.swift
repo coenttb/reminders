@@ -112,6 +112,15 @@ import Tagged
         #expect(!lists.reminders[3].pastDue(at: now, calendar: calendar))
     }
 
+    @Test func `tags order case-insensitively wherever they are listed`() {
+        var lists = Lists.sample(at: now)
+        lists.rename(tag: "car", to: "Car")
+        #expect(lists.usedTags.map(\.title) == ["adulting", "Car", "kids", "night", "optional", "social", "someday"])
+        #expect(lists.rankedTags.map(\.title) == ["social", "adulting", "optional", "someday", "Car", "kids", "night"])
+        lists.add(tag: "Cat")
+        #expect(lists.tagSuggestions(for: Lists.Search(text: "#c")).map(\.title) == ["Car", "Cat"])
+    }
+
     @Test func `a new list takes the last position and lists move as SwiftUI moves them`() {
         var lists = Lists.sample(at: now)
         lists.upsert(Reminder.List(id: Reminder.List.ID(UUID()), title: "Chores"))
@@ -161,6 +170,8 @@ import Tagged
         #expect(lists.reminders.count == 11)
         lists.deleteCompleted(matching: Lists.Search(text: "Take"), olderThanMonths: 1, at: now)
         #expect(lists.reminders.count == 10)
+        // Clear is scoped to the matches: completed reminders elsewhere stay.
+        #expect(lists.reminders.filter(\.completed).map(\.title) == ["Get laundry", "Send weekly emails"])
     }
 
     @Test func `details round-trip through their identifiers`() {

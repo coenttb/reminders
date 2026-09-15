@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/TCA26.git", branch: "main", traits: ["Dependencies", "Clocks"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
-        .package(url: "https://github.com/coenttb/accessory", branch: "main"),
+        .package(url: "https://github.com/coenttb/swiftui-extensions", branch: "main"),
     ],
     targets: [
         .target(
@@ -34,7 +34,7 @@ let package = Package(
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Feature", package: "reminders"),
                 "Reminders View",
-                .product(name: "Accessory", package: "accessory"),
+                .product(name: "SwiftUI Extensions", package: "swiftui-extensions"),
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Tagged", package: "swift-tagged"),

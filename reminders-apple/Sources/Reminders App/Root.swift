@@ -1,4 +1,4 @@
-import Accessory
+import SwiftUI_Extensions
 public import ComposableArchitecture2
 import Dependencies
 public import Reminders

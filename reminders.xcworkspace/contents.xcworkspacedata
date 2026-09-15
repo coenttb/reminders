@@ -5,6 +5,6 @@
       <FileRef location="group:."/>
       <FileRef location="group:reminders-apple"/>
    </Group>
-   <FileRef location="group:../accessory"/>
+   <FileRef location="group:../swiftui-extensions"/>
    <FileRef location="group:../../pointfreeco/TCA26"/>
 </Workspace>

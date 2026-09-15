@@ -25,6 +25,10 @@ import Testing
         _ = Tag.Picker(selection: .constant([]), tags: lists.rankedTags, add: { _ in }, rename: { _, _ in }, delete: { _ in })
     }
 
+    @Test func `the sort menu lists the orderings as the stock app does`() {
+        #expect(Lists.Ordering.allCases.map(\.title) == ["Manual", "Due Date", "Priority", "Title"])
+    }
+
     @Test func `the due date reads as a day, a weekday, or a date, with the time only when it matters`() {
         let calendar = Calendar(identifier: .gregorian)
         let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9))!
