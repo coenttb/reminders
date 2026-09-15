@@ -1,5 +1,5 @@
 public import Foundation
-import Foundation_Extensions
+import FoundationEssentials_Extensions
 public import Tagged
 
 /// Everything the Reminders app owns: the lists, their reminders, the known tags,

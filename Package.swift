@@ -26,7 +26,7 @@ let package = Package(
         .target(
             name: "Reminders",
             dependencies: [
-                .product(name: "Foundation Extensions", package: "swift-foundation-extensions"),
+                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
