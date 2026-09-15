@@ -6,7 +6,7 @@ extension Lists {
     /// Creates the Reminders schema in any database, or brings an older one up to date; shared
     /// by the applications and a future server. `upTo` stops at an earlier migration, for
     /// tests that upgrade from it.
-    public static func migrate(_ database: any DatabaseWriter, upTo target: String? = nil) throws {
+    public static func migrate(_ database: some DatabaseWriter, upTo target: String? = nil) throws {
         var migrator = DatabaseMigrator()
         #if DEBUG
         migrator.eraseDatabaseOnSchemaChange = true
@@ -96,6 +96,43 @@ extension Lists {
             try #sql(#"CREATE INDEX "idx_remindersTags_reminderID" ON "remindersTags"("reminderID")"#).execute(db)
             try #sql(#"CREATE INDEX "idx_remindersTags_tagID" ON "remindersTags"("tagID")"#).execute(db)
         }
+        // The database is the source of truth, so what a row may hold is the schema's rule, not
+        // the reader's tolerance: a due date is stored text in one format, a status is one of the
+        // three, a priority one of the three or none. A writer that breaks the rule is refused;
+        // rows that broke it before the rule existed are brought back inside it (a malformed
+        // date is no date, an unknown status is incomplete, an unknown priority none) rather
+        // than left to fail every read of their screen.
+        migrator.registerMigration("Constrain what a reminder row may hold") { db in
+            try #sql("""
+                CREATE TABLE "reminders_new" (
+                  "id" TEXT PRIMARY KEY NOT NULL,
+                  "listID" TEXT NOT NULL REFERENCES "lists"("id") ON DELETE CASCADE,
+                  "title" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "notes" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "due" TEXT CHECK ("due" IS NULL OR "due" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]'),
+                  "hasTime" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "flagged" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "priority" INTEGER CHECK ("priority" IS NULL OR "priority" IN (1, 2, 3)),
+                  "status" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0 CHECK ("status" IN (0, 1, 2)),
+                  "position" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "location" TEXT,
+                  "repeats" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT 'never'
+                ) STRICT
+                """).execute(db)
+            try #sql("""
+                INSERT INTO "reminders_new"
+                SELECT "id", "listID", "title", "notes",
+                  CASE WHEN "due" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]' THEN "due" ELSE NULL END,
+                  "hasTime", "flagged",
+                  CASE WHEN "priority" IN (1, 2, 3) THEN "priority" ELSE NULL END,
+                  CASE WHEN "status" IN (0, 1, 2) THEN "status" ELSE 0 END,
+                  "position", "location", "repeats"
+                FROM "reminders" ORDER BY "rowid"
+                """).execute(db)
+            try #sql(#"DROP TABLE "reminders""#).execute(db)
+            try #sql(#"ALTER TABLE "reminders_new" RENAME TO "reminders""#).execute(db)
+            try #sql(#"CREATE INDEX "idx_reminders_listID" ON "reminders"("listID")"#).execute(db)
+        }
         if let target {
             try migrator.migrate(database, upTo: target)
         } else {
@@ -118,7 +155,7 @@ extension Lists {
     }
 
     /// An in-memory database with the schema, for tests.
-    public static func inMemoryDatabase() throws -> any DatabaseWriter {
+    public static func inMemoryDatabase() throws -> DatabaseQueue {
         var configuration = Configuration()
         prepare(&configuration)
         let database = try DatabaseQueue(configuration: configuration)

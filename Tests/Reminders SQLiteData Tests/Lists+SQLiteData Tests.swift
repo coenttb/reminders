@@ -11,30 +11,30 @@ import Tagged
     var today: Range<Date> { Lists.day(containing: now, calendar: calendar) }
 
     /// The sample in a fresh in-memory database.
-    func makeDatabase() throws -> (database: any DatabaseWriter, sample: Lists.Sample) {
+    func makeDatabase() throws -> (database: DatabaseQueue, sample: Lists.Sample) {
         let database = try Lists.inMemoryDatabase()
         let sample = Lists.sample(at: now)
         try database.write { db in try Lists.replace(with: sample, in: db) }
         return (database, sample)
     }
 
-    func home(_ database: any DatabaseWriter) throws -> Lists.Home {
+    func home(_ database: some DatabaseWriter) throws -> Lists.Home {
         try database.read { db in try Lists.Home.Request(today: today).fetch(db) }
     }
 
-    func contents(_ detail: Lists.Detail, _ database: any DatabaseWriter, place: Reminder? = nil) throws -> Lists.Detail.Contents {
+    func contents(_ detail: Lists.Detail, _ database: some DatabaseWriter, place: Reminder? = nil) throws -> Lists.Detail.Contents {
         try database.read { db in try Lists.Detail.Request(detail: detail, today: today, place: place).fetch(db) }
     }
 
-    func results(_ search: Lists.Search, _ database: any DatabaseWriter) throws -> Lists.Search.Results {
+    func results(_ search: Lists.Search, _ database: some DatabaseWriter) throws -> Lists.Search.Results {
         try database.read { db in try Lists.Search.Request(search: search).fetch(db) }
     }
 
-    func stored(_ id: Reminder.ID, _ database: any DatabaseWriter) throws -> Reminder? {
+    func stored(_ id: Reminder.ID, _ database: some DatabaseWriter) throws -> Reminder? {
         try database.read { db in try Reminder.Record.find(id).rows().fetchOne(db)?.value }
     }
 
-    func count(_ database: any DatabaseWriter) throws -> Int {
+    func count(_ database: some DatabaseWriter) throws -> Int {
         try database.read { db in try Reminder.Record.all.fetchCount(db) }
     }
 
@@ -390,5 +390,39 @@ import Tagged
         // The day after, in UTC, it is today.
         let tomorrow = Lists.day(containing: now.addingTimeInterval(3_600), calendar: utc)
         #expect(try database.read { db in try Lists.Home.Request(today: tomorrow).fetch(db).stats.today } == 1)
+    }
+
+    @Test func `a row that could not be read is refused by the schema, and one stored before the rule is brought back inside it`() throws {
+        let (database, sample) = try makeDatabase()
+        // The rule is the table's: no writer can store a date the reader could not decode.
+        #expect(throws: (any Error).self) {
+            try database.write { db in try #sql("UPDATE reminders SET due = 'garbage' WHERE id = \(sample.reminders[0].id)").execute(db) }
+        }
+        #expect(throws: (any Error).self) {
+            try database.write { db in try #sql("UPDATE reminders SET status = 7 WHERE id = \(sample.reminders[0].id)").execute(db) }
+        }
+        #expect(try contents(.all, database).reminders.count == 8)
+        // A database from before the rule: its malformed values are coerced, its rows all kept.
+        var configuration = Configuration()
+        Lists.prepare(&configuration)
+        let old = try DatabaseQueue(configuration: configuration)
+        try Lists.migrate(old, upTo: "Compare tag titles as Swift does")
+        let list = Reminder.List.ID(UUID())
+        let (bad, good) = (Reminder.ID(UUID()), Reminder.ID(UUID()))
+        try old.write { db in
+            try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
+            try #sql("INSERT INTO reminders (id, listID, title, due, status, priority) VALUES (\(bad), \(list), 'Bad', 'garbage', 9, 4)").execute(db)
+            try #sql("INSERT INTO reminders (id, listID, title, due, status, priority) VALUES (\(good), \(list), 'Good', '2026-09-15 10:00:00.000', 2, 3)").execute(db)
+            try #sql("INSERT INTO tags (title) VALUES ('car')").execute(db)
+            try #sql("INSERT INTO remindersTags (reminderID, tagID) VALUES (\(bad), 'car')").execute(db)
+        }
+        try Lists.migrate(old)
+        let repaired = try old.read { db in try Reminder.Record.find(bad).rows().fetchOne(db)?.value }
+        #expect(repaired?.due == nil && repaired?.status == .incomplete && repaired?.priority == nil && repaired?.tags == ["car"])
+        let kept = try old.read { db in try Reminder.Record.find(good).rows().fetchOne(db)?.value }
+        #expect(kept?.status == .completing && kept?.priority == .high && kept?.due != nil)
+        // The rebuilt table keeps its cascade: deleting the list takes the reminders and their links.
+        try old.write { db in try Reminder.List.Record.find(list).delete().execute(db) }
+        #expect(try old.read { db in try Reminder.Tagging.all.fetchCount(db) } == 0)
     }
 }

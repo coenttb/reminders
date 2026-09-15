@@ -387,7 +387,11 @@ extension Lists {
                 guard let autosave, autosave.draft != autosave.saved else { return }
                 store.addTask {
                     do {
-                        let exists = try write { db in try update(from: autosave.saved, to: autosave.draft, in: db) }
+                        let exists = try write { db in
+                            let exists = try update(from: autosave.saved, to: autosave.draft, in: db)
+                            if !exists { try Lists.Record.set(editing: nil).execute(db) }
+                            return exists
+                        }
                         try store.modify {
                             guard $0.editing?.session == autosave.session else { return }
                             if exists {
