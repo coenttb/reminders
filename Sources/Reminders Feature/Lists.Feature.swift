@@ -549,7 +549,7 @@ extension Lists.Feature {
         guard let editing else { return }
         if editing.draft.isBlank {
             try Reminder.Record.find(editing.id).delete().execute(db)
-        } else {
+        } else if !editing.isSaved {
             try update(from: editing.saved, to: editing.draft, in: db)
         }
     }
@@ -561,7 +561,8 @@ extension Lists.Feature {
     private func update(from saved: Reminder, to draft: Reminder, in db: Database) throws -> Bool {
         guard try Reminder.Record.find(saved.id).fetchCount(db) > 0 else { return false }
         try Reminder.Record.changes(from: saved, to: draft)?.execute(db)
-        try Reminder.Tagging.detach(saved.tags.subtracting(draft.tags), from: saved.id).execute(db)
+        let removed = saved.tags.subtracting(draft.tags)
+        if !removed.isEmpty { try Reminder.Tagging.detach(removed, from: saved.id).execute(db) }
         try Reminder.Tagging.attach(draft.tags.subtracting(saved.tags), to: saved.id, in: db)
         return true
     }

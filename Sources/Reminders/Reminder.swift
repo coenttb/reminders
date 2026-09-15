@@ -3,9 +3,7 @@ public import Tagged
 
 /// One reminder: what to do, in which list, by when, how urgent, and its tags.
 public struct Reminder: Identifiable, Hashable, Sendable {
-    public typealias ID = Tagged<Reminder, UUID>
-
-    public var id: ID
+    public var id: Tagged<Reminder, UUID>
     public var list: List.ID
     public var title: String
     public var notes: String

@@ -15,14 +15,13 @@ extension Lists {
 }
 
 extension Lists.Detail: Identifiable {
-    public typealias ID = Tagged<Lists.Detail, String>
 
     /// Tag titles are free text, so the tag key joins them with the unit separator; the tags are
     /// sorted so the same set of tags shares one key whatever order it was opened in.
     private static let separator = "\u{1F}"
 
     /// A stable key, also the one preferences are stored under.
-    public var id: ID {
+    public var id: Tagged<Lists.Detail, String> {
         switch self {
         case .all: "all"
         case .completed: "completed"

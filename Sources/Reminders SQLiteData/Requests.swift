@@ -116,6 +116,8 @@ extension Lists.Search {
 
         public func fetch(_ db: Database) throws -> Lists.Search.Results {
             var results = Lists.Search.Results()
+            // Nothing typed reads nothing: an idle search is not re-read on every write.
+            guard search.matchesReminders || search.tagPrefix != nil else { return results }
             if let prefix = search.tagPrefix {
                 let taken = search.tags.map(\.rawValue)
                 results.suggestions = try Tag.Record

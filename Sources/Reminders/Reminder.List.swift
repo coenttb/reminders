@@ -4,14 +4,17 @@ public import Tagged
 extension Reminder {
     /// A list reminders belong to: named, colored, ordered by the user.
     public struct List: Identifiable, Hashable, Sendable {
-        public typealias ID = Tagged<List, UUID>
-
-        public var id: ID
+        public var id: Tagged<List, UUID>
         public var title: String
         public var color: Color
         public var position: Int
 
-        public init(id: ID, title: String = "", color: Color = .default, position: Int = 0) {
+        public init(
+            id: Reminder.List.ID,
+            title: String = "",
+            color: Color = .default,
+            position: Int = 0
+        ) {
             self.id = id
             self.title = title
             self.color = color
@@ -22,7 +25,7 @@ extension Reminder {
 
 extension Reminder.List {
     /// The list that exists when no other does.
-    public static func `default`(id: ID) -> Self {
+    public static func `default`(id: Reminder.List.ID) -> Self {
         Reminder.List(id: id, title: "Personal", color: .default)
     }
 
