@@ -1,4 +1,5 @@
 public import ComposableArchitecture2
+public import Foundation
 public import Reminders
 
 extension Reminder.List {
@@ -10,16 +11,30 @@ extension Reminder.List {
 
             public var list: Reminder.List
             public let original: Reminder.List
-            /// Whether the form creates the list or edits one the lists hold; the parent decides at presentation.
+            /// Whether the form creates the list or edits a stored one; the parent decides at presentation.
             public let isNew: Bool
+            /// Tells this presentation of the form from any other: work started for a form that
+            /// has closed, or for an earlier form on the same list, reports to nobody.
+            public let session: UUID
+            /// Why the last save did not happen; the draft stays, and Done tries again.
+            public var failure: String?
+            /// Whether a save is under way; Done is ignored until it has succeeded or failed.
+            public var isSaving = false
 
-            public init(list: Reminder.List, isNew: Bool) {
+            public init(list: Reminder.List, isNew: Bool, session: UUID) {
                 self.list = list
                 self.original = list
                 self.isNew = isNew
+                self.session = session
             }
 
             public var isDirty: Bool { list != original }
+
+            /// The save did not happen: the reason is shown and Done is enabled again.
+            public mutating func fail(_ reason: String) {
+                failure = reason
+                isSaving = false
+            }
         }
 
         public enum Action {

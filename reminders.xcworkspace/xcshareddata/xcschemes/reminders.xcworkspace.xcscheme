@@ -31,7 +31,7 @@
                BlueprintIdentifier = "Reminders"
                BuildableName = "Reminders"
                BlueprintName = "Reminders"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -45,7 +45,7 @@
                BlueprintIdentifier = "Reminders SQLiteData"
                BuildableName = "Reminders SQLiteData"
                BlueprintName = "Reminders SQLiteData"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -59,7 +59,7 @@
                BlueprintIdentifier = "Reminders Feature"
                BuildableName = "Reminders Feature"
                BlueprintName = "Reminders Feature"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -73,7 +73,7 @@
                BlueprintIdentifier = "Reminders Tests"
                BuildableName = "Reminders Tests"
                BlueprintName = "Reminders Tests"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -87,7 +87,7 @@
                BlueprintIdentifier = "Reminders SQLiteData Tests"
                BuildableName = "Reminders SQLiteData Tests"
                BlueprintName = "Reminders SQLiteData Tests"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -101,7 +101,7 @@
                BlueprintIdentifier = "Reminders Feature Tests"
                BuildableName = "Reminders Feature Tests"
                BlueprintName = "Reminders Feature Tests"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -175,7 +175,7 @@
                BlueprintIdentifier = "Reminders Tests"
                BuildableName = "Reminders Tests"
                BlueprintName = "Reminders Tests"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -185,7 +185,7 @@
                BlueprintIdentifier = "Reminders SQLiteData Tests"
                BuildableName = "Reminders SQLiteData Tests"
                BlueprintName = "Reminders SQLiteData Tests"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -195,7 +195,7 @@
                BlueprintIdentifier = "Reminders Feature Tests"
                BuildableName = "Reminders Feature Tests"
                BlueprintName = "Reminders Feature Tests"
-               ReferencedContainer = "container:.">
+               ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -232,13 +232,13 @@
       allowLocationSimulation = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B9944FCA26C0E9878D1DFADB"
-               BuildableName = "Reminders.app"
-               BlueprintName = "Reminders"
-               ReferencedContainer = "container:reminders-apple/Reminders.xcodeproj">
-            </BuildableReference>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B9944FCA26C0E9878D1DFADB"
+            BuildableName = "Reminders.app"
+            BlueprintName = "Reminders"
+            ReferencedContainer = "container:reminders-apple/Reminders.xcodeproj">
+         </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
@@ -249,13 +249,13 @@
       debugDocumentVersioning = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B9944FCA26C0E9878D1DFADB"
-               BuildableName = "Reminders.app"
-               BlueprintName = "Reminders"
-               ReferencedContainer = "container:reminders-apple/Reminders.xcodeproj">
-            </BuildableReference>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B9944FCA26C0E9878D1DFADB"
+            BuildableName = "Reminders.app"
+            BlueprintName = "Reminders"
+            ReferencedContainer = "container:reminders-apple/Reminders.xcodeproj">
+         </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction

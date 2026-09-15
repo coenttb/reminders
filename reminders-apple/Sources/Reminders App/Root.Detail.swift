@@ -25,9 +25,10 @@ extension Root {
             @Bindable var store = store
             Lists.Detail.View(
                 detail,
-                lists: store.lists,
+                contents: store.contents,
+                editing: store.editing?.id,
                 now: now,
-                draft: { $store.lists.draft($0) },
+                draft: { $store[dynamicMember: \.[draft: $0]] },
                 rows: rows,
                 editor: editor,
                 done: { store.send(.doneButtonTapped) },
@@ -39,7 +40,7 @@ extension Root {
             )
             // Leaving the app commits the row being edited, as the stock app does.
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background, store.lists.editing != nil { store.send(.doneButtonTapped) }
+                if phase == .background, store.editing != nil { store.send(.doneButtonTapped) }
             }
         }
     }
@@ -66,10 +67,4 @@ extension Root.Detail {
             setTime: { store.send(.timePresetSelected($0, $1)) }
         )
     }
-}
-
-extension Binding<Lists> {
-    /// The row's draft as a key-path projection of the lists, so the editor's fields
-    /// keep SwiftUI's transaction and every write is one state edit.
-    fileprivate func draft(_ id: Reminder.ID) -> Binding<Reminder> { self[dynamicMember: \.[draft: id]] }
 }

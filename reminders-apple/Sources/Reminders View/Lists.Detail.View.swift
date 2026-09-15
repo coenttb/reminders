@@ -9,7 +9,8 @@ extension Lists.Detail {
     /// the menu gives way to Done and the plus hides, as in iOS 27.
     public struct View: SwiftUI.View {
         private var detail: Lists.Detail
-        private var lists: Lists
+        private var contents: Lists.Detail.Contents
+        private var editing: Reminder.ID?
         private var now: Date
         private var draft: (Reminder.ID) -> Binding<Reminder>
         private var rows: Reminder.Row.Actions
@@ -26,7 +27,8 @@ extension Lists.Detail {
 
         public init(
             _ detail: Lists.Detail,
-            lists: Lists,
+            contents: Lists.Detail.Contents,
+            editing: Reminder.ID?,
             now: Date,
             draft: @escaping (Reminder.ID) -> Binding<Reminder>,
             rows: Reminder.Row.Actions,
@@ -39,7 +41,8 @@ extension Lists.Detail {
             newReminder: @escaping () -> Void
         ) {
             self.detail = detail
-            self.lists = lists
+            self.contents = contents
+            self.editing = editing
             self.now = now
             self.draft = draft
             self.rows = rows
@@ -56,23 +59,23 @@ extension Lists.Detail {
 
 extension Lists.Detail.View {
     @ViewBuilder public var body: some SwiftUI.View {
-        let color = detail.color(in: lists)
-        let preference = lists.preference(for: detail)
+        let color = detail.color(list: contents.color)
+        let preference = contents.preference
         ScrollViewReader { proxy in
         List {
             GeometryReader { proxy in
-                Text(lists.title(of: detail))
+                Text(contents.title)
                     .font(.largeTitle.weight(.bold))
                     .foregroundStyle(color)
                     .onAppear { titleHeight = proxy.size.height }
             }
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-            ForEach(lists.reminders(in: detail, at: now)) { reminder in
-                if reminder.id == lists.editing {
-                    Reminder.Editor(reminder: draft(reminder.id), color: lists.list(reminder.list)?.color.swiftUI ?? color, now: now, focus: $focus, actions: editor)
+            ForEach(contents.rows) { row in
+                if row.id == editing {
+                    Reminder.Editor(reminder: draft(row.id), color: row.color.swiftUI, now: now, focus: $focus, actions: editor)
                 } else {
-                    Reminder.Row(reminder, color: lists.list(reminder.list)?.color.swiftUI ?? color, now: now, actions: rowActions)
+                    Reminder.Row(row.reminder, color: row.color.swiftUI, now: now, actions: rowActions)
                 }
             }
             .onMove(perform: move)
@@ -88,15 +91,15 @@ extension Lists.Detail.View {
         }
         .listStyle(.plain)
         // Rows animate when they appear, leave, or move; a keystroke in the edited row does not.
-        .animation(.default, value: lists.reminders(in: detail, at: now).map(\.id))
-        .onChange(of: lists.editing, initial: true) { _, editing in
-            focus = editing.map(Reminder.Focus.title)
-            // The row being edited comes up above the keyboard.
-            if let editing {
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(80))
-                    withAnimation { proxy.scrollTo(editing, anchor: .center) }
-                }
+        .animation(.default, value: contents.rows.map(\.id))
+        // The row being edited takes the keyboard and comes up above it; a new row is read back
+        // from the database a moment after it starts, so the focus waits for it.
+        .onChange(of: editing, initial: true) { _, editing in
+            guard let editing else { return focus = nil }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(80))
+                focus = .title(editing)
+                withAnimation { proxy.scrollTo(editing, anchor: .center) }
             }
         }
         }
@@ -107,12 +110,12 @@ extension Lists.Detail.View {
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text(lists.title(of: detail))
+                Text(contents.title)
                     .font(.headline)
                     .opacity(titleVisible ? 1 : 0)
                     .animation(.default.speed(2), value: titleVisible)
             }
-            if detail.isList, lists.editing == nil {
+            if detail.isList, editing == nil {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
                     Button("New Reminder", systemImage: "plus", action: newReminder)
@@ -121,7 +124,7 @@ extension Lists.Detail.View {
                 }
                 .visibilityPriority(.high)
             }
-            if lists.editing != nil {
+            if editing != nil {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark", action: done)
                         .buttonStyle(.glassProminent)

@@ -9,15 +9,17 @@ extension Reminder.List {
         @Binding private var list: Reminder.List
         private var isNew: Bool
         private var isDirty: Bool
+        private var failure: String?
         private var save: () -> Void
         private var cancel: () -> Void
         @FocusState private var nameFocused: Bool
         @State private var discardPresented = false
 
-        public init(list: Binding<Reminder.List>, isNew: Bool = true, isDirty: Bool = false, save: @escaping () -> Void, cancel: @escaping () -> Void) {
+        public init(list: Binding<Reminder.List>, isNew: Bool = true, isDirty: Bool = false, failure: String? = nil, save: @escaping () -> Void, cancel: @escaping () -> Void) {
             self._list = list
             self.isNew = isNew
             self.isDirty = isDirty
+            self.failure = failure
             self.save = save
             self.cancel = cancel
         }
@@ -75,6 +77,9 @@ extension Reminder.List.Form {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
                 ColorPicker("Custom", selection: $list.color.swiftUI)
+            }
+            if let failure {
+                Section { Text(failure).foregroundStyle(.red) } header: { Text("Not saved") }
             }
         }
         .scrollDismissesKeyboard(.interactively)

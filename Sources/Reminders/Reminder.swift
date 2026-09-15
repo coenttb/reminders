@@ -134,8 +134,6 @@ extension Reminder {
     /// Completing counts as completed everywhere but the grace timer.
     public var completed: Bool { status != .incomplete }
 
-    public var scheduled: Bool { !completed && due != nil }
-
     /// Tags in a stable, display order.
     public var sortedTags: [Tag.ID] { tags.sorted() }
 
@@ -143,12 +141,6 @@ extension Reminder {
     public func pastDue(at now: Date, calendar: Calendar = .current) -> Bool {
         guard !completed, let due else { return false }
         return calendar.startOfDay(for: due) < calendar.startOfDay(for: now)
-    }
-
-    /// Incomplete and due today.
-    public func dueToday(at now: Date, calendar: Calendar = .current) -> Bool {
-        guard !completed, let due else { return false }
-        return calendar.isDate(due, inSameDayAs: now)
     }
 
     /// Turning the time on needs a date; turning the date off drops the time.
@@ -198,16 +190,37 @@ extension Reminder {
     public mutating func toggle() {
         status = status == .incomplete ? .completing : .incomplete
     }
+}
 
-    /// The grace timer elapsed.
-    public mutating func complete() {
-        if status == .completing { status = .completed }
-    }
+extension Reminder {
+    /// One reminder edited in place: the draft the row's fields bind to, the value the database
+    /// holds as far as this session has written it, so each write is only what changed since,
+    /// and the value the row is sorted by until editing ends, so it keeps its place under any
+    /// ordering. The session tells one editing of a row from a later one: a write started for
+    /// a session that has ended reports to nobody.
+    public struct Editing: Hashable, Sendable {
+        public var draft: Reminder
+        public var saved: Reminder
+        public let place: Reminder
+        public let session: UUID
+        /// Why the draft's last write did not happen; the draft stays, and the next write tries again.
+        public var failure: String?
 
-    /// Whether the text, title, notes, or tags contain the query, case-insensitively.
-    public func matches(_ text: String) -> Bool {
-        title.localizedCaseInsensitiveContains(text)
-            || notes.localizedCaseInsensitiveContains(text)
-            || tags.contains { $0.rawValue.localizedCaseInsensitiveContains(text) }
+        public var id: Reminder.ID { saved.id }
+
+        /// Whether the database holds the draft as typed.
+        public var isSaved: Bool { draft == saved }
+
+        public init(draft: Reminder, saved: Reminder, place: Reminder, session: UUID) {
+            self.draft = draft
+            self.saved = saved
+            self.place = place
+            self.session = session
+        }
+
+        /// Editing a stored reminder: the draft starts as, and sorts as, the stored value.
+        public init(_ reminder: Reminder, session: UUID) {
+            self.init(draft: reminder, saved: reminder, place: reminder, session: session)
+        }
     }
 }

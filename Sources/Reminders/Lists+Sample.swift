@@ -1,12 +1,26 @@
 public import Foundation
-import Tagged
+public import Tagged
 
 extension Lists {
-    /// The reference fixture: three lists, eleven reminders around today, seven tags.
-    public static var sample: Lists { sample(at: Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))) }
+    /// A set of records to fill the database with: what the first run starts from, and what
+    /// the seed button resets to.
+    public struct Sample: Hashable, Sendable {
+        public var lists: [Reminder.List]
+        public var reminders: [Reminder]
+        public var tags: Set<Tag>
 
-    /// The fixture relative to a given now, so tests can fix the calendar.
-    public static func sample(at now: Date) -> Lists {
+        public init(lists: [Reminder.List], reminders: [Reminder] = [], tags: Set<Tag> = []) {
+            self.lists = lists
+            self.reminders = reminders
+            self.tags = tags
+        }
+
+        public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first { $0.id == id } }
+    }
+
+    /// The reference fixture relative to a given now, so tests can fix the calendar: three
+    /// lists, eleven reminders around today, seven tags.
+    public static func sample(at now: Date) -> Sample {
         func id(_ n: Int) -> UUID {
             let hex = String(n, radix: 16, uppercase: true)
             // A fixture identifier sits in a segment the incrementing test generator never fills.
@@ -14,7 +28,7 @@ extension Lists {
         }
         func day(_ offset: Double) -> Date { now.addingTimeInterval(60 * 60 * 24 * offset) }
         let personal = Reminder.List.ID(id(0)), family = Reminder.List.ID(id(1)), business = Reminder.List.ID(id(2))
-        return Lists(
+        return Sample(
             lists: [
                 Reminder.List(id: personal, title: "Personal", color: Reminder.List.Color(hex: 0x4a99ef), position: 0),
                 Reminder.List(id: family, title: "Family", color: Reminder.List.Color(hex: 0xed8935), position: 1),

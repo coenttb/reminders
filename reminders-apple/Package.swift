@@ -3,7 +3,7 @@
 import PackageDescription
 
 // The Apple layer of one example: SwiftUI presentation and the application
-// layer that owns the domain value through the core's TCA26 feature. Depends
+// layer that drives the core's TCA26 feature. Depends
 // on the example's core by URL; the workspace resolves it to the sibling checkout.
 let package = Package(
     name: "reminders-apple",
@@ -18,6 +18,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/coenttb/swiftui-extensions", branch: "main"),
+        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0", traits: ["Tagged"]),
     ],
     targets: [
         .target(
@@ -53,6 +54,7 @@ let package = Package(
             dependencies: [
                 "Reminders App",
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+                .product(name: "SQLiteData", package: "sqlite-data"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),

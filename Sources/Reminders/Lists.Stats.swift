@@ -1,7 +1,5 @@
-public import Foundation
-
 extension Lists {
-    /// The counts on the home grid.
+    /// The counts on the home grid: open reminders only.
     public struct Stats: Hashable, Sendable {
         public var all: Int
         public var flagged: Int
@@ -14,15 +12,5 @@ extension Lists {
             self.scheduled = scheduled
             self.today = today
         }
-    }
-
-    public func stats(at now: Date, calendar: Calendar = .current) -> Stats {
-        let open = reminders.filter { !$0.completed }
-        return Stats(
-            all: open.count,
-            flagged: open.filter(\.flagged).count,
-            scheduled: open.filter(\.scheduled).count,
-            today: open.filter { $0.dueToday(at: now, calendar: calendar) }.count
-        )
     }
 }

@@ -12,6 +12,7 @@ extension DependencyValues {
     /// to the console in a preview, so the cost of a write can be measured rather than assumed.
     public mutating func bootstrapDatabase() throws {
         var configuration = Configuration()
+        Lists.prepare(&configuration)
         #if DEBUG
         let context = self.context
         configuration.prepareDatabase { db in

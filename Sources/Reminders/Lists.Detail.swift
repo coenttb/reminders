@@ -1,4 +1,4 @@
-public import Foundation
+import Foundation
 public import Tagged
 
 extension Lists {
@@ -72,12 +72,70 @@ extension Lists.Detail {
     public var isList: Bool {
         if case .list = self { true } else { false }
     }
+
+    /// The name a detail shows; a list's is its title, read with the rest of its contents.
+    public var title: String? {
+        switch self {
+        case .all: "All"
+        case .completed: "Completed"
+        case .flagged: "Flagged"
+        case .list: nil
+        case .scheduled: "Scheduled"
+        case let .tags(tags): tags.count == 1 ? "#\(tags[0])" : tags.isEmpty ? "Tags" : "\(tags.count) tags"
+        case .today: "Today"
+        }
+    }
+
+    /// The detail without a tag that no longer exists: narrowed, or closed when it was the last one.
+    public func removing(tag id: Tag.ID) -> Lists.Detail? {
+        guard case let .tags(open) = self else { return self }
+        return open == [id] ? nil : .tags(open.filter { $0 != id })
+    }
+
+    /// The detail without a list that no longer exists: closed when it was that list.
+    public func removing(list id: Reminder.List.ID) -> Lists.Detail? {
+        if case let .list(open) = self, open == id { nil } else { self }
+    }
+}
+
+extension Lists.Detail {
+    /// One detail as read from the database: its name, its list's color when it is a list,
+    /// its preference, and the reminders it shows in the preference's order, each with the
+    /// color of the list it belongs to.
+    public struct Contents: Hashable, Sendable {
+        public var title: String
+        public var color: Reminder.List.Color?
+        public var preference: Preference
+        public var rows: [Row]
+
+        public init(title: String = "", color: Reminder.List.Color? = nil, preference: Preference = Preference(), rows: [Row] = []) {
+            self.title = title
+            self.color = color
+            self.preference = preference
+            self.rows = rows
+        }
+
+        /// One reminder in a detail, tinted by its list.
+        public struct Row: Identifiable, Hashable, Sendable {
+            public var reminder: Reminder
+            public var color: Reminder.List.Color
+
+            public var id: Reminder.ID { reminder.id }
+
+            public init(reminder: Reminder, color: Reminder.List.Color) {
+                self.reminder = reminder
+                self.color = color
+            }
+        }
+
+        public var reminders: [Reminder] { rows.map(\.reminder) }
+    }
 }
 
 extension Lists {
-    /// The raw value is the stored key; the name the menu shows is `title`.
+    /// The raw value is the stored key; the name the menu shows is `title`, in the stock menu's order.
     public enum Ordering: String, CaseIterable, Hashable, Sendable {
-        case dueDate, manual, priority, title
+        case manual, dueDate, priority, title
 
         public var title: String {
             switch self {
@@ -85,82 +143,6 @@ extension Lists {
             case .manual: "Manual"
             case .priority: "Priority"
             case .title: "Title"
-            }
-        }
-    }
-
-    public func preference(for detail: Detail) -> Detail.Preference {
-        preferences[detail.id] ?? detail.defaultPreference
-    }
-
-    public mutating func set(ordering: Ordering, for detail: Detail) {
-        preferences[detail.id, default: detail.defaultPreference].ordering = ordering
-    }
-
-    public mutating func toggleShowCompleted(for detail: Detail) {
-        preferences[detail.id, default: detail.defaultPreference].showCompleted.toggle()
-    }
-
-    /// The reminders a detail shows, filtered by its membership and its preference, ordered by its preference.
-    public func reminders(in detail: Detail, at now: Date, calendar: Calendar = .current) -> [Reminder] {
-        let preference = preference(for: detail)
-        let members = reminders.filter { reminder in
-            switch detail {
-            case .all: true
-            case .completed: reminder.completed
-            case .flagged: reminder.flagged
-            case let .list(id): reminder.list == id
-            case .scheduled: reminder.scheduled
-            case let .tags(tags): !reminder.tags.isDisjoint(with: tags)
-            case .today: reminder.dueToday(at: now, calendar: calendar)
-            }
-        }
-        // A reminder in its grace period stays on screen, in place, so the tap can be undone;
-        // completed ones sort last only when the detail shows them.
-        let shown = preference.showCompleted ? members : members.filter { $0.status != .completed }
-        // The row being edited keeps its place until editing ends.
-        func placed(_ reminder: Reminder) -> Reminder {
-            reminder.id == editing ? editingPlace ?? reminder : reminder
-        }
-        return shown.sorted { lhs, rhs in
-            let (l, r) = (placed(lhs), placed(rhs))
-            if preference.showCompleted, l.completed != r.completed { return !l.completed }
-            return Lists.precedes(l, r, by: preference.ordering)
-        }
-    }
-
-    /// The name a detail shows.
-    public func title(of detail: Detail) -> String {
-        switch detail {
-        case .all: "All"
-        case .completed: "Completed"
-        case .flagged: "Flagged"
-        case let .list(id): list(id)?.title ?? ""
-        case .scheduled: "Scheduled"
-        case let .tags(tags): tags.count == 1 ? "#\(tags[0])" : tags.isEmpty ? "Tags" : "\(tags.count) tags"
-        case .today: "Today"
-        }
-    }
-
-    static func precedes(_ lhs: Reminder, _ rhs: Reminder, by ordering: Ordering) -> Bool {
-        switch ordering {
-        case .dueDate:
-            switch (lhs.due, rhs.due) {
-            case let (l?, r?): return l == r ? lhs.position < rhs.position : l < r
-            case (.some, nil): return true
-            case (nil, .some): return false
-            case (nil, nil): return lhs.position < rhs.position
-            }
-        case .manual: return lhs.position < rhs.position
-        case .priority:
-            let l = (lhs.priority?.rawValue ?? 0, lhs.flagged ? 1 : 0)
-            let r = (rhs.priority?.rawValue ?? 0, rhs.flagged ? 1 : 0)
-            return l == r ? lhs.position < rhs.position : l > r
-        case .title:
-            switch lhs.title.localizedCaseInsensitiveCompare(rhs.title) {
-            case .orderedAscending: return true
-            case .orderedDescending: return false
-            case .orderedSame: return lhs.position < rhs.position
             }
         }
     }

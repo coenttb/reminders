@@ -1,246 +1,52 @@
 public import Foundation
-import FoundationEssentials_Extensions
 public import Tagged
 
-/// Everything the Reminders app owns: the lists, their reminders, the known tags,
-/// the per-detail preferences, which detail is open, and which reminder is being
-/// edited in place. Pure value; the rules that filter, order, search, and count
-/// live here so every platform shares them.
-public struct Lists: Equatable, Sendable {
-    public var lists: [Reminder.List]
-    public var reminders: [Reminder]
-    public var tags: Set<Tag>
-    public var preferences: [Detail.ID: Detail.Preference]
-    public var detail: Detail?
-    /// The reminder whose row is open for editing in the detail, if any.
-    public var editing: Reminder.ID?
-    /// The row being edited keeps the place it had when editing began; this is the value
-    /// it is sorted by until editing ends. Not stored: a relaunch sorts the row afresh.
-    public var editingPlace: Reminder?
+/// The Reminders domain: the screens the app shows (the home, a detail, the search) and
+/// the rules every platform shares. The records themselves live in the database; what a
+/// screen shows is read from it as one of the read models below, never held as a second
+/// copy of the data.
+public enum Lists {}
 
-    /// The value as the stored form keeps it: everything but the editing place. The
-    /// feature persists on changes to this, so re-sorting state alone writes nothing.
-    public var stored: Lists {
-        var stored = self
-        stored.editingPlace = nil
-        return stored
-    }
+extension Lists {
+    /// The home screen as read from the database: the user's lists in their order with
+    /// their open counts, the smart-group counts, the tags at least one reminder carries,
+    /// and every tag ranked by use for the picker.
+    public struct Home: Hashable, Sendable {
+        public var lists: [Entry]
+        public var stats: Stats
+        public var usedTags: [Tag]
+        public var rankedTags: [Tag]
 
-    public init(
-        lists: [Reminder.List],
-        reminders: [Reminder] = [],
-        tags: Set<Tag> = [],
-        preferences: [Detail.ID: Detail.Preference] = [:],
-        detail: Detail? = nil,
-        editing: Reminder.ID? = nil
-    ) {
-        self.lists = lists
-        self.reminders = reminders
-        self.tags = tags
-        self.preferences = preferences
-        self.detail = detail
-        self.editing = editing
+        public init(lists: [Entry] = [], stats: Stats = Stats(), usedTags: [Tag] = [], rankedTags: [Tag] = []) {
+            self.lists = lists
+            self.stats = stats
+            self.usedTags = usedTags
+            self.rankedTags = rankedTags
+        }
+
+        /// One list on the home screen with the number of reminders still open in it.
+        public struct Entry: Identifiable, Hashable, Sendable {
+            public var list: Reminder.List
+            public var count: Int
+
+            public var id: Reminder.List.ID { list.id }
+
+            public init(list: Reminder.List, count: Int) {
+                self.list = list
+                self.count = count
+            }
+        }
+
+        public func list(_ id: Reminder.List.ID) -> Reminder.List? { lists.first { $0.id == id }?.list }
     }
 }
 
 extension Lists {
-    /// Opens a reminder's row for editing, committing whatever was being edited.
-    public mutating func edit(_ id: Reminder.ID) {
-        endEditing()
-        guard let reminder = reminder(id) else { return }
-        editing = id
-        editingPlace = reminder
-    }
-
-    /// Adds an empty reminder at the end of a list and opens it for editing.
-    public mutating func startNewReminder(in list: Reminder.List.ID, id: Reminder.ID) {
-        endEditing()
-        upsert(Reminder(id: id, list: list))
-        editing = id
-        editingPlace = reminder(id)
-    }
-
-    /// Commits the row being edited: a blank one is removed, any other one stays as typed.
-    public mutating func endEditing() {
-        if let editing, let reminder = reminder(editing), reminder.isBlank { delete(reminder: editing) }
-        editing = nil
-        editingPlace = nil
-    }
-
-    /// Return in the title: a blank row ends editing; a titled row is committed and an
-    /// empty row opens directly beneath it, in the same list, sorted as its neighbour
-    /// until editing ends so it stays beneath under any ordering.
-    public mutating func continueEditing(id: Reminder.ID) {
-        guard let current = editing, let anchor = reminder(current), !anchor.isBlank else { return endEditing() }
-        for index in reminders.indices where reminders[index].position > anchor.position { reminders[index].position += 1 }
-        reminders.append(Reminder(id: id, list: anchor.list, position: anchor.position + 1))
-        editing = id
-        var place = anchor
-        place.id = id
-        place.position = anchor.position + 1
-        editingPlace = place
-    }
-}
-
-extension Lists {
-    /// Lists in the user's order.
-    public var orderedLists: [Reminder.List] { lists.sorted { $0.position < $1.position } }
-
-    /// Tags at least one reminder carries, alphabetically.
-    public var usedTags: [Tag] {
-        let used = Set(reminders.flatMap(\.tags))
-        return tags.filter { used.contains($0.id) }.sorted { $0.title < $1.title }
-    }
-
-    /// Tags alphabetically, the most used first.
-    public var rankedTags: [Tag] {
-        let counts = reminders.flatMap(\.tags).reduce(into: [Tag.ID: Int]()) { $0[$1, default: 0] += 1 }
-        return tags.sorted { lhs, rhs in
-            let (l, r) = (counts[lhs.id] ?? 0, counts[rhs.id] ?? 0)
-            return l == r ? lhs.title < rhs.title : l > r
-        }
-    }
-
-    public func list(_ id: Reminder.List.ID) -> Reminder.List? { lists.first { $0.id == id } }
-
-    public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first { $0.id == id } }
-
-    /// A reminder as a draft for editing in place: the stored one, or a placeholder in the
-    /// first list once it is gone. A write to a reminder the lists no longer hold is dropped,
-    /// so a field committing after editing ended cannot bring a deleted row back. A
-    /// subscript, so a view binds to it through a key path (`$lists[draft: id]`) rather
-    /// than a closure-built binding.
-    public subscript(draft id: Reminder.ID) -> Reminder {
-        get { reminder(id) ?? Reminder(id: id, list: orderedLists.first?.id ?? Reminder.List.ID(Self.noList)) }
-        set {
-            guard reminder(id) != nil else { return }
-            upsert(newValue)
-        }
-    }
-
-    /// The list a placeholder draft names when there is no list at all; never stored.
-    private static let noList = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-
-    /// The tag with this title in any case; tags are unique case-insensitively.
-    public func tag(titled title: String) -> Tag? {
-        tags.first { $0.title.caseInsensitiveCompare(title) == .orderedSame }
-    }
-
-    /// The identifier the lists already use for a tag title in any case, or the given one
-    /// when the tag is new. Every path that attaches a tag goes through here, so the value
-    /// and the stored form, whose key is case-insensitive, agree on which tag a title names.
-    public func canonical(_ id: Tag.ID) -> Tag.ID {
-        tag(titled: id.rawValue)?.id ?? id
-    }
-
-    /// Incomplete reminders in a list.
-    public func count(in list: Reminder.List.ID) -> Int {
-        reminders.filter { $0.list == list && !$0.completed }.count
-    }
-
-    /// Reminders still in their completion grace period.
-    public var completing: Set<Reminder.ID> { Set(reminders.filter { $0.status == .completing }.map(\.id)) }
-
-    public var isEmpty: Bool { lists.isEmpty }
-}
-
-extension Lists {
-    public mutating func upsert(_ reminder: Reminder) {
-        var reminder = reminder
-        reminder.tags = Set(reminder.tags.map(canonical))
-        for tag in reminder.tags { tags.insert(Tag(tag)) }
-        if let index = reminders.firstIndex(where: { $0.id == reminder.id }) {
-            reminders[index] = reminder
-        } else {
-            reminder.position = (reminders.map(\.position).max() ?? -1) + 1
-            reminders.append(reminder)
-        }
-    }
-
-    public mutating func upsert(_ list: Reminder.List) {
-        var list = list
-        if let index = lists.firstIndex(where: { $0.id == list.id }) {
-            lists[index] = list
-        } else {
-            list.position = (lists.map(\.position).max() ?? -1) + 1
-            lists.append(list)
-        }
-    }
-
-    /// Removes the list and its reminders; the caller keeps the default-list invariant with `isEmpty`.
-    public mutating func delete(list id: Reminder.List.ID) {
-        lists.removeAll { $0.id == id }
-        reminders.removeAll { $0.list == id }
-        if case let .list(open) = detail, open == id { detail = nil }
-    }
-
-    public mutating func delete(reminder id: Reminder.ID) {
-        reminders.removeAll { $0.id == id }
-        if editing == id { editing = nil; editingPlace = nil }
-    }
-
-    /// Removes the tag everywhere it is used.
-    public mutating func delete(tag id: Tag.ID) {
-        tags.remove(Tag(id))
-        for index in reminders.indices { reminders[index].tags.remove(id) }
-        if case let .tags(open) = detail { detail = open == [id] ? nil : .tags(open.filter { $0 != id }) }
-    }
-
-    /// Adds a tag nothing uses yet; adding an existing title is a no-op.
-    public mutating func add(tag title: String) {
-        guard !title.isEmpty, !tags.contains(where: { $0.title.caseInsensitiveCompare(title) == .orderedSame }) else { return }
-        tags.insert(Tag(title: title))
-    }
-
-    /// The inline Date chip: a preset day for one reminder, on the feature's clock.
-    public mutating func set(datePreset preset: Reminder.DatePreset?, for id: Reminder.ID, at now: Date, calendar: Calendar = .current) {
-        guard let index = reminders.firstIndex(where: { $0.id == id }) else { return }
-        reminders[index].set(datePreset: preset, at: now, calendar: calendar)
-    }
-
-    /// The inline Time chip: a preset time for one reminder, on the feature's clock.
-    public mutating func set(timePreset preset: Reminder.TimePreset?, for id: Reminder.ID, at now: Date, calendar: Calendar = .current) {
-        guard let index = reminders.firstIndex(where: { $0.id == id }) else { return }
-        reminders[index].set(timePreset: preset, at: now, calendar: calendar)
-    }
-
-    /// Renaming onto a title another tag already has, in any case, merges into that tag.
-    public mutating func rename(tag id: Tag.ID, to title: String) {
-        guard !title.isEmpty, tags.remove(Tag(id)) != nil else { return }
-        let renamed = canonical(Tag.ID(title))
-        tags.insert(Tag(renamed))
-        for reminderIndex in reminders.indices where reminders[reminderIndex].tags.remove(id) != nil {
-            reminders[reminderIndex].tags.insert(renamed)
-        }
-    }
-
-    public mutating func toggle(_ id: Reminder.ID) {
-        guard let index = reminders.firstIndex(where: { $0.id == id }) else { return }
-        reminders[index].toggle()
-    }
-
-    /// Every reminder in its grace period is now completed.
-    public mutating func completeCompleting() {
-        for index in reminders.indices { reminders[index].complete() }
-    }
-
-    /// Reorders the lists as the user dragged them.
-    public mutating func move(lists source: IndexSet, to destination: Int) {
-        var ordered = orderedLists
-        ordered.move(offsets: source, to: destination)
-        for (position, list) in ordered.enumerated() {
-            if let index = lists.firstIndex(where: { $0.id == list.id }) { lists[index].position = position }
-        }
-    }
-
-    /// Reorders the reminders shown in a detail as the user dragged them, and switches that detail to manual ordering.
-    public mutating func move(reminders source: IndexSet, to destination: Int, in detail: Detail, at now: Date, calendar: Calendar = .current) {
-        var shown = reminders(in: detail, at: now, calendar: calendar)
-        shown.move(offsets: source, to: destination)
-        var positions = shown.map(\.position).sorted()
-        for reminder in shown {
-            if let index = reminders.firstIndex(where: { $0.id == reminder.id }) { reminders[index].position = positions.removeFirst() }
-        }
-        preferences[detail.id, default: detail.defaultPreference].ordering = .manual
+    /// The calendar day a moment falls in, as half-open bounds, so "today" is decided by the
+    /// calendar the app is given rather than by the database's own idea of local time.
+    public static func day(containing now: Date, calendar: Calendar) -> Range<Date> {
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
+        return start..<end
     }
 }

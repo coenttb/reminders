@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Workspace version="1.0">
-   <Group location="container:" name="Reminders">
-      <FileRef location="group:reminders-apple/Reminders.xcodeproj"/>
-      <FileRef location="group:."/>
-      <FileRef location="group:reminders-apple"/>
+<Workspace
+   version = "1.0">
+   <Group
+      location = "container:"
+      name = "Reminders">
+      <FileRef
+         location = "group:reminders-apple/Reminders.xcodeproj">
+      </FileRef>
+      <FileRef
+         location = "group:.">
+      </FileRef>
+      <FileRef
+         location = "group:reminders-apple">
+      </FileRef>
    </Group>
-   <FileRef location="group:../swiftui-extensions"/>
-   <FileRef location="group:../swift-institute/swift-molecules/swift-foundation-extensions"/>
-   <FileRef location="group:../../pointfreeco/TCA26"/>
+   <FileRef
+      location = "group:../swiftui-extensions">
+   </FileRef>
+   <FileRef
+      location = "group:../../pointfreeco/TCA26">
+   </FileRef>
+   <FileRef
+      location = "container:../swift-institute/swift-atoms/swift-standard-library-extensions">
+   </FileRef>
 </Workspace>

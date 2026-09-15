@@ -8,7 +8,7 @@ extension Lists.Search {
     /// summary with its clear menu, and the matches grouped under their lists.
     public struct View: SwiftUI.View {
         private var search: Lists.Search
-        private var lists: Lists
+        private var results: Lists.Search.Results
         private var now: Date
         private var rows: Reminder.Row.Actions
         private var addTag: (Tag.ID) -> Void
@@ -17,7 +17,7 @@ extension Lists.Search {
 
         public init(
             _ search: Lists.Search,
-            lists: Lists,
+            results: Lists.Search.Results,
             now: Date,
             rows: Reminder.Row.Actions,
             addTag: @escaping (Tag.ID) -> Void,
@@ -25,7 +25,7 @@ extension Lists.Search {
             deleteCompleted: @escaping (Int?) -> Void
         ) {
             self.search = search
-            self.lists = lists
+            self.results = results
             self.now = now
             self.rows = rows
             self.addTag = addTag
@@ -37,11 +37,9 @@ extension Lists.Search {
 
 extension Lists.Search.View {
     @ViewBuilder public var body: some SwiftUI.View {
-        let suggestions = lists.tagSuggestions(for: search)
-        let matches = lists.matches(search)
+        let suggestions = results.suggestions
         // A reminder in its grace period is neither counted nor hidden, so the tap can be undone.
-        let completed = matches.filter { $0.status == .completed }.count
-        let shown = search.showCompleted ? matches : matches.filter { $0.status != .completed }
+        let completed = results.completedCount
         if !suggestions.isEmpty {
             Section {
                 ScrollView(.horizontal) {
@@ -78,22 +76,19 @@ extension Lists.Search.View {
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())
-        ForEach(lists.orderedLists) { list in
-            let rows = shown.filter { $0.list == list.id }
-            if !rows.isEmpty {
-                Section {
-                    ForEach(rows) { reminder in
-                        Reminder.Row(reminder, color: list.color.swiftUI, now: now, actions: self.rows)
-                    }
-                } header: {
-                    Text(list.title)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(list.color.swiftUI)
-                        .textCase(nil)
-                        .padding(.leading, -4)
+        ForEach(results.sections) { section in
+            Section {
+                ForEach(section.reminders) { reminder in
+                    Reminder.Row(reminder, color: section.list.color.swiftUI, now: now, actions: rows)
                 }
-                .listRowBackground(Color.clear)
+            } header: {
+                Text(section.list.title)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(section.list.color.swiftUI)
+                    .textCase(nil)
+                    .padding(.leading, -4)
             }
+            .listRowBackground(Color.clear)
         }
     }
 }

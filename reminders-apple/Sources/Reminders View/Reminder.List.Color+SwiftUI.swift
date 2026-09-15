@@ -18,12 +18,12 @@ extension Reminder.List.Color {
 
 extension Lists.Detail {
     /// The accent of a detail: its list's color, or the smart group's.
-    public func color(in lists: Lists) -> SwiftUI.Color {
+    public func color(list: Reminder.List.Color?) -> SwiftUI.Color {
         switch self {
         case .all: .primary
         case .completed: .gray
         case .flagged: .orange
-        case let .list(id): lists.list(id)?.color.swiftUI ?? .blue
+        case .list: list?.swiftUI ?? .blue
         case .scheduled: .red
         case .tags, .today: .blue
         }

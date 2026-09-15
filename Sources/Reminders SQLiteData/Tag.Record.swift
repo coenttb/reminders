@@ -3,7 +3,7 @@ public import SQLiteData
 public import Tagged
 
 extension Tag {
-    /// The stored form of a tag: its title is the key, case-insensitively.
+    /// The stored form of a tag: its title is the key, case-insensitively as Swift compares.
     @Table("tags")
     public struct Record: Identifiable, Sendable {
         @Column(primaryKey: true)

@@ -7,129 +7,41 @@ import Tagged
     let now = Date(timeIntervalSince1970: 1_234_567_890)
     let calendar = Calendar(identifier: .gregorian)
 
-    @Test func `the home counts open reminders only`() {
-        let lists = Lists.sample(at: now)
-        #expect(lists.stats(at: now) == Lists.Stats(all: 8, flagged: 2, scheduled: 7, today: 2))
-        #expect(lists.count(in: lists.orderedLists[0].id) == 4)
-        #expect(lists.usedTags.map(\.title) == ["adulting", "car", "kids", "night", "optional", "social", "someday"])
-    }
-
-    @Test func `a detail filters by membership and orders by its preference`() {
-        var lists = Lists.sample(at: now)
-        let personal = Lists.Detail.list(lists.orderedLists[0].id)
-        #expect(lists.reminders(in: personal, at: now).map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
-        lists.set(ordering: .priority, for: personal)
-        #expect(lists.reminders(in: personal, at: now).map(\.title) == ["Doctor appointment", "Haircut", "Groceries", "Buy concert tickets"])
-        lists.set(ordering: .title, for: personal)
-        #expect(lists.reminders(in: personal, at: now).map(\.title) == ["Buy concert tickets", "Doctor appointment", "Groceries", "Haircut"])
-        lists.toggleShowCompleted(for: personal)
-        #expect(lists.reminders(in: personal, at: now).map(\.title).last == "Take a walk")
-        #expect(lists.reminders(in: .completed, at: now).count == 3)
-        #expect(lists.reminders(in: .today, at: now).count == 2)
-        #expect(lists.reminders(in: .tags(["social"]), at: now).map(\.title) == ["Buy concert tickets", "Prepare for WWDC"])
+    @Test func `only incomplete reminders before today are past due`() {
+        var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "Call", due: now.addingTimeInterval(-86_400))
+        #expect(reminder.pastDue(at: now, calendar: calendar))
+        reminder.status = .completed
+        #expect(!reminder.pastDue(at: now, calendar: calendar))
+        reminder.status = .incomplete
+        reminder.due = now
+        #expect(!reminder.pastDue(at: now, calendar: calendar))
     }
 
     @Test func `completing is a grace period before completed`() {
-        var lists = Lists.sample(at: now)
-        let groceries = lists.reminders[0].id
-        lists.toggle(groceries)
-        #expect(lists.completing == [groceries])
-        #expect(lists.stats(at: now).all == 7)
-        let personal = Lists.Detail.list(lists.reminders[0].list)
-        #expect(lists.reminders(in: personal, at: now).map(\.id).contains(groceries))
-        #expect(lists.reminders(in: personal, at: now).last?.id == groceries)
-        lists.toggle(groceries)
-        #expect(lists.completing.isEmpty)
-        lists.toggle(groceries)
-        lists.completeCompleting()
-        #expect(lists.reminder(groceries)?.status == .completed)
+        var reminder = Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: "x")
+        reminder.toggle()
+        #expect(reminder.status == .completing && reminder.completed)
+        reminder.toggle()
+        #expect(reminder.status == .incomplete && !reminder.completed)
+        reminder.status = .completed
+        reminder.toggle()
+        #expect(reminder.status == .incomplete)
     }
 
-    @Test func `deleting a list takes its reminders and closes its detail`() {
-        var lists = Lists.sample(at: now)
-        let family = lists.orderedLists[1].id
-        lists.detail = .list(family)
-        lists.delete(list: family)
-        #expect(lists.lists.count == 2)
-        #expect(lists.reminders.count == 8)
-        #expect(lists.detail == nil)
+    @Test func `a tag detail narrows and closes as its tags go, and a list detail closes with its list`() {
+        let list = Reminder.List.ID(UUID())
+        #expect(Lists.Detail.tags(["car", "kids"]).removing(tag: "car") == .tags(["kids"]))
+        #expect(Lists.Detail.tags(["kids"]).removing(tag: "kids") == nil)
+        #expect(Lists.Detail.today.removing(tag: "kids") == .today)
+        #expect(Lists.Detail.list(list).removing(list: list) == nil)
+        #expect(Lists.Detail.all.removing(list: list) == .all)
     }
 
-    @Test func `tags are shared, renamed everywhere, and deleted everywhere`() {
-        var lists = Lists.sample(at: now)
-        lists.rename(tag: "social", to: "friends")
-        #expect(lists.reminders.filter { $0.tags.contains("friends") }.count == 3)
-        lists.delete(tag: "friends")
-        #expect(lists.reminders.allSatisfy { !$0.tags.contains("friends") })
-        lists.add(tag: "Someday")
-        #expect(lists.tags.count == 6)
-        // A reminder's tags follow the case the lists already know.
-        lists.upsert(Reminder(id: Reminder.ID(UUID()), list: lists.orderedLists[0].id, title: "Wash", tags: ["CAR"]))
-        #expect(lists.tags.count == 6)
-        #expect(lists.reminders.last?.tags == ["car"])
-        lists.rename(tag: "car", to: "Car")
-        #expect(lists.tags.contains(Tag(title: "Car")) && !lists.tags.contains(Tag(title: "car")))
-        #expect(lists.reminders.last?.tags == ["Car"])
-    }
-
-    @Test func `a draft written after editing ended does not come back`() {
-        var lists = Lists.sample(at: now)
-        let id = Reminder.ID(UUID())
-        lists.startNewReminder(in: lists.orderedLists[0].id, id: id)
-        var late = lists[draft: id]
-        lists.endEditing()
-        #expect(lists.reminder(id) == nil)
-        late.title = "New Reminder"
-        lists[draft: id] = late
-        #expect(lists.reminder(id) == nil)
-        #expect(lists.reminders.count == 11)
-    }
-
-    @Test func `clearing completed matches leaves a reminder still in its grace period`() {
-        var lists = Lists.sample(at: now)
-        let walk = lists.reminders[3].id
-        let trash = lists.reminders[7].id
-        lists.toggle(trash)
-        lists.deleteCompleted(matching: Lists.Search(text: "Take"), olderThanMonths: nil, at: now)
-        #expect(lists.reminder(walk) == nil)
-        #expect(lists.reminder(trash)?.status == .completing)
-        // It also keeps its place among the open matches instead of sorting last.
-        #expect(lists.matches(Lists.Search(text: "Take")).first?.id == trash)
-    }
-
-    @Test func `tags rank by use, a tag detail narrows and closes as its tags go, and text matches notes and tags`() {
-        var lists = Lists.sample(at: now)
-        #expect(lists.rankedTags.prefix(3).map(\.title) == ["social", "adulting", "optional"])
-        lists.detail = .tags(["car", "kids"])
-        lists.delete(tag: "car")
-        #expect(lists.detail == .tags(["kids"]))
-        lists.delete(tag: "kids")
-        #expect(lists.detail == nil)
-        let groceries = lists.reminders[0]
-        #expect(groceries.matches("oatmeal") && groceries.matches("ADULT") && !groceries.matches("payroll"))
-        let haircut = lists.reminders[1]
-        #expect(haircut.pastDue(at: now, calendar: calendar) && !groceries.pastDue(at: now, calendar: calendar))
-        #expect(!lists.reminders[3].pastDue(at: now, calendar: calendar))
-    }
-
-    @Test func `tags order case-insensitively wherever they are listed`() {
-        var lists = Lists.sample(at: now)
-        lists.rename(tag: "car", to: "Car")
-        #expect(lists.usedTags.map(\.title) == ["adulting", "Car", "kids", "night", "optional", "social", "someday"])
-        #expect(lists.rankedTags.map(\.title) == ["social", "adulting", "optional", "someday", "Car", "kids", "night"])
-        lists.add(tag: "Cat")
-        #expect(lists.tagSuggestions(for: Lists.Search(text: "#c")).map(\.title) == ["Car", "Cat"])
-    }
-
-    @Test func `a new list takes the last position and lists move as SwiftUI moves them`() {
-        var lists = Lists.sample(at: now)
-        lists.upsert(Reminder.List(id: Reminder.List.ID(UUID()), title: "Chores"))
-        #expect(lists.orderedLists.map(\.title) == ["Personal", "Family", "Business", "Chores"])
-        // Down: the moved element lands before the element at the destination, as `move(fromOffsets:toOffset:)` does.
-        lists.move(lists: [0], to: 3)
-        #expect(lists.orderedLists.map(\.title) == ["Family", "Business", "Personal", "Chores"])
-        lists.move(lists: [3], to: 0)
-        #expect(lists.orderedLists.map(\.title) == ["Chores", "Family", "Business", "Personal"])
+    @Test func `details name themselves except lists, and default to hiding completed reminders`() {
+        #expect(Lists.Detail.today.title == "Today" && Lists.Detail.list(Reminder.List.ID(UUID())).title == nil)
+        #expect(Lists.Detail.tags(["a"]).title == "#a" && Lists.Detail.tags(["a", "b"]).title == "2 tags")
+        #expect(Lists.Detail.completed.defaultPreference == Lists.Detail.Preference(showCompleted: true))
+        #expect(Lists.Detail.all.defaultPreference == Lists.Detail.Preference(ordering: .dueDate, showCompleted: false))
     }
 
     @Test func `a title of only whitespace is blank for reminders and lists`() {
@@ -138,40 +50,19 @@ import Tagged
         #expect(!Reminder.List(id: Reminder.List.ID(UUID()), title: "Chores").isBlank)
     }
 
-    @Test func `moving reminders switches the detail to manual ordering`() {
-        var lists = Lists.sample(at: now)
-        let personal = Lists.Detail.list(lists.orderedLists[0].id)
-        lists.move(reminders: [3], to: 0, in: personal, at: now)
-        #expect(lists.preference(for: personal).ordering == .manual)
-        #expect(lists.reminders(in: personal, at: now).map(\.title).first == "Groceries")
-        lists.move(lists: [2], to: 0)
-        #expect(lists.orderedLists.map(\.title) == ["Business", "Personal", "Family"])
-    }
-
-    @Test func `search matches text and tag tokens and can clear completed matches`() {
-        var lists = Lists.sample(at: now)
-        var search = Lists.Search(text: "Take")
-        #expect(lists.matches(search).map(\.title) == ["Take out trash", "Take a walk"])
-        search.add(tag: "car")
-        #expect(search.text.isEmpty)
-        search.text = "Take"
-        #expect(lists.matches(search).map(\.title) == ["Take a walk"])
-        #expect(lists.tagSuggestions(for: Lists.Search(text: "#so")).map(\.title) == ["social", "someday"])
-        // Typing a tag prefix shows suggestions, not every reminder.
-        #expect(lists.matches(Lists.Search(text: "#so")).isEmpty)
-        // Submitting the field commits the trimmed text as a token.
-        search = Lists.Search(text: " Take ")
+    @Test func `the search commits trimmed text as a token and leaves a tag prefix for the suggestions`() {
+        var search = Lists.Search(text: " Take ")
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text.isEmpty)
         search.text = "#so"
         search.commitText()
-        #expect(search.tokens == [.near("Take")] && search.text == "#so")
-        lists.deleteCompleted(matching: Lists.Search(text: "Take"), olderThanMonths: 12, at: now)
-        #expect(lists.reminders.count == 11)
-        lists.deleteCompleted(matching: Lists.Search(text: "Take"), olderThanMonths: 1, at: now)
-        #expect(lists.reminders.count == 10)
-        // Clear is scoped to the matches: completed reminders elsewhere stay.
-        #expect(lists.reminders.filter(\.completed).map(\.title) == ["Get laundry", "Send weekly emails"])
+        #expect(search.tokens == [.near("Take")] && search.text == "#so" && search.tagPrefix == "so")
+        // Typing a tag prefix alone names no reminders; with a token it does, on the tokens alone.
+        #expect(!Lists.Search(text: "#so").matchesReminders)
+        #expect(search.matchesReminders && search.matchedText.isEmpty)
+        search.add(tag: "car")
+        #expect(search.text.isEmpty && search.tags == ["car"] && search.isActive)
+        #expect(!Lists.Search().isActive)
     }
 
     @Test func `details round-trip through their identifiers`() {
@@ -184,39 +75,18 @@ import Tagged
         #expect(Reminder.List.Color(hex: 0x4a99ef).hex == 0x4a99ef)
     }
 
-    @Test func `inline editing starts a row, chains on return, and drops blank rows`() {
-        var lists = Lists.sample(at: now)
-        let personal = lists.orderedLists[0].id
-        let first = Reminder.ID(UUID())
-        lists.startNewReminder(in: personal, id: first)
-        #expect(lists.editing == first && lists.reminder(first)?.list == personal)
-        lists.continueEditing(id: Reminder.ID(UUID()))
-        #expect(lists.editing == nil && lists.reminder(first) == nil)
-        lists.startNewReminder(in: personal, id: first)
-        lists.upsert({ var r = lists.reminder(first)!; r.title = "Milk"; return r }())
-        let second = Reminder.ID(UUID())
-        lists.continueEditing(id: second)
-        #expect(lists.editing == second && lists.reminder(first)?.title == "Milk")
-        #expect(lists.reminder(second)?.position == lists.reminder(first)!.position + 1)
-        // The new row sits beneath its anchor under due-date ordering, and the anchor keeps its
-        // place while a date is set on it, until editing ends.
-        lists.set(ordering: .dueDate, for: .list(personal))
-        var shown = lists.reminders(in: .list(personal), at: now).map(\.id)
-        #expect(shown.firstIndex(of: second) == shown.firstIndex(of: first).map { $0 + 1 })
-        lists.edit(first)
-        let before = lists.reminders(in: .list(personal), at: now).map(\.id).firstIndex(of: first)
-        lists.upsert({ var r = lists.reminder(first)!; r.due = now.addingTimeInterval(-400_000); return r }())
-        shown = lists.reminders(in: .list(personal), at: now).map(\.id)
-        #expect(shown.firstIndex(of: first) == before)
-        lists.endEditing()
-        #expect(lists.reminders(in: .list(personal), at: now).first?.id == first)
-        lists.edit(first)
-        #expect(lists.editing == first && lists.reminder(second) == nil)
-        lists.endEditing()
-        #expect(lists.editing == nil && lists.reminder(first) != nil)
-        lists.delete(reminder: first)
-        lists.edit(first)
-        #expect(lists.editing == nil)
+    @Test func `a day is bounded by the calendar it is asked in`() {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        var tokyo = utc
+        tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        // 2009-02-13 23:31:30 UTC is already the 14th in Tokyo.
+        let day = Lists.day(containing: now, calendar: utc)
+        #expect(day.lowerBound == utc.date(from: DateComponents(year: 2009, month: 2, day: 13)))
+        #expect(day.upperBound == utc.date(from: DateComponents(year: 2009, month: 2, day: 14)))
+        let ahead = Lists.day(containing: now, calendar: tokyo)
+        #expect(ahead.lowerBound == tokyo.date(from: DateComponents(year: 2009, month: 2, day: 14)))
+        #expect(ahead.contains(now) && day.contains(now))
     }
 
     @Test func `date and time presets resolve against now`() {

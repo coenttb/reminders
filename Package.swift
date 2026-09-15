@@ -18,15 +18,13 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/TCA26.git", branch: "main", traits: ["Dependencies", "Clocks"]),
         .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
-        .package(url: "https://github.com/pointfreeco/swift-issue-reporting", from: "2.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
-        .package(url: "https://github.com/swift-molecules/swift-foundation-extensions.git", branch: "main"),
+        .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
     ],
     targets: [
         .target(
             name: "Reminders",
             dependencies: [
-                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -45,9 +43,9 @@ let package = Package(
                 "Reminders SQLiteData",
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "Tagged", package: "swift-tagged"),
-                .product(name: "IssueReporting", package: "swift-issue-reporting"),
             ]
         ),
         .testTarget(

@@ -13,6 +13,7 @@ extension Reminder {
         @Binding private var reminder: Reminder
         private var isNew: Bool
         private var isDirty: Bool
+        private var failure: String?
         private var lists: [Reminder.List]
         private var tags: [Tag]
         private var now: Date
@@ -30,6 +31,7 @@ extension Reminder {
             reminder: Binding<Reminder>,
             isNew: Bool = true,
             isDirty: Bool = false,
+            failure: String? = nil,
             lists: [Reminder.List],
             tags: [Tag],
             now: Date,
@@ -42,6 +44,7 @@ extension Reminder {
             self._reminder = reminder
             self.isNew = isNew
             self.isDirty = isDirty
+            self.failure = failure
             self.lists = lists
             self.tags = tags
             self.now = now
@@ -97,6 +100,9 @@ extension Reminder.Form {
                         Label("Repeat", systemImage: "repeat").foregroundStyle(.primary, .secondary)
                     }
                 }
+            }
+            if let failure {
+                Section { Text(failure).foregroundStyle(.red) } header: { Text("Not saved") }
             }
             if isNew {
                 Section("More Options") { listPicker }
