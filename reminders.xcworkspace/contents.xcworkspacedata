@@ -6,5 +6,5 @@
       <FileRef location="group:reminders-apple"/>
    </Group>
    <FileRef location="group:../accessory"/>
-   <FileRef location="group:../../../pointfreeco/TCA26"/>
+   <FileRef location="group:../../pointfreeco/TCA26"/>
 </Workspace>
