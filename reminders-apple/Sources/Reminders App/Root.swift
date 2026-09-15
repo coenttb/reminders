@@ -62,15 +62,6 @@ extension Root {
             .listStyle(.insetGrouped)
             .contentMargins(.bottom, 72, for: .scrollContent)
             .animation(.default, value: store.overview)
-            .searchable(text: $store.search.text, tokens: $store.search.tokens) { token in
-                switch token {
-                case let .near(text): Text(text)
-                case let .tag(tag): Text(Tag<Reminder>.hashtag(tag))
-                }
-            }
-            // The field lives in the bottom bar and minimizes to a pill; the system
-            // owns its keyboard attachment and, on iPhone Duo, its bar placement.
-            .searchToolbarBehavior(.minimize)
             .onSubmit(of: .search) { store.send(.searchSubmitted) }
             .toolbar {
                 #if DEBUG
@@ -95,6 +86,18 @@ extension Root {
                 Detail(filter, store: store)
             }
         }
+        // Search is declared on the stack, not on the list inside it, as in the iOS 26
+        // samples: declared on the content, SwiftUI vends the field from a second
+        // navigation item and cancelling evicts the list's rows behind the keyboard.
+        // The field lives in the bottom bar and minimizes to a pill; the system
+        // owns its keyboard attachment and, on iPhone Duo, its bar placement.
+        .searchable(text: $store.search.text, tokens: $store.search.tokens) { token in
+            switch token {
+            case let .near(text): Text(text)
+            case let .tag(tag): Text(Tag<Reminder>.hashtag(tag))
+            }
+        }
+        .searchToolbarBehavior(.minimize)
         .observingDivision()
         .sheet(item: $store.scope(\.destination).reminder) { form in
             @Bindable var form = form
