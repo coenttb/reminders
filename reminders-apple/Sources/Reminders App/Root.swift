@@ -61,7 +61,7 @@ extension Root {
             .searchable(text: $store.search.text, tokens: $store.search.tokens) { token in
                 switch token {
                 case let .near(text): Text(text)
-                case let .tag(tag): Text("#\(tag)")
+                case let .tag(tag): Text("#\(tag.rawValue)")
                 }
             }
             // The field lives in the bottom bar and minimizes to a pill; the system

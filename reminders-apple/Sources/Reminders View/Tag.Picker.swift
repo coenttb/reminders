@@ -61,7 +61,7 @@ extension Tag.Picker {
                 }
             }
         }
-        .alert(editing == nil ? "New tag" : "Edit tag", isPresented: $adding) {
+        .alert("New tag", isPresented: $adding) {
             TextField("Tag name", text: $title)
             Button("Save") { add(title) }
             Button("Cancel", role: .cancel) {}

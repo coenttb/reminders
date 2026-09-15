@@ -1,4 +1,3 @@
-public import Foundation
 public import Reminders
 public import SQLiteData
 public import Tagged

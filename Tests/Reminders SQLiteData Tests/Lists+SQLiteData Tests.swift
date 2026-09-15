@@ -49,6 +49,23 @@ import Tagged
         #expect(stored?.reminders.filter { $0.tags.contains("Social") }.count == 3)
     }
 
+    @Test func `a deleted list takes its rows with it and a preference for an unknown detail is dropped on load`() throws {
+        let database = try DatabaseQueue()
+        try Lists.migrate(database)
+        var lists = Lists.sample(at: now)
+        try database.write { db in try Lists.seed(lists, in: db) }
+        let business = lists.orderedLists[2].id
+        lists.delete(list: business)
+        try database.write { db in try Lists.persist(lists, in: db) }
+        #expect(try database.read { db in try Lists.load(db) } == lists)
+        #expect(try database.read { db in try Reminder.Record.where { $0.listID.eq(business) }.fetchCount(db) } == 0)
+        #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == lists.reminders.reduce(0) { $0 + $1.tags.count })
+        try database.write { db in
+            try Lists.Detail.Preference.Record.insert { Lists.Detail.Preference.Record(detailID: "nothing", Lists.Detail.Preference()) }.execute(db)
+        }
+        #expect(try database.read { db in try Lists.load(db) }?.preferences.isEmpty == true)
+    }
+
     @Test func `persisting an unchanged value writes nothing and a changed row writes only itself`() throws {
         let database = try DatabaseQueue()
         try Lists.migrate(database)

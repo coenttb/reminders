@@ -75,7 +75,8 @@ extension Lists {
             lists: try Reminder.List.Record.order(by: \.position).fetchAll(db).map(\.list),
             reminders: try Reminder.Record.order(by: \.position).fetchAll(db).map { $0.reminder(tags: tagsByReminder[$0.id] ?? []) },
             tags: Set(try Tag.Record.all.fetchAll(db).map(\.tag)),
-            preferences: Dictionary(uniqueKeysWithValues: try Lists.Detail.Preference.Record.all.fetchAll(db).map { ($0.detailID, $0.preference) }),
+            // A key no detail answers to, left by an older schema, is noise and stays behind.
+            preferences: Dictionary(uniqueKeysWithValues: try Lists.Detail.Preference.Record.all.fetchAll(db).filter { Lists.Detail(id: $0.detailID) != nil }.map { ($0.detailID, $0.preference) }),
             detail: state.detail.flatMap(Lists.Detail.init(id:)),
             editing: state.editing
         )

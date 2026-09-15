@@ -150,7 +150,7 @@ extension Reminder.Editor {
             ForEach(Reminder.TimePreset.allCases, id: \.self) { preset in
                 Button { actions.setTime(reminder.id, preset) } label: {
                     let current = reminder.hasTime && reminder.due.map { Calendar.current.component(.hour, from: $0) == preset.hour && Calendar.current.component(.minute, from: $0) == 0 } == true
-                    Text(String(format: "%02d:00", preset.hour))
+                    Text(preset.hour.formatted(.number.precision(.integerLength(2))) + ":00")
                     Text(preset.title)
                     Image(systemName: current ? "checkmark" : "clock")
                 }

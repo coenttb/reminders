@@ -97,6 +97,32 @@ import Tagged
         #expect(lists.matches(Lists.Search(text: "Take")).first?.id == trash)
     }
 
+    @Test func `tags rank by use, a tag detail narrows and closes as its tags go, and text matches notes and tags`() {
+        var lists = Lists.sample(at: now)
+        #expect(lists.rankedTags.prefix(3).map(\.title) == ["social", "adulting", "optional"])
+        lists.detail = .tags(["car", "kids"])
+        lists.delete(tag: "car")
+        #expect(lists.detail == .tags(["kids"]))
+        lists.delete(tag: "kids")
+        #expect(lists.detail == nil)
+        let groceries = lists.reminders[0]
+        #expect(groceries.matches("oatmeal") && groceries.matches("ADULT") && !groceries.matches("payroll"))
+        let haircut = lists.reminders[1]
+        #expect(haircut.pastDue(at: now, calendar: calendar) && !groceries.pastDue(at: now, calendar: calendar))
+        #expect(!lists.reminders[3].pastDue(at: now, calendar: calendar))
+    }
+
+    @Test func `a new list takes the last position and lists move as SwiftUI moves them`() {
+        var lists = Lists.sample(at: now)
+        lists.upsert(Reminder.List(id: Reminder.List.ID(UUID()), title: "Chores"))
+        #expect(lists.orderedLists.map(\.title) == ["Personal", "Family", "Business", "Chores"])
+        // Down: the moved element lands before the element at the destination, as `move(fromOffsets:toOffset:)` does.
+        lists.move(lists: [0], to: 3)
+        #expect(lists.orderedLists.map(\.title) == ["Family", "Business", "Personal", "Chores"])
+        lists.move(lists: [3], to: 0)
+        #expect(lists.orderedLists.map(\.title) == ["Chores", "Family", "Business", "Personal"])
+    }
+
     @Test func `a title of only whitespace is blank for reminders and lists`() {
         #expect(Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: " \n").isBlank)
         #expect(Reminder.List(id: Reminder.List.ID(UUID()), title: " \n").isBlank)

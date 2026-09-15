@@ -1,6 +1,5 @@
 public import Foundation
 public import Reminders
-public import SwiftUI
 
 extension Reminder {
     /// The due date as iOS 27 Reminders words it: Today, Tomorrow, Yesterday, a weekday
