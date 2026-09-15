@@ -1,5 +1,6 @@
 public import Foundation
 public import Reminders
+public import Reminders_Application
 public import SwiftUI
 
 extension Reminder {
@@ -15,7 +16,7 @@ extension Reminder {
     /// in the title, the circle, and Details are intents the caller decides.
     public struct Editor: SwiftUI.View {
         @Binding private var reminder: Reminder
-        private var color: Color
+        private var color: SwiftUI.Color
         private var now: Date
         private var calendar: Calendar
         private var focus: FocusState<Reminder.Focus?>.Binding
@@ -23,7 +24,7 @@ extension Reminder {
 
         public init(
             reminder: Binding<Reminder>,
-            color: Color,
+            color: SwiftUI.Color,
             now: Date,
             calendar: Calendar,
             focus: FocusState<Reminder.Focus?>.Binding,
@@ -46,15 +47,15 @@ extension Reminder.Editor {
         public var complete: (Reminder.ID) -> Void
         public var details: (Reminder.ID) -> Void
         public var submit: () -> Void
-        public var setDate: (Reminder.ID, Reminder.DatePreset?) -> Void
-        public var setTime: (Reminder.ID, Reminder.TimePreset?) -> Void
+        public var setDate: (Reminder.ID, Reminder.Due.Preset?) -> Void
+        public var setTime: (Reminder.ID, Reminder.Due.Preset.Time?) -> Void
 
         public init(
             complete: @escaping (Reminder.ID) -> Void,
             details: @escaping (Reminder.ID) -> Void,
             submit: @escaping () -> Void,
-            setDate: @escaping (Reminder.ID, Reminder.DatePreset?) -> Void,
-            setTime: @escaping (Reminder.ID, Reminder.TimePreset?) -> Void
+            setDate: @escaping (Reminder.ID, Reminder.Due.Preset?) -> Void,
+            setTime: @escaping (Reminder.ID, Reminder.Due.Preset.Time?) -> Void
         ) {
             self.complete = complete
             self.details = details
@@ -70,7 +71,7 @@ extension Reminder.Editor {
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(reminder.completed ? color : Color(.systemGray3))
+                    .foregroundStyle(reminder.completed ? color : SwiftUI.Color(.systemGray3))
                     .font(.title2)
             }
             .buttonStyle(.borderless)
@@ -110,12 +111,12 @@ extension Reminder.Editor {
         // clipped to the row, which cut the shadow and the corners.
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.systemBackground))
+                .fill(SwiftUI.Color(.systemBackground))
                 .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
         )
         .listRowInsets(EdgeInsets(top: 8, leading: 6, bottom: 14, trailing: 6))
         .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
+        .listRowBackground(SwiftUI.Color.clear)
         // Moving on to the note with no title names the reminder, as the stock app does.
         .onChange(of: focus.wrappedValue) { _, focus in
             if focus == .notes(reminder.id), reminder.isBlank { reminder.title = "New Reminder" }
@@ -126,16 +127,16 @@ extension Reminder.Editor {
         Menu {
             Button { actions.setDate(reminder.id, nil) } label: { checked("None", reminder.due == nil) }
             Divider()
-            ForEach(Reminder.DatePreset.allCases, id: \.self) { preset in
+            ForEach(Reminder.Due.Preset.allCases, id: \.self) { preset in
                 Button { actions.setDate(reminder.id, preset) } label: {
-                    let current = reminder.due.map { calendar.isDate($0, inSameDayAs: preset.date(at: now, calendar: calendar)) } ?? false
+                    let current = reminder.due.map { calendar.isDate($0.date, inSameDayAs: preset.date(at: now, calendar: calendar)) } ?? false
                     Label(preset.title, systemImage: current ? "checkmark" : "calendar")
                 }
             }
             Button("Custom", systemImage: "ellipsis") { actions.details(reminder.id) }
         } label: {
             chip(tinted: reminder.due != nil) {
-                if let day = reminder.dayDescription(at: now, calendar: calendar) {
+                if let day = reminder.due?.dayDescription(at: now, calendar: calendar) {
                     Label(day, systemImage: "calendar")
                 } else {
                     Label("Date", systemImage: "calendar").labelStyle(.iconOnly)
@@ -148,11 +149,11 @@ extension Reminder.Editor {
 
     private var timeChip: some SwiftUI.View {
         Menu {
-            Button { actions.setTime(reminder.id, nil) } label: { checked("None", !reminder.hasTime) }
+            Button { actions.setTime(reminder.id, nil) } label: { checked("None", reminder.due?.hasTime != true) }
             Divider()
-            ForEach(Reminder.TimePreset.allCases, id: \.self) { preset in
+            ForEach(Reminder.Due.Preset.Time.allCases, id: \.self) { preset in
                 Button { actions.setTime(reminder.id, preset) } label: {
-                    let current = reminder.hasTime && reminder.due.map { calendar.component(.hour, from: $0) == preset.hour && calendar.component(.minute, from: $0) == 0 } == true
+                    let current = reminder.due.map { $0.hasTime && calendar.component(.hour, from: $0.date) == preset.hour && calendar.component(.minute, from: $0.date) == 0 } == true
                     Text(preset.description(on: now, calendar: calendar) ?? preset.title)
                     Text(preset.title)
                     Image(systemName: current ? "checkmark" : "clock")
@@ -160,8 +161,8 @@ extension Reminder.Editor {
             }
             Button("Custom", systemImage: "ellipsis") { actions.details(reminder.id) }
         } label: {
-            chip(tinted: reminder.hasTime) {
-                if let time = reminder.timeDescription() {
+            chip(tinted: reminder.due?.hasTime == true) {
+                if let time = reminder.due?.timeDescription(calendar: calendar) {
                     Label(time, systemImage: "clock")
                 } else {
                     Label("Time", systemImage: "clock").labelStyle(.iconOnly)
@@ -228,7 +229,7 @@ extension Reminder.Editor {
             .padding(.horizontal, tinted ? 10 : 8)
             .frame(height: 36)
             .frame(minWidth: 36)
-            .background(tinted ? color.opacity(0.15) : Color(.tertiarySystemFill), in: .capsule)
+            .background(tinted ? color.opacity(0.15) : SwiftUI.Color(.tertiarySystemFill), in: .capsule)
             .contentShape(.capsule)
     }
 }

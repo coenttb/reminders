@@ -1,14 +1,19 @@
 public import Foundation
+public import Organizing
 public import Reminders
 public import SQLiteData
 public import Tagged
 
 extension Reminder {
-    /// The stored form of a reminder; tags are rows of `Reminder.Tagging`.
+    /// The stored form of a reminder; tags are rows of `Reminder.Tagging`. A due date is the
+    /// `due` and `hasTime` columns. The `status` column encodes the completion together with
+    /// the grace period: 0 incomplete, 1 completed, 2 completed but pending, so a database
+    /// from before the grace period left the domain reads unchanged; the pending members are
+    /// read through `Reminder.Completion.Pending.Request`.
     @Table("reminders")
     public struct Record: Identifiable, Sendable {
         public let id: Reminder.ID
-        public var listID: Reminder.List.ID
+        public var listID: List<Reminder>.ID
         public var title = ""
         public var notes = ""
         public var due: Date?
@@ -25,11 +30,11 @@ extension Reminder {
             listID = reminder.list
             title = reminder.title
             notes = reminder.notes
-            due = reminder.due
-            hasTime = reminder.hasTime
+            due = reminder.due?.date
+            hasTime = reminder.due?.hasTime ?? false
             flagged = reminder.flagged
             priority = reminder.priority?.rawValue
-            status = reminder.status.rawValue
+            status = Self.status(reminder.completion)
             position = reminder.position
             location = reminder.location?.rawValue
             repeats = reminder.repeats.rawValue
@@ -41,9 +46,9 @@ extension Reminder {
     @Table("remindersTags")
     public struct Tagging: Sendable {
         public var reminderID: Reminder.ID
-        public var tagID: Tag.ID
+        public var tagID: Tag<Reminder>.ID
 
-        public init(reminderID: Reminder.ID, tagID: Tag.ID) {
+        public init(reminderID: Reminder.ID, tagID: Tag<Reminder>.ID) {
             self.reminderID = reminderID
             self.tagID = tagID
         }
@@ -51,17 +56,29 @@ extension Reminder {
 }
 
 extension Reminder.Record {
-    public func reminder(tags: Set<Tag.ID>) -> Reminder {
+    static let incomplete = 0
+    static let completed = 1
+    static let pending = 2
+
+    static func status(_ completion: Reminder.Completion) -> Int {
+        completion == .completed ? completed : incomplete
+    }
+
+    /// Pending counts as completed everywhere but the grace timer.
+    static func completion(_ status: Int) -> Reminder.Completion {
+        status == incomplete ? .incomplete : .completed
+    }
+
+    public func reminder(tags: Set<Tag<Reminder>.ID>) -> Reminder {
         Reminder(
             id: id,
             list: listID,
             title: title,
             notes: notes,
-            due: due,
-            hasTime: hasTime,
+            due: due.map { Reminder.Due($0, hasTime: hasTime) },
             flagged: flagged,
             priority: priority.flatMap(Reminder.Priority.init(rawValue:)),
-            status: Reminder.Status(rawValue: status) ?? .incomplete,
+            completion: Self.completion(status),
             tags: tags,
             position: position,
             location: location.flatMap(Reminder.Location.init(rawValue:)),

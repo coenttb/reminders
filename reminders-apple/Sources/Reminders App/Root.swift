@@ -1,7 +1,9 @@
 import SwiftUI_Extensions
 public import ComposableArchitecture2
 import Dependencies
+import Organizing
 public import Reminders
+import Reminders_Application
 public import Reminders_Feature
 import Reminders_View
 public import SwiftUI
@@ -12,12 +14,12 @@ import Tagged
 /// chrome follows iOS 27 Reminders: no home title, glass pills top-trailing,
 /// the search field and New Reminder in the bottom bar, sheets with glyph buttons.
 public struct Root: View {
-    @Bindable private var store: StoreOf<Lists.Feature>
+    @Bindable private var store: StoreOf<Reminder.Feature>
     @Dependency(\.date.now) private var now
     @Dependency(\.calendar) private var calendar
     @Environment(\.scenePhase) private var scenePhase
 
-    public init(store: StoreOf<Lists.Feature>) {
+    public init(store: StoreOf<Reminder.Feature>) {
         self.store = store
     }
 }
@@ -34,22 +36,22 @@ extension Root {
 
     public var body: some View {
         NavigationStack {
-            List {
+            SwiftUI.List {
                 if store.search.isActive {
-                    Lists.Search.View(
+                    Reminder.Search.View(
                         store.search,
                         results: store.results,
                         now: now,
-                    calendar: calendar,
+                        calendar: calendar,
                         rows: rows,
                         addTag: { store.send(.searchTagTapped($0)) },
                         toggleCompleted: { store.send(.searchCompletedButtonTapped) },
                         deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) }
                     )
                 } else {
-                    Lists.View(
-                        home: store.home,
-                        open: { store.send(.statTapped($0)) },
+                    Reminder.Overview.View(
+                        store.overview,
+                        open: { store.send(.filterTapped($0)) },
                         details: { store.send(.listDetailsButtonTapped($0)) },
                         delete: { store.send(.listDeleted($0)) },
                         move: { store.send(.listsMoved($0, $1)) },
@@ -59,11 +61,11 @@ extension Root {
             }
             .listStyle(.insetGrouped)
             .contentMargins(.bottom, 72, for: .scrollContent)
-            .animation(.default, value: store.home)
+            .animation(.default, value: store.overview)
             .searchable(text: $store.search.text, tokens: $store.search.tokens) { token in
                 switch token {
                 case let .near(text): Text(text)
-                case let .tag(tag): Text(Tag.hashtag(tag))
+                case let .tag(tag): Text(Tag<Reminder>.hashtag(tag))
                 }
             }
             // The field lives in the bottom bar and minimizes to a pill; the system
@@ -89,8 +91,8 @@ extension Root {
                 }
                 .visibilityPriority(.high)
             }
-            .navigationDestination(item: $store.detail) { detail in
-                Detail(detail, store: store)
+            .navigationDestination(item: $store.filter) { filter in
+                Detail(filter, store: store)
             }
         }
         .observingDivision()
@@ -102,8 +104,8 @@ extension Root {
                     isNew: form.isNew,
                     isDirty: form.isDirty,
                     failure: form.failure,
-                    lists: store.home.lists.map(\.list),
-                    tags: store.home.rankedTags,
+                    lists: store.overview.lists.map(\.list),
+                    tags: store.overview.rankedTags,
                     now: now,
                     calendar: calendar,
                     addTag: { form.send(.tagAdded($0)) },
@@ -123,7 +125,7 @@ extension Root {
         .sheet(item: $store.scope(\.destination).list) { form in
             @Bindable var form = form
             NavigationStack {
-                Reminder.List.Form(list: $form.list, isNew: form.isNew, isDirty: form.isDirty, failure: form.failure, save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
+                Organizing.List<Reminder>.Form(list: $form.list, isNew: form.isNew, isDirty: form.isDirty, failure: form.failure, save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
                     .navigationTitle(form.isNew ? "New List" : "List Info")
             }
             .interactiveDismissDisabled(form.isDirty)

@@ -1,4 +1,5 @@
 import Foundation
+public import Organizing
 public import Reminders
 import Standard_Library_Extensions
 public import SwiftUI
@@ -15,13 +16,13 @@ extension Reminder {
         private var isNew: Bool
         private var isDirty: Bool
         private var failure: String?
-        private var lists: [Reminder.List]
-        private var tags: [Tag]
+        private var lists: [Organizing.List<Reminder>]
+        private var tags: [Tag<Reminder>]
         private var now: Date
         private var calendar: Calendar
         private var addTag: (String) -> Void
-        private var renameTag: (Tag.ID, String) -> Void
-        private var deleteTag: (Tag.ID) -> Void
+        private var renameTag: (Tag<Reminder>.ID, String) -> Void
+        private var deleteTag: (Tag<Reminder>.ID) -> Void
         private var save: () -> Void
         private var cancel: () -> Void
         @State private var tagsPresented = false
@@ -34,13 +35,13 @@ extension Reminder {
             isNew: Bool = true,
             isDirty: Bool = false,
             failure: String? = nil,
-            lists: [Reminder.List],
-            tags: [Tag],
+            lists: [Organizing.List<Reminder>],
+            tags: [Tag<Reminder>],
             now: Date,
             calendar: Calendar,
             addTag: @escaping (String) -> Void,
-            renameTag: @escaping (Tag.ID, String) -> Void,
-            deleteTag: @escaping (Tag.ID) -> Void,
+            renameTag: @escaping (Tag<Reminder>.ID, String) -> Void,
+            deleteTag: @escaping (Tag<Reminder>.ID) -> Void,
             save: @escaping () -> Void,
             cancel: @escaping () -> Void
         ) {
@@ -77,21 +78,21 @@ extension Reminder.Form {
             }
             Section("Date & Time") {
                 Toggle(isOn: $reminder.dueOn(now, calendar: calendar).animation()) {
-                    row("Date", systemImage: "calendar", subtitle: reminder.dayDescription(at: now, calendar: calendar)) {
+                    row("Date", systemImage: "calendar", subtitle: reminder.due?.dayDescription(at: now, calendar: calendar)) {
                         if reminder.due != nil { expanded = expanded == .date ? nil : .date }
                     }
                 }
                 if expanded == .date, let due = reminder.due {
-                    DatePicker("Date", selection: $reminder.due[or: due], displayedComponents: .date)
+                    DatePicker("Date", selection: $reminder.date(or: due.date), displayedComponents: .date)
                         .datePickerStyle(.graphical)
                 }
                 Toggle(isOn: $reminder.timeOn(now, calendar: calendar).animation()) {
-                    row("Time", systemImage: "clock", subtitle: reminder.timeDescription()) {
-                        if reminder.hasTime { expanded = expanded == .time ? nil : .time }
+                    row("Time", systemImage: "clock", subtitle: reminder.due?.timeDescription(calendar: calendar)) {
+                        if reminder.due?.hasTime == true { expanded = expanded == .time ? nil : .time }
                     }
                 }
-                if expanded == .time, reminder.hasTime, let due = reminder.due {
-                    DatePicker("Time", selection: $reminder.due[or: due], displayedComponents: .hourAndMinute)
+                if expanded == .time, let due = reminder.due, due.hasTime {
+                    DatePicker("Time", selection: $reminder.date(or: due.date), displayedComponents: .hourAndMinute)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                 }
@@ -147,7 +148,7 @@ extension Reminder.Form {
             expanded = on ? .date : nil
             titleFocused = false
         }
-        .onChange(of: reminder.hasTime) { _, on in
+        .onChange(of: reminder.due?.hasTime == true) { _, on in
             expanded = on ? .time : nil
             titleFocused = false
         }
@@ -179,13 +180,13 @@ extension Reminder.Form {
     private var listPicker: some SwiftUI.View {
         Picker(selection: $reminder.list) {
             ForEach(lists) { list in
-                Label { Text(list.title) } icon: { Reminder.List.Badge(color: list.color.swiftUI, size: 28) }.tag(list.id)
+                Label { Text(list.title) } icon: { Organizing.List<Reminder>.Badge(color: list.color.swiftUI, size: 28) }.tag(list.id)
             }
         } label: {
             Label {
                 Text("List")
             } icon: {
-                Reminder.List.Badge(color: lists.first(id: reminder.list)?.color.swiftUI ?? .blue, size: 28)
+                Organizing.List<Reminder>.Badge(color: lists.first(id: reminder.list)?.color.swiftUI ?? .blue, size: 28)
             }
         }
         .pickerStyle(.navigationLink)
@@ -195,9 +196,7 @@ extension Reminder.Form {
         Picker(selection: $reminder.priority) {
             Text("None").tag(Reminder.Priority?.none)
             Divider()
-            Text("High").tag(Reminder.Priority.high)
-            Text("Medium").tag(Reminder.Priority.medium)
-            Text("Low").tag(Reminder.Priority.low)
+            ForEach(Reminder.Priority.allCases.reversed(), id: \.self) { Text($0.title).tag(Optional($0)) }
         } label: {
             Label("Priority", systemImage: "exclamationmark").foregroundStyle(.primary, .secondary)
         }
@@ -205,7 +204,7 @@ extension Reminder.Form {
             LabeledContent {
                 HStack(spacing: 6) {
                     if !reminder.tags.isEmpty {
-                        Text(reminder.hashtags).lineLimit(1).truncationMode(.tail)
+                        Text(reminder.tagLine).lineLimit(1).truncationMode(.tail)
                     }
                     Image(systemName: "chevron.forward").font(.footnote.weight(.semibold))
                 }
@@ -216,7 +215,7 @@ extension Reminder.Form {
         .foregroundStyle(.primary)
         .popover(isPresented: $tagsPresented) {
             NavigationStack {
-                Tag.Picker(selection: $reminder.tags, tags: tags, add: addTag, rename: renameTag, delete: deleteTag)
+                Tag<Reminder>.Picker(selection: $reminder.tags, tags: tags, add: addTag, rename: renameTag, delete: deleteTag)
             }
         }
         Toggle(isOn: $reminder.flagged) {
@@ -242,20 +241,20 @@ extension Reminder {
 
     /// The Time row: on proposes the next full hour and turns the date on with it.
     fileprivate subscript(timeOn now: Date, calendar calendar: Calendar) -> Bool {
-        get { hasTime }
+        get { due?.hasTime == true }
         set { set(hasTime: newValue, at: now, calendar: calendar) }
+    }
+
+    /// The pickers edit the due date's moment, keeping whether the time matters.
+    fileprivate subscript(date fallback: Date) -> Date {
+        get { due?.date ?? fallback }
+        set { set(due: newValue) }
     }
 }
 
 extension Binding<Reminder> {
-    /// The toggles as key-path projections of the draft, so SwiftUI keeps their transaction.
+    /// The toggles and pickers as key-path projections of the draft, so SwiftUI keeps their transaction.
     fileprivate func dueOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now, calendar: calendar]] }
     fileprivate func timeOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now, calendar: calendar]] }
-}
-
-extension Optional {
-    fileprivate subscript(or fallback: Wrapped) -> Wrapped {
-        get { self ?? fallback }
-        set { self = newValue }
-    }
+    fileprivate func date(or fallback: Date) -> Binding<Date> { self[dynamicMember: \.[date: fallback]] }
 }

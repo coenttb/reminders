@@ -14,6 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/coenttb/reminders", branch: "main"),
+        .package(url: "https://github.com/coenttb/organizing", branch: "main"),
         .package(url: "https://github.com/pointfreeco/TCA26.git", branch: "main", traits: ["Dependencies", "Clocks"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
@@ -27,6 +28,8 @@ let package = Package(
             name: "Reminders View",
             dependencies: [
                 .product(name: "Reminders", package: "reminders"),
+                .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Organizing", package: "organizing"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -37,7 +40,9 @@ let package = Package(
             name: "Reminders App",
             dependencies: [
                 .product(name: "Reminders", package: "reminders"),
+                .product(name: "Reminders Application", package: "reminders"),
                 .product(name: "Reminders Feature", package: "reminders"),
+                .product(name: "Organizing", package: "organizing"),
                 "Reminders View",
                 .product(name: "SwiftUI Extensions", package: "swiftui-extensions"),
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
@@ -50,7 +55,11 @@ let package = Package(
             name: "Reminders View Tests",
             dependencies: [
                 "Reminders View",
+                .product(name: "Reminders", package: "reminders"),
+                .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Organizing", package: "organizing"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
+                .product(name: "Tagged", package: "swift-tagged"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
@@ -58,6 +67,10 @@ let package = Package(
             name: "Reminders App Tests",
             dependencies: [
                 "Reminders App",
+                .product(name: "Reminders", package: "reminders"),
+                .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Feature", package: "reminders"),
+                .product(name: "Organizing", package: "organizing"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
             ],

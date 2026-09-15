@@ -1,22 +1,24 @@
 public import Foundation
+import Organizing
 public import Reminders
+public import Reminders_Application
 public import SQLiteData
 import Standard_Library_Extensions
 import Tagged
 
 extension Reminder.Record.TableColumns {
-    /// Completing counts as completed everywhere but the grace timer.
+    /// Pending counts as completed everywhere but the grace timer.
     public var isCompleted: some QueryExpression<Bool> {
-        status.neq(Reminder.Status.incomplete.rawValue)
+        status.neq(Reminder.Record.incomplete)
     }
 
-    public var isCompleting: some QueryExpression<Bool> {
-        status.eq(Reminder.Status.completing.rawValue)
+    public var isPending: some QueryExpression<Bool> {
+        status.eq(Reminder.Record.pending)
     }
 
     /// Fully completed: the grace period is over.
     public var isDone: some QueryExpression<Bool> {
-        status.eq(Reminder.Status.completed.rawValue)
+        status.eq(Reminder.Record.completed)
     }
 
     public var isScheduled: some QueryExpression<Bool> {
@@ -29,9 +31,9 @@ extension Reminder.Record.TableColumns {
         !isCompleted && #sql("coalesce(\(due) >= \(day.lowerBound) AND \(due) < \(day.upperBound), 0)")
     }
 
-    /// Whether the reminder belongs to a detail; `today` is the day the detail of that name shows.
-    public func belongs(to detail: Lists.Detail, today: Range<Date>) -> SQLQueryExpression<Bool> {
-        switch detail {
+    /// Whether the reminder belongs to a filter; `today` is the day the filter of that name shows.
+    public func belongs(to filter: Reminder.Filter, today: Range<Date>) -> SQLQueryExpression<Bool> {
+        switch filter {
         case .all: SQLQueryExpression("1")
         case .completed: SQLQueryExpression("\(isCompleted)")
         case .flagged: SQLQueryExpression("\(flagged)")
@@ -50,13 +52,13 @@ extension Reminder.Record.TableColumns {
     }
 
     /// Whether the reminder carries the tag.
-    fileprivate func carries(_ tag: Tag.ID) -> some QueryExpression<Bool> {
+    fileprivate func carries(_ tag: Tag<Reminder>.ID) -> some QueryExpression<Bool> {
         Reminder.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(tag) }.exists()
     }
 
     /// Whether the reminder matches every term of a search; a search that names no reminders
     /// (nothing typed, or a tag prefix alone) matches none.
-    public func matches(_ search: Lists.Search) -> SQLQueryExpression<Bool> {
+    public func matches(_ search: Reminder.Search) -> SQLQueryExpression<Bool> {
         guard search.matchesReminders else { return SQLQueryExpression("0") }
         var predicate = SQLQueryExpression<Bool>(search.matchedText.isEmpty ? "1" : "(\(matches(search.matchedText)))")
         for token in search.tokens {
@@ -73,7 +75,7 @@ extension Reminder.Record.TableColumns {
     public var tagList: some QueryExpression<String?> {
         Reminder.Tagging
             .where { $0.reminderID.eq(id) }
-            .join(Tag.Record.all) { $0.tagID.text.eq($1.title) }
+            .join(Tag<Reminder>.Record.all) { $0.tagID.text.eq($1.title) }
             .select { $1.title.groupConcat(Reminder.Record.tagSeparator, order: $1.title) }
     }
 }
@@ -81,8 +83,8 @@ extension Reminder.Record.TableColumns {
 extension Reminder.Record {
     static let tagSeparator = String(Character.unitSeparator)
 
-    static func tags(from list: String?) -> Set<Tag.ID> {
-        Set((list ?? "").split(separator: tagSeparator).map { Tag.ID(String($0)) })
+    static func tags(from list: String?) -> Set<Tag<Reminder>.ID> {
+        Set((list ?? "").split(separator: tagSeparator).map { Tag<Reminder>.ID(String($0)) })
     }
 }
 
@@ -99,10 +101,10 @@ extension Reminder.Record.TableColumns {
     }
 
     /// The ordering a preference asks for, ties broken by position as the manual order has it.
-    /// Completed reminders sort last only when the detail shows them; one in its grace period
+    /// Completed reminders sort last only when the filter shows them; one in its grace period
     /// keeps its place, so the tap can be undone.
-    public func ordered(by ordering: Lists.Ordering, showCompleted: Bool, placing place: Reminder? = nil) -> SQLQueryExpression<Bool> {
-        let due = placed(due, place?.due, of: place)
+    public func ordered(by ordering: Reminder.Ordering, showCompleted: Bool, placing place: Reminder? = nil) -> SQLQueryExpression<Bool> {
+        let due = placed(due, place?.due?.date, of: place)
         let position = placed(position, place?.position ?? 0, of: place)
         let priority = placed(priority, place?.priority?.rawValue, of: place)
         let flagged = placed(flagged, place?.flagged ?? false, of: place)
@@ -119,7 +121,7 @@ extension Reminder.Record.TableColumns {
     }
 }
 
-extension QueryExpression where QueryValue == Tag.ID {
+extension QueryExpression where QueryValue == Tag<Reminder>.ID {
     /// The tag's title as the text column it is stored in.
     var text: SQLQueryExpression<String> { SQLQueryExpression("\(self)") }
 }

@@ -1,6 +1,8 @@
 import ComposableArchitecture2
 import Dependencies
+import Organizing
 import Reminders
+import Reminders_Application
 import Reminders_Feature
 import Reminders_View
 import SwiftUI
@@ -11,22 +13,24 @@ extension Root {
     /// every change; a value view built inside the `navigationDestination` closure is not
     /// re-evaluated for later changes (the sort menu worked once, then the screen went stale).
     struct Detail: View {
-        private var detail: Lists.Detail
-        private var store: StoreOf<Lists.Feature>
+        private var filter: Reminder.Filter
+        private var store: StoreOf<Reminder.Feature>
         @Dependency(\.date.now) private var now
         @Dependency(\.calendar) private var calendar
         @Environment(\.scenePhase) private var scenePhase
 
-        init(_ detail: Lists.Detail, store: StoreOf<Lists.Feature>) {
-            self.detail = detail
+        init(_ filter: Reminder.Filter, store: StoreOf<Reminder.Feature>) {
+            self.filter = filter
             self.store = store
         }
 
         var body: some View {
             @Bindable var store = store
-            Lists.Detail.View(
+            // The detail is read a moment after the filter opens; until then the screen is empty.
+            let detail = store.detail ?? Reminder.Filter.Detail(filter: filter, preference: filter.defaultPreference)
+            Reminder.Filter.Detail.View(
                 detail,
-                contents: store.contents,
+                title: filter.title ?? list?.title ?? "",
                 editing: store.editing?.id,
                 now: now,
                 calendar: calendar,
@@ -49,6 +53,11 @@ extension Root {
 }
 
 extension Root.Detail {
+    /// The list a list filter shows, named by the overview.
+    private var list: Organizing.List<Reminder>? {
+        if case let .list(id) = filter { store.overview.list(id) } else { nil }
+    }
+
     /// A detail's rows edit in place on a tap.
     private var rows: Reminder.Row.Actions {
         Reminder.Row.Actions(

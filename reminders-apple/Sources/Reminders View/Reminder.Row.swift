@@ -1,5 +1,6 @@
 public import Foundation
 public import Reminders
+import Reminders_Application
 public import SwiftUI
 public import Tagged
 
@@ -10,12 +11,12 @@ extension Reminder {
     /// opens details; Details and Delete are the swipe actions, as in iOS 27.
     public struct Row: SwiftUI.View {
         private var reminder: Reminder
-        private var color: Color
+        private var color: SwiftUI.Color
         private var now: Date
         private var calendar: Calendar
         private var actions: Actions
 
-        public init(_ reminder: Reminder, color: Color, now: Date, calendar: Calendar, actions: Actions) {
+        public init(_ reminder: Reminder, color: SwiftUI.Color, now: Date, calendar: Calendar, actions: Actions) {
             self.reminder = reminder
             self.color = color
             self.now = now
@@ -52,7 +53,7 @@ extension Reminder.Row {
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(reminder.completed ? color : Color(.systemGray3))
+                    .foregroundStyle(reminder.completed ? color : SwiftUI.Color(.systemGray3))
                     .font(.title2)
             }
             .buttonStyle(.borderless)
@@ -94,14 +95,15 @@ extension Reminder.Row {
     }
 
     private var subtitle: Text? {
-        let due = reminder.dueDescription(at: now, calendar: calendar).map { text in
-            Text(text).foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? Color.red : Color.secondary)
+        let due = reminder.due.map { due in
+            Text(due.description(at: now, calendar: calendar))
+                .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI.Color.red : SwiftUI.Color.secondary)
         }
-        switch (due, reminder.hashtags.isEmpty) {
+        switch (due, reminder.tagLine.isEmpty) {
         case (nil, true): return nil
         case let (due?, true): return due
-        case (nil, false): return Text(reminder.hashtags)
-        case let (due?, false): return Text("\(due)  \(reminder.hashtags)")
+        case (nil, false): return Text(reminder.tagLine)
+        case let (due?, false): return Text("\(due)  \(reminder.tagLine)")
         }
     }
 }

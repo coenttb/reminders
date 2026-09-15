@@ -1,5 +1,7 @@
 public import Foundation
+public import Organizing
 public import Reminders
+public import Reminders_Application
 public import SQLiteData
 public import Tagged
 
@@ -9,31 +11,31 @@ extension Reminder.Record {
     public struct Row: Sendable {
         public let reminder: Reminder.Record
         public let tags: String?
-        public let color: Int64
+        public let color: Color.Hex
 
         public var value: Reminder { reminder.reminder(tags: Reminder.Record.tags(from: tags)) }
-        public var listColor: Reminder.List.Color { Reminder.List.Color(hex: color) }
+        public var listColor: Color { color.color }
     }
 
     /// Every reminder as a `Row`, joined to its list; narrow with `where`, `find`, and `order`
     /// before selecting, or apply them to the rows through the two-table closures.
-    public static var rows: Select<Row, Reminder.Record, Reminder.List.Record> {
+    public static var rows: Select<Row, Reminder.Record, List<Reminder>.Record> {
         Reminder.Record.all.rows()
     }
 
-    /// The circle tap: incomplete starts completing; completing or completed reverts to incomplete.
+    /// The circle tap: incomplete starts the grace period; pending or completed reverts to incomplete.
     public static func toggle(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
         Reminder.Record.find(id).update {
             $0.status = Case($0.status)
-                .when(Reminder.Status.incomplete.rawValue, then: Reminder.Status.completing.rawValue)
-                .else(Reminder.Status.incomplete.rawValue)
+                .when(Reminder.Record.incomplete, then: Reminder.Record.pending)
+                .else(Reminder.Record.incomplete)
         }
     }
 
-    /// The grace timer elapsed: every reminder still completing is now completed. One that was
+    /// The grace timer elapsed: every reminder still pending is now completed. One that was
     /// reverted meanwhile is incomplete and untouched; one deleted meanwhile is simply absent.
-    public static var completeCompleting: UpdateOf<Reminder.Record> {
-        Reminder.Record.where { $0.isCompleting }.update { $0.status = Reminder.Status.completed.rawValue }
+    public static var completePending: UpdateOf<Reminder.Record> {
+        Reminder.Record.where { $0.isPending }.update { $0.status = Reminder.Record.completed }
     }
 
     /// Puts a reminder at the end of the manual order.
@@ -59,19 +61,21 @@ extension Reminder.Record {
     }
 
     /// The columns an edit changed, and nothing else, so a change made elsewhere to another
-    /// field survives; nil when no column differs. The status is the grace timer's, never a
+    /// field survives; nil when no column differs. The completion is the grace timer's, never a
     /// draft's, and the tags are links: see `Reminder.Tagging.attach` and `detach`.
     public static func changes(from original: Reminder, to draft: Reminder) -> UpdateOf<Reminder.Record>? {
         var same = original
-        same.status = draft.status
+        same.completion = draft.completion
         same.tags = draft.tags
         guard same != draft else { return nil }
         return Reminder.Record.find(original.id).update { row in
             if draft.list != original.list { row.listID = draft.list }
             if draft.title != original.title { row.title = draft.title }
             if draft.notes != original.notes { row.notes = draft.notes }
-            if draft.due != original.due { row.due = draft.due }
-            if draft.hasTime != original.hasTime { row.hasTime = draft.hasTime }
+            if draft.due != original.due {
+                row.due = draft.due?.date
+                row.hasTime = draft.due?.hasTime ?? false
+            }
             if draft.flagged != original.flagged { row.flagged = draft.flagged }
             if draft.priority != original.priority { row.priority = draft.priority?.rawValue }
             if draft.position != original.position { row.position = draft.position }
@@ -82,7 +86,7 @@ extension Reminder.Record {
 
     /// Deletes the completed reminders a search matches, optionally only those due before a
     /// cutoff. One still in its grace period is kept, so the tap can be undone.
-    public static func deleteCompleted(matching search: Lists.Search, dueBefore cutoff: Date?) -> DeleteOf<Reminder.Record> {
+    public static func deleteCompleted(matching search: Reminder.Search, dueBefore cutoff: Date?) -> DeleteOf<Reminder.Record> {
         Reminder.Record
             .where { $0.isDone && $0.matches(search) }
             .where { if let cutoff { #sql("\($0.due) < \(cutoff)") } }
@@ -92,16 +96,16 @@ extension Reminder.Record {
 
 extension Where<Reminder.Record> {
     /// The reminders as rows with their tags and list color.
-    public func rows() -> Select<Reminder.Record.Row, Reminder.Record, Reminder.List.Record> {
-        join(Reminder.List.Record.all) { $0.listID.eq($1.id) }
+    public func rows() -> Select<Reminder.Record.Row, Reminder.Record, List<Reminder>.Record> {
+        join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
             .select { Reminder.Record.Row.Columns(reminder: $0, tags: $0.tagList, color: $1.color) }
     }
 }
 
 extension Select<(), Reminder.Record, ()> {
     /// The reminders as rows with their tags and list color.
-    public func rows() -> Select<Reminder.Record.Row, Reminder.Record, Reminder.List.Record> {
-        join(Reminder.List.Record.all) { $0.listID.eq($1.id) }
+    public func rows() -> Select<Reminder.Record.Row, Reminder.Record, List<Reminder>.Record> {
+        join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
             .select { Reminder.Record.Row.Columns(reminder: $0, tags: $0.tagList, color: $1.color) }
     }
 }
@@ -109,9 +113,9 @@ extension Select<(), Reminder.Record, ()> {
 extension Reminder.Tagging {
     /// Links a reminder to tags by title. A title the tags table knows in another case attaches
     /// the known tag rather than a twin; an unknown one is created.
-    public static func attach(_ tags: Set<Tag.ID>, to id: Reminder.ID, in db: Database) throws {
+    public static func attach(_ tags: Set<Tag<Reminder>.ID>, to id: Reminder.ID, in db: Database) throws {
         for tag in tags.sorted() {
-            guard let canonical = try Tag.Record.add(tag.rawValue, in: db) else { continue }
+            guard let canonical = try Tag<Reminder>.Record.add(tag.rawValue, in: db) else { continue }
             let linked = try Reminder.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(canonical) }.fetchCount(db) > 0
             if !linked {
                 try Reminder.Tagging.insert { Reminder.Tagging(reminderID: id, tagID: canonical) }.execute(db)
@@ -120,7 +124,7 @@ extension Reminder.Tagging {
     }
 
     /// Unlinks tags from a reminder; the tags themselves stay.
-    public static func detach(_ tags: Set<Tag.ID>, from id: Reminder.ID) -> DeleteOf<Reminder.Tagging> {
+    public static func detach(_ tags: Set<Tag<Reminder>.ID>, from id: Reminder.ID) -> DeleteOf<Reminder.Tagging> {
         Reminder.Tagging.where { $0.reminderID.eq(id) && $0.tagID.in(tags) }.delete()
     }
 }

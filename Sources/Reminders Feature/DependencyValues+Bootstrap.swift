@@ -12,7 +12,7 @@ extension DependencyValues {
     /// to the console in a preview, so the cost of a write can be measured rather than assumed.
     public mutating func bootstrapDatabase() throws {
         var configuration = Configuration()
-        Lists.prepare(&configuration)
+        Reminder.Schema.prepare(&configuration)
         #if DEBUG
         let context = self.context
         configuration.prepareDatabase { db in
@@ -32,7 +32,7 @@ extension DependencyValues {
         }
         #endif
         let database = try SQLiteData.defaultDatabase(configuration: configuration)
-        try Lists.migrate(database)
+        try Reminder.Schema.migrate(database)
         defaultDatabase = database
     }
 }

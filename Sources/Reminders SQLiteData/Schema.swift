@@ -1,8 +1,16 @@
 import Foundation
+import Organizing
 public import Reminders
+public import Reminders_Application
 public import SQLiteData
 
-extension Lists {
+extension Reminder {
+    /// The Reminders database: its tables, the connection setup they need, and the sample
+    /// that fills a first run.
+    public enum Schema {}
+}
+
+extension Reminder.Schema {
     /// Creates the Reminders schema in any database, or brings an older one up to date; shared
     /// by the applications and a future server. `upTo` stops at an earlier migration, for
     /// tests that upgrade from it.
@@ -164,33 +172,37 @@ extension Lists {
     }
 }
 
-extension Lists {
+extension Reminder.Sample {
     /// The first run: fills an uninitialised database with the sample. The state row is written
     /// by the first initialisation and never deleted, so a database initialised before is left
     /// alone whatever it holds, and a failed read throws rather than counting as a first run.
-    public static func initialize(with sample: Lists.Sample, in db: Database) throws {
-        guard try Lists.Record.state.fetchCount(db) == 0 else { return }
+    public static func initialize(with sample: Self, in db: Database) throws {
+        guard try Reminder.Navigation.Record.state.fetchCount(db) == 0 else { return }
         try replace(with: sample, in: db)
     }
 
+    public func initialize(in db: Database) throws { try Self.initialize(with: self, in: db) }
+
     /// The explicit reset: everything the database holds is replaced by the sample, in one
     /// transaction.
-    public static func replace(with sample: Lists.Sample, in db: Database) throws {
+    public static func replace(with sample: Self, in db: Database) throws {
         try Reminder.Tagging.delete().execute(db)
         try Reminder.Record.delete().execute(db)
-        try Reminder.List.Record.delete().execute(db)
-        try Tag.Record.delete().execute(db)
-        try Lists.Detail.Preference.Record.delete().execute(db)
+        try List<Reminder>.Record.delete().execute(db)
+        try Tag<Reminder>.Record.delete().execute(db)
+        try Reminder.Filter.Preference.Record.delete().execute(db)
         for list in sample.lists {
-            try Reminder.List.Record.insert { Reminder.List.Record(list) }.execute(db)
+            try List<Reminder>.Record.insert { List<Reminder>.Record(list) }.execute(db)
         }
         for tag in sample.tags {
-            try Tag.Record.insert { Tag.Record(tag) }.execute(db)
+            try Tag<Reminder>.Record.insert { Tag<Reminder>.Record(tag) }.execute(db)
         }
         for reminder in sample.reminders {
             try Reminder.Record.insert { Reminder.Record(reminder) }.execute(db)
             try Reminder.Tagging.attach(reminder.tags, to: reminder.id, in: db)
         }
-        try Lists.Record.upsert { Lists.Record(detail: nil, editing: nil) }.execute(db)
+        try Reminder.Navigation.Record.upsert { Reminder.Navigation.Record(Reminder.Navigation()) }.execute(db)
     }
+
+    public func replace(in db: Database) throws { try Self.replace(with: self, in: db) }
 }

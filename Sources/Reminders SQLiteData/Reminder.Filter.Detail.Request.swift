@@ -1,0 +1,45 @@
+public import Foundation
+import Organizing
+public import Reminders
+public import Reminders_Application
+public import SQLiteData
+import Tagged
+
+extension Reminder.Filter.Detail {
+    /// Reads one filter in one transaction: its preference decides the query, so a change to
+    /// the preference re-reads the rows along with it. No filter reads nothing.
+    public struct Request: FetchKeyRequest {
+        public var filter: Reminder.Filter?
+        /// The day the Today filter shows.
+        public var today: Range<Date>
+        /// The row being edited sorts by this value until editing ends.
+        public var place: Reminder?
+
+        public init(filter: Reminder.Filter?, today: Range<Date>, place: Reminder? = nil) {
+            self.filter = filter
+            self.today = today
+            self.place = place
+        }
+
+        public func fetch(_ db: Database) throws -> Reminder.Filter.Detail? {
+            guard let filter else { return nil }
+            let preference = try Reminder.Filter.Preference.Record.preference(for: filter).fetchOne(db)?.preference ?? filter.defaultPreference
+            var list: List<Reminder>?
+            if case let .list(id) = filter {
+                list = try List<Reminder>.Record.find(id).fetchOne(db)?.list
+            }
+            let rows = try Reminder.Record
+                .where { $0.belongs(to: filter, today: today) }
+                .where { if !preference.showCompleted { !$0.isDone } }
+                .order { $0.ordered(by: preference.ordering, showCompleted: preference.showCompleted, placing: place) }
+                .rows()
+                .fetchAll(db)
+            return Reminder.Filter.Detail(
+                filter: filter,
+                color: list?.color,
+                preference: preference,
+                rows: rows.map { Reminder.Filter.Detail.Row(reminder: $0.value, color: $0.listColor) }
+            )
+        }
+    }
+}

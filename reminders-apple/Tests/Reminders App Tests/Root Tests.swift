@@ -3,8 +3,10 @@ import ComposableArchitecture2
 import Dependencies
 import DependenciesTestSupport
 import Foundation
+import Organizing
 import Reminders
 import Reminders_App
+import Reminders_Application
 import Reminders_Feature
 import SQLiteData
 import SwiftUI
@@ -16,14 +18,14 @@ import Testing
     $0.continuousClock = ImmediateClock()
     $0.date.now = Date(timeIntervalSince1970: 1_234_567_890)
 })
-struct `Lists root` {
+struct `Reminder root` {
     @Test func `constructs from a store and reads the database through it`() async throws {
-        let store = Store(initialState: Lists.Feature.State()) { Lists.Feature() }
+        let store = Store(initialState: Reminder.Feature.State()) { Reminder.Feature() }
         _ = Root(store: store)
-        store.send(.statTapped(.today))
-        #expect(store.detail == .today)
+        store.send(.filterTapped(.today))
+        #expect(store.filter == .today)
         // The first run seeded the sample, which the home reads back.
-        try await store.state.$home.load()
-        #expect(store.home.lists.map(\.list.title) == ["Personal", "Family", "Business"])
+        try await store.state.$overview.load()
+        #expect(store.overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
     }
 }
