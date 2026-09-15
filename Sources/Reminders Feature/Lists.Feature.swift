@@ -43,8 +43,10 @@ extension Lists {
             /// The search results, read from the database.
             @DebugSnapshotIgnored @Fetch public var results = Lists.Search.Results()
             /// The reminders in their grace period, read from the database; the grace timer is
-            /// driven by this value however a reminder came to be completing.
-            @DebugSnapshotIgnored @Fetch public var completing = Set<Reminder.ID>()
+            /// driven by this value however a reminder came to be completing. The query is
+            /// declared here rather than loaded at mount, so the reader the body observes is the
+            /// shared one from the first evaluation on.
+            @DebugSnapshotIgnored @Fetch(Reminder.Record.Completing()) public var completing: Set<Reminder.ID> = []
 
             public init() {}
 
@@ -329,14 +331,12 @@ extension Lists {
                 Destination.body
             }
             // The first run fills the database with the sample; any later run restores the open
-            // detail and the row being edited, and a grace period that was running when the app
-            // last quit. A read that fails is a failure, not a first run. The completing set is
-            // loaded before the restored state is applied: applying it re-evaluates the body, which
-            // is what makes the loaded query the one the grace timer observes from then on.
+            // detail and the row being edited, before anything else runs. A grace period that was
+            // running when the app last quit resumes as soon as `completing` reads it. A read
+            // that fails is a failure, not a first run.
             .onMount { state in
                 state.today = Lists.day(containing: now, calendar: calendar)
                 let sample = Lists.sample(at: now)
-                let completing = state.$completing
                 store.addTask {
                     try await attempt {
                         let (stored, reminder) = try write { db in
@@ -345,7 +345,6 @@ extension Lists {
                             let reminder = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db)?.value }
                             return (stored, reminder)
                         }
-                        try await completing.load(Reminder.Record.Completing())
                         try store.modify {
                             if let detail = stored?.openDetail { $0.detail = detail }
                             if let reminder { $0.editing = Reminder.Editing(reminder, session: uuid()) }
@@ -427,7 +426,9 @@ extension Lists {
             // feature is remounted when it changes, by this feature's own write or another
             // writer's, and every change restarts the period, so the latest tap, reversal, or
             // external change gets the full five seconds, and a set that empties cancels the timer.
-            .onChange(of: store.completing) { _, completing, _ in
+            // The mount counts as a change: a set already loaded when the feature mounts is a
+            // period that was running when the app last quit, and it resumes here.
+            .onChange(of: store.completing, initial: true) { _, completing, _ in
                 guard !completing.isEmpty else { return }
                 store.addTask {
                     try await clock.sleep(for: .seconds(5))

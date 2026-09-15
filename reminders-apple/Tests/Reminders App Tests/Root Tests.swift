@@ -1,3 +1,4 @@
+import Clocks
 import ComposableArchitecture2
 import Dependencies
 import DependenciesTestSupport
@@ -11,6 +12,8 @@ import Testing
 
 @Suite(.dependencies {
     try $0.bootstrapDatabase()
+    $0.calendar = Calendar(identifier: .gregorian)
+    $0.continuousClock = ImmediateClock()
     $0.date.now = Date(timeIntervalSince1970: 1_234_567_890)
 })
 struct `Lists root` {
