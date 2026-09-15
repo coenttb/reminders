@@ -33,7 +33,6 @@ extension Root {
                         toggleCompleted: { store.send(.searchCompletedButtonTapped) },
                         deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) },
                         complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                        flag: { store.send(.reminderFlagButtonTapped($0)) },
                         delete: { store.send(.reminderDeleted($0)) },
                         details: { store.send(.reminderDetailsButtonTapped($0)) }
                     )
@@ -61,6 +60,7 @@ extension Root {
             // The field lives in the bottom bar and minimizes to a pill; the system
             // owns its keyboard attachment and, on iPhone Duo, its bar placement.
             .searchToolbarBehavior(.minimize)
+            .onSubmit(of: .search) { store.send(.searchSubmitted) }
             .toolbar {
                 #if DEBUG
                 ToolbarItem(placement: .topBarTrailing) {

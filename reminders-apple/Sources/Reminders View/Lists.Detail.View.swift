@@ -17,7 +17,6 @@ extension Lists.Detail {
         private var done: () -> Void
         private var backgroundTapped: () -> Void
         private var complete: (Reminder.ID) -> Void
-        private var flag: (Reminder.ID) -> Void
         private var delete: (Reminder.ID) -> Void
         private var details: (Reminder.ID) -> Void
         private var move: (IndexSet, Int) -> Void
@@ -38,7 +37,6 @@ extension Lists.Detail {
             done: @escaping () -> Void,
             backgroundTapped: @escaping () -> Void,
             complete: @escaping (Reminder.ID) -> Void,
-            flag: @escaping (Reminder.ID) -> Void,
             delete: @escaping (Reminder.ID) -> Void,
             details: @escaping (Reminder.ID) -> Void,
             move: @escaping (IndexSet, Int) -> Void,
@@ -55,7 +53,6 @@ extension Lists.Detail {
             self.done = done
             self.backgroundTapped = backgroundTapped
             self.complete = complete
-            self.flag = flag
             self.delete = delete
             self.details = details
             self.move = move
@@ -97,7 +94,6 @@ extension Lists.Detail.View {
                         color: lists.list(reminder.list)?.color.swiftUI ?? color,
                         now: now,
                         complete: { complete(reminder.id) },
-                        flag: { flag(reminder.id) },
                         delete: { delete(reminder.id) },
                         details: { details(reminder.id) },
                         edit: detail.isList ? { edit(reminder.id) } : nil
@@ -161,13 +157,13 @@ extension Lists.Detail.View {
                     Menu {
                         ForEach(Lists.Ordering.allCases, id: \.self) { ordering in
                             Button { order(ordering) } label: {
-                                Text(ordering.rawValue)
+                                Text(ordering.title)
                                 Image(systemName: ordering.systemImage)
                             }
                         }
                     } label: {
                         Text("Sort By")
-                        Text(preference.ordering.rawValue)
+                        Text(preference.ordering.title)
                         Image(systemName: "arrow.up.arrow.down")
                     }
                     Button(action: toggleCompleted) {

@@ -34,7 +34,6 @@ extension Root {
                 done: { store.send(.doneButtonTapped) },
                 backgroundTapped: { store.send(.backgroundTapped) },
                 complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                flag: { store.send(.reminderFlagButtonTapped($0)) },
                 delete: { store.send(.reminderDeleted($0)) },
                 details: { store.send(.reminderDetailsButtonTapped($0)) },
                 move: { store.send(.remindersMoved($0, $1)) },
@@ -44,7 +43,7 @@ extension Root {
             )
             // Leaving the app commits the row being edited, as the stock app does.
             .onChange(of: scenePhase) { _, phase in
-                if phase != .active, store.lists.editing != nil { store.send(.doneButtonTapped) }
+                if phase == .background, store.lists.editing != nil { store.send(.doneButtonTapped) }
             }
         }
     }

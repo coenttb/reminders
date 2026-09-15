@@ -89,7 +89,7 @@ extension Reminder.List.Form {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done", systemImage: "checkmark", action: save)
                     .buttonStyle(.glassProminent)
-                    .disabled(list.title.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(list.isBlank)
             }
         }
         .onAppear { nameFocused = isNew }

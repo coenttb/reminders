@@ -32,10 +32,12 @@ extension Lists.Search {
         text.hasPrefix("#") ? String(text.dropFirst()) : nil
     }
 
-    /// A trailing tab commits the text as a near token.
+    /// Submitting the field commits the trimmed text as a near token; a tag prefix is
+    /// left for the suggestions.
     public mutating func commitText() {
-        guard text.hasSuffix("\t") else { return }
-        tokens.append(.near(String(text.dropLast())))
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard tagPrefix == nil, !trimmed.isEmpty else { return }
+        tokens.append(.near(trimmed))
         text = ""
     }
 
@@ -46,9 +48,12 @@ extension Lists.Search {
 }
 
 extension Lists {
-    /// Every reminder the search matches, completed ones included, open ones first and by due date.
+    /// Every reminder the search matches, completed ones included, open ones first and by due
+    /// date; one in its grace period keeps its place among the open ones, as in a detail.
     public func matches(_ search: Lists.Search) -> [Reminder] {
         guard search.isActive else { return [] }
+        // A tag prefix alone offers suggestions, not the whole database.
+        guard search.tagPrefix == nil || !search.tokens.isEmpty else { return [] }
         let text = search.tagPrefix == nil ? search.text : ""
         return reminders.filter { reminder in
             guard text.isEmpty || reminder.matches(text) else { return false }
@@ -60,7 +65,8 @@ extension Lists {
             }
         }
         .sorted { lhs, rhs in
-            if lhs.completed != rhs.completed { return !lhs.completed }
+            let (l, r) = (lhs.status == .completed, rhs.status == .completed)
+            if l != r { return !l }
             return Lists.precedes(lhs, rhs, by: .dueDate)
         }
     }
@@ -73,11 +79,12 @@ extension Lists {
             .sorted { $0.title < $1.title }
     }
 
-    /// Deletes completed reminders the search matches, optionally only those due more than some months ago.
+    /// Deletes completed reminders the search matches, optionally only those due more than
+    /// some months ago. A reminder still in its grace period is kept, so the tap can be undone.
     public mutating func deleteCompleted(matching search: Lists.Search, olderThanMonths months: Int?, at now: Date) {
         let cutoff = months.map { Calendar.current.date(byAdding: .month, value: -$0, to: now) ?? now }
         let doomed = Set(matches(search).filter { reminder in
-            guard reminder.completed else { return false }
+            guard reminder.status == .completed else { return false }
             guard let cutoff else { return true }
             guard let due = reminder.due else { return false }
             return due < cutoff

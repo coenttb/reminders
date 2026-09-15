@@ -6,9 +6,10 @@ import SwiftUI
 
 /// The host: one scene around the application layer in `Reminders App`.
 @main struct Application: App {
-    @State private var store = Lists.Feature.live()
+    /// The root store, held once for the process as the Point-Free Way has it.
+    static let store = Lists.Feature.live()
 
     var body: some Scene {
-        WindowGroup { Root(store: store) }
+        WindowGroup { Root(store: Self.store) }
     }
 }

@@ -14,7 +14,6 @@ extension Lists.Search {
         private var toggleCompleted: () -> Void
         private var deleteCompleted: (Int?) -> Void
         private var complete: (Reminder.ID) -> Void
-        private var flag: (Reminder.ID) -> Void
         private var delete: (Reminder.ID) -> Void
         private var details: (Reminder.ID) -> Void
 
@@ -26,7 +25,6 @@ extension Lists.Search {
             toggleCompleted: @escaping () -> Void,
             deleteCompleted: @escaping (Int?) -> Void,
             complete: @escaping (Reminder.ID) -> Void,
-            flag: @escaping (Reminder.ID) -> Void,
             delete: @escaping (Reminder.ID) -> Void,
             details: @escaping (Reminder.ID) -> Void
         ) {
@@ -37,7 +35,6 @@ extension Lists.Search {
             self.toggleCompleted = toggleCompleted
             self.deleteCompleted = deleteCompleted
             self.complete = complete
-            self.flag = flag
             self.delete = delete
             self.details = details
         }
@@ -48,8 +45,9 @@ extension Lists.Search.View {
     @ViewBuilder public var body: some SwiftUI.View {
         let suggestions = lists.tagSuggestions(for: search)
         let matches = lists.matches(search)
-        let completed = matches.filter(\.completed).count
-        let shown = search.showCompleted ? matches : matches.filter { !$0.completed }
+        // A reminder in its grace period is neither counted nor hidden, so the tap can be undone.
+        let completed = matches.filter { $0.status == .completed }.count
+        let shown = search.showCompleted ? matches : matches.filter { $0.status != .completed }
         if !suggestions.isEmpty {
             Section {
                 ScrollView(.horizontal) {
@@ -96,7 +94,6 @@ extension Lists.Search.View {
                             color: list.color.swiftUI,
                             now: now,
                             complete: { complete(reminder.id) },
-                            flag: { flag(reminder.id) },
                             delete: { delete(reminder.id) },
                             details: { details(reminder.id) }
                         )

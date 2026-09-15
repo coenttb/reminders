@@ -82,4 +82,30 @@ struct `Lists feature` {
             #expect(stored?.editing == nil)
         }
     }
+
+    @Test func `submitting the search commits the text as a token`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+            let store = await TestStoreActor(initialState: Lists.Feature.State()) { Lists.Feature() }
+            await store.modify { $0.search.text = "Take" }?.value
+            await store.send(.searchSubmitted)?.value
+            let state = await store.state
+            #expect(state.search.tokens == [.near("Take")])
+            #expect(state.search.text.isEmpty)
+            #expect(state.lists.matches(state.search).map(\.title) == ["Take out trash", "Take a walk"])
+            await store.dismount()
+        }
+    }
+
+    @Test func `a form with a blank title does not save`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+            let store = await TestStoreActor(initialState: Lists.Feature.State()) { Lists.Feature() }
+            await store.send(.addListButtonTapped)?.value
+            await store.send(.destination(.list(.saveButtonTapped)))?.value
+            #expect(await store.state.destination != nil)
+            #expect(await store.state.lists.lists.count == 3)
+            await store.send(.destination(.list(.cancelButtonTapped)))?.value
+            #expect(await store.state.destination == nil)
+            await store.dismount()
+        }
+    }
 }

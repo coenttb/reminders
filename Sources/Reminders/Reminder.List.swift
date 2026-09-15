@@ -25,6 +25,9 @@ extension Reminder.List {
     public static func `default`(id: ID) -> Self {
         Reminder.List(id: id, title: "Personal", color: .default)
     }
+
+    /// A name of only whitespace is no list.
+    public var isBlank: Bool { title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }
 
 extension Reminder.List {

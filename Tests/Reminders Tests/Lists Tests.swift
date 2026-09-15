@@ -62,6 +62,44 @@ import Tagged
         #expect(lists.reminders.allSatisfy { !$0.tags.contains("friends") })
         lists.add(tag: "Someday")
         #expect(lists.tags.count == 6)
+        // A reminder's tags follow the case the lists already know.
+        lists.upsert(Reminder(id: Reminder.ID(UUID()), list: lists.orderedLists[0].id, title: "Wash", tags: ["CAR"]))
+        #expect(lists.tags.count == 6)
+        #expect(lists.reminders.last?.tags == ["car"])
+        lists.rename(tag: "car", to: "Car")
+        #expect(lists.tags.contains(Tag(title: "Car")) && !lists.tags.contains(Tag(title: "car")))
+        #expect(lists.reminders.last?.tags == ["Car"])
+    }
+
+    @Test func `a draft written after editing ended does not come back`() {
+        var lists = Lists.sample(at: now)
+        let id = Reminder.ID(UUID())
+        lists.startNewReminder(in: lists.orderedLists[0].id, id: id)
+        var late = lists[draft: id]
+        lists.endEditing()
+        #expect(lists.reminder(id) == nil)
+        late.title = "New Reminder"
+        lists[draft: id] = late
+        #expect(lists.reminder(id) == nil)
+        #expect(lists.reminders.count == 11)
+    }
+
+    @Test func `clearing completed matches leaves a reminder still in its grace period`() {
+        var lists = Lists.sample(at: now)
+        let walk = lists.reminders[3].id
+        let trash = lists.reminders[7].id
+        lists.toggle(trash)
+        lists.deleteCompleted(matching: Lists.Search(text: "Take"), olderThanMonths: nil, at: now)
+        #expect(lists.reminder(walk) == nil)
+        #expect(lists.reminder(trash)?.status == .completing)
+        // It also keeps its place among the open matches instead of sorting last.
+        #expect(lists.matches(Lists.Search(text: "Take")).first?.id == trash)
+    }
+
+    @Test func `a title of only whitespace is blank for reminders and lists`() {
+        #expect(Reminder(id: Reminder.ID(UUID()), list: Reminder.List.ID(UUID()), title: " \n").isBlank)
+        #expect(Reminder.List(id: Reminder.List.ID(UUID()), title: " \n").isBlank)
+        #expect(!Reminder.List(id: Reminder.List.ID(UUID()), title: "Chores").isBlank)
     }
 
     @Test func `moving reminders switches the detail to manual ordering`() {
@@ -83,6 +121,15 @@ import Tagged
         search.text = "Take"
         #expect(lists.matches(search).map(\.title) == ["Take a walk"])
         #expect(lists.tagSuggestions(for: Lists.Search(text: "#so")).map(\.title) == ["social", "someday"])
+        // Typing a tag prefix shows suggestions, not every reminder.
+        #expect(lists.matches(Lists.Search(text: "#so")).isEmpty)
+        // Submitting the field commits the trimmed text as a token.
+        search = Lists.Search(text: " Take ")
+        search.commitText()
+        #expect(search.tokens == [.near("Take")] && search.text.isEmpty)
+        search.text = "#so"
+        search.commitText()
+        #expect(search.tokens == [.near("Take")] && search.text == "#so")
         lists.deleteCompleted(matching: Lists.Search(text: "Take"), olderThanMonths: 12, at: now)
         #expect(lists.reminders.count == 11)
         lists.deleteCompleted(matching: Lists.Search(text: "Take"), olderThanMonths: 1, at: now)

@@ -96,17 +96,32 @@ extension Lists {
 
     public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first { $0.id == id } }
 
-    /// A reminder as a draft for editing in place: the stored one, or an empty one in the
-    /// first list when it is gone; writing upserts. A subscript, so a view binds to it
-    /// through a key path (`$lists[draft: id]`) rather than a closure-built binding.
+    /// A reminder as a draft for editing in place: the stored one, or a placeholder in the
+    /// first list once it is gone. A write to a reminder the lists no longer hold is dropped,
+    /// so a field committing after editing ended cannot bring a deleted row back. A
+    /// subscript, so a view binds to it through a key path (`$lists[draft: id]`) rather
+    /// than a closure-built binding.
     public subscript(draft id: Reminder.ID) -> Reminder {
-        get { reminder(id) ?? Reminder(id: id, list: orderedLists.first?.id ?? Reminder.List.ID(UUID())) }
-        set { upsert(newValue) }
+        get { reminder(id) ?? Reminder(id: id, list: orderedLists.first?.id ?? Reminder.List.ID(Self.noList)) }
+        set {
+            guard reminder(id) != nil else { return }
+            upsert(newValue)
+        }
     }
+
+    /// The list a placeholder draft names when there is no list at all; never stored.
+    private static let noList = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
     /// The tag with this title in any case; tags are unique case-insensitively.
     public func tag(titled title: String) -> Tag? {
         tags.first { $0.title.caseInsensitiveCompare(title) == .orderedSame }
+    }
+
+    /// The identifier the lists already use for a tag title in any case, or the given one
+    /// when the tag is new. Every path that attaches a tag goes through here, so the value
+    /// and the stored form, whose key is case-insensitive, agree on which tag a title names.
+    public func canonical(_ id: Tag.ID) -> Tag.ID {
+        tag(titled: id.rawValue)?.id ?? id
     }
 
     /// Incomplete reminders in a list.
@@ -123,6 +138,7 @@ extension Lists {
 extension Lists {
     public mutating func upsert(_ reminder: Reminder) {
         var reminder = reminder
+        reminder.tags = Set(reminder.tags.map(canonical))
         for tag in reminder.tags { tags.insert(Tag(tag)) }
         if let index = reminders.firstIndex(where: { $0.id == reminder.id }) {
             reminders[index] = reminder
@@ -167,11 +183,13 @@ extension Lists {
         tags.insert(Tag(title: title))
     }
 
+    /// Renaming onto a title another tag already has, in any case, merges into that tag.
     public mutating func rename(tag id: Tag.ID, to title: String) {
         guard !title.isEmpty, tags.remove(Tag(id)) != nil else { return }
-        tags.insert(Tag(title: title))
+        let renamed = canonical(Tag.ID(title))
+        tags.insert(Tag(renamed))
         for reminderIndex in reminders.indices where reminders[reminderIndex].tags.remove(id) != nil {
-            reminders[reminderIndex].tags.insert(Tag.ID(title))
+            reminders[reminderIndex].tags.insert(renamed)
         }
     }
 
@@ -183,11 +201,6 @@ extension Lists {
     /// Every reminder in its grace period is now completed.
     public mutating func completeCompleting() {
         for index in reminders.indices { reminders[index].complete() }
-    }
-
-    public mutating func flag(_ id: Reminder.ID) {
-        guard let index = reminders.firstIndex(where: { $0.id == id }) else { return }
-        reminders[index].flagged.toggle()
     }
 
     /// Reorders the lists as the user dragged them.

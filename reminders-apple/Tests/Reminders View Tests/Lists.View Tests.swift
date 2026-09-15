@@ -11,11 +11,11 @@ import Testing
         let lists = Lists.sample(at: now)
         let reminder = lists.reminders[0]
         _ = Lists.View(lists: lists, now: now, open: { _ in }, details: { _ in }, delete: { _ in }, move: { _, _ in }, deleteTag: { _ in })
-        _ = Lists.Detail.View(.today, lists: lists, now: now, draft: { _ in .constant(reminder) }, edit: { _ in }, submit: {}, done: {}, backgroundTapped: {}, complete: { _ in }, flag: { _ in }, delete: { _ in }, details: { _ in }, move: { _, _ in }, order: { _ in }, toggleCompleted: {}, newReminder: {})
-        _ = Lists.Detail.View(.list(lists.orderedLists[0].id), lists: lists, now: now, draft: { _ in .constant(reminder) }, edit: { _ in }, submit: {}, done: {}, backgroundTapped: {}, complete: { _ in }, flag: { _ in }, delete: { _ in }, details: { _ in }, move: { _, _ in }, order: { _ in }, toggleCompleted: {}, newReminder: {})
-        _ = Lists.Search.View(Lists.Search(text: "Take"), lists: lists, now: now, addTag: { _ in }, toggleCompleted: {}, deleteCompleted: { _ in }, complete: { _ in }, flag: { _ in }, delete: { _ in }, details: { _ in })
+        _ = Lists.Detail.View(.today, lists: lists, now: now, draft: { _ in .constant(reminder) }, edit: { _ in }, submit: {}, done: {}, backgroundTapped: {}, complete: { _ in }, delete: { _ in }, details: { _ in }, move: { _, _ in }, order: { _ in }, toggleCompleted: {}, newReminder: {})
+        _ = Lists.Detail.View(.list(lists.orderedLists[0].id), lists: lists, now: now, draft: { _ in .constant(reminder) }, edit: { _ in }, submit: {}, done: {}, backgroundTapped: {}, complete: { _ in }, delete: { _ in }, details: { _ in }, move: { _, _ in }, order: { _ in }, toggleCompleted: {}, newReminder: {})
+        _ = Lists.Search.View(Lists.Search(text: "Take"), lists: lists, now: now, addTag: { _ in }, toggleCompleted: {}, deleteCompleted: { _ in }, complete: { _ in }, delete: { _ in }, details: { _ in })
         _ = Lists.Stats.Cell("Today", systemImage: "calendar.circle.fill", color: .blue, count: 2) {}
-        _ = Reminder.Row(reminder, color: .blue, now: now, complete: {}, flag: {}, delete: {}, details: {})
+        _ = Reminder.Row(reminder, color: .blue, now: now, complete: {}, delete: {}, details: {})
         _ = Reminder.List.Row(lists.orderedLists[0], count: 4, details: {}, delete: {})
         _ = Tag.Row(lists.usedTags[0])
         _ = Reminder.Form(reminder: .constant(reminder), isNew: false, isDirty: true, lists: lists.orderedLists, tags: lists.rankedTags, now: now, addTag: { _ in }, renameTag: { _, _ in }, deleteTag: { _ in }, save: {}, cancel: {})

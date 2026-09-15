@@ -44,10 +44,10 @@ extension Lists {
             case reminderCompleteButtonTapped(Reminder.ID)
             case reminderDeleted(Reminder.ID)
             case reminderDetailsButtonTapped(Reminder.ID)
-            case reminderFlagButtonTapped(Reminder.ID)
             case reminderTapped(Reminder.ID)
             case remindersMoved(IndexSet, Int)
             case searchCompletedButtonTapped
+            case searchSubmitted
             case searchTagTapped(Tag.ID)
             case seedButtonTapped
             case showCompletedButtonTapped
@@ -82,11 +82,14 @@ extension Lists {
                     state.lists.deleteCompleted(matching: state.search, olderThanMonths: months, at: now)
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
                     state.destination = nil
+                // A blank name is no list and no reminder: the sheet stays up.
                 case .destination(.list(.saveButtonTapped)):
-                    if case let .list(form) = state.destination { state.lists.upsert(form.list) }
+                    guard case let .list(form) = state.destination, !form.list.isBlank else { break }
+                    state.lists.upsert(form.list)
                     state.destination = nil
                 case .destination(.reminder(.saveButtonTapped)):
-                    if case let .reminder(form) = state.destination { state.lists.upsert(form.reminder) }
+                    guard case let .reminder(form) = state.destination, !form.reminder.isBlank else { break }
+                    state.lists.upsert(form.reminder)
                     state.destination = nil
                 // The lists own the tags; the draft follows what the lists accepted, so adding a
                 // tag that exists in another case attaches the existing tag instead of a twin.
@@ -133,14 +136,14 @@ extension Lists {
                 case let .reminderDetailsButtonTapped(id):
                     state.lists.endEditing()
                     if let reminder = state.lists.reminder(id) { state.destination = .reminder(Reminder.Feature.State(reminder: reminder)) }
-                case let .reminderFlagButtonTapped(id):
-                    state.lists.flag(id)
                 case let .reminderTapped(id):
                     state.lists.edit(id)
                 case let .remindersMoved(source, destination):
                     if let detail = state.lists.detail { state.lists.move(reminders: source, to: destination, in: detail, at: now) }
                 case .searchCompletedButtonTapped:
                     state.search.showCompleted.toggle()
+                case .searchSubmitted:
+                    state.search.commitText()
                 case let .searchTagTapped(tag):
                     state.search.add(tag: tag)
                 case .seedButtonTapped:
@@ -189,9 +192,6 @@ extension Lists {
                     try await clock.sleep(for: .seconds(5))
                     try store.modify { $0.lists.completeCompleting() }
                 }
-            }
-            .onChange(of: store.search.text) { _, _, state in
-                state.search.commitText()
             }
             .onChange(of: store.search.isActive) { _, active, state in
                 if !active { state.search.showCompleted = false }

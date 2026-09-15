@@ -13,7 +13,6 @@ extension Reminder {
         private var color: Color
         private var now: Date
         private var complete: () -> Void
-        private var flag: () -> Void
         private var delete: () -> Void
         private var details: () -> Void
         private var edit: (() -> Void)?
@@ -23,7 +22,6 @@ extension Reminder {
             color: Color,
             now: Date,
             complete: @escaping () -> Void,
-            flag: @escaping () -> Void,
             delete: @escaping () -> Void,
             details: @escaping () -> Void,
             edit: (() -> Void)? = nil
@@ -32,7 +30,6 @@ extension Reminder {
             self.color = color
             self.now = now
             self.complete = complete
-            self.flag = flag
             self.delete = delete
             self.details = details
             self.edit = edit

@@ -75,11 +75,18 @@ extension Lists.Detail {
 }
 
 extension Lists {
+    /// The raw value is the stored key; the name the menu shows is `title`.
     public enum Ordering: String, CaseIterable, Hashable, Sendable {
-        case dueDate = "Due Date"
-        case manual = "Manual"
-        case priority = "Priority"
-        case title = "Title"
+        case dueDate, manual, priority, title
+
+        public var title: String {
+            switch self {
+            case .dueDate: "Due Date"
+            case .manual: "Manual"
+            case .priority: "Priority"
+            case .title: "Title"
+            }
+        }
     }
 
     public func preference(for detail: Detail) -> Detail.Preference {

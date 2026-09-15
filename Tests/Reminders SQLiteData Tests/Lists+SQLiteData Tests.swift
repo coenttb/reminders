@@ -35,4 +35,17 @@ import Tagged
         #expect(stored?.editing == new)
         #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == lists.reminders.reduce(0) { $0 + $1.tags.count })
     }
+
+    @Test func `a tag renamed only in case survives a round trip`() throws {
+        let database = try DatabaseQueue()
+        try Lists.migrate(database)
+        var lists = Lists.sample(at: now)
+        try database.write { db in try Lists.seed(lists, in: db) }
+        lists.rename(tag: "social", to: "Social")
+        try database.write { db in try Lists.persist(lists, in: db) }
+        let stored = try database.read { db in try Lists.load(db) }
+        #expect(stored == lists)
+        #expect(stored?.tags.contains(Tag(title: "Social")) == true)
+        #expect(stored?.reminders.filter { $0.tags.contains("Social") }.count == 3)
+    }
 }

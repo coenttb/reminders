@@ -126,7 +126,7 @@ extension Reminder.Form {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done", systemImage: "checkmark", action: save)
                     .buttonStyle(.glassProminent)
-                    .disabled(reminder.title.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(reminder.isBlank)
             }
         }
         .onAppear { titleFocused = isNew }

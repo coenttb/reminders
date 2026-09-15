@@ -92,8 +92,10 @@ extension Lists {
             try Reminder.List.Record.upsert { Reminder.List.Record(list) }.execute(db)
         }
         try Reminder.List.Record.where { !$0.id.in(lists.lists.map(\.id)) }.delete().execute(db)
+        // The key is case-insensitive, so a tag renamed only in case conflicts with its own
+        // row; the update writes the new spelling instead of keeping the old one.
         for tag in lists.tags {
-            try Tag.Record.insert { Tag.Record(tag) } onConflictDoUpdate: { _ in }.execute(db)
+            try Tag.Record.insert { Tag.Record(tag) } onConflictDoUpdate: { $0.title = $1.title }.execute(db)
         }
         try Tag.Record.where { !$0.title.in(lists.tags.map(\.title)) }.delete().execute(db)
         for reminder in lists.reminders {
