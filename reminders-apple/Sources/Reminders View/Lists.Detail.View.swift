@@ -87,7 +87,8 @@ extension Lists.Detail.View {
                 .listRowBackground(Color.clear)
         }
         .listStyle(.plain)
-        .animation(.default, value: lists)
+        // Rows animate when they appear, leave, or move; a keystroke in the edited row does not.
+        .animation(.default, value: lists.reminders(in: detail, at: now).map(\.id))
         .onChange(of: lists.editing, initial: true) { _, editing in
             focus = editing.map(Reminder.Focus.title)
             // The row being edited comes up above the keyboard.

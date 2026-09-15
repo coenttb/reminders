@@ -12,25 +12,25 @@ extension Lists {
             try #sql("""
                 CREATE TABLE "lists" (
                   "id" TEXT PRIMARY KEY NOT NULL,
-                  "title" TEXT NOT NULL DEFAULT '',
-                  "color" INTEGER NOT NULL DEFAULT 0,
-                  "position" INTEGER NOT NULL DEFAULT 0
+                  "title" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "color" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "position" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0
                 ) STRICT
                 """).execute(db)
             try #sql("""
                 CREATE TABLE "reminders" (
                   "id" TEXT PRIMARY KEY NOT NULL,
                   "listID" TEXT NOT NULL REFERENCES "lists"("id") ON DELETE CASCADE,
-                  "title" TEXT NOT NULL DEFAULT '',
-                  "notes" TEXT NOT NULL DEFAULT '',
+                  "title" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "notes" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
                   "due" TEXT,
-                  "hasTime" INTEGER NOT NULL DEFAULT 0,
-                  "flagged" INTEGER NOT NULL DEFAULT 0,
+                  "hasTime" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "flagged" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
                   "priority" INTEGER,
-                  "status" INTEGER NOT NULL DEFAULT 0,
-                  "position" INTEGER NOT NULL DEFAULT 0,
+                  "status" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "position" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
                   "location" TEXT,
-                  "repeats" TEXT NOT NULL DEFAULT 'never'
+                  "repeats" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT 'never'
                 ) STRICT
                 """).execute(db)
             try #sql("""
@@ -48,8 +48,8 @@ extension Lists {
             try #sql("""
                 CREATE TABLE "preferences" (
                   "detailID" TEXT PRIMARY KEY NOT NULL,
-                  "ordering" TEXT NOT NULL DEFAULT '',
-                  "showCompleted" INTEGER NOT NULL DEFAULT 0
+                  "ordering" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "showCompleted" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0
                 ) STRICT
                 """).execute(db)
             try #sql("""
