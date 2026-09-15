@@ -25,15 +25,6 @@ public struct Root: View {
 }
 
 extension Root {
-    /// What a search result row can ask: search rows open details rather than editing in place.
-    private var rows: Reminder.Row.Actions {
-        Reminder.Row.Actions(
-            complete: { store.send(.reminderCompleteButtonTapped($0)) },
-            delete: { store.send(.reminderDeleted($0)) },
-            details: { store.send(.reminderDetailsButtonTapped($0)) }
-        )
-    }
-
     public var body: some View {
         NavigationStack {
             SwiftUI.List {
@@ -43,7 +34,11 @@ extension Root {
                         results: store.results,
                         now: now,
                         calendar: calendar,
-                        rows: rows,
+                        rows: .init(
+                            complete: { store.send(.reminderCompleteButtonTapped($0)) },
+                            delete: { store.send(.reminderDeleted($0)) },
+                            details: { store.send(.reminderDetailsButtonTapped($0)) }
+                        ),
                         addTag: { store.send(.searchTagTapped($0)) },
                         toggleCompleted: { store.send(.searchCompletedButtonTapped) },
                         deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) }
