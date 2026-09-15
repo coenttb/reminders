@@ -45,6 +45,7 @@ let package = Package(
                 .product(name: "Organizing", package: "organizing"),
                 "Reminders View",
                 .product(name: "SwiftUI Extensions", package: "swiftui-extensions"),
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Tagged", package: "swift-tagged"),

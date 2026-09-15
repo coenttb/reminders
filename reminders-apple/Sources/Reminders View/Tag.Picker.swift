@@ -76,11 +76,3 @@ extension Tag.Picker {
         .navigationTitle("Tags")
     }
 }
-
-extension Optional {
-    /// Whether a value is present; setting it false clears the value, setting it true is a no-op.
-    fileprivate var isPresent: Bool {
-        get { self != nil }
-        set { if !newValue { self = nil } }
-    }
-}

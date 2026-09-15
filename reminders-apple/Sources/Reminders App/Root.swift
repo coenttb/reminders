@@ -6,6 +6,7 @@ public import Reminders
 import Reminders_Application
 public import Reminders_Feature
 import Reminders_View
+import Standard_Library_Extensions
 public import SwiftUI
 import Tagged
 
@@ -133,15 +134,11 @@ extension Root {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store.send(.appActivated) }
         }
-        .alert("Something went wrong", isPresented: failurePresented) {
+        // Dismissing the alert clears the failure through the binding's key path.
+        .alert("Something went wrong", isPresented: $store.failure.isPresent) {
             Button("OK") {}
         } message: {
             Text(store.failure ?? "")
         }
-    }
-
-    /// Whether the last failed write is on screen; dismissing the alert clears it.
-    private var failurePresented: Binding<Bool> {
-        Binding(get: { store.failure != nil }, set: { if !$0 { $store.failure.wrappedValue = nil } })
     }
 }
