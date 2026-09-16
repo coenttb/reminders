@@ -102,6 +102,27 @@ import Tagged
         #expect(Reminder.Session().filter == nil && Reminder.Session(filter: .today, editing: row.id).editing == row.id)
     }
 
+    @Test func `a window starts at one step, widens while there is more, and starts over for another key`() {
+        var window = Reminder.Window<Reminder.Filter>()
+        let step = Reminder.Window<Reminder.Filter>.step
+        #expect(window.limit(for: .all) == step && window.limit(for: .today) == step)
+        window.widen(for: .all, shown: step, total: step)
+        #expect(window.limit(for: .all) == step)
+        window.widen(for: .all, shown: step, total: step + 1)
+        #expect(window.limit(for: .all) == 2 * step && window.limit(for: .today) == step)
+        window.extend(for: .all, by: 1)
+        #expect(window.limit(for: .all) == 2 * step + 1)
+        window.open(for: .today)
+        #expect(window.limit(for: .today) == nil && window.limit(for: .all) == step)
+        window.widen(for: .today, shown: 10, total: 20)
+        window.extend(for: .today, by: 1)
+        #expect(window.limit(for: .today) == nil)
+        let margin = Reminder.Window<Reminder.Filter>.margin
+        #expect(Reminder.Window<Reminder.Filter>.nearsEnd(step - margin, of: step, total: step + 1))
+        #expect(!Reminder.Window<Reminder.Filter>.nearsEnd(step - margin - 1, of: step, total: step + 1))
+        #expect(!Reminder.Window<Reminder.Filter>.nearsEnd(step - 1, of: step, total: step))
+    }
+
     @Test func `a generated sample is a function of its seed and fills its scale`() {
         let scale = Reminder.Sample.Scale(lists: 4, remindersPerList: 50, tags: 25)
         let a = Reminder.Sample.generated(scale, seed: 7, at: now, calendar: calendar)

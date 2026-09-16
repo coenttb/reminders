@@ -153,7 +153,10 @@ struct `Reminder feature` {
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let first = Reminder.ID(UUID(0))
         let blank = Reminder(id: first, list: personal, position: 11, created: now)
-        await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
+        await store.send(.newReminderButtonTapped) { [personal] in
+            $0.detailWindow = Reminder.Window(key: .list(personal), rows: nil)
+            $0.editing = Reminder.Editing(blank, session: UUID(1))
+        }?.value
         // The new row is in the database at once, blank, and shown in the detail.
         #expect(try await stored(first)?.isBlank == true)
         try await until(store.state.$detail) { $0?.reminders.map(\.id).contains(first) == true }
@@ -181,7 +184,10 @@ struct `Reminder feature` {
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
         let blank = Reminder(id: row, list: personal, position: 11, created: now)
-        await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
+        await store.send(.newReminderButtonTapped) { [personal] in
+            $0.detailWindow = Reminder.Window(key: .list(personal), rows: nil)
+            $0.editing = Reminder.Editing(blank, session: UUID(1))
+        }?.value
         // Quit without Done: the row being edited is in the database, as it was last written.
         await store.dismount()
         #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == row)
@@ -197,6 +203,36 @@ struct `Reminder feature` {
         }?.value
         #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == nil)
         await revived.dismount()
+    }
+
+    @Test func `a long filter is read a window at a time, widened near its end, and whole when a row starts at its end`() async throws {
+        let scale = Reminder.Sample.Scale(lists: 1, remindersPerList: 700, tags: 5)
+        let generated = Reminder.Sample.generated(scale, seed: 1, at: now, calendar: calendar)
+        try await database.write { db in try generated.replace(in: db) }
+        let list = generated.lists[0].id
+        let open = generated.reminders.count { !$0.completed }
+        let step = Reminder.Window<Reminder.Filter>.step
+        #expect(open > step && open < 2 * step)
+        let store = try await makeStore()
+        await store.send(.filterTapped(.all)) { $0.filter = .all }?.value
+        try await until(store.state.$detail) { $0?.filter == .all && $0?.rows.count == step }
+        #expect(await store.state.detail?.total == open)
+        // Near the end the next step is read; at the end nothing more is asked for.
+        await store.send(.detailEndReached) { $0.detailWindow = Reminder.Window(key: .all, rows: 2 * step) }?.value
+        try await until(store.state.$detail) { $0?.rows.count == open }
+        await store.send(.detailEndReached)?.value
+        // Another filter starts at the first step again.
+        await store.send(.listTapped(list)) { $0.filter = .list(list) }?.value
+        try await until(store.state.$detail) { $0?.filter == .list(list) && $0?.rows.count == step }
+        // A new row goes at the end of the list, so the whole list is read to show it.
+        let id = Reminder.ID(UUID(0))
+        await store.send(.newReminderButtonTapped) {
+            $0.detailWindow = Reminder.Window(key: .list(list), rows: nil)
+            $0.editing = Reminder.Editing(Reminder(id: id, list: list, position: 700, created: now), session: UUID(1))
+        }?.value
+        try await until(store.state.$detail) { $0?.rows.count == open + 1 && $0?.rows.last?.id == id }
+        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
+        await store.dismount()
     }
 
     @Test func `a relaunch onto an open list reads its rows`() async throws {
@@ -269,7 +305,10 @@ struct `Reminder feature` {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
-        await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(Reminder(id: row, list: personal, position: 11, created: now), session: UUID(1)) }?.value
+        await store.send(.newReminderButtonTapped) { [personal] in
+            $0.detailWindow = Reminder.Window(key: .list(personal), rows: nil)
+            $0.editing = Reminder.Editing(Reminder(id: row, list: personal, position: 11, created: now), session: UUID(1))
+        }?.value
         await store.send(.datePresetSelected(row, .tomorrow)) { [now, calendar] in
             $0.editing?.draft.set(datePreset: .tomorrow, at: now, calendar: calendar)
         }?.value
@@ -425,7 +464,10 @@ struct `Reminder feature` {
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
         let blank = Reminder(id: row, list: personal, position: 11, created: now)
-        await store.send(.backgroundTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
+        await store.send(.backgroundTapped) { [personal] in
+            $0.detailWindow = Reminder.Window(key: .list(personal), rows: nil)
+            $0.editing = Reminder.Editing(blank, session: UUID(1))
+        }?.value
         await store.modify { $0[draft: row].title = "Bread" } changes: { $0.editing?.draft.title = "Bread" }?.value
         await store.send(.backgroundTapped) { $0.editing = nil }?.value
         // The row reopens on the stored reminder, and leaving the detail ends the session.

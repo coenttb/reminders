@@ -76,6 +76,25 @@ import Tagged
         #expect(try self.overview(database).lists.map(\.count) == [3, 2, 2])
     }
 
+    @Test func `a detail and a search read their first rows with the count of all of them`() throws {
+        let (database, sample) = try makeDatabase()
+        let personal = Reminder.Filter.list(sample.lists[0].id)
+        let window = try #require(try database.read { db in try Reminder.Filter.Detail.Request(filter: personal, today: today, limit: 2).fetch(db) })
+        #expect(window.reminders.map(\.title) == ["Haircut", "Doctor appointment"])
+        #expect(window.total == 4 && window.hasMore && window.ids == window.reminders.map(\.id))
+        #expect(window.completedCount == 0)
+        let whole = try detail(personal, database)
+        #expect(whole.rows.count == 4 && whole.total == 4 && !whole.hasMore)
+        // The completed count is the whole filter's, not the window's, and is read only when they show.
+        try database.write { db in try Reminder.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
+        let shown = try #require(try database.read { db in try Reminder.Filter.Detail.Request(filter: personal, today: today, limit: 1).fetch(db) })
+        #expect(shown.rows.count == 1 && shown.total == 5 && shown.completedCount == 1)
+        let matches = try database.read { db in try Reminder.Search.Results.Request(search: Reminder.Search(text: "Take", showCompleted: true), limit: 1).fetch(db) }
+        #expect(matches.reminders.map(\.title) == ["Take a walk"] && matches.total == 2 && matches.hasMore)
+        #expect(matches.completedCount == 1 && matches.shown == 1)
+        #expect(try results(Reminder.Search(text: "Take", showCompleted: true), database).total == 2)
+    }
+
     @Test func `a detail filters by membership and orders by its preference`() throws {
         let (database, sample) = try makeDatabase()
         let personal = Reminder.Filter.list(sample.lists[0].id)

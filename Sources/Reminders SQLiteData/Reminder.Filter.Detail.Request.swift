@@ -7,18 +7,22 @@ import Tagged
 
 extension Reminder.Filter.Detail {
     /// Reads one filter in one transaction: its preference decides the query, so a change to
-    /// the preference re-reads the rows along with it. No filter reads nothing.
+    /// the preference re-reads the rows along with it. The rows are the first `limit` in the
+    /// preference's order, with the count of all of them; no limit reads them all. No filter
+    /// reads nothing.
     public struct Request: FetchKeyRequest {
         public var filter: Reminder.Filter?
         /// The day the Today filter shows.
         public var today: Range<Date>
         /// The row being edited sorts by this value until editing ends.
         public var place: Reminder?
+        public var limit: Int?
 
-        public init(filter: Reminder.Filter?, today: Range<Date>, place: Reminder? = nil) {
+        public init(filter: Reminder.Filter?, today: Range<Date>, place: Reminder? = nil, limit: Int? = nil) {
             self.filter = filter
             self.today = today
             self.place = place
+            self.limit = limit
         }
 
         public func fetch(_ db: Database) throws -> Reminder.Filter.Detail? {
@@ -28,17 +32,23 @@ extension Reminder.Filter.Detail {
             if case let .list(id) = filter {
                 list = try List<Reminder>.Record.find(id).fetchOne(db)?.list
             }
-            let rows = try Reminder.Record
+            let shown = Reminder.Record
                 .where { $0.belongs(to: filter, today: today) }
                 .where { if !preference.showCompleted { !$0.isDone } }
+            let total = try shown.fetchCount(db)
+            let completedCount = preference.showCompleted ? try shown.where { $0.isDone }.fetchCount(db) : 0
+            let rows = try shown
                 .order { $0.ordered(by: preference.ordering, showCompleted: preference.showCompleted, placing: place) }
+                .limit(limit ?? total)
                 .rows()
                 .fetchAll(db)
             return Reminder.Filter.Detail(
                 filter: filter,
                 color: list?.color,
                 preference: preference,
-                rows: rows.map { Reminder.Filter.Detail.Row(reminder: $0.value, color: $0.listColor) }
+                rows: rows.map { Reminder.Filter.Detail.Row(reminder: $0.value, color: $0.listColor) },
+                total: total,
+                completedCount: completedCount
             )
         }
     }

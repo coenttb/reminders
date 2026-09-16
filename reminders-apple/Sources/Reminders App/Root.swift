@@ -43,7 +43,8 @@ extension Root {
                         ),
                         addTag: { store.send(.searchTagTapped($0)) },
                         toggleCompleted: { store.send(.searchCompletedButtonTapped) },
-                        deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) }
+                        deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) },
+                        endReached: { store.send(.resultsEndReached) }
                     )
                 } else {
                     Reminder.Overview.View(

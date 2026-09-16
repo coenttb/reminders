@@ -43,6 +43,7 @@ extension Root {
                 order: { store.send(.orderingSelected($0)) },
                 toggleCompleted: { store.send(.showCompletedButtonTapped) },
                 newReminder: { store.send(.newReminderButtonTapped) },
+                endReached: { store.send(.detailEndReached) },
                 info: list.map { list in { store.send(.listDetailsButtonTapped(list.id)) } },
                 delete: list.map { list in { store.send(.listDeleted(list.id)) } },
                 clearCompleted: { store.send(.clearCompletedButtonTapped) }

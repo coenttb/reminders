@@ -23,6 +23,7 @@ extension Reminder.Filter.Detail {
         private var order: (Reminder.Ordering) -> Void
         private var toggleCompleted: () -> Void
         private var newReminder: () -> Void
+        private var endReached: () -> Void
         private var info: (() -> Void)?
         private var delete: (() -> Void)?
         private var clearCompleted: (() -> Void)?
@@ -46,6 +47,7 @@ extension Reminder.Filter.Detail {
             order: @escaping (Reminder.Ordering) -> Void,
             toggleCompleted: @escaping () -> Void,
             newReminder: @escaping () -> Void,
+            endReached: @escaping () -> Void,
             info: (() -> Void)? = nil,
             delete: (() -> Void)? = nil,
             clearCompleted: (() -> Void)? = nil
@@ -64,6 +66,7 @@ extension Reminder.Filter.Detail {
             self.order = order
             self.toggleCompleted = toggleCompleted
             self.newReminder = newReminder
+            self.endReached = endReached
             self.info = info
             self.delete = delete
             self.clearCompleted = clearCompleted
@@ -91,7 +94,7 @@ extension Reminder.Filter.Detail.View {
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             // With completed shown, stock heads the list with "N Completed • Clear" over a rule.
             if preference.showCompleted, let clearCompleted {
-                let count = detail.rows.count { $0.reminder.completed }
+                let count = detail.completedCount
                 VStack(spacing: 0) {
                     HStack(spacing: 6) {
                         Text("\(count) Completed")
@@ -111,13 +114,17 @@ extension Reminder.Filter.Detail.View {
                 .listRowSeparator(.hidden)
             }
             // Stock rows: no separators, 10 pt above and below the text, 42 pt for a title alone.
-            ForEach(detail.rows) { row in
+            // The rows are the first of the filter's; one near the end coming on screen asks for
+            // the next, so the list scrolls on without a seam.
+            let (shown, total) = (detail.rows.count, detail.total)
+            ForEach(Array(detail.rows.enumerated()), id: \.element.id) { index, row in
                 if row.id == editing {
                     Reminder.Editor(reminder: draft(row.id), color: row.color.swiftUI, now: now, calendar: calendar, focus: $focus, actions: editor)
                 } else {
                     Reminder.Row(row.reminder, color: row.color.swiftUI, now: now, calendar: calendar, actions: rowActions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
+                        .onAppear { if Reminder.Window<Reminder.Filter>.nearsEnd(index, of: shown, total: total) { endReached() } }
                 }
             }
             .onMove(perform: move)
@@ -134,7 +141,7 @@ extension Reminder.Filter.Detail.View {
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 42)
         // Rows animate when they appear, leave, or move; a keystroke in the edited row does not.
-        .animation(.default, value: detail.rows.map(\.id))
+        .animation(.default, value: detail.ids)
         // The row being edited takes the keyboard and comes up above it. A new row is read back
         // from the database a moment after it starts — longer in a long list — so the focus is
         // set once the row is among the rows, not after a fixed wait.
@@ -142,7 +149,7 @@ extension Reminder.Filter.Detail.View {
             guard editing != nil else { return focus = nil }
             focusEditing(proxy)
         }
-        .onChange(of: detail.rows.map(\.id)) { _, _ in focusEditing(proxy) }
+        .onChange(of: detail.ids) { _, _ in focusEditing(proxy) }
         }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top > titleHeight

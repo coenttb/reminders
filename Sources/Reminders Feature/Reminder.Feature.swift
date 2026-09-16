@@ -43,6 +43,10 @@ extension Reminder {
             public var lastSeed: Reminder.Sample.Seed?
             /// Whether a seed is being written; the menu disables itself meanwhile.
             public var isSeeding = false
+            /// How many rows of the open filter, and of the search, are read; each widens as the
+            /// user nears its end and starts over for another filter or search.
+            public var detailWindow = Reminder.Window<Reminder.Filter>()
+            public var resultsWindow = Reminder.Window<Reminder.Search>()
 
             /// The open filter, read from the database; nil while no filter is open.
             @DebugSnapshotIgnored @Fetch public var detail: Reminder.Filter.Detail? = nil
@@ -86,6 +90,8 @@ extension Reminder {
             case datePresetSelected(Reminder.ID, Reminder.Due.Preset?)
             case deleteCompletedButtonTapped(olderThanMonths: Int?)
             case destination(Destination.Action)
+            /// The user scrolled close to the last row read: the next rows follow.
+            case detailEndReached
             case doneButtonTapped
             case filterTapped(Reminder.Filter)
             case listDeleted(List<Reminder>.ID)
@@ -99,6 +105,7 @@ extension Reminder {
             case reminderDetailsButtonTapped(Reminder.ID)
             case reminderTapped(Reminder.ID)
             case remindersMoved(IndexSet, Int)
+            case resultsEndReached
             case searchCompletedButtonTapped
             case searchSubmitted
             case searchTagTapped(Tag<Reminder>.ID)
@@ -147,6 +154,9 @@ extension Reminder {
                     perform { db in try Reminder.Record.deleteCompleted(matching: search, dueBefore: cutoff).execute(db) }
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
                     state.destination = nil
+                case .detailEndReached:
+                    guard let detail = state.detail else { break }
+                    state.detailWindow.widen(for: detail.filter, shown: detail.rows.count, total: detail.total)
                 // A blank name is no list and no reminder: the sheet stays up. It also stays up
                 // until the write has succeeded; a failed one leaves the draft to try again, and
                 // a save under way is not started twice.
@@ -308,6 +318,8 @@ extension Reminder {
                         try Reminder.Record.reorder(ids, in: db)
                         try Reminder.Filter.Preference.Record.set(ordering: .manual, for: filter).execute(db)
                     }
+                case .resultsEndReached:
+                    state.resultsWindow.widen(for: state.search, shown: state.results.shown, total: state.results.total)
                 case .searchCompletedButtonTapped:
                     state.search.showCompleted.toggle()
                 case .searchSubmitted:
@@ -415,23 +427,24 @@ extension Reminder {
             }
             // The detail is read again for another filter or day, or when a row starts or stops
             // being edited: the row being edited keeps the place it had, whatever the ordering says.
-            .onChange(of: DetailQuery(filter: store.filter, place: store.editing?.place, today: store.today), initial: true) { _, query, state in
+            .onChange(of: DetailQuery(filter: store.filter, place: store.editing?.place, today: store.today, limit: store.filter.flatMap { store.detailWindow.limit(for: $0) }), initial: true) { _, query, state in
                 guard let today = query.today else { return }
                 let detail = state.$detail
                 store.addTask {
-                    try await attempt { try await detail.load(Reminder.Filter.Detail.Request(filter: query.filter, today: today, place: query.place)) }
+                    try await attempt { try await detail.load(Reminder.Filter.Detail.Request(filter: query.filter, today: today, place: query.place, limit: query.limit)) }
                 }
             }
             // Typing waits for a pause before it is read: each read is two passes over every
             // reminder, and the earlier task is cancelled by the next character, so a word costs
             // one read rather than one per character. A token, the completed toggle, or a
             // cleared field is read at once.
-            .onChange(of: store.search, initial: true) { previous, search, state in
+            .onChange(of: ResultsQuery(search: store.search, limit: store.resultsWindow.limit(for: store.search)), initial: true) { previous, query, state in
                 let results = state.$results
+                let (previous, search) = (previous.search, query.search)
                 let typed = previous.text != search.text && previous.tokens == search.tokens && !search.text.isEmpty
                 store.addTask {
                     if typed { try await clock.sleep(for: Self.searchPause) }
-                    try await attempt { try await results.load(Reminder.Search.Results.Request(search: search)) }
+                    try await attempt { try await results.load(Reminder.Search.Results.Request(search: search, limit: query.limit)) }
                 }
             }
             .onChange(of: store.search.isActive) { _, active, state in
@@ -518,6 +531,7 @@ extension Reminder.Feature {
     private func startNewReminder(in list: List<Reminder>.ID, _ state: inout State) {
         let previous = state.editing
         let id = Reminder.ID(uuid())
+        if let filter = state.filter { state.detailWindow.open(for: filter) }
         store.addTask {
             try await attempt(editing: previous?.session) {
                 let reminder = try write { db in
@@ -556,6 +570,7 @@ extension Reminder.Feature {
     private func continueEditing(_ state: inout State) {
         guard let editing = state.editing, !editing.draft.isBlank else { return endEditing(&state) }
         let id = Reminder.ID(uuid())
+        if let filter = state.filter { state.detailWindow.extend(for: filter, by: 1) }
         store.addTask {
             try await attempt(editing: editing.session) {
                 let next = try write { db in
@@ -691,4 +706,11 @@ private struct DetailQuery: Equatable {
     var filter: Reminder.Filter?
     var place: Reminder?
     var today: Range<Date>?
+    var limit: Int?
+}
+
+/// What the search read depends on.
+private struct ResultsQuery: Equatable {
+    var search: Reminder.Search
+    var limit: Int?
 }

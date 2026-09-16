@@ -6,13 +6,16 @@ public import SQLiteData
 import Tagged
 
 extension Reminder.Search.Results {
-    /// Reads the search in one transaction: the matches under their lists, how many of them are
-    /// completed whether or not they are shown, and the tags completing a typed prefix.
+    /// Reads the search in one transaction: the first `limit` matches under their lists with the
+    /// count of all of them, how many are completed whether or not they are shown, and the tags
+    /// completing a typed prefix. No limit reads every match.
     public struct Request: FetchKeyRequest {
         public var search: Reminder.Search
+        public var limit: Int?
 
-        public init(search: Reminder.Search) {
+        public init(search: Reminder.Search, limit: Int? = nil) {
             self.search = search
+            self.limit = limit
         }
 
         public func fetch(_ db: Database) throws -> Reminder.Search.Results {
@@ -28,13 +31,16 @@ extension Reminder.Search.Results {
                     .map(\.tag)
             }
             results.completedCount = try Reminder.Record.where { $0.isDone && $0.matches(search) }.fetchCount(db)
-            let rows = try Reminder.Record
+            let shown = Reminder.Record
                 .where { $0.matches(search) }
                 .where { if !search.showCompleted { !$0.isDone } }
+            results.total = try shown.fetchCount(db)
+            let rows = try shown
                 .join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
                 .order { reminders, lists in
                     (lists.position, reminders.isDone, reminders.ordered(by: .dueDate, showCompleted: false))
                 }
+                .limit(limit ?? results.total)
                 .select { Match.Columns(reminder: $0, tags: $0.tagList, list: $1) }
                 .fetchAll(db)
             for row in rows {

@@ -17,6 +17,7 @@ extension Reminder.Search {
         private var addTag: (Tag<Reminder>.ID) -> Void
         private var toggleCompleted: () -> Void
         private var deleteCompleted: (Int?) -> Void
+        private var endReached: () -> Void
 
         public init(
             _ search: Reminder.Search,
@@ -26,7 +27,8 @@ extension Reminder.Search {
             rows: Reminder.Row.Actions,
             addTag: @escaping (Tag<Reminder>.ID) -> Void,
             toggleCompleted: @escaping () -> Void,
-            deleteCompleted: @escaping (Int?) -> Void
+            deleteCompleted: @escaping (Int?) -> Void,
+            endReached: @escaping () -> Void
         ) {
             self.search = search
             self.results = results
@@ -36,6 +38,7 @@ extension Reminder.Search {
             self.addTag = addTag
             self.toggleCompleted = toggleCompleted
             self.deleteCompleted = deleteCompleted
+            self.endReached = endReached
         }
     }
 }
@@ -87,12 +90,17 @@ extension Reminder.Search.View {
         .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .listRowSeparator(.visible, edges: .bottom)
         .listSectionMargins(.horizontal, 0)
-        ForEach(results.sections) { section in
+        // The matches are the first of the search's; one near the end coming on screen asks for
+        // the next. Sections count from the start so the index runs across them.
+        let (shown, total) = (results.shown, results.total)
+        let starts = results.sections.reduce(into: [0]) { $0.append($0[$0.count - 1] + $1.reminders.count) }
+        ForEach(Array(results.sections.enumerated()), id: \.element.id) { position, section in
             Section {
-                ForEach(section.reminders) { reminder in
+                ForEach(Array(section.reminders.enumerated()), id: \.element.id) { offset, reminder in
                     Reminder.Row(reminder, color: section.list.color.swiftUI, now: now, calendar: calendar, actions: rows)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
+                        .onAppear { if Reminder.Window<Reminder.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { endReached() } }
                 }
             } header: {
                 Text(section.list.title)
