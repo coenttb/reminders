@@ -48,7 +48,6 @@ let package = Package(
                 .product(name: "CasePaths", package: "swift-case-paths"),
                 "Reminder",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -115,6 +114,7 @@ let package = Package(
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
+                .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -141,7 +141,6 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -184,6 +183,7 @@ let package = Package(
             name: "Reminders Feature Tests",
             dependencies: [
                 "Reminder",
+                "Reminders",
                 "Reminders Dependency",
                 "Reminders Feature",
                 "Reminders Sample",

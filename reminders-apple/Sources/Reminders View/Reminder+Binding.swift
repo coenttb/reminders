@@ -1,6 +1,7 @@
 import Foundation
 import Reminder
 import Reminders
+import Reminders_Feature
 
 extension Reminder {
     subscript(dueOn now: Date, calendar calendar: Calendar) -> Bool {

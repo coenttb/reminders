@@ -1,3 +1,4 @@
+public import Reminders
 public import Foundation
 public import Reminder
 import FoundationEssentials_Extensions

@@ -1,4 +1,5 @@
 public import Reminders
+public import Reminders_Feature
 
 extension Reminders.Editor.Preset {
     public var title: String {
