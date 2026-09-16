@@ -1,5 +1,5 @@
 import Foundation
-public import Organizing
+import Organizing
 public import Reminders
 public import Reminders_Application
 public import SQLiteData

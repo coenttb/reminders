@@ -1,7 +1,7 @@
 public import Organizing
 public import Reminders
 public import SwiftUI
-public import Tagged
+import Tagged
 
 extension Reminder.Filter {
     public var title: String? {

@@ -1,8 +1,8 @@
-public import Organizing
-public import Reminders
-public import Reminders_Application
-public import SQLiteData
-public import Tagged
+import Organizing
+import Reminders
+import Reminders_Application
+import SQLiteData
+import Tagged
 
 extension Reminder {
     init(_ match: Reminder.Search.Results.Request.Match) {

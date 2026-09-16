@@ -1,12 +1,12 @@
 import Foundation
-public import Organizing
+import Organizing
 public import Reminders
 public import Reminders_Application
-public import SQLiteData
+import SQLiteData
 import Tagged
 
 extension Reminder.Search.Results {
-    public struct Request {
+    public struct Request: Hashable, Sendable {
         public var search: Reminder.Search
         public var limit: Int?
 

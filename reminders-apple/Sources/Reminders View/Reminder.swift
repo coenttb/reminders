@@ -1,7 +1,7 @@
-public import Foundation
-public import Organizing
+import Foundation
+import Organizing
 public import Reminders
-public import Tagged
+import Tagged
 
 extension Reminder {
     public var tagLine: String { tags.sorted().map(Tag<Reminder>.hashtag).joined(separator: " ") }

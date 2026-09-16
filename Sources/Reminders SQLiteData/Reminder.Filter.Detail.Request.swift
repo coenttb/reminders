@@ -2,11 +2,11 @@ public import Foundation
 import Organizing
 public import Reminders
 public import Reminders_Application
-public import SQLiteData
+import SQLiteData
 import Tagged
 
 extension Reminder.Filter.Detail {
-    public struct Request {
+    public struct Request: Hashable, Sendable {
         public var filter: Reminder.Filter?
         public var today: Range<Date>
         public var place: Reminder?

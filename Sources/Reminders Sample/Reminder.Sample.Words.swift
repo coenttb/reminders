@@ -1,5 +1,5 @@
 import Organizing
-public import Reminders
+import Reminders
 
 extension Reminder.Sample {
     enum Words {}

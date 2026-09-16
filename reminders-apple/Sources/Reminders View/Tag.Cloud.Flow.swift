@@ -1,4 +1,4 @@
-public import Organizing
+import Organizing
 public import SwiftUI
 
 extension Tag.Cloud {

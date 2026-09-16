@@ -1,4 +1,4 @@
-public import Foundation
+import Foundation
 import Organizing
 public import Reminders
 public import Reminders_Application

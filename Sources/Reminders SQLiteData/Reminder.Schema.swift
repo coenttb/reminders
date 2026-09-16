@@ -1,8 +1,8 @@
 import Foundation
 import Organizing
 public import Reminders
-public import Reminders_Application
-public import Reminders_Sample
+import Reminders_Application
+import Reminders_Sample
 public import SQLiteData
 
 extension Reminder {

@@ -1,12 +1,12 @@
 public import Foundation
-public import Organizing
+import Organizing
 public import Reminders
 public import Reminders_Application
-public import SQLiteData
+import SQLiteData
 import Tagged
 
 extension Reminder.Overview {
-    public struct Request {
+    public struct Request: Hashable, Sendable {
         public var today: Range<Date>
 
         public init(today: Range<Date>) {

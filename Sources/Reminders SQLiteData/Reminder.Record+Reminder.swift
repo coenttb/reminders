@@ -1,7 +1,7 @@
-public import Foundation
+import Foundation
 public import Organizing
 public import Reminders
-public import SQLiteData
+import SQLiteData
 public import Tagged
 
 extension Reminder {

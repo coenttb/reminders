@@ -1,7 +1,7 @@
-public import Organizing
+import Organizing
 public import Reminders
-public import SQLiteData
-public import Tagged
+import SQLiteData
+import Tagged
 
 extension Reminder {
     public init(_ row: Reminder.Record.Row) {

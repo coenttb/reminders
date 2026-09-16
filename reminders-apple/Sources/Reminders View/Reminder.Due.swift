@@ -1,7 +1,7 @@
 public import Foundation
 import FoundationEssentials_Extensions
 public import Reminders
-public import Reminders_Application
+import Reminders_Application
 
 extension Reminder.Due {
     public static func description(of due: Self, at now: Date, calendar: Calendar) -> String {

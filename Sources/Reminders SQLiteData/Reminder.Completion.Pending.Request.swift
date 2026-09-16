@@ -1,9 +1,9 @@
 public import Reminders
 public import Reminders_Application
-public import SQLiteData
+import SQLiteData
 
 extension Reminder.Completion.Pending {
-    public struct Request {
+    public struct Request: Hashable, Sendable {
         public init() {}
     }
 }

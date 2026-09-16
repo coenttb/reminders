@@ -9,7 +9,7 @@ import SwiftUI
 import Tagged
 
 extension Root {
-    struct Detail: View {
+    struct Detail {
         private var filter: Reminder.Filter
         private var store: StoreOf<Reminder.Feature>
         @Dependency(\.date.now) private var now
@@ -23,8 +23,8 @@ extension Root {
     }
 }
 
-extension Root.Detail {
-    var body: some View {
+extension Root.Detail: SwiftUI::View {
+    @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
         let detail = store.detail ?? Reminder.Filter.Detail(filter: filter, preference: filter.defaultPreference)
         Reminder.Filter.Detail.View(

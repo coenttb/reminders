@@ -1,6 +1,6 @@
-public import Foundation
-public import Reminders
-public import SwiftUI
+import Foundation
+import Reminders
+import SwiftUI
 
 extension Binding<Reminder> {
     func dueOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now, calendar: calendar]] }

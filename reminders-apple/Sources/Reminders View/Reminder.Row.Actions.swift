@@ -1,2 +1,2 @@
-public import Reminders
-public import Tagged
+import Reminders
+import Tagged

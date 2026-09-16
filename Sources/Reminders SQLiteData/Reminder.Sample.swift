@@ -1,10 +1,10 @@
-public import Organizing
+import Organizing
 public import Reminders
-public import Reminders_Application
+import Reminders_Application
 public import Reminders_Sample
 public import SQLiteData
 import Standard_Library_Extensions
-public import Tagged
+import Tagged
 
 extension Reminder.Sample {
     public static func initialize(with sample: Self, in db: Database) throws {

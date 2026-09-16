@@ -1,2 +1,2 @@
-public import Reminders
-public import Reminders_Application
+import Reminders
+import Reminders_Application
