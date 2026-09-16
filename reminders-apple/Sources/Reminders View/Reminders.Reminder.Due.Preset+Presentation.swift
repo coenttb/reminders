@@ -1,5 +1,4 @@
 public import Reminders
-public import Reminders_Interface
 
 extension Reminders.Reminder.Due.Preset {
     public var title: String {

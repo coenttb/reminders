@@ -144,7 +144,7 @@ struct `Reminder feature` {
             await store.send(.newReminderButtonTapped)?.value
             let editing = try #require(await store.state.editing)
             let first = editing.id
-            #expect(await store.state.detailWindow == Window(key: .list(personal), rows: nil))
+            #expect(await store.state.detailWindow == Window(key: .list(personal), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
             #expect(editing.isSaved && editing.draft.isBlank && editing.draft.listID == personal && editing.place.position == 11 && editing.session == UUID(0))
             #expect(try await stored(first)?.isBlank == true)
             try await until(store.state.$detail) { $0?.ids.contains(first) == true }
@@ -191,13 +191,13 @@ struct `Reminder feature` {
         try await database.write { db in try generated.replace(in: db) }
         let list = generated.lists[0].id
         let open = generated.reminders.count { !$0.completed }
-        let step = Window<Reminders.Filter>.step
+        let step = Reminders.Feature.paging.step
         #expect(open > step && open < 2 * step)
         let store = try await makeStore()
         await store.send(.filterTapped(.all)) { $0.filter = .all }?.value
         try await until(store.state.$detail) { $0?.filter == .all && $0?.rows.count == step }
         #expect(await store.state.detail?.total == open)
-        await store.send(.detailEndReached) { $0.detailWindow = Window(key: .all, rows: 2 * step) }?.value
+        await store.send(.detailEndReached) { $0.detailWindow = Window(key: .all, rows: 2 * step, step: step, margin: Reminders.Feature.paging.margin) }?.value
         try await until(store.state.$detail) { $0?.rows.count == open }
         await store.send(.detailEndReached)?.value
         await store.send(.listTapped(list)) { $0.filter = .list(list) }?.value
@@ -205,7 +205,7 @@ struct `Reminder feature` {
         try await TestExhaustivity.$current.withValue(.off) {
             await store.send(.newReminderButtonTapped)?.value
             let editing = try #require(await store.state.editing)
-            #expect(await store.state.detailWindow == Window(key: .list(list), rows: nil))
+            #expect(await store.state.detailWindow == Window(key: .list(list), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
             #expect(editing.place.position == 700 && editing.draft.listID == list)
             try await until(store.state.$detail) { $0?.rows.count == open + 1 && $0?.ids.last == editing.id }
             await store.send(.doneButtonTapped) { $0.editing = nil }?.value
@@ -433,7 +433,7 @@ struct `Reminder feature` {
             await store.send(.backgroundTapped)?.value
             let editing = try #require(await store.state.editing)
             let row = editing.id
-            #expect(await store.state.detailWindow == Window(key: .list(personal), rows: nil))
+            #expect(await store.state.detailWindow == Window(key: .list(personal), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
             #expect(editing.draft.isBlank && editing.place.position == 11 && editing.session == UUID(0))
             await store.modify { $0[draft: row]?.title = "Bread" } changes: { $0.editing?.draft.title = "Bread" }?.value
             await store.send(.backgroundTapped) { $0.editing = nil }?.value
@@ -489,6 +489,10 @@ struct `Reminder feature` {
         #expect(overview.lists.first?.id == List<Reminder>.ID(UUID(2)))
         #expect(overview.counts.all == 0)
         await store.dismount()
+    }
+
+    @Test func `the grace period between the tap and completed is five seconds`() {
+        #expect(Reminders.Feature.grace == .seconds(5))
     }
 
     @Test func `an editing session starts saved and knows when the draft differs`() {

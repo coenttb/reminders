@@ -21,12 +21,12 @@ extension Reminders {
             public var filter: Reminders.Filter?
             public var editing: Reminders.Reminder.Editing?
             public var failure: String?
-            public var search = Reminders.Search()
+            public var search = Reminders.Search.Query()
             public var today: Range<Date>?
             public var lastSeed: Reminders.Sample.Seed?
             public var isSeeding = false
-            public var detailWindow = Window<Reminders.Filter>()
-            public var resultsWindow = Window<Reminders.Search>()
+            public var detailWindow = Window<Reminders.Filter>(step: Feature.paging.step, margin: Feature.paging.margin)
+            public var resultsWindow = Window<Reminders.Search.Query>(step: Feature.paging.step, margin: Feature.paging.margin)
 
             @DebugSnapshotIgnored @Fetch public var detail: Reminders.Filter.Detail.Contents? = nil
             @DebugSnapshotIgnored @Fetch public var overview = Reminders.Overview.Contents()
@@ -112,9 +112,9 @@ extension Reminders {
                     guard let filter = state.filter, let today = state.today else { break }
                     perform { db in try Reminder.Record.deleteCompleted(in: filter, today: today).execute(db) }
                 case let .deleteCompletedButtonTapped(months):
-                    let search = state.search
+                    let query = state.search
                     let cutoff = months.map { now.subtracting($0.months, in: calendar) ?? now }
-                    perform { db in try Reminder.Record.deleteCompleted(matching: search, dueBefore: cutoff).execute(db) }
+                    perform { db in try Reminder.Record.deleteCompleted(matching: query, dueBefore: cutoff).execute(db) }
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
                     state.destination = nil
                 case .detailEndReached:
@@ -349,10 +349,10 @@ extension Reminders {
                     try await attempt { try await detail.load(request) }
                 }
             }
-            .onChange(of: Reminders.Search.Request(search: store.search, limit: store.resultsWindow.limit(for: store.search)), initial: true) { previous, request, state in
+            .onChange(of: Reminders.Search.Request(query: store.search, limit: store.resultsWindow.limit(for: store.search)), initial: true) { previous, request, state in
                 let results = state.$results
-                let (previous, search) = (previous.search, request.search)
-                let typed = previous.text != search.text && previous.tokens == search.tokens && !search.text.isEmpty
+                let (previous, query) = (previous.query, request.query)
+                let typed = previous.text != query.text && previous.tokens == query.tokens && !query.text.isEmpty
                 store.addTask {
                     if typed { try await clock.sleep(for: Self.searchPause) }
                     try await attempt { try await results.load(request) }
@@ -364,7 +364,7 @@ extension Reminders {
             .onChange(of: store.pending, initial: true) { _, pending, _ in
                 guard !pending.isEmpty else { return }
                 store.addTask {
-                    try await clock.sleep(for: Reminders.Pending.grace)
+                    try await clock.sleep(for: Self.grace)
                     try await attempt { try write { db in try Reminder.Record.completePending.execute(db) } }
                 }
             }
@@ -374,6 +374,8 @@ extension Reminders {
 
 extension Reminders.Feature {
     public static let searchPause: Duration = .milliseconds(250)
+    public static let grace: Duration = .seconds(5)
+    public static let paging: (step: Int, margin: Int) = (300, 60)
 
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
 

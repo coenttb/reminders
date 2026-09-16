@@ -35,7 +35,8 @@ extension Reminders.Filter.Screen: SwiftUI::View {
             color: { store.overview.list($0).map { SwiftUI.Color(Organizing.Color($0.color)) } ?? .blue },
             draft: { Binding($store[dynamicMember: \.[draft: $0]]) },
             view: Reminders.Filter.Detail.View(
-                title: style.title ?? "",
+                filter: filter,
+                window: store.detailWindow,
                 editing: store.editing?.id,
                 now: now,
                 calendar: calendar,

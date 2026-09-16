@@ -1,25 +1,30 @@
 public struct Window<Key: Hashable & Sendable>: Hashable, Sendable {
     public var key: Key?
     public var rows: Int?
+    public let step: Int
+    public let margin: Int
 
-    public init(key: Key? = nil, rows: Int? = Self.step) {
+    public init(key: Key?, rows: Int?, step: Int, margin: Int) {
         self.key = key
         self.rows = rows
+        self.step = step
+        self.margin = margin
+    }
+
+    public init(step: Int, margin: Int) {
+        self.init(key: nil, rows: step, step: step, margin: margin)
     }
 }
 
 extension Window {
-    public static var step: Int { 300 }
-    public static var margin: Int { 60 }
-
     public func limit(for key: Key) -> Int? {
-        self.key == key ? rows : Self.step
+        self.key == key ? rows : step
     }
 
     public mutating func widen(for key: Key, shown: Int, total: Int) {
         guard shown < total, let limit = limit(for: key) else { return }
         self.key = key
-        rows = limit + Self.step
+        rows = limit + step
     }
 
     public mutating func extend(for key: Key, by count: Int) {
@@ -33,7 +38,7 @@ extension Window {
         rows = nil
     }
 
-    public static func nearsEnd(_ index: Int, of shown: Int, total: Int) -> Bool {
+    public func nearsEnd(_ index: Int, of shown: Int, total: Int) -> Bool {
         shown < total && index >= shown - margin
     }
 }

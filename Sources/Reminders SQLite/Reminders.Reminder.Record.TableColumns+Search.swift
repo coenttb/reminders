@@ -14,10 +14,10 @@ extension Reminders.Reminder.Record.TableColumns {
                 .exists()
     }
 
-    public func matches(_ search: Reminders.Search) -> SQLQueryExpression<Bool> {
-        guard search.matchesReminders else { return SQLQueryExpression("0") }
-        var predicate = SQLQueryExpression<Bool>(search.matchedText.isEmpty ? "1" : "(\(matches(search.matchedText)))")
-        for token in search.tokens {
+    public func matches(_ query: Reminders.Search.Query) -> SQLQueryExpression<Bool> {
+        guard query.matchesReminders else { return SQLQueryExpression("0") }
+        var predicate = SQLQueryExpression<Bool>(query.matchedText.isEmpty ? "1" : "(\(matches(query.matchedText)))")
+        for token in query.tokens {
             switch token {
             case let .near(text): predicate = SQLQueryExpression("\(predicate) AND (\(matches(text)))")
             case let .tag(tag): predicate = SQLQueryExpression("\(predicate) AND (\(carries(tag)))")

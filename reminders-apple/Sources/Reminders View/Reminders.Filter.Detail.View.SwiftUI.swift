@@ -35,7 +35,7 @@ extension Reminders.Filter.Detail.View {
 
 extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
-        let (title, editing, actions) = (view.title, view.editing, view.actions)
+        let (title, editing, actions) = (style.title ?? "", view.editing, view.actions)
         let tint = style.tint
         let preference = contents.preference
         let row = Reminders.Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
@@ -84,7 +84,7 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
                     Reminders.Reminder.Row.SwiftUI(row: record, color: color(record.reminder.listID), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if Reminders_Interface.Window<Reminders.Filter>.nearsEnd(index, of: shown, total: total) { actions.endReached() } }
+                        .onAppear { if view.window.nearsEnd(index, of: shown, total: total) { actions.endReached() } }
                 }
             }
             .onMove(perform: actions.move)

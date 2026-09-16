@@ -8,23 +8,23 @@ import Tagged
 extension Reminders.Search.Request: FetchKeyRequest {
     public func fetch(_ db: Database) throws -> Reminders.Search.Contents {
         var contents = Reminders.Search.Contents()
-        guard search.matchesReminders || search.tagPrefix != nil else { return contents }
-        if let prefix = search.tagPrefix {
-            let taken = search.tags.map(\.rawValue)
+        guard query.matchesReminders || query.tagPrefix != nil else { return contents }
+        if let prefix = query.tagPrefix {
+            let taken = query.tags.map(\.rawValue)
             contents.suggestions = try Tag<Reminder>.Record
                 .where { Reminders.Schema.$hasCaseInsensitivePrefix($0.title, prefix) && !$0.title.in(taken) }
                 .order { $0.title.collate(Reminders.Schema.$localizedCaseInsensitive) }
                 .fetchAll(db)
         }
         let (matched, completed) = try Reminder.Record
-            .where { $0.matches(search) }
+            .where { $0.matches(query) }
             .select { ($0.id.count(), $0.isDone.cast(as: Int.self).sum() ?? 0) }
             .fetchOne(db) ?? (0, 0)
         contents.completedCount = completed
-        contents.total = search.showCompleted ? matched : matched - completed
+        contents.total = query.showCompleted ? matched : matched - completed
         let matches = try Reminder.Record
-            .where { $0.matches(search) }
-            .where { if !search.showCompleted { !$0.isDone } }
+            .where { $0.matches(query) }
+            .where { if !query.showCompleted { !$0.isDone } }
             .join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
             .order { reminders, lists in
                 (lists.position, reminders.isDone, reminders.ordered(by: .dueDate, showCompleted: false))

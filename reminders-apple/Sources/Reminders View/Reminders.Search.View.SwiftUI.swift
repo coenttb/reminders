@@ -52,7 +52,7 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
                 }
                 .disabled(completed == 0)
                 Spacer()
-                Button(view.search.showCompleted ? "Hide" : "Show", action: actions.toggleCompleted).disabled(completed == 0)
+                Button(view.query.showCompleted ? "Hide" : "Show", action: actions.toggleCompleted).disabled(completed == 0)
             }
             .buttonStyle(.borderless)
         }
@@ -71,7 +71,7 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
                     Reminders.Reminder.Row.SwiftUI(row: record, color: SwiftUI::Color(Organizing.Color(section.list.color)), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if Reminders_Interface.Window<Reminders.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { actions.endReached() } }
+                        .onAppear { if view.window.nearsEnd(starts[position] + offset, of: shown, total: total) { actions.endReached() } }
                 }
             } header: {
                 Text(section.list.title)
