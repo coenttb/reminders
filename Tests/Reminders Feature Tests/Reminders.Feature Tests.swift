@@ -94,28 +94,27 @@ struct `Reminder feature` {
         await clock.advance(by: .seconds(5))
         try await until($pending) { $0.isEmpty }
         #expect(try await stored(groceries.id)?.completion == .completed)
-        let draft = Reminder(id: Reminder.ID(UUID(0)), list: personal, created: now)
-        await store.send(.newReminderButtonTapped) {
-            $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: draft, isNew: true, session: UUID(1))))
+        await store.send(.newReminderButtonTapped) { [personal, now] in
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .create(listID: personal, created: now), tags: [], original: nil)))
         }?.value
         await store.modify {
-            if case var .reminder(form) = $0.destination { form.reminder.title = "Water plants"; $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.title = "Water plants"; $0.destination = .reminder(form) }
         } changes: {
-            if case var .reminder(form) = $0.destination { form.draft.reminder.title = "Water plants"; $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.title = "Water plants"; $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.tagAdded("garden")))) {
-            if case var .reminder(form) = $0.destination { form.draft.reminder.tags.insert("garden"); $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.tags.insert("garden"); $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.tagAdded("ADULTING")))) {
-            if case var .reminder(form) = $0.destination { form.draft.reminder.tags.insert("adulting"); $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.tags.insert("adulting"); $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.saveButtonTapped))) { $0.destination = nil }?.value
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         await store.send(.orderingSelected(.title))?.value
         await store.send(.showCompletedButtonTapped)?.value
         await store.dismount()
-        let saved = try await stored(draft.id)
-        #expect(saved?.title == "Water plants")
+        let saved = try await database.read { db in try Reminder.Record.where { $0.title.eq("Water plants") }.rows().fetchOne(db).map(Reminder.init) }
+        #expect(saved?.title == "Water plants" && saved?.position == 11)
         #expect(saved?.tags == ["garden", "adulting"])
         let adulting = try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).count { $0.title.lowercased() == "adulting" } }
         #expect(adulting == 1)
@@ -461,18 +460,18 @@ struct `Reminder feature` {
         let groceriesRow0 = try await row(groceries.id)
         await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminders.Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
         await store.modify { $0[draft: groceries.id]?.title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
-        var committed = groceries
-        committed.title = "Groceries and more"
+        var committed = groceriesRow0
+        committed.reminder.title = "Groceries and more"
         await store.send(.reminderDetailsButtonTapped(groceries.id)) {
             $0.editing = nil
-            $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: committed, isNew: false, session: UUID(1))))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(committed.reminder), tags: Set(committed.tags.map(Tag<Reminder>.ID.init)), original: committed)))
         }?.value
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
         let (haircut, doctor) = (sample.reminders[1], sample.reminders[2])
-        let haircutRow2 = try await row(haircut.id)
-        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminders.Reminder.Editing(haircutRow2, session: UUID(2)) }?.value
-        let doctorRow3 = try await row(doctor.id)
-        await store.send(.reminderTapped(doctor.id)) { $0.editing = Reminders.Reminder.Editing(doctorRow3, session: UUID(3)) }?.value
+        let haircutRow1 = try await row(haircut.id)
+        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminders.Reminder.Editing(haircutRow1, session: UUID(1)) }?.value
+        let doctorRow2 = try await row(doctor.id)
+        await store.send(.reminderTapped(doctor.id)) { $0.editing = Reminders.Reminder.Editing(doctorRow2, session: UUID(2)) }?.value
         await store.send(.reminderTapped(doctor.id))?.value
         #expect(try await database.read { db in try Reminders.Restoration.current.fetchOne(db)?.editing } == doctor.id)
         await store.dismount()
@@ -503,14 +502,14 @@ struct `Reminder feature` {
     @Test func `the list form edits a list, Done is one save, and the reminder form's tag intents change every reminder`() async throws {
         let store = try await makeStore()
         try await store.state.$overview.load()
-        let family = sample.lists[1]
+        let family = List<Reminder>.Record(sample.lists[1])
         await store.send(.listDetailsButtonTapped(family.id)) {
-            $0.destination = .list(snap(List<Reminder>.Draft.Feature.State(list: family, isNew: false, session: UUID(0))))
+            $0.destination = .list(snap(List<Reminder>.Form.Feature.State(draft: List<Reminder>.Record.Draft(family), original: family)))
         }?.value
         await store.modify {
-            if case var .list(form) = $0.destination { form.list.title = "Home"; $0.destination = .list(form) }
+            if case var .list(form) = $0.destination { form.draft.title = "Home"; $0.destination = .list(form) }
         } changes: {
-            if case var .list(form) = $0.destination { form.draft.list.title = "Home"; $0.destination = .list(form) }
+            if case var .list(form) = $0.destination { form.draft.title = "Home"; $0.destination = .list(form) }
         }?.value
         await store.modify {
             if case var .list(form) = $0.destination { form.isSaving = true; $0.destination = .list(form) }
@@ -526,18 +525,19 @@ struct `Reminder feature` {
         }?.value
         await store.send(.destination(.list(.saveButtonTapped))) { $0.destination = nil }?.value
         #expect(try await database.read { db in try List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Home")
+        let groceriesRow = try await row(groceries.id)
         await store.send(.reminderDetailsButtonTapped(groceries.id)) {
-            $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: groceries, isNew: false, session: UUID(1))))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(groceriesRow.reminder), tags: Set(groceriesRow.tags.map(Tag<Reminder>.ID.init)), original: groceriesRow)))
         }?.value
         await store.send(.destination(.reminder(.tagRenamed("someday", "later")))) {
             if case var .reminder(form) = $0.destination {
-                form.draft.reminder.tags.remove("someday")
-                form.draft.reminder.tags.insert("later")
+                form.tags.remove("someday")
+                form.tags.insert("later")
                 $0.destination = .reminder(form)
             }
         }?.value
         await store.send(.destination(.reminder(.tagDeleted("optional")))) {
-            if case var .reminder(form) = $0.destination { form.draft.reminder.tags.remove("optional"); $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.tags.remove("optional"); $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
         #expect(try await database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("later")) }.fetchCount(db) } == 2)
@@ -551,13 +551,13 @@ struct `Reminder feature` {
             try await store.state.$overview.load()
             await store.send(.tagTapped("car"))?.value
             await store.send(.reminderDetailsButtonTapped(groceries.id))?.value
-            func form() async -> Reminder.Draft.Feature.State? {
+            func form() async -> Reminder.Form.Feature.State? {
                 await store.state.destination.flatMap { if case let .reminder(form) = $0 { form } else { nil } }
             }
             try await block("INSERT", on: "tags", reason: "tags locked")
             await store.send(.destination(.reminder(.tagAdded("garden"))))?.value
             #expect(await form()?.failure?.contains("tags locked") == true)
-            #expect(await form()?.reminder.tags == groceries.tags)
+            #expect(await form()?.tags == groceries.tags)
             try await unblock()
             try await block("DELETE", on: "tags", reason: "tags kept")
             await store.send(.destination(.reminder(.tagDeleted("car"))))?.value
@@ -609,33 +609,32 @@ struct `Reminder feature` {
     @Test func `a form with a blank title does not save, and a failed save keeps the draft`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        let list = List<Reminder>(id: List<Reminder>.ID(UUID(0)))
         await store.send(.addListButtonTapped) {
-            $0.destination = .list(snap(List<Reminder>.Draft.Feature.State(list: list, isNew: true, session: UUID(1))))
+            $0.destination = .list(snap(List<Reminder>.Form.Feature.State(draft: .create(), original: nil)))
         }?.value
         await store.send(.destination(.list(.saveButtonTapped)))?.value
         #expect(try await database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 3)
         await store.send(.destination(.list(.cancelButtonTapped))) { $0.destination = nil }?.value
-        let draft = Reminder(id: Reminder.ID(UUID(2)), list: personal, title: "Orphan", created: now)
-        await store.send(.newReminderButtonTapped) {
-            $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: Reminder(id: draft.id, list: personal, created: now), isNew: true, session: UUID(3))))
+        await store.send(.newReminderButtonTapped) { [personal, now] in
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .create(listID: personal, created: now), tags: [], original: nil)))
         }?.value
         await store.modify {
-            if case var .reminder(form) = $0.destination { form.reminder.title = "Orphan"; $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.title = "Orphan"; $0.destination = .reminder(form) }
         } changes: {
-            if case var .reminder(form) = $0.destination { form.draft.reminder.title = "Orphan"; $0.destination = .reminder(form) }
+            if case var .reminder(form) = $0.destination { form.draft.title = "Orphan"; $0.destination = .reminder(form) }
         }?.value
         try await database.write { [personal] db in try List<Reminder>.Record.find(personal).delete().execute(db) }
         await store.send(.destination(.reminder(.saveButtonTapped)))?.value
         let failed = await store.state.destination.flatMap { if case let .reminder(form) = $0 { form } else { nil } }
         #expect(failed?.failure?.contains("FOREIGN KEY") == true)
-        #expect(failed?.reminder.title == "Orphan")
+        #expect(failed?.draft.title == "Orphan")
         #expect(failed?.isSaving == false)
-        #expect(try await stored(draft.id) == nil)
+        #expect(try await database.read { db in try Reminder.Record.where { $0.title.eq("Orphan") }.fetchCount(db) } == 0)
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
         let trash = sample.reminders[7]
+        let trashRow = try await row(trash.id)
         await store.send(.reminderDetailsButtonTapped(trash.id)) {
-            $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: trash, isNew: false, session: UUID(4))))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(trashRow.reminder), tags: Set(trashRow.tags.map(Tag<Reminder>.ID.init)), original: trashRow)))
         }?.value
         try await database.write { db in try Reminder.Record.find(trash.id).delete().execute(db) }
         await store.send(.destination(.reminder(.saveButtonTapped))) {

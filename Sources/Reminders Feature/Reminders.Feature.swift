@@ -9,7 +9,6 @@ public import Reminders_Sample
 public import Reminders_SQL
 import Reminders_SQLite
 public import SQLiteData
-import Standard_Library_Extensions
 public import Tagged
 
 extension Reminders {
@@ -93,7 +92,7 @@ extension Reminders {
             ComposableArchitecture2.Update { state, action in
                 switch action {
                 case .addListButtonTapped:
-                    state.destination = .list(List<Reminder>.Draft.Feature.State(list: List(id: List<Reminder>.ID(uuid())), isNew: true, session: uuid()))
+                    state.destination = .list(List<Reminder>.Form.Feature.State(draft: List<Reminder>.Record.Draft.create(), original: nil))
                 case .appActivated:
                     state.today = calendar.day(containing: now)
                 case .backgroundTapped:
@@ -116,56 +115,8 @@ extension Reminders {
                 case .detailEndReached:
                     guard let detail = state.detail else { break }
                     state.detailWindow.widen(for: detail.filter, shown: detail.rows.count, total: detail.total)
-                case .destination(.list(.saveButtonTapped)):
-                    guard case var .list(form) = state.destination, !form.list.isBlank, !form.isSaving else { break }
-                    form.isSaving = true
-                    state.destination = .list(form)
-                    save(form)
-                case .destination(.reminder(.saveButtonTapped)):
-                    guard case var .reminder(form) = state.destination, !form.reminder.isBlank, !form.isSaving else { break }
-                    form.isSaving = true
-                    state.destination = .reminder(form)
-                    save(form)
-                case let .destination(.reminder(.tagAdded(title))):
-                    guard case let .reminder(form) = state.destination else { break }
-                    store.addTask {
-                        try await attempt(form: form.session) {
-                            guard let tag = try write({ db in try Tag<Reminder>.Record.add(title, in: db) }) else { return }
-                            try store.modify {
-                                $0.modifyReminderForm(form.session) {
-                                    $0.reminder.tags.insert(tag)
-                                    $0.failure = nil
-                                }
-                            }
-                        }
-                    }
-                case let .destination(.reminder(.tagDeleted(id))):
-                    guard case let .reminder(form) = state.destination else { break }
-                    store.addTask {
-                        try await attempt(form: form.session) {
-                            try write { db in try Tag<Reminder>.Record.delete(id).execute(db) }
-                            try store.modify {
-                                $0.filter = $0.filter.flatMap { $0.removing(tag: id) }
-                                $0.modifyReminderForm(form.session) {
-                                    $0.reminder.tags.remove(id)
-                                    $0.failure = nil
-                                }
-                            }
-                        }
-                    }
-                case let .destination(.reminder(.tagRenamed(id, title))):
-                    guard case let .reminder(form) = state.destination else { break }
-                    store.addTask {
-                        try await attempt(form: form.session) {
-                            guard let renamed = try write({ db in try Tag<Reminder>.Record.rename(id, to: title, in: db) }) else { return }
-                            try store.modify {
-                                $0.modifyReminderForm(form.session) { form in
-                                    form.reminder.tags.replace(id, with: renamed)
-                                    form.failure = nil
-                                }
-                            }
-                        }
-                    }
+                case .destination:
+                    break
                 case .doneButtonTapped:
                     endEditing(&state)
                 case let .filterTapped(filter):
@@ -180,7 +131,7 @@ extension Reminders {
                     }
                 case let .listDetailsButtonTapped(id):
                     if let list = state.overview.list(id) {
-                        state.destination = .list(List<Reminder>.Draft.Feature.State(list: List(id: list.id, title: list.title, color: Color(list.color), position: list.position), isNew: false, session: uuid()))
+                        state.destination = .list(List<Reminder>.Form.Feature.State(draft: List<Reminder>.Record.Draft(list), original: list))
                     }
                 case let .listTapped(id):
                     state.filter = .list(id)
@@ -192,7 +143,7 @@ extension Reminders {
                     if case let .list(list) = state.filter {
                         startNewReminder(in: list, &state)
                     } else if let list = state.overview.lists.first?.id {
-                        state.destination = .reminder(Reminder.Draft.Feature.State(reminder: Reminder(id: Reminder.ID(uuid()), list: list, created: now), isNew: true, session: uuid()))
+                        state.destination = .reminder(Reminder.Form.Feature.State(draft: Reminder.Record.Draft.create(listID: list, created: now), tags: [], original: nil))
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
@@ -234,7 +185,9 @@ extension Reminders {
                             }
                             try store.modify {
                                 $0.endEditing(editing?.session)
-                                if let row { $0.destination = .reminder(Reminder.Draft.Feature.State(reminder: Reminder(row), isNew: false, session: uuid())) }
+                                if let row {
+                                    $0.destination = .reminder(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(row.reminder), tags: Set(row.tags.map(Tag<Reminder>.ID.init)), original: row))
+                                }
                             }
                         }
                     }
@@ -332,6 +285,9 @@ extension Reminders {
             .ifLet(\.destination) {
                 Destination.body
             }
+            .onEvent(TagDeleted.self) { id, state in
+                state.filter = state.filter.flatMap { $0.removing(tag: id) }
+            }
             .onMount { state in
                 state.today = calendar.day(containing: now)
                 let sample = Reminders.sample(at: now)
@@ -405,16 +361,6 @@ extension Reminders.Feature {
     public static let searchPause: Duration = .milliseconds(250)
 
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
-
-    private func attempt(form session: UUID, _ body: () async throws -> Void) async throws {
-        do {
-            try await body()
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            try store.modify { $0.modifyReminderForm(session) { $0.failure = error.localizedDescription } }
-        }
-    }
 
     private func perform(_ body: @escaping (Database) throws -> Void) {
         store.addTask {
@@ -491,57 +437,6 @@ extension Reminders.Feature {
         } else if !editing.isSaved {
             guard try Reminder.Record.find(editing.id).fetchCount(db) > 0 else { return }
             try Reminder.Record.save(editing.draft).execute(db)
-        }
-    }
-
-    private func save(_ form: Reminder.Draft.Feature.State) {
-        store.addTask {
-            do {
-                let saved = try write { db in
-                    try Reminder.Record.save(Reminder.Record.Draft(form.reminder), tags: form.reminder.tags, isNew: form.isNew, in: db)
-                }
-                try store.modify {
-                    guard case let .reminder(current) = $0.destination, current.session == form.session else { return }
-                    if saved != nil {
-                        $0.destination = nil
-                    } else {
-                        $0.modifyReminderForm(form.session) { $0.fail("This reminder was deleted.") }
-                    }
-                }
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                try store.modify { $0.modifyReminderForm(form.session) { $0.fail(error.localizedDescription) } }
-            }
-        }
-    }
-
-    private func save(_ form: List<Reminder>.Draft.Feature.State) {
-        store.addTask {
-            do {
-                let saved = try write { db in
-                    if form.isNew {
-                        try List<Reminder>.Record.insert { List<Reminder>.Record(form.list) }.execute(db)
-                        try List<Reminder>.Record.placeLast(form.list.id).execute(db)
-                        return true
-                    }
-                    guard try List<Reminder>.Record.find(form.original.id).fetchCount(db) > 0 else { return false }
-                    try List<Reminder>.Record.save(List<Reminder>.Record.Draft(List<Reminder>.Record(form.list))).execute(db)
-                    return true
-                }
-                try store.modify {
-                    guard case let .list(current) = $0.destination, current.session == form.session else { return }
-                    if saved {
-                        $0.destination = nil
-                    } else {
-                        $0.modifyListForm(form.session) { $0.fail("This list was deleted.") }
-                    }
-                }
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                try store.modify { $0.modifyListForm(form.session) { $0.fail(error.localizedDescription) } }
-            }
         }
     }
 }

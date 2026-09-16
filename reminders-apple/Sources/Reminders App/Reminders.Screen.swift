@@ -134,20 +134,27 @@ extension Reminders.Screen: SwiftUI::View {
         .sheet(item: $store.scope(\.destination).reminder) { form in
             @Bindable var form = form
             NavigationStack {
-                Reminder.Form(
-                    reminder: $form.reminder,
-                    isNew: form.isNew,
-                    isDirty: form.isDirty,
-                    failure: form.failure,
+                Reminders.Reminder.Form.SwiftUI(
+                    draft: $form.draft,
+                    tags: $form.tags,
                     lists: store.overview.lists.map(\.list),
-                    tags: store.overview.rankedTags,
-                    now: now,
-                    calendar: calendar,
-                    addTag: { form.send(.tagAdded($0)) },
-                    renameTag: { form.send(.tagRenamed($0, $1)) },
-                    deleteTag: { form.send(.tagDeleted($0)) },
-                    save: { form.send(.saveButtonTapped) },
-                    cancel: { form.send(.cancelButtonTapped) }
+                    available: store.overview.rankedTags,
+                    form: Reminders.Reminder.Form(
+                        isNew: form.isNew,
+                        isDirty: form.isDirty,
+                        failure: form.failure,
+                        now: now,
+                        calendar: calendar,
+                        actions: Reminders.Reminder.Form.Actions(
+                            save: { form.send(.saveButtonTapped) },
+                            cancel: { form.send(.cancelButtonTapped) },
+                            tags: Tag<Reminder>.Picker.Actions(
+                                add: { form.send(.tagAdded($0)) },
+                                rename: { form.send(.tagRenamed($0, $1)) },
+                                delete: { form.send(.tagDeleted($0)) }
+                            )
+                        )
+                    )
                 )
                 .navigationTitle(form.isNew ? "New Reminder" : "Details")
             }
@@ -159,8 +166,16 @@ extension Reminders.Screen: SwiftUI::View {
         .sheet(item: $store.scope(\.destination).list) { form in
             @Bindable var form = form
             NavigationStack {
-                Organizing.List<Reminder>.Form(list: $form.list, isNew: form.isNew, isDirty: form.isDirty, failure: form.failure, save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
-                    .navigationTitle(form.isNew ? "New List" : "List Info")
+                Organizing.List<Reminder>.Form.SwiftUI(
+                    draft: $form.draft,
+                    form: Organizing.List<Reminder>.Form(
+                        isNew: form.isNew,
+                        isDirty: form.isDirty,
+                        failure: form.failure,
+                        actions: Organizing.List<Reminder>.Form.Actions(save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
+                    )
+                )
+                .navigationTitle(form.isNew ? "New List" : "List Info")
             }
             .interactiveDismissDisabled(form.isDirty)
             .presentationDetents([.large])

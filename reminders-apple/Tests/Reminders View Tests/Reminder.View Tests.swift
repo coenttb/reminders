@@ -76,6 +76,6 @@ import Testing
         #expect(abs(round.red - color.red) < 0.002 && abs(round.green - color.green) < 0.002 && abs(round.blue - color.blue) < 0.002)
         #expect(Reminders.Filter.flagged.color(list: nil) == .orange)
         #expect(Reminders.Filter.list(list).color(list: color) == SwiftUI.Color(color))
-        #expect(Organizing.List<Reminder>.Form.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])
+        #expect(Organizing.List<Reminder>.Form.SwiftUI.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])
     }
 }
