@@ -73,6 +73,7 @@ let package = Package(
                 "Reminders Interface",
                 "Reminders Sample",
                 "Reminders SQL",
+                .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),

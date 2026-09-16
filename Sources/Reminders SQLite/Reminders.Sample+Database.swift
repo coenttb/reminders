@@ -7,8 +7,9 @@ import Standard_Library_Extensions
 import Tagged
 
 extension Reminders.Sample {
+    /// Writes the sample into a database that holds no lists and no reminders yet.
     public static func initialize(with sample: Self, in db: Database) throws {
-        guard try Reminders.Restoration.current.fetchCount(db) == 0 else { return }
+        guard try List<Reminder>.Record.all.fetchCount(db) == 0, try Reminder.Record.all.fetchCount(db) == 0 else { return }
         try replace(with: sample, in: db)
     }
 
@@ -33,7 +34,6 @@ extension Reminders.Sample {
         for chunk in taggings.chunks(of: 500) as [ArraySlice<Reminders.Tagging>] {
             try Reminders.Tagging.insert { Array(chunk) }.execute(db)
         }
-        try Reminders.Restoration.upsert { Reminders.Restoration() }.execute(db)
     }
 
     public func replace(in db: Database) throws { try Self.replace(with: self, in: db) }

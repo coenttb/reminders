@@ -1,15 +1,19 @@
 public import Dependencies
+import Organizing
 import Reminders
-import Reminders_SQLite
+public import Reminders_Sample
+import Reminders_SQL
 import SQLiteData
+import Tagged
 #if canImport(os)
 import os
 #endif
 
 extension DependencyValues {
-    public mutating func bootstrapDatabase() throws {
+    /// Opens the app's database, migrates it, and puts the baseline in place; a sample, when given,
+    /// is written first into a database that is still empty.
+    public mutating func bootstrapDatabase(seeding sample: Reminders.Sample? = nil) throws {
         var configuration = Configuration()
-        Reminders.Schema.prepare(&configuration)
         #if DEBUG
         let context = self.context
         configuration.prepareDatabase { db in
@@ -28,8 +32,11 @@ extension DependencyValues {
             }
         }
         #endif
-        let database = try SQLiteData.defaultDatabase(configuration: configuration)
-        try Reminders.Schema.migrate(database)
+        let database = try Reminders.Schema.database(configuration)
+        try database.write { db in
+            try sample?.initialize(in: db)
+            try Reminders.Schema.install(db, default: List<Reminder>.ID(uuid()))
+        }
         defaultDatabase = database
     }
 }

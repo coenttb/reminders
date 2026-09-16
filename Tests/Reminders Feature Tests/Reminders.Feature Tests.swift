@@ -20,13 +20,12 @@ import Testing
 import Tagged
 
 @Suite(.dependencies {
-    try $0.bootstrapDatabase()
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "UTC")!
     $0.calendar = calendar
     $0.date.now = Date(timeIntervalSince1970: 1_234_567_890)
     $0.uuid = .incrementing
-    try $0.defaultDatabase.write { db in try Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).replace(in: db) }
+    try $0.bootstrapDatabase(seeding: Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)))
 })
 struct `Reminder feature` {
     @Dependency(\.calendar) var calendar
@@ -591,6 +590,7 @@ struct `Reminder feature` {
         await store.send(.tagTapped("car")) { $0.filter = .tags(["car"]) }?.value
         await store.send(.tagDeleted("car")) { $0.filter = nil }?.value
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
+        #if DEBUG
         await store.send(.seedButtonTapped)?.value
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
         let scale = Reminders.Sample.Scale(lists: 2, remindersPerList: 5, tags: 3)
@@ -602,7 +602,9 @@ struct `Reminder feature` {
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 10)
         await store.send(.deleteEverythingButtonTapped)?.value
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 0)
-        #expect(try await database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 1)
+        #expect(try await database.read { db in try List<Reminder>.Record.all.fetchAll(db).map(\.title) } == ["Personal"])
+        #expect(try await database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 1)
+        #endif
         await store.dismount()
     }
 
@@ -689,10 +691,11 @@ struct `Reminder feature` {
         #expect(try await database.read { db in try db.tableExists("lists") } == false)
     }
 
-    @Test(.dependency(\.defaultDatabase, try { let db = try Reminders.Schema.inMemoryDatabase(); return db }()))
-    func `the first run seeds the sample into an empty database`() async throws {
+    @Test(.dependencies { try $0.bootstrapDatabase() })
+    func `the first run installs the default list and the restoration row`() async throws {
         let store = try await makeStore()
-        try await until(store.state.$overview) { $0.counts.all == 8 }
+        try await until(store.state.$overview) { $0.lists.map(\.list.title) == ["Personal"] && $0.counts.all == 0 }
+        #expect(try await database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 1)
         await store.dismount()
     }
 }

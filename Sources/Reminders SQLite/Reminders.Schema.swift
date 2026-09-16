@@ -215,10 +215,12 @@ extension Reminders.Schema {
         }
     }
 
-    public static func inMemoryDatabase() throws -> DatabaseQueue {
-        var configuration = Configuration()
+    /// A prepared and migrated database where the dependency context puts it: on disk when live,
+    /// in memory under test.
+    public static func database(_ configuration: Configuration = Configuration()) throws -> any DatabaseWriter {
+        var configuration = configuration
         prepare(&configuration)
-        let database = try DatabaseQueue(configuration: configuration)
+        let database = try SQLiteData.defaultDatabase(configuration: configuration)
         try migrate(database)
         return database
     }

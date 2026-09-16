@@ -15,8 +15,8 @@ import Tagged
     let calendar = Calendar(identifier: .gregorian)
     var today: Range<Date> { calendar.day(containing: now)! }
 
-    func makeDatabase() throws -> (database: DatabaseQueue, sample: Reminders.Sample) {
-        let database = try Reminders.Schema.inMemoryDatabase()
+    func makeDatabase() throws -> (database: any DatabaseWriter, sample: Reminders.Sample) {
+        let database = try Reminders.Schema.database()
         let sample = Reminders.sample(at: now)
         try database.write { db in try sample.replace(in: db) }
         return (database, sample)
@@ -42,25 +42,46 @@ import Tagged
         try database.read { db in try Reminder.Record.all.fetchCount(db) }
     }
 
-    @Test func `the first run seeds the sample once, a later run leaves the database alone, and a reset replaces everything`() throws {
-        let database = try Reminders.Schema.inMemoryDatabase()
+    @Test func `an empty database is installed with the restoration row and one list, and installing again changes nothing`() throws {
+        let database = try Reminders.Schema.database()
         #expect(try database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 0)
+        let personal = List<Reminder>.ID(UUID())
+        try database.write { db in try Reminders.Schema.install(db, default: personal) }
+        #expect(try database.read { db in try Reminders.Restoration.current.fetchOne(db) } == Reminders.Restoration())
+        #expect(try overview(database).lists.map(\.list.title) == ["Personal"] && overview(database).lists.first?.id == personal)
+        try database.write { db in
+            try Reminders.Restoration.set(filter: .today).execute(db)
+            try Reminders.Schema.install(db, default: List<Reminder>.ID(UUID()))
+        }
+        #expect(try database.read { db in try Reminders.Restoration.current.fetchOne(db)?.filter } == Reminders.Filter.Key(.today))
+        #expect(try overview(database).lists.map(\.id) == [personal])
+        try database.write { db in try Reminders.sample(at: now).initialize(in: db) }
+        #expect(try overview(database).lists.map(\.id) == [personal])
+    }
+
+    @Test func `the sample is written into an empty database once, a later run leaves the database alone, and a reset replaces everything`() throws {
+        let database = try Reminders.Schema.database()
         let sample = Reminders.sample(at: now)
         try database.write { db in
             try sample.initialize(in: db)
             try sample.initialize(in: db)
         }
-        #expect(try database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 1)
+        #expect(try database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 0)
         #expect(try overview(database).counts == Reminder.Record.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         try database.write { db in try Reminder.Record.find(sample.reminders[0].id).delete().execute(db) }
         try database.write { db in try sample.initialize(in: db) }
         #expect(try overview(database).counts.all == 7)
-        try database.write { db in try sample.replace(in: db) }
+        try database.write { db in
+            try Reminders.Restoration.install(in: db)
+            try Reminders.Restoration.set(editing: sample.reminders[1].id).execute(db)
+            try sample.replace(in: db)
+        }
         #expect(try overview(database).counts.all == 8)
+        #expect(try database.read { db in try Reminders.Restoration.current.fetchOne(db)?.editing } == sample.reminders[1].id)
         #expect(try database.read { db in try Reminders.Tagging.all.fetchCount(db) } == sample.reminders.reduce(0) { $0 + $1.tags.count })
         try database.write { db in try List<Reminder>.Record.delete().execute(db) }
         try database.write { db in try sample.initialize(in: db) }
-        #expect(try overview(database).lists.isEmpty)
+        #expect(try overview(database).lists.map(\.list.title) == ["Personal", "Family", "Business"])
     }
 
     @Test func `the home counts open reminders only and lists the tags in use`() throws {
@@ -419,7 +440,7 @@ import Tagged
     }
 
     @Test func `a generated sample at scale is written in one transaction and read back whole`() throws {
-        let database = try Reminders.Schema.inMemoryDatabase()
+        let database = try Reminders.Schema.database()
         let sample = Reminders.Sample.generated(.medium, seed: 1, at: now, calendar: calendar)
         try database.write { db in try sample.replace(in: db) }
         #expect(try database.read { db in try Reminder.Record.all.fetchCount(db) } == 1_000)
