@@ -479,4 +479,39 @@ import Tagged
         #expect(Color.Hex(rawValue: 0x4a99ef).color == .default && Color.Hex(.default).rawValue == 0x4a99ef)
         #expect(Color.Hex(Color(red: 2, green: -1, blue: 0.5)).rawValue == 0xff0080)
     }
+
+    /// The steps of a statement's plan, as SQLite explains it.
+    func plan(_ statement: some Statement, _ database: some DatabaseWriter) throws -> [String] {
+        try database.read { db in try #sql("EXPLAIN QUERY PLAN \(statement.query)", as: PlanStep.self).fetchAll(db).map(\.detail) }
+    }
+
+    @Selection struct PlanStep {
+        let id: Int
+        let parent: Int
+        let notused: Int
+        let detail: String
+    }
+
+    // The tags key is collated as Swift compares; the join must compare it on the left, or the
+    // planner scans every tag for every row read (RESEARCH.md, scale investigation).
+    @Test func `a row's tag list is read through the tags index, not a scan of the tags per row`() throws {
+        let (database, sample) = try makeDatabase()
+        let steps = try plan(Reminder.Record.rows, database)
+        #expect(!steps.contains { $0.hasPrefix("SCAN tags") }, "\(steps)")
+        #expect(steps.contains { $0.hasPrefix("SEARCH tags USING COVERING INDEX") }, "\(steps)")
+        // The titles still come from the tags table, in the case it stores them.
+        try database.write { db in _ = try Tag<Reminder>.Record.rename("someday", to: "Someday", in: db) }
+        #expect(try stored(sample.reminders[0].id, database)?.tags == ["Someday", "optional", "adulting"])
+    }
+
+    @Test func `Today and the pending set are read through indexes, not a scan of every reminder`() throws {
+        let (database, _) = try makeDatabase()
+        let today = try plan(Reminder.Record.where { $0.isDue(during: self.today) }.rows(), database)
+        #expect(today.contains { $0.contains("idx_reminders_due") }, "\(today)")
+        let pending = try plan(Reminder.Record.where { $0.isPending }.select(\.id), database)
+        #expect(pending.contains { $0.contains("idx_reminders_status") }, "\(pending)")
+        // The range still means the same: undated reminders are not due, dated ones on the day are.
+        #expect(try overview(database).counts.today == 2)
+        #expect(try detail(.today, database).rows.map(\.reminder.title) == ["Doctor appointment", "Buy concert tickets"])
+    }
 }

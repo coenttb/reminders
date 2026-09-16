@@ -26,9 +26,10 @@ extension Reminder.Record.TableColumns {
     }
 
     /// Incomplete and due within a day's bounds; the bounds come from the app's calendar, so
-    /// the database has no say in where a day starts.
+    /// the database has no say in where a day starts. Written as a plain range so the index on
+    /// the due date serves it; a `coalesce` around the comparison would defeat it.
     public func isDue(during day: Range<Date>) -> some QueryExpression<Bool> {
-        !isCompleted && #sql("coalesce(\(due) >= \(day.lowerBound) AND \(due) < \(day.upperBound), 0)")
+        !isCompleted && due.isNot(nil) && #sql("\(due) >= \(day.lowerBound) AND \(due) < \(day.upperBound)")
     }
 
     /// Whether the reminder belongs to a filter; `today` is the day the filter of that name shows.
@@ -72,10 +73,13 @@ extension Reminder.Record.TableColumns {
 
     /// The tags the reminder carries, joined by the unit separator, in tag order; the titles are
     /// read from the tags table, so the case the tag is stored in is what a reminder shows.
+    /// The tags key is compared on the left: SQLite takes the left operand's collation, and only
+    /// under the key's own collation can its index serve the join. The other way round the
+    /// planner scans every tag for every row (RESEARCH.md, scale investigation).
     public var tagList: some QueryExpression<String?> {
         Reminder.Tagging
             .where { $0.reminderID.eq(id) }
-            .join(Tag<Reminder>.Record.all) { $0.tagID.text.eq($1.title) }
+            .join(Tag<Reminder>.Record.all) { $1.title.eq($0.tagID.text) }
             .select { $1.title.groupConcat(Reminder.Record.tagSeparator, order: $1.title) }
     }
 }

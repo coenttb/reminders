@@ -146,6 +146,12 @@ extension Reminder.Schema {
         migrator.registerMigration("Record when a reminder was created") { db in
             try #sql(#"ALTER TABLE "reminders" ADD COLUMN "created" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '1970-01-01 00:00:00.000' CHECK ("created" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]')"#).execute(db)
         }
+        // The smart lists and the grace timer filter by these; without the indexes Today and the
+        // pending set scan every reminder (RESEARCH.md, scale investigation).
+        migrator.registerMigration("Index the due date and the status") { db in
+            try #sql(#"CREATE INDEX "idx_reminders_due" ON "reminders"("due") WHERE "due" IS NOT NULL"#).execute(db)
+            try #sql(#"CREATE INDEX "idx_reminders_status" ON "reminders"("status")"#).execute(db)
+        }
         if let target {
             try migrator.migrate(database, upTo: target)
         } else {
