@@ -1,26 +1,26 @@
 #if DEBUG
-import ComposableArchitecture2
+public import ComposableArchitecture2
 import Dependencies
 import Organizing
-import Reminders
-import Reminders_Sample
+public import Reminders
+public import Reminders_Sample
 import Reminders_SQL
 import Reminders_SQLite
 import SQLiteData
 import Tagged
 
 extension Reminders.Sample {
-    @ComposableArchitecture2.Feature struct Feature {
-        struct State: Sendable {
-            typealias Feature = Reminders.Sample.Feature
+    @ComposableArchitecture2.Feature public struct Feature {
+        public struct State: Sendable {
+            public typealias Feature = Reminders.Sample.Feature
 
-            var lastSeed: Reminders.Sample.Seed?
-            var isSeeding = false
+            public var lastSeed: Reminders.Sample.Seed?
+            public var isSeeding = false
 
-            init() {}
+            public init() {}
         }
 
-        enum Action {
+        public enum Action {
             case seedButtonTapped
             case seedGenerated(Reminders.Sample.Scale, seed: UInt64?)
             case deleteEverythingButtonTapped
@@ -34,11 +34,11 @@ extension Reminders.Sample {
 
         let replaced: () -> Void
 
-        init(replaced: @escaping () -> Void) {
+        public init(replaced: @escaping () -> Void) {
             self.replaced = replaced
         }
 
-        var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
+        public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
             ComposableArchitecture2.Update { state, action in
                 switch action {
                 case .seedButtonTapped:

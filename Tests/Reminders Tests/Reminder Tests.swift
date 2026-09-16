@@ -43,11 +43,11 @@ import Tagged
         #expect(Reminder.Due.moment(date).date == date && Reminder.Due.moment(date).hasTime)
         #expect(Reminder.Due(date, hasTime: true) == .moment(date) && Reminder.Due(date, hasTime: false) == .day(date))
         var reminder = reminder(due: .moment(date))
-        #expect(reminder.dueDate == date && reminder.hasTime)
-        reminder.hasTime = false
+        #expect(reminder.due?.date == date && reminder.due?.hasTime == true)
+        reminder.set(hasTime: false, at: now, calendar: calendar)
         #expect(reminder.due == .day(date))
-        reminder.dueDate = nil
-        #expect(reminder.due == nil && !reminder.hasTime)
+        reminder.set(due: nil)
+        #expect(reminder.due == nil)
     }
 
     @Test func `a time needs a date, a date can stand alone, and dropping the date drops the time`() throws {
