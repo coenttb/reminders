@@ -40,7 +40,7 @@ extension Reminder.Overview {
                 rankedTags: try Tag<Reminder>.Record
                     .order { tag in
                         (
-                            Reminder.Tagging.where { #sql("\($0.tagID) = \(tag.title)") }.count().desc(),
+                            Reminder.Tagging.where { $0.tagID.text.eq(tag.title) }.count().desc(),
                             tag.title.collate(localizedCaseInsensitive)
                         )
                     }

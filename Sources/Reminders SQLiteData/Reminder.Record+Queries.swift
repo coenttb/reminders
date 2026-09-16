@@ -24,7 +24,7 @@ extension Reminder.Record.TableColumns {
     }
 
     public func isDue(during day: Range<Date>) -> some QueryExpression<Bool> {
-        !isCompleted && due.isNot(nil) && #sql("\(due) >= \(day.lowerBound) AND \(due) < \(day.upperBound)")
+        !isCompleted && due.isNot(nil) && due.gte(Date?.some(day.lowerBound)) && due.lt(Date?.some(day.upperBound))
     }
 
     public func belongs(to filter: Reminder.Filter, today: Range<Date>) -> SQLQueryExpression<Bool> {
@@ -80,13 +80,13 @@ extension Reminder.Record {
 }
 
 extension Reminder.Record.TableColumns {
-    fileprivate func placed<Value>(
+    fileprivate func placed<Value: _OptionalPromotable>(
         _ column: some QueryExpression<Value>,
         _ value: some QueryExpression<Value>,
         of place: Reminder?
     ) -> SQLQueryExpression<Value> {
         guard let place else { return SQLQueryExpression("\(column)") }
-        return #sql("CASE WHEN \(id) = \(place.id) THEN \(value) ELSE \(column) END")
+        return SQLQueryExpression("\(Case().when(id.eq(place.id), then: value).else(column))")
     }
 
     public func ordered(by ordering: Reminder.Ordering, showCompleted: Bool, placing place: Reminder? = nil) -> SQLQueryExpression<Bool> {
