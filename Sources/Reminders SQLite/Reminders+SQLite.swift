@@ -52,8 +52,7 @@ extension Reminders {
                     move: { ids, filter in
                         try write { db in
                             try Reminder.Record.reorder(ids, in: db)
-                            let preference = try Preference.Record.preference(for: filter).fetchOne(db).map(Preference.init) ?? .default(for: filter)
-                            try Preference.Record.set(Preference(ordering: .manual, showCompleted: preference.showCompleted), for: filter).execute(db)
+                            try Preference.Record.set(ordering: .manual, for: filter).execute(db)
                         }
                     },
                     deleteCompleted: { selection, today, cutoff in
@@ -93,9 +92,10 @@ extension Reminders {
                 )
             ),
             preferences: Preferences(
-                client: Preferences.Client { preference, filter in
-                    try write { db in try Preference.Record.set(preference, for: filter).execute(db) }
-                }
+                client: Preferences.Client(
+                    ordering: { ordering, filter in try write { db in try Preference.Record.set(ordering: ordering, for: filter).execute(db) } },
+                    toggleShowCompleted: { filter in try write { db in try Preference.Record.toggleShowCompleted(for: filter).execute(db) } }
+                )
             )
         )
     }

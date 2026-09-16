@@ -332,10 +332,11 @@ import Tagged
         }
         #expect(try detail(.list(sample.lists[0].id), database).preference == .default(for: .list(sample.lists[0].id)))
         #expect(try detail(.completed, database).preference == .default(for: .completed))
-        try database.write { db in
-            try Reminders.Preference.Record.set(Reminders.Preference(showCompleted: false), for: .completed).execute(db)
-            try Reminders.Preference.Record.set(Reminders.Preference(ordering: .title, showCompleted: true), for: .completed).execute(db)
-        }
+        try database.write { db in try Reminders.Preference.Record.toggleShowCompleted(for: .completed).execute(db) }
+        #expect(try detail(.completed, database).preference == Reminders.Preference(ordering: .dueDate, showCompleted: false))
+        try database.write { db in try Reminders.Preference.Record.set(ordering: .title, for: .completed).execute(db) }
+        #expect(try detail(.completed, database).preference == Reminders.Preference(ordering: .title, showCompleted: false))
+        try database.write { db in try Reminders.Preference.Record.toggleShowCompleted(for: .completed).execute(db) }
         #expect(try detail(.completed, database).preference == Reminders.Preference(ordering: .title, showCompleted: true))
     }
 

@@ -51,4 +51,28 @@ extension Reminders.Preference.Record {
             row.showCompleted = excluded.showCompleted
         }
     }
+
+    public static func set(ordering: Reminders.Ordering, for filter: Reminders.Filter) -> InsertOf<Self> {
+        var record = Self.default(for: filter)
+        record.ordering = ordering
+        return Self.insert {
+            record
+        } onConflict: {
+            $0.key
+        } doUpdate: { row, excluded in
+            row.ordering = excluded.ordering
+        }
+    }
+
+    public static func toggleShowCompleted(for filter: Reminders.Filter) -> InsertOf<Self> {
+        var record = Self.default(for: filter)
+        record.showCompleted.toggle()
+        return Self.insert {
+            record
+        } onConflict: {
+            $0.key
+        } doUpdate: { row, _ in
+            row.showCompleted = !row.showCompleted
+        }
+    }
 }

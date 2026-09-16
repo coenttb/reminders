@@ -158,9 +158,7 @@ extension Reminders {
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
-                    var preference = state.preference(for: filter)
-                    preference.ordering = ordering
-                    perform { try reminders.preferences.client.set(preference, filter) }
+                    perform { try reminders.preferences.client.ordering(ordering, filter) }
                 case let .reminderCompleteButtonTapped(id):
                     if state.grace.removeValue(forKey: id) != nil { break }
                     if state.isCompleted(id) == true {
@@ -229,9 +227,7 @@ extension Reminders {
                     state.editing = nil
                 case .showCompletedButtonTapped:
                     guard let filter = state.filter else { break }
-                    var preference = state.preference(for: filter)
-                    preference.showCompleted.toggle()
-                    perform { try reminders.preferences.client.set(preference, filter) }
+                    perform { try reminders.preferences.client.toggleShowCompleted(filter) }
                 case let .tagDeleted(id):
                     store.addTask {
                         try await attempt {

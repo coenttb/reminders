@@ -51,7 +51,8 @@ extension Reminders: TestDependencyKey {
             ),
             preferences: .init(
                 client: .init(
-                    set: unimplemented("\\.reminders.preferences.client.set")
+                    ordering: unimplemented("\\.reminders.preferences.client.ordering"),
+                    toggleShowCompleted: unimplemented("\\.reminders.preferences.client.toggleShowCompleted")
                 )
             )
         )

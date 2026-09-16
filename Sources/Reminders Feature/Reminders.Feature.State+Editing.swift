@@ -19,10 +19,3 @@ extension Reminders.Feature.State {
 
     public var gracing: Set<Reminder.ID> { Set(grace.keys) }
 }
-
-extension Reminders.Feature.State {
-    public func preference(for filter: Reminders.Filter) -> Reminders.Preference {
-        if let detail, detail.selection == .filter(filter) { return detail.preference }
-        return .default(for: filter)
-    }
-}
