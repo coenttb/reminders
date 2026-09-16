@@ -3,7 +3,6 @@ public import Dependencies
 public import Foundation
 import FoundationEssentials_Extensions
 import Standard_Library_Extensions
-import Synchronization
 public import Models
 public import Reminder
 public import Reminders
@@ -94,9 +93,6 @@ extension Reminders {
         @Dependency(\.reminders) var reminders
         @Dependency(\.uuid) var uuid
 
-        // Mirrors `State.grace` for the dismount flush, which runs after the state is gone.
-        let armed = Armed()
-
         public init() {}
 
         public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
@@ -109,7 +105,6 @@ extension Reminders {
                 case .appBackgrounded:
                     for id in state.grace.keys { complete(id) }
                     state.grace = [:]
-                    armed.withLock { $0 = [:] }
                 case .backgroundTapped:
                     if state.editing != nil {
                         endEditing(&state)
@@ -167,14 +162,12 @@ extension Reminders {
                     preference.ordering = ordering
                     perform { try reminders.preferences.client.set(preference, filter) }
                 case let .reminderCompleteButtonTapped(id):
-                    if state.grace.removeValue(forKey: id) != nil {
-                        armed.withLock { _ = $0.removeValue(forKey: id) }
-                    } else if state.isCompleted(id) == true {
+                    if state.grace.removeValue(forKey: id) != nil { break }
+                    if state.isCompleted(id) == true {
                         complete(id)
                     } else {
                         let token = uuid()
                         state.grace[id] = token
-                        armed.withLock { $0[id] = token }
                         store.addTask {
                             try await clock.sleep(for: Self.grace)
                             guard store.grace[id] == token else { return }
@@ -183,7 +176,6 @@ extension Reminders {
                     }
                 case let .reminderDeleted(id):
                     state.grace.removeValue(forKey: id)
-                    armed.withLock { _ = $0.removeValue(forKey: id) }
                     let token = state.editing?.id == id ? state.editing?.session : nil
                     store.addTask {
                         try await attempt {
@@ -344,7 +336,7 @@ extension Reminders {
                 if !active { state.search.showCompleted = false }
             }
             .onDismount {
-                for id in armed.withLock({ Array($0.keys) }) { _ = try reminders.editor.client.toggle(id) }
+                for id in store.grace.keys { _ = try reminders.editor.client.toggle(id) }
             }
         }
     }
@@ -387,7 +379,6 @@ extension Reminders.Feature {
     private func finish(_ id: Reminder.ID) async throws {
         try await attempt {
             let completed = try reminders.editor.client.toggle(id)
-            armed.withLock { _ = $0.removeValue(forKey: id) }
             try store.modify {
                 $0.grace.removeValue(forKey: id)
                 if let completed, $0.editing?.id == id {
@@ -473,13 +464,5 @@ extension Reminders.Feature {
         var fetching: Fetching
         var committed: Reminders.Search.Query
         var typing: Bool
-    }
-}
-
-extension Reminders.Feature {
-    final class Armed: Sendable {
-        private let storage = Mutex<[Reminder.ID: UUID]>([:])
-
-        func withLock<T: Sendable>(_ body: (inout sending [Reminder.ID: UUID]) throws -> sending T) rethrows -> T { try storage.withLock(body) }
     }
 }
