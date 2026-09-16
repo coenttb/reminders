@@ -91,7 +91,6 @@ let package = Package(
             dependencies: [
                 "Reminders",
                 "Reminders Interface",
-                "Reminders Sample",
                 "Reminders SQL",
                 "Reminders SQLite",
                 .product(name: "Organizing", package: "organizing"),

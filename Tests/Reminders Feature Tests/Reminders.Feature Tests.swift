@@ -582,7 +582,7 @@ struct `Reminder feature` {
         }
     }
 
-    @Test func `search tokens, the completed toggle, clearing, and the seed`() async throws {
+    @Test func `search tokens, the completed toggle, and clearing`() async throws {
         let store = try await makeStore()
         await store.send(.searchTagTapped("car")) { $0.search.add(tag: "car") }?.value
         await store.send(.searchCompletedButtonTapped) { $0.search.showCompleted = true }?.value
@@ -595,21 +595,6 @@ struct `Reminder feature` {
         await store.send(.tagTapped("car")) { $0.filter = .tags(["car"]) }?.value
         await store.send(.tagDeleted("car")) { $0.filter = nil }?.value
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
-        #if DEBUG
-        await store.send(.seedButtonTapped)?.value
-        #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
-        let scale = Reminders.Sample.Scale(lists: 2, remindersPerList: 5, tags: 3)
-        await store.send(.seedGenerated(scale, seed: 42)) {
-            $0.lastSeed = Reminders.Sample.Seed(scale: scale, value: 42)
-            $0.isSeeding = true
-        }?.value
-        await store.expect { $0.isSeeding = false }
-        #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 10)
-        await store.send(.deleteEverythingButtonTapped)?.value
-        #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 0)
-        #expect(try await database.read { db in try List<Reminder>.Record.all.fetchAll(db).map(\.title) } == ["Personal"])
-        #expect(try await database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 1)
-        #endif
         await store.dismount()
     }
 

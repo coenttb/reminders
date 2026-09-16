@@ -21,9 +21,15 @@ extension Reminders {
         @Dependency(\.calendar) private var calendar
         @Environment(\.scenePhase) private var scenePhase
         @State private var editMode: EditMode = .inactive
+        #if DEBUG
+        @State private var sample: StoreOf<Reminders.Sample.Feature>
+        #endif
 
         public init(store: StoreOf<Reminders.Feature>) {
             self.store = store
+            #if DEBUG
+            _sample = State(initialValue: Store(initialState: Reminders.Sample.Feature.State()) { Reminders.Sample.Feature(replaced: { store.send(.databaseReplaced) }) })
+            #endif
         }
     }
 }
@@ -80,7 +86,7 @@ extension Reminders.Screen: SwiftUI::View {
             .toolbar {
                 #if DEBUG
                 ToolbarItem(placement: .topBarTrailing) {
-                    Reminders.Sample.Menu(store: store)
+                    Reminders.Sample.Menu(store: sample)
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {

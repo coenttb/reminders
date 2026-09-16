@@ -1,16 +1,15 @@
 #if DEBUG
 import ComposableArchitecture2
 import Reminders
-import Reminders_Feature
 import Reminders_Sample
 import Reminders_View
 import SwiftUI
 
 extension Reminders.Sample {
     struct Menu {
-        @Bindable private var store: StoreOf<Reminders.Feature>
+        @Bindable private var store: StoreOf<Reminders.Sample.Feature>
 
-        init(store: StoreOf<Reminders.Feature>) {
+        init(store: StoreOf<Reminders.Sample.Feature>) {
             self.store = store
         }
     }

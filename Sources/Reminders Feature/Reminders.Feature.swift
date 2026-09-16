@@ -6,7 +6,6 @@ import Standard_Library_Extensions
 public import Organizing
 public import Reminders
 public import Reminders_Interface
-public import Reminders_Sample
 public import Reminders_SQL
 import Reminders_SQLite
 public import SQLiteData
@@ -23,8 +22,6 @@ extension Reminders {
             public var failure: String?
             public var search = Reminders.Search.Query()
             public var today: Range<Date>?
-            public var lastSeed: Reminders.Sample.Seed?
-            public var isSeeding = false
             public var detailWindow = Window<Reminders.Filter>(step: Feature.paging.step, margin: Feature.paging.margin)
             public var resultsWindow = Window<Reminders.Search.Query>(step: Feature.paging.step, margin: Feature.paging.margin)
 
@@ -70,11 +67,7 @@ extension Reminders {
             case searchCompletedButtonTapped
             case searchSubmitted
             case searchTagTapped(Tag<Reminder>.ID)
-            #if DEBUG
-            case seedButtonTapped
-            case seedGenerated(Reminders.Sample.Scale, seed: UInt64?)
-            case deleteEverythingButtonTapped
-            #endif
+            case databaseReplaced
             case showCompletedButtonTapped
             case tagDeleted(Tag<Reminder>.ID)
             case tagTapped(Tag<Reminder>.ID)
@@ -87,9 +80,6 @@ extension Reminders {
         @Dependency(\.date.now) var now
         @Dependency(\.defaultDatabase) var database
         @Dependency(\.uuid) var uuid
-        #if DEBUG
-        @Dependency(\.withRandomNumberGenerator) var withRandomNumberGenerator
-        #endif
 
         public init() {}
 
@@ -232,55 +222,9 @@ extension Reminders {
                     state.search.commitText()
                 case let .searchTagTapped(tag):
                     state.search.add(tag: tag)
-                #if DEBUG
-                case .seedButtonTapped:
-                    let sample = Reminders.sample(at: now)
-                    store.addTask {
-                        try await attempt {
-                            try write { db in
-                                try sample.replace(in: db)
-                                try Reminders.Restoration.set(editing: nil).execute(db)
-                            }
-                            try store.modify {
-                                $0.filter = nil
-                                $0.editing = nil
-                            }
-                        }
-                    }
-                case let .seedGenerated(scale, seed):
-                    let value = seed ?? withRandomNumberGenerator { UInt64.random(in: .min ... .max, using: &$0) }
-                    state.lastSeed = Reminders.Sample.Seed(scale: scale, value: value)
-                    state.isSeeding = true
-                    store.addTask {
-                        try await attempt {
-                            let sample = Reminders.Sample.generated(scale, seed: value, at: now, calendar: calendar)
-                            try await database.write { db in
-                                try sample.replace(in: db)
-                                try Reminders.Restoration.set(editing: nil).execute(db)
-                            }
-                            try store.modify {
-                                $0.filter = nil
-                                $0.editing = nil
-                            }
-                        }
-                        try store.modify { $0.isSeeding = false }
-                    }
-                case .deleteEverythingButtonTapped:
-                    let replacement = List<Reminder>.ID(uuid())
-                    store.addTask {
-                        try await attempt {
-                            try write { db in
-                                try Reminders.Sample(lists: []).replace(in: db)
-                                try List<Reminder>.Record.installDefault(replacement, in: db)
-                                try Reminders.Restoration.set(editing: nil).execute(db)
-                            }
-                            try store.modify {
-                                $0.filter = nil
-                                $0.editing = nil
-                            }
-                        }
-                    }
-                #endif
+                case .databaseReplaced:
+                    state.filter = nil
+                    state.editing = nil
                 case .showCompletedButtonTapped:
                     guard let filter = state.filter else { break }
                     perform { db in try Reminders.Filter.Preference.toggleShowCompleted(for: filter).execute(db) }

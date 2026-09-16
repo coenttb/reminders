@@ -31,4 +31,17 @@ struct `Reminder root` {
         try await store.state.$overview.load()
         #expect(store.overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
     }
+
+    #if DEBUG
+    @Test func `the sample menu replaces the database and tells the screen`() async throws {
+        @Dependency(\.defaultDatabase) var database
+        let store = Store(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+        let sample = Store(initialState: Reminders.Sample.Feature.State()) { Reminders.Sample.Feature(replaced: { store.send(.databaseReplaced) }) }
+        store.send(.filterTapped(.today))
+        try await database.write { db in try Reminder.Record.delete().execute(db) }
+        await sample.send(.seedButtonTapped)?.value
+        #expect(store.filter == nil)
+        #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
+    }
+    #endif
 }
