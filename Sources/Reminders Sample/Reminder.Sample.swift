@@ -50,3 +50,53 @@ extension Reminder {
         )
     }
 }
+
+extension Reminder.Sample {
+    public static func generated(_ scale: Scale, seed: UInt64, at now: Date, calendar: Calendar) -> Reminder.Sample {
+        var random = Random(seed: seed)
+        func uuid() -> UUID {
+            UUID(uuid: (
+                random.byte(), random.byte(), random.byte(), random.byte(), random.byte(), random.byte(), random.byte(), random.byte(),
+                random.byte(), random.byte(), random.byte(), random.byte(), random.byte(), random.byte(), random.byte(), random.byte()
+            ))
+        }
+        let tagTitles = (0..<scale.tags).map { Words.tag($0) }
+        let lists = (0..<scale.lists).map { index in
+            List<Reminder>(id: List<Reminder>.ID(uuid()), title: Words.list(index), color: Words.colors[index % Words.colors.count], position: index)
+        }
+        var reminders: [Reminder] = []
+        reminders.reserveCapacity(scale.reminders)
+        var position = 0
+        for list in lists {
+            for _ in 0..<scale.remindersPerList {
+                let created = now.addingTimeInterval(-Double(random.next(in: 0..<365 * 24 * 60 * 60)))
+                var due: Reminder.Due?
+                if random.chance(1, in: 3) {
+                    let day = calendar.startOfDay(for: now).addingTimeInterval(Double(random.next(in: 0..<120) - 30) * 86_400)
+                    due = random.chance(1, in: 2) ? .day(day) : .moment(day.addingTimeInterval(Double(random.next(in: 6..<22)) * 3_600))
+                }
+                var tags: Set<Tag<Reminder>.ID> = []
+                if !tagTitles.isEmpty, random.chance(2, in: 5) {
+                    for _ in 0..<random.next(in: 1..<4) { tags.insert(Tag<Reminder>.ID(rawValue: tagTitles[random.next(in: 0..<tagTitles.count)])) }
+                }
+                reminders.append(
+                    Reminder(
+                        id: Reminder.ID(uuid()),
+                        list: list.id,
+                        title: Words.title(&random),
+                        notes: random.chance(1, in: 6) ? Words.note(&random) : "",
+                        due: due,
+                        flagged: random.chance(1, in: 10),
+                        priority: random.chance(1, in: 4) ? Reminder.Priority.allCases[random.next(in: 0..<3)] : nil,
+                        completion: random.chance(1, in: 5) ? .completed : .incomplete,
+                        tags: tags,
+                        position: position,
+                        created: created
+                    )
+                )
+                position += 1
+            }
+        }
+        return Reminder.Sample(lists: lists, reminders: reminders, tags: Set(tagTitles.map(Tag<Reminder>.init(title:))))
+    }
+}

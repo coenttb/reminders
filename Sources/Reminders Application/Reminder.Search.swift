@@ -20,13 +20,6 @@ extension Reminder {
 }
 
 extension Reminder.Search {
-    public enum Token: Hashable, Identifiable, Sendable {
-        case near(String)
-        case tag(Tag<Reminder>.ID)
-
-        public var id: Self { self }
-    }
-
     public var isActive: Bool { !text.isEmpty || !tokens.isEmpty }
 
     public var tagPrefix: String? {
