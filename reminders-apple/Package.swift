@@ -26,6 +26,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
@@ -38,6 +39,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Reminders Feature", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),
                 "Reminders View",
@@ -55,6 +57,7 @@ let package = Package(
                 "Reminders View",
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -67,6 +70,7 @@ let package = Package(
                 "Reminders App",
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Reminders Feature", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),

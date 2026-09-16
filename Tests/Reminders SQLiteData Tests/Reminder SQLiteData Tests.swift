@@ -3,6 +3,7 @@ import FoundationEssentials_Extensions
 import Organizing
 import Reminders
 import Reminders_Application
+import Reminders_Sample
 import Reminders_SQLiteData
 import SQLiteData
 import Testing

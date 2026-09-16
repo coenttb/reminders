@@ -4,6 +4,7 @@ import Dependencies
 import Organizing
 public import Reminders
 import Reminders_Application
+import Reminders_Sample
 public import Reminders_Feature
 import Reminders_View
 import Standard_Library_Extensions

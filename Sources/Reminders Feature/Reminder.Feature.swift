@@ -5,6 +5,7 @@ import FoundationEssentials_Extensions
 public import Organizing
 public import Reminders
 public import Reminders_Application
+public import Reminders_Sample
 import Reminders_SQLiteData
 public import SQLiteData
 import Standard_Library_Extensions

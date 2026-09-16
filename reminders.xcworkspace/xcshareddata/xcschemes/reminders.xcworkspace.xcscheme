@@ -70,6 +70,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders Sample"
+               BuildableName = "Reminders Sample"
+               BlueprintName = "Reminders Sample"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "Reminders SQLiteData"
                BuildableName = "Reminders SQLiteData"
                BlueprintName = "Reminders SQLiteData"
@@ -129,6 +143,20 @@
                BlueprintIdentifier = "Reminders Application Tests"
                BuildableName = "Reminders Application Tests"
                BlueprintName = "Reminders Application Tests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders Sample Tests"
+               BuildableName = "Reminders Sample Tests"
+               BlueprintName = "Reminders Sample Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -251,6 +279,16 @@
                BlueprintIdentifier = "Reminders Application Tests"
                BuildableName = "Reminders Application Tests"
                BlueprintName = "Reminders Application Tests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders Sample Tests"
+               BuildableName = "Reminders Sample Tests"
+               BlueprintName = "Reminders Sample Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

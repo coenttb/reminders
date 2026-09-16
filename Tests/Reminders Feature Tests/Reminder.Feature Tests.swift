@@ -10,6 +10,7 @@ import Observation
 import Organizing
 import Reminders
 import Reminders_Application
+import Reminders_Sample
 import Reminders_Feature
 import Reminders_SQLiteData
 import SQLiteData
