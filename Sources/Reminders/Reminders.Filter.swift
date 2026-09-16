@@ -2,7 +2,7 @@ public import Foundation
 public import Organizing
 public import Tagged
 
-extension Reminder {
+extension Reminders {
     public enum Filter: Hashable, Sendable {
         case all
         case completed
@@ -14,7 +14,7 @@ extension Reminder {
     }
 }
 
-extension Reminder.Filter {
+extension Reminders.Filter {
     public static func contains(_ reminder: Reminder, in filter: Self, today: Range<Date>) -> Bool {
         switch filter {
         case .all: true

@@ -1,12 +1,12 @@
 import Foundation
 
-extension Reminder {
+extension Reminders {
     public enum Ordering: String, CaseIterable, Hashable, Sendable {
         case manual, dueDate, creationDate, priority, title
     }
 }
 
-extension Reminder.Ordering {
+extension Reminders.Ordering {
     public static func areInIncreasingOrder(_ lhs: Reminder, _ rhs: Reminder, for ordering: Self) -> Bool {
         switch ordering {
         case .manual:

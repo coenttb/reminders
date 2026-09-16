@@ -1,13 +1,13 @@
 public import Foundation
 
-extension Reminder {
+extension Reminders.Reminder {
     public enum Due: Hashable, Sendable {
         case day(Date)
         case moment(Date)
     }
 }
 
-extension Reminder.Due {
+extension Reminders.Reminder.Due {
     public init(_ date: Date, hasTime: Bool) {
         self = hasTime ? .moment(date) : .day(date)
     }
