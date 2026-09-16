@@ -1,5 +1,5 @@
 public import Organizing
-public import Reminders
+public import Reminder
 public import Tagged
 
 extension List<Reminder>.Record.Entry: Identifiable {

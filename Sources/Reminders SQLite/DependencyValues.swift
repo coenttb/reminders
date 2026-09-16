@@ -1,5 +1,6 @@
 public import Dependencies
 import Organizing
+import Reminder
 public import Reminders
 public import Reminders_Sample
 import Reminders_SQL

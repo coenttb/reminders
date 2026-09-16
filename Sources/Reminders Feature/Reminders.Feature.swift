@@ -4,6 +4,7 @@ public import Foundation
 import FoundationEssentials_Extensions
 import Standard_Library_Extensions
 public import Organizing
+public import Reminder
 public import Reminders
 public import Reminders_Interface
 public import Reminders_SQL
@@ -18,7 +19,7 @@ extension Reminders {
 
             public var destination: Destination.State?
             public var filter: Reminders.Filter?
-            public var editing: Reminders.Reminder.Editing?
+            public var editing: Reminder.Editing?
             public var failure: String?
             public var search = Reminders.Search.Query()
             public var today: Range<Date>?
@@ -46,7 +47,7 @@ extension Reminders {
             case appActivated
             case backgroundTapped
             case clearCompletedButtonTapped
-            case datePresetSelected(Reminder.ID, Reminders.Reminder.Due.Preset?)
+            case datePresetSelected(Reminder.ID, Reminder.Due.Preset?)
             case deleteCompletedButtonTapped(olderThanMonths: Int?)
             case destination(Destination.Action)
             case detailEndReached
@@ -71,7 +72,7 @@ extension Reminders {
             case showCompletedButtonTapped
             case tagDeleted(Tag<Reminder>.ID)
             case tagTapped(Tag<Reminder>.ID)
-            case timePresetSelected(Reminder.ID, Reminders.Reminder.Due.Preset.Time?)
+            case timePresetSelected(Reminder.ID, Reminder.Due.Preset.Time?)
             case titleSubmitted
         }
 
@@ -202,7 +203,7 @@ extension Reminders {
                             }
                             try store.modify {
                                 $0.endEditing(editing?.session)
-                                if let row { $0.editing = Reminders.Reminder.Editing(row, session: uuid()) }
+                                if let row { $0.editing = Reminder.Editing(row, session: uuid()) }
                             }
                         }
                     }
@@ -258,7 +259,7 @@ extension Reminders {
                         return (stored, row)
                     }
                     if let filter = stored?.filter.flatMap(Reminders.Filter.init(key:)) { state.filter = filter }
-                    if let row { state.editing = Reminders.Reminder.Editing(row, session: uuid()) }
+                    if let row { state.editing = Reminder.Editing(row, session: uuid()) }
                 } catch {
                     state.failure = error.localizedDescription
                 }
@@ -365,7 +366,7 @@ extension Reminders.Feature {
                 }
                 try store.modify {
                     $0.endEditing(previous?.session)
-                    if let row { $0.editing = Reminders.Reminder.Editing(row, session: uuid()) }
+                    if let row { $0.editing = Reminder.Editing(row, session: uuid()) }
                 }
             }
         }
@@ -393,7 +394,7 @@ extension Reminders.Feature {
                     try commit(editing, in: db)
                     guard let anchor = try Reminder.Record.find(editing.id).rows().fetchOne(db) else {
                         try Reminders.Restoration.set(editing: nil).execute(db)
-                        return Reminders.Reminder.Editing?.none
+                        return Reminder.Editing?.none
                     }
                     try Reminder.Record.makeRoom(after: anchor.reminder.position).execute(db)
                     var next = Reminder.Record.Draft.start(in: anchor.reminder.listID, created: now)
@@ -404,7 +405,7 @@ extension Reminders.Feature {
                     var place = Reminder(anchor)
                     place.id = id
                     place.position = row.reminder.position
-                    return Reminders.Reminder.Editing(draft: Reminder.Record.Draft(row.reminder), original: row.reminder, place: place, session: uuid())
+                    return Reminder.Editing(draft: Reminder.Record.Draft(row.reminder), original: row.reminder, place: place, session: uuid())
                 }
                 try store.modify {
                     $0.endEditing(editing.session)
@@ -414,7 +415,7 @@ extension Reminders.Feature {
         }
     }
 
-    private func commit(_ editing: Reminders.Reminder.Editing?, in db: Database) throws {
+    private func commit(_ editing: Reminder.Editing?, in db: Database) throws {
         guard let editing else { return }
         if editing.draft.isBlank {
             try Reminder.Record.find(editing.id).delete().execute(db)

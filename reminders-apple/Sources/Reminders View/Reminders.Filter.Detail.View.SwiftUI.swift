@@ -1,4 +1,5 @@
 public import Organizing
+public import Reminder
 public import Reminders
 public import Reminders_Interface
 public import Reminders_SQL
@@ -38,7 +39,7 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
         let (title, editing, actions) = (style.title ?? "", view.editing, view.actions)
         let tint = style.tint
         let preference = contents.preference
-        let row = Reminders.Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
+        let row = Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
         ScrollViewReader { proxy in
         SwiftUI::List {
             GeometryReader { proxy in
@@ -74,14 +75,14 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
             ForEach(Array(contents.rows.enumerated()), id: \.element.reminder.id) { index, record in
                 let id = record.reminder.id
                 if id == editing, let draft = draft(id) {
-                    Reminders.Reminder.Editor.SwiftUI(
+                    Reminder.Editor.SwiftUI(
                         draft: draft,
                         color: color(record.reminder.listID),
                         focus: $focus,
-                        view: Reminders.Reminder.Editor(id: id, now: view.now, calendar: view.calendar, actions: actions.editor)
+                        view: Reminder.Editor(id: id, now: view.now, calendar: view.calendar, actions: actions.editor)
                     )
                 } else {
-                    Reminders.Reminder.Row.SwiftUI(row: record, color: color(record.reminder.listID), view: row)
+                    Reminder.Row.SwiftUI(row: record, color: color(record.reminder.listID), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if view.window.nearsEnd(index, of: shown, total: total) { actions.endReached() } }

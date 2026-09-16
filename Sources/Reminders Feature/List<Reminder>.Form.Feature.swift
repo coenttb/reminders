@@ -1,7 +1,7 @@
 public import ComposableArchitecture2
 public import Dependencies
 public import Organizing
-public import Reminders
+public import Reminder
 public import Reminders_Interface
 public import Reminders_SQL
 public import SQLiteData

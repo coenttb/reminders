@@ -1,5 +1,5 @@
 public import Organizing
-public import Reminders
+public import Reminder
 public import StructuredQueries
 
 extension List<Reminder>.Record {

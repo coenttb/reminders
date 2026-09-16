@@ -1,5 +1,6 @@
 public import Foundation
 public import Organizing
+public import Reminder
 public import Reminders
 public import Tagged
 

@@ -1,4 +1,5 @@
 public import Foundation
+public import Reminder
 public import Reminders
 
 extension Reminders.Filter.Detail {

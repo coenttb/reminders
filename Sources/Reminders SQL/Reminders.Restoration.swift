@@ -1,3 +1,4 @@
+public import Reminder
 public import Reminders
 public import StructuredQueries
 public import Tagged

@@ -6,6 +6,7 @@ let package = Package(
     name: "reminders",
     platforms: [.iOS(.v27), .macOS(.v27)],
     products: [
+        .library(name: "Reminder", targets: ["Reminder"]),
         .library(name: "Reminders", targets: ["Reminders"]),
         .library(name: "Reminders Interface", targets: ["Reminders Interface"]),
         .library(name: "Reminders Sample", targets: ["Reminders Sample"]),
@@ -26,8 +27,18 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "Reminder",
+            dependencies: [
+                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
+                .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
+                .product(name: "Organizing", package: "organizing"),
+                .product(name: "Tagged", package: "swift-tagged"),
+            ]
+        ),
+        .target(
             name: "Reminders",
             dependencies: [
+                "Reminder",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Organizing", package: "organizing"),
@@ -38,6 +49,7 @@ let package = Package(
         .target(
             name: "Reminders Interface",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Organizing", package: "organizing"),
@@ -48,6 +60,7 @@ let package = Package(
         .target(
             name: "Reminders Sample",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Organizing", package: "organizing"),
@@ -58,6 +71,7 @@ let package = Package(
         .target(
             name: "Reminders SQL",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 "Reminders Interface",
                 .product(name: "Organizing", package: "organizing"),
@@ -69,6 +83,7 @@ let package = Package(
         .target(
             name: "Reminders SQLite",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 "Reminders Interface",
                 "Reminders Sample",
@@ -89,6 +104,7 @@ let package = Package(
         .target(
             name: "Reminders Feature",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 "Reminders Interface",
                 "Reminders SQL",
@@ -103,8 +119,18 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "Reminder Tests",
+            dependencies: [
+                "Reminder",
+                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
+                .product(name: "Organizing", package: "organizing"),
+                .product(name: "Tagged", package: "swift-tagged"),
+            ]
+        ),
+        .testTarget(
             name: "Reminders Tests",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Organizing", package: "organizing"),
@@ -114,6 +140,7 @@ let package = Package(
         .testTarget(
             name: "Reminders Interface Tests",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 "Reminders Interface",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
@@ -124,6 +151,7 @@ let package = Package(
         .testTarget(
             name: "Reminders Sample Tests",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 "Reminders Sample",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
@@ -134,6 +162,7 @@ let package = Package(
         .testTarget(
             name: "Reminders SQL Tests",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 "Reminders Interface",
                 "Reminders SQL",
@@ -144,6 +173,7 @@ let package = Package(
         .testTarget(
             name: "Reminders SQLite Tests",
             dependencies: [
+                "Reminder",
                 "Reminders",
                 "Reminders Interface",
                 "Reminders Sample",
@@ -157,6 +187,7 @@ let package = Package(
         .testTarget(
             name: "Reminders Feature Tests",
             dependencies: [
+                "Reminder",
                 "Reminders Feature",
                 "Reminders Sample",
                 .product(name: "Organizing", package: "organizing"),

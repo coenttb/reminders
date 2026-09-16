@@ -154,6 +154,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminder Tests"
+               BuildableName = "Reminder Tests"
+               BlueprintName = "Reminder Tests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "Reminders Tests"
                BuildableName = "Reminders Tests"
                BlueprintName = "Reminders Tests"
@@ -302,6 +316,16 @@
                BuildableName = "Organizing Tests"
                BlueprintName = "Organizing Tests"
                ReferencedContainer = "container:../organizing">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminder Tests"
+               BuildableName = "Reminder Tests"
+               BlueprintName = "Reminder Tests"
+               ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
          <TestableReference

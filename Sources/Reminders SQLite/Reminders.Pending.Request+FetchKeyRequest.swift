@@ -1,3 +1,4 @@
+public import Reminder
 public import Reminders
 public import Reminders_Interface
 import Reminders_SQL

@@ -1,5 +1,5 @@
 import Organizing
-import Reminders
+import Reminder
 import Reminders_Interface
 public import SwiftUI
 

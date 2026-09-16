@@ -1,5 +1,5 @@
 public import Organizing
-public import Reminders
+public import Reminder
 public import Reminders_Interface
 public import Reminders_SQL
 import Standard_Library_Extensions

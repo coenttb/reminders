@@ -1,4 +1,5 @@
 public import Organizing
+public import Reminder
 public import Reminders
 import Reminders_SQL
 public import SQLiteData

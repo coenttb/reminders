@@ -4,6 +4,7 @@ import Dependencies
 import DependenciesTestSupport
 import Foundation
 import Organizing
+import Reminder
 import Reminders
 import Reminders_App
 import Reminders_Interface

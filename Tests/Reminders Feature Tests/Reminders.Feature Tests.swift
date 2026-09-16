@@ -8,6 +8,7 @@ import FoundationEssentials_Extensions
 import Foundation
 import Observation
 import Organizing
+import Reminder
 import Reminders
 import Reminders_Interface
 import Reminders_Sample
@@ -227,7 +228,7 @@ struct `Reminder feature` {
             let store = try await makeStore()
             await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
             let groceriesRow0 = try await row(groceries.id)
-            await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminders.Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
+            await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
             try await block("UPDATE OF title", on: "reminders", reason: "title locked")
             await store.modify { $0[draft: groceries.id]?.title = "Groceries!" }?.value
             var editing = try #require(await store.state.editing)
@@ -258,7 +259,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let groceriesRow0 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminders.Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
+        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).update { $0.flagged = true }.execute(db) }
         await store.modify { $0[draft: groceries.id]?.title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
         await store.send(.doneButtonTapped) { $0.editing = nil }?.value
@@ -266,7 +267,7 @@ struct `Reminder feature` {
         #expect(saved?.title == "Groceries and more")
         #expect(saved?.flagged == false)
         let groceriesRow1 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminders.Reminder.Editing(groceriesRow1, session: UUID(1)) }?.value
+        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow1, session: UUID(1)) }?.value
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
         await store.modify { $0[draft: groceries.id]?.title = "Back" } changes: { $0.editing?.draft.title = "Back" }?.value
         await store.send(.doneButtonTapped) { $0.editing = nil }?.value
@@ -407,14 +408,14 @@ struct `Reminder feature` {
         let haircut = sample.reminders[1]
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let groceriesRow0 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminders.Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
+        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
         await store.send(.reminderCompleteButtonTapped(groceries.id)) {
             $0.editing?.draft.status = .pending
             $0.editing?.original.status = .pending
         }?.value
         try await until($pending) { [groceries] in $0 == [groceries.id] }
         let haircutRow = try await row(haircut.id)
-        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminders.Reminder.Editing(haircutRow, session: UUID(1)) }?.value
+        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow, session: UUID(1)) }?.value
         await clock.advance(by: .seconds(5))
         try await until($pending) { $0.isEmpty }
         #expect(try await stored(groceries.id)?.completion == .completed)
@@ -439,7 +440,7 @@ struct `Reminder feature` {
             await store.send(.backgroundTapped) { $0.editing = nil }?.value
             let bread = try await self.row(row)
             #expect(bread.reminder.title == "Bread")
-            await store.send(.reminderTapped(row)) { $0.editing = Reminders.Reminder.Editing(bread, session: UUID(1)) }?.value
+            await store.send(.reminderTapped(row)) { $0.editing = Reminder.Editing(bread, session: UUID(1)) }?.value
             await store.modify { $0[draft: row]?.notes = "Rye" } changes: { $0.editing?.draft.notes = "Rye" }?.value
             await store.send(.filterTapped(.today)) {
                 $0.filter = .today
@@ -457,7 +458,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let groceriesRow0 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminders.Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
+        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
         await store.modify { $0[draft: groceries.id]?.title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
         var record = groceriesRow0.reminder
         record.title = "Groceries and more"
@@ -469,9 +470,9 @@ struct `Reminder feature` {
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
         let (haircut, doctor) = (sample.reminders[1], sample.reminders[2])
         let haircutRow1 = try await row(haircut.id)
-        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminders.Reminder.Editing(haircutRow1, session: UUID(1)) }?.value
+        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow1, session: UUID(1)) }?.value
         let doctorRow2 = try await row(doctor.id)
-        await store.send(.reminderTapped(doctor.id)) { $0.editing = Reminders.Reminder.Editing(doctorRow2, session: UUID(2)) }?.value
+        await store.send(.reminderTapped(doctor.id)) { $0.editing = Reminder.Editing(doctorRow2, session: UUID(2)) }?.value
         await store.send(.reminderTapped(doctor.id))?.value
         #expect(try await database.read { db in try Reminders.Restoration.current.fetchOne(db)?.editing } == doctor.id)
         await store.dismount()
@@ -497,7 +498,7 @@ struct `Reminder feature` {
 
     @Test func `an editing session starts saved and knows when the draft differs`() {
         let record = Reminder.Record(id: groceries.id, listID: personal, title: "Groceries", created: now)
-        var editing = Reminders.Reminder.Editing(Reminder.Record.Row(reminder: record, tags: ["car"]), session: UUID())
+        var editing = Reminder.Editing(Reminder.Record.Row(reminder: record, tags: ["car"]), session: UUID())
         #expect(editing.isSaved && editing.id == record.id && editing.place.tags == ["car"] && editing.place.title == "Groceries")
         editing.draft.title = "Call back"
         #expect(!editing.isSaved && editing.original == record)

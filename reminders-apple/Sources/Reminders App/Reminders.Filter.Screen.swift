@@ -1,6 +1,7 @@
 import ComposableArchitecture2
 import Dependencies
 import Organizing
+import Reminder
 import Reminders
 import Reminders_Interface
 import Reminders_SQL
@@ -58,13 +59,13 @@ extension Reminders.Filter.Screen {
 
     private var actions: Reminders.Filter.Detail.View.Actions {
         Reminders.Filter.Detail.View.Actions(
-            rows: Reminders.Reminder.Row.Actions(
+            rows: Reminder.Row.Actions(
                 complete: { store.send(.reminderCompleteButtonTapped($0)) },
                 delete: { store.send(.reminderDeleted($0)) },
                 details: { store.send(.reminderDetailsButtonTapped($0)) },
                 edit: listID.map { _ in { store.send(.reminderTapped($0)) } }
             ),
-            editor: Reminders.Reminder.Editor.Actions(
+            editor: Reminder.Editor.Actions(
                 complete: { store.send(.reminderCompleteButtonTapped($0)) },
                 details: { store.send(.reminderDetailsButtonTapped($0)) },
                 submit: { store.send(.titleSubmitted) },

@@ -1,5 +1,6 @@
 import Foundation
 import Organizing
+import Reminder
 import Reminders
 import Reminders_Interface
 import Reminders_SQL

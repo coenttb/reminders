@@ -1,6 +1,7 @@
 import Foundation
 import FoundationEssentials_Extensions
 import Organizing
+import Reminder
 import Reminders
 import Reminders_Interface
 import Reminders_SQL
@@ -18,8 +19,8 @@ import Testing
         #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
         #expect(Reminder.Repeat.allCases.map(\.title) == ["Never", "Daily", "Weekly", "Monthly", "Yearly"])
         #expect(Reminder.Location.allCases.map(\.title) == ["Getting in Car", "Getting out of Car"])
-        #expect(Reminders.Reminder.Due.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
-        #expect(Reminders.Reminder.Due.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
+        #expect(Reminder.Due.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
+        #expect(Reminder.Due.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
     }
 
     @Test func `filters name themselves except lists, and tags show as hashtags`() {
@@ -46,7 +47,7 @@ import Testing
         let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20)))
         let evening = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 18)))
         let style = Date.FormatStyle(date: .omitted, time: .shortened, calendar: calendar, timeZone: calendar.timeZone)
-        #expect(Reminders.Reminder.Due.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
+        #expect(Reminder.Due.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.moment(evening).timeDescription(calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.day(evening).timeDescription(calendar: calendar) == nil)
     }

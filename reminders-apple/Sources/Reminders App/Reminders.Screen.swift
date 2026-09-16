@@ -2,6 +2,7 @@ import SwiftUI_Extensions
 public import ComposableArchitecture2
 import Dependencies
 import Organizing
+import Reminder
 public import Reminders
 import Reminders_Interface
 import Standard_Library_Extensions
@@ -47,7 +48,7 @@ extension Reminders.Screen: SwiftUI::View {
                             now: now,
                             calendar: calendar,
                             actions: Reminders.Search.View.Actions(
-                                rows: Reminders.Reminder.Row.Actions(
+                                rows: Reminder.Row.Actions(
                                     complete: { store.send(.reminderCompleteButtonTapped($0)) },
                                     delete: { store.send(.reminderDeleted($0)) },
                                     details: { store.send(.reminderDetailsButtonTapped($0)) }
@@ -125,18 +126,18 @@ extension Reminders.Screen: SwiftUI::View {
         .sheet(item: $store.scope(\.destination).reminder) { form in
             @Bindable var form = form
             NavigationStack {
-                Reminders.Reminder.Form.SwiftUI(
+                Reminder.Form.SwiftUI(
                     draft: $form.draft,
                     tags: $form.tags,
                     lists: store.overview.lists.map(\.list),
                     available: store.overview.rankedTags,
-                    form: Reminders.Reminder.Form(
+                    form: Reminder.Form(
                         isNew: form.isNew,
                         isDirty: form.isDirty,
                         failure: form.failure,
                         now: now,
                         calendar: calendar,
-                        actions: Reminders.Reminder.Form.Actions(
+                        actions: Reminder.Form.Actions(
                             save: { form.send(.saveButtonTapped) },
                             cancel: { form.send(.cancelButtonTapped) },
                             tags: Tag<Reminder>.Picker.Actions(

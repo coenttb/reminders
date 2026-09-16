@@ -1,4 +1,5 @@
-public import Organizing
+import Organizing
+import Reminder
 public import Reminders
 public import Reminders_Interface
 public import Reminders_SQL
@@ -64,11 +65,11 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
         .listSectionMargins(.horizontal, 0)
         let (shown, total) = (contents.shown, contents.total)
         let starts = contents.sections.reduce(into: [0]) { $0.append($0[$0.count - 1] + $1.rows.count) }
-        let row = Reminders.Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
+        let row = Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
         ForEach(Array(contents.sections.enumerated()), id: \.element.id) { position, section in
             Section {
                 ForEach(Array(section.rows.enumerated()), id: \.element.reminder.id) { offset, record in
-                    Reminders.Reminder.Row.SwiftUI(row: record, color: SwiftUI::Color(Organizing.Color(section.list.color)), view: row)
+                    Reminder.Row.SwiftUI(row: record, color: SwiftUI::Color(Organizing.Color(section.list.color)), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if view.window.nearsEnd(starts[position] + offset, of: shown, total: total) { actions.endReached() } }

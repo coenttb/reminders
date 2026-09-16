@@ -1,4 +1,5 @@
 public import Organizing
+public import Reminder
 public import Tagged
 
 extension Reminders {

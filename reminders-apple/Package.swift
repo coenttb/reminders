@@ -24,6 +24,7 @@ let package = Package(
         .target(
             name: "Reminders View",
             dependencies: [
+                .product(name: "Reminder", package: "reminders"),
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),
@@ -38,6 +39,7 @@ let package = Package(
         .target(
             name: "Reminders App",
             dependencies: [
+                .product(name: "Reminder", package: "reminders"),
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),
@@ -58,6 +60,7 @@ let package = Package(
             name: "Reminders View Tests",
             dependencies: [
                 "Reminders View",
+                .product(name: "Reminder", package: "reminders"),
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders SQL", package: "reminders"),
@@ -71,6 +74,7 @@ let package = Package(
             name: "Reminders App Tests",
             dependencies: [
                 "Reminders App",
+                .product(name: "Reminder", package: "reminders"),
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),

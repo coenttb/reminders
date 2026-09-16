@@ -1,12 +1,13 @@
 public import ComposableArchitecture2
 public import Organizing
+public import Reminder
 public import Reminders
 public import Reminders_Interface
 
 extension Reminders.Feature {
     @ComposableArchitecture2.Feature public enum Destination {
         case list(List<Reminder>.Form.Feature)
-        case reminder(Reminders.Reminder.Form.Feature)
+        case reminder(Reminder.Form.Feature)
     }
 }
 

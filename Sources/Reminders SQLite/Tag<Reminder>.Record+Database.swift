@@ -1,5 +1,6 @@
 public import Organizing
-public import Reminders
+public import Reminder
+import Reminders
 public import Reminders_SQL
 public import SQLiteData
 public import Tagged
