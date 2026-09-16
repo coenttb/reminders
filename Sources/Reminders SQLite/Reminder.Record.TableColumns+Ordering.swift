@@ -8,13 +8,13 @@ extension Reminder.Record.TableColumns {
     fileprivate func placed<Value: _OptionalPromotable>(
         _ column: some QueryExpression<Value>,
         _ value: some QueryExpression<Value>,
-        of place: Reminders.Filter.Detail.Placement?
+        of place: Reminders.Placement?
     ) -> SQLQueryExpression<Value> {
         guard let place else { return SQLQueryExpression("\(column)") }
         return SQLQueryExpression("\(Case().when(id.eq(place.reminder.id), then: value).else(column))")
     }
 
-    public func ordered(by ordering: Reminders.Ordering, showCompleted: Bool, placing place: Reminders.Filter.Detail.Placement? = nil) -> SQLQueryExpression<Bool> {
+    public func ordered(by ordering: Reminders.Ordering, showCompleted: Bool, placing place: Reminders.Placement? = nil) -> SQLQueryExpression<Bool> {
         let dueDate = placed(dueDate, place?.reminder.due?.date, of: place)
         let position = placed(position, place?.position ?? 0, of: place)
         let priority = placed(priority, place?.reminder.priority, of: place)

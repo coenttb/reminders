@@ -1,7 +1,6 @@
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_SQL
 public import SwiftUI
 public import Tagged
 
@@ -10,7 +9,7 @@ extension Reminders.Filter.Detail.View {
         private var contents: Reminders.Filter.Detail.Contents
         private var style: Reminders.Filter.Style
         private var color: (Models.List<Reminder>.ID) -> SwiftUI::Color
-        private var draft: (Reminder.ID) -> Binding<Reminder.Record.Draft>?
+        private var draft: (Reminder.ID) -> Binding<Reminder>?
         private var view: Reminders.Filter.Detail.View
         @State private var titleVisible = false
         @State private var editMode: EditMode = .inactive
@@ -21,7 +20,7 @@ extension Reminders.Filter.Detail.View {
             contents: Reminders.Filter.Detail.Contents,
             style: Reminders.Filter.Style,
             color: @escaping (Models.List<Reminder>.ID) -> SwiftUI::Color,
-            draft: @escaping (Reminder.ID) -> Binding<Reminder.Record.Draft>?,
+            draft: @escaping (Reminder.ID) -> Binding<Reminder>?,
             view: Reminders.Filter.Detail.View
         ) {
             self.contents = contents

@@ -1,15 +1,13 @@
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_SQL
 import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
 
 extension Reminder.Form {
     public struct SwiftUI {
-        @Binding private var draft: Reminder.Record.Draft
-        @Binding private var tags: Set<Tag<Reminder>.ID>
+        @Binding private var draft: Reminder
         private var lists: [Models.List<Reminder>]
         private var available: [Tag<Reminder>]
         private var form: Reminder.Form
@@ -20,14 +18,12 @@ extension Reminder.Form {
         @FocusState private var notesFocused: Bool
 
         public init(
-            draft: Binding<Reminder.Record.Draft>,
-            tags: Binding<Set<Tag<Reminder>.ID>>,
+            draft: Binding<Reminder>,
             lists: [Models.List<Reminder>],
             available: [Tag<Reminder>],
             form: Reminder.Form
         ) {
             self._draft = draft
-            self._tags = tags
             self.lists = lists
             self.available = available
             self.form = form
@@ -54,7 +50,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             Section("Date & Time") {
                 Toggle(isOn: $draft.dueOn(now, calendar: calendar).animation()) {
                     row("Date", systemImage: "calendar", subtitle: draft.due?.dayDescription(at: now, calendar: calendar)) {
-                        if draft.dueDate != nil { expanded = expanded == .date ? nil : .date }
+                        if draft.due != nil { expanded = expanded == .date ? nil : .date }
                     }
                 }
                 if expanded == .date, let due = draft.due {
@@ -63,7 +59,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                 }
                 Toggle(isOn: $draft.timeOn(now, calendar: calendar).animation()) {
                     row("Time", systemImage: "clock", subtitle: draft.due?.timeDescription(calendar: calendar)) {
-                        if draft.hasTime { expanded = expanded == .time ? nil : .time }
+                        if draft.due?.hasTime == true { expanded = expanded == .time ? nil : .time }
                     }
                 }
                 if expanded == .time, let due = draft.due, due.hasTime {
@@ -72,7 +68,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                         .labelsHidden()
                 }
             }
-            if draft.dueDate != nil {
+            if draft.due != nil {
                 Section {
                     Picker(selection: $draft.repeatFrequency(in: calendar)) {
                         Text("Never").tag(Calendar.RecurrenceRule.Frequency?.none)
@@ -125,11 +121,11 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             }
         }
         .onAppear { titleFocused = form.isNew }
-        .onChange(of: draft.dueDate != nil) { _, on in
+        .onChange(of: draft.due != nil) { _, on in
             expanded = on ? .date : nil
             titleFocused = false
         }
-        .onChange(of: draft.hasTime) { _, on in
+        .onChange(of: draft.due?.hasTime == true) { _, on in
             expanded = on ? .time : nil
             titleFocused = false
         }
@@ -146,7 +142,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                     }
                 }
                 Button("Custom", systemImage: "ellipsis") {
-                    if draft.dueDate == nil { draft.set(datePreset: .today, at: now, calendar: calendar) }
+                    if draft.due == nil { draft.set(datePreset: .today, at: now, calendar: calendar) }
                     expanded = .date
                 }
             } label: {
@@ -192,12 +188,12 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     private var listPicker: some SwiftUI::View {
         NavigationLink {
             SwiftUI::List(lists) { list in
-                Button { draft.listID = list.id } label: {
+                Button { draft.list = list.id } label: {
                     HStack(spacing: 16) {
                         Models.List<Reminder>.Badge(color: SwiftUI::Color(list.color))
                         Text(list.title).foregroundStyle(.primary)
                         Spacer()
-                        if list.id == draft.listID {
+                        if list.id == draft.list {
                             Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold)
                         }
                     }
@@ -207,12 +203,12 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             .navigationBarTitleDisplayMode(.inline)
         } label: {
             LabeledContent {
-                Text(lists.first(id: draft.listID)?.title ?? "")
+                Text(lists.first(id: draft.list)?.title ?? "")
             } label: {
                 Label {
                     Text("List")
                 } icon: {
-                    Models.List<Reminder>.Badge(color: lists.first(id: draft.listID).map { SwiftUI::Color($0.color) } ?? .blue, size: 28)
+                    Models.List<Reminder>.Badge(color: lists.first(id: draft.list).map { SwiftUI::Color($0.color) } ?? .blue, size: 28)
                 }
             }
         }
@@ -238,8 +234,8 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
         Button { tagsPresented = true } label: {
             LabeledContent {
                 HStack(spacing: 6) {
-                    if !tags.isEmpty {
-                        Text(tags.sorted().map(Tag<Reminder>.hashtag).joined(separator: " ")).lineLimit(1).truncationMode(.tail)
+                    if !draft.tags.isEmpty {
+                        Text(draft.tags.sorted().map(Tag<Reminder>.hashtag).joined(separator: " ")).lineLimit(1).truncationMode(.tail)
                     }
                     Image(systemName: "chevron.forward").font(.footnote.weight(.semibold))
                 }
@@ -250,7 +246,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
         .foregroundStyle(.primary)
         .popover(isPresented: $tagsPresented) {
             NavigationStack {
-                Tag<Reminder>.Picker.SwiftUI(selection: $tags, tags: available, picker: Tag<Reminder>.Picker(actions: form.actions.tags))
+                Tag<Reminder>.Picker.SwiftUI(selection: $draft.tags, tags: available, picker: Tag<Reminder>.Picker(actions: form.actions.tags))
             }
         }
     }

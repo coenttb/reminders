@@ -1,6 +1,6 @@
 public import Reminder
 
-extension Reminders.Filter.Detail {
+extension Reminders {
     public struct Placement: Hashable, Sendable {
         public var reminder: Reminder
         public var position: Int

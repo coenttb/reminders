@@ -1,17 +1,16 @@
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_SQL
 public import SwiftUI
 
 extension Models.List<Reminder>.Form {
     public struct SwiftUI {
-        @Binding private var draft: Models.List<Reminder>.Record.Draft
+        @Binding private var draft: Models.List<Reminder>
         private var form: Models.List<Reminder>.Form
         @FocusState private var nameFocused: Bool
         @State private var discardPresented = false
 
-        public init(draft: Binding<Models.List<Reminder>.Record.Draft>, form: Models.List<Reminder>.Form) {
+        public init(draft: Binding<Models.List<Reminder>>, form: Models.List<Reminder>.Form) {
             self._draft = draft
             self.form = form
         }
@@ -32,7 +31,7 @@ extension Models.List<Reminder>.Form.SwiftUI: SwiftUI::View {
     }
 
     public var body: some SwiftUI::View {
-        let color = SwiftUI::Color(Models.Color(draft.color))
+        let color = SwiftUI::Color(draft.color)
         SwiftUI::Form {
             Section {
                 VStack(spacing: 20) {
@@ -54,7 +53,7 @@ extension Models.List<Reminder>.Form.SwiftUI: SwiftUI::View {
             Section {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 14) {
                     ForEach(Self.palette, id: \.color) { entry in
-                        swatch(entry.name, entry.color, selected: entry.color == draft.color)
+                        swatch(entry.name, entry.color, selected: entry.color == Models.Color.Hex(draft.color))
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -88,7 +87,7 @@ extension Models.List<Reminder>.Form.SwiftUI: SwiftUI::View {
 
     private func swatch(_ name: String, _ hex: Models.Color.Hex, selected: Bool) -> some SwiftUI::View {
         Button {
-            draft.color = hex
+            draft.color = Models.Color(hex)
         } label: {
             Circle()
                 .fill(SwiftUI::Color(Models.Color(hex)))

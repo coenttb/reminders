@@ -52,7 +52,7 @@ extension Reminders.Sample {
                         try await attempt {
                             try write { db in
                                 try sample.replace(in: db)
-                                try Reminders.Restoration.set(editing: nil).execute(db)
+                                try Reminders.Session.Record.set(editing: nil).execute(db)
                             }
                             replaced()
                         }
@@ -66,7 +66,7 @@ extension Reminders.Sample {
                             let sample = Reminders.Sample.generated(scale, seed: value, at: now, calendar: calendar)
                             try await database.write { db in
                                 try sample.replace(in: db)
-                                try Reminders.Restoration.set(editing: nil).execute(db)
+                                try Reminders.Session.Record.set(editing: nil).execute(db)
                             }
                             replaced()
                         }
@@ -79,7 +79,7 @@ extension Reminders.Sample {
                             try write { db in
                                 try Reminders.Sample(lists: []).replace(in: db)
                                 try List<Reminder>.Record.installDefault(replacement, in: db)
-                                try Reminders.Restoration.set(editing: nil).execute(db)
+                                try Reminders.Session.Record.set(editing: nil).execute(db)
                             }
                             replaced()
                         }

@@ -5,7 +5,6 @@ import Models
 import Reminder
 public import Reminders
 import Standard_Library_Extensions
-import Reminders_SQL
 public import Reminders_Feature
 #if DEBUG
 import Reminders_Sample
@@ -127,7 +126,6 @@ extension Reminders.Screen: SwiftUI::View {
             NavigationStack {
                 Reminder.Form.SwiftUI(
                     draft: $form.draft,
-                    tags: $form.tags,
                     lists: store.overview.lists.map(\.list),
                     available: store.overview.rankedTags,
                     form: Reminder.Form(

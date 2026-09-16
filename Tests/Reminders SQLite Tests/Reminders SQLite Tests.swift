@@ -26,7 +26,7 @@ import Tagged
         try database.read { db in try Reminders.Overview.Request(today: today).fetch(db) }
     }
 
-    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Filter.Detail.Placement? = nil) throws -> Reminders.Filter.Detail.Contents {
+    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil) throws -> Reminders.Filter.Detail.Contents {
         try #require(try database.read { db in try Reminders.Filter.Detail.Request(filter: filter, today: today, place: place).fetch(db) })
     }
 
@@ -48,16 +48,16 @@ import Tagged
 
     @Test func `an empty database is installed with the restoration row and one list, and installing again changes nothing`() throws {
         let database = try Reminders.Schema.database()
-        #expect(try database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 0)
+        #expect(try database.read { db in try Reminders.Session.Record.current.fetchCount(db) } == 0)
         let personal = List<Reminder>.ID(UUID())
         try database.write { db in try Reminders.Schema.install(db, default: personal) }
-        #expect(try database.read { db in try Reminders.Restoration.current.fetchOne(db) } == Reminders.Restoration())
+        #expect(try database.read { db in try Reminders.Session.Record.current.fetchOne(db) } == Reminders.Session.Record())
         #expect(try overview(database).lists.map(\.list.title) == ["Personal"] && overview(database).lists.first?.id == personal)
         try database.write { db in
-            try Reminders.Restoration.set(filter: .today).execute(db)
+            try Reminders.Session.Record.set(filter: .today).execute(db)
             try Reminders.Schema.install(db, default: List<Reminder>.ID(UUID()))
         }
-        #expect(try database.read { db in try Reminders.Restoration.current.fetchOne(db)?.filter } == Reminders.Filter.Key(.today))
+        #expect(try database.read { db in try Reminders.Session.Record.current.fetchOne(db)?.filter } == Reminders.Filter.Key(.today))
         #expect(try overview(database).lists.map(\.id) == [personal])
         try database.write { db in try Reminders.sample(at: now).initialize(in: db) }
         #expect(try overview(database).lists.map(\.id) == [personal])
@@ -70,18 +70,18 @@ import Tagged
             try sample.initialize(in: db)
             try sample.initialize(in: db)
         }
-        #expect(try database.read { db in try Reminders.Restoration.current.fetchCount(db) } == 0)
+        #expect(try database.read { db in try Reminders.Session.Record.current.fetchCount(db) } == 0)
         #expect(try overview(database).counts == Reminders.Overview.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         try database.write { db in try Reminder.Record.find(sample.reminders[0].id).delete().execute(db) }
         try database.write { db in try sample.initialize(in: db) }
         #expect(try overview(database).counts.all == 7)
         try database.write { db in
-            try Reminders.Restoration.install(in: db)
-            try Reminders.Restoration.set(editing: sample.reminders[1].id).execute(db)
+            try Reminders.Session.Record.install(in: db)
+            try Reminders.Session.Record.set(editing: sample.reminders[1].id).execute(db)
             try sample.replace(in: db)
         }
         #expect(try overview(database).counts.all == 8)
-        #expect(try database.read { db in try Reminders.Restoration.current.fetchOne(db)?.editing } == sample.reminders[1].id)
+        #expect(try database.read { db in try Reminders.Session.Record.current.fetchOne(db)?.editing } == sample.reminders[1].id)
         #expect(try database.read { db in try Reminders.Tagging.all.fetchCount(db) } == sample.reminders.reduce(0) { $0 + $1.tags.count })
         try database.write { db in try List<Reminder>.Record.delete().execute(db) }
         try database.write { db in try sample.initialize(in: db) }
@@ -160,7 +160,7 @@ import Tagged
         dated.due = .day(now.addingTimeInterval(-400_000))
         try database.write { db in try Reminder.Record.save(dated).execute(db) }
         #expect(try detail(personal, database).reminders.first?.id == groceries.id)
-        #expect(try detail(personal, database, place: Reminders.Filter.Detail.Placement(groceries, position: 0)).reminders.last?.id == groceries.id)
+        #expect(try detail(personal, database, place: Reminders.Placement(groceries, position: 0)).reminders.last?.id == groceries.id)
     }
 
     @Test func `a reminder in its grace period stays in place and counts as completed`() throws {
@@ -345,7 +345,7 @@ import Tagged
         #expect(try position(sample.reminders[2].id, database) == 3)
         let personal = Reminders.Filter.list(sample.lists[0].id)
         try database.write { db in try Reminders.Filter.Preference.Record.set(ordering: .manual, for: personal).execute(db) }
-        #expect(try detail(personal, database, place: { var p = haircut; p.id = next.id; return Reminders.Filter.Detail.Placement(p, position: 2) }()).reminders.map(\.id).prefix(3) == [sample.reminders[0].id, haircut.id, next.id])
+        #expect(try detail(personal, database, place: { var p = haircut; p.id = next.id; return Reminders.Placement(p, position: 2) }()).reminders.map(\.id).prefix(3) == [sample.reminders[0].id, haircut.id, next.id])
         var ids = try detail(personal, database).reminders.map(\.id)
         ids.swapAt(0, 2)
         try database.write { db in try Reminder.Record.reorder(ids, in: db) }

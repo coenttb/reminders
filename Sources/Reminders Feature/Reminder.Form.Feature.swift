@@ -3,9 +3,7 @@ public import Dependencies
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_SQL
-import Reminders_SQLite
-public import SQLiteData
+public import Reminders_Dependency
 import Standard_Library_Extensions
 public import Tagged
 import Foundation
@@ -15,23 +13,19 @@ extension Reminder.Form {
         public struct State: Sendable {
             public typealias Feature = Reminder.Form.Feature
 
-            public var draft: Reminder.Record.Draft
-            public var tags: Set<Tag<Reminder>.ID>
-            public let original: Reminder.Record.Row?
+            public var draft: Reminder
+            public let original: Reminder?
             public var failure: String?
             public var isSaving = false
 
-            public init(draft: Reminder.Record.Draft, tags: Set<Tag<Reminder>.ID>, original: Reminder.Record.Row?) {
+            public init(draft: Reminder, original: Reminder?) {
                 self.draft = draft
-                self.tags = tags
                 self.original = original
             }
 
             public var isNew: Bool { original == nil }
 
-            public var isDirty: Bool {
-                original.map { draft != Reminder.Record.Draft($0.reminder) || tags != Set($0.tags.map { Tag<Reminder>.ID($0) }) } ?? true
-            }
+            public var isDirty: Bool { original.map { draft != $0 } ?? true }
 
             public mutating func fail(_ reason: String) {
                 failure = reason
@@ -47,7 +41,7 @@ extension Reminder.Form {
             case tagRenamed(Tag<Reminder>.ID, String)
         }
 
-        @Dependency(\.defaultDatabase) var database
+        @Dependency(\.reminders) var reminders
 
         public init() {}
 
@@ -59,23 +53,22 @@ extension Reminder.Form {
                 case .saveButtonTapped:
                     guard !state.draft.isBlank, !state.isSaving else { break }
                     state.isSaving = true
-                    let (draft, tags, isNew) = (state.draft, state.tags, state.isNew)
+                    let (draft, isNew) = (state.draft, state.isNew)
                     store.addTask {
                         try await attempt {
-                            let saved = try write { db in try Reminder.Record.save(draft, tags: tags, isNew: isNew, in: db) }
-                            if saved == nil {
-                                try store.modify { $0.fail("This reminder was deleted.") }
-                            } else {
+                            if try await reminders.editor.client.save(draft, isNew) {
                                 try store.dismiss()
+                            } else {
+                                try store.modify { $0.fail("This reminder was deleted.") }
                             }
                         }
                     }
                 case let .tagAdded(title):
                     store.addTask {
                         try await attempt {
-                            guard let tag = try write({ db in try Tag<Reminder>.Record.add(title, in: db) }) else { return }
+                            guard let tag = try await reminders.tags.client.add(title) else { return }
                             try store.modify {
-                                $0.tags.insert(tag)
+                                $0.draft.tags.insert(tag)
                                 $0.failure = nil
                             }
                         }
@@ -83,9 +76,9 @@ extension Reminder.Form {
                 case let .tagDeleted(id):
                     store.addTask {
                         try await attempt {
-                            try write { db in try Tag<Reminder>.Record.delete(id).execute(db) }
+                            try await reminders.tags.client.delete(id)
                             try store.modify {
-                                $0.tags.remove(id)
+                                $0.draft.tags.remove(id)
                                 $0.failure = nil
                             }
                             try store.post(key: Reminders.Feature.TagDeleted.self, value: id)
@@ -94,9 +87,9 @@ extension Reminder.Form {
                 case let .tagRenamed(id, title):
                     store.addTask {
                         try await attempt {
-                            guard let renamed = try write({ db in try Tag<Reminder>.Record.rename(id, to: title, in: db) }) else { return }
+                            guard let renamed = try await reminders.tags.client.rename(id, title) else { return }
                             try store.modify {
-                                $0.tags.replace(id, with: renamed)
+                                $0.draft.tags.replace(id, with: renamed)
                                 $0.failure = nil
                             }
                         }
@@ -108,8 +101,6 @@ extension Reminder.Form {
 }
 
 extension Reminder.Form.Feature {
-    private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
-
     private func attempt(_ body: () async throws -> Void) async throws {
         do {
             try await body()

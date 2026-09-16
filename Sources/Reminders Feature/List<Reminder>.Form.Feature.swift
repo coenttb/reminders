@@ -3,8 +3,7 @@ public import Dependencies
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_SQL
-public import SQLiteData
+public import Reminders_Dependency
 import Foundation
 
 extension Models.List<Reminder>.Form {
@@ -12,19 +11,19 @@ extension Models.List<Reminder>.Form {
         public struct State: Sendable {
             public typealias Feature = List<Reminder>.Form.Feature
 
-            public var draft: List<Reminder>.Record.Draft
-            public let original: List<Reminder>.Record?
+            public var draft: List<Reminder>
+            public let original: List<Reminder>?
             public var failure: String?
             public var isSaving = false
 
-            public init(draft: List<Reminder>.Record.Draft, original: List<Reminder>.Record?) {
+            public init(draft: List<Reminder>, original: List<Reminder>?) {
                 self.draft = draft
                 self.original = original
             }
 
             public var isNew: Bool { original == nil }
 
-            public var isDirty: Bool { original.map { draft != List<Reminder>.Record.Draft($0) } ?? true }
+            public var isDirty: Bool { original.map { draft != $0 } ?? true }
 
             public mutating func fail(_ reason: String) {
                 failure = reason
@@ -37,7 +36,7 @@ extension Models.List<Reminder>.Form {
             case saveButtonTapped
         }
 
-        @Dependency(\.defaultDatabase) var database
+        @Dependency(\.reminders) var reminders
 
         public init() {}
 
@@ -52,18 +51,7 @@ extension Models.List<Reminder>.Form {
                     let (draft, isNew) = (state.draft, state.isNew)
                     store.addTask {
                         try await attempt {
-                            let saved = try write { db in
-                                if isNew {
-                                    let inserted = List<Reminder>.Record.insert { draft }
-                                    guard let id = try inserted.returning(\.id).fetchOne(db) else { return false }
-                                    try List<Reminder>.Record.placeLast(id).execute(db)
-                                    return true
-                                }
-                                guard let id = draft.id, try List<Reminder>.Record.find(id).fetchCount(db) > 0 else { return false }
-                                try List<Reminder>.Record.save(draft).execute(db)
-                                return true
-                            }
-                            if saved {
+                            if try await reminders.lists.client.save(draft, isNew) {
                                 try store.dismiss()
                             } else {
                                 try store.modify { $0.fail("This list was deleted.") }
@@ -77,8 +65,6 @@ extension Models.List<Reminder>.Form {
 }
 
 extension Models.List<Reminder>.Form.Feature {
-    private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
-
     private func attempt(_ body: () async throws -> Void) async throws {
         do {
             try await body()

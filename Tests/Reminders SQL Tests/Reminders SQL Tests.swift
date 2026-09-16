@@ -75,6 +75,6 @@ import Tagged
         #expect(detail.ids == [record.id] && detail.total == 0)
         let results = Reminders.Search.Contents(sections: [Reminders.Search.Contents.Section(list: personal, rows: [Reminder(Reminder.Record.Row(reminder: record, tags: ["a"]))])])
         #expect(results.shown == 1 && results.sections.first?.id == list)
-        #expect(Reminders.Restoration().filter == nil && Reminders.Restoration(filter: Reminders.Filter.Key(.today), editing: record.id).editing == record.id)
+        #expect(Reminders.Session.Record().filter == nil && Reminders.Session.Record(filter: Reminders.Filter.Key(.today), editing: record.id).editing == record.id)
     }
 }

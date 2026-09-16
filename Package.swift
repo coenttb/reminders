@@ -110,7 +110,6 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
-                "Reminders SQL",
                 "Reminders SQLite",
                 "Models",
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
@@ -185,6 +184,7 @@ let package = Package(
             name: "Reminders Feature Tests",
             dependencies: [
                 "Reminder",
+                "Reminders Dependency",
                 "Reminders Feature",
                 "Reminders Sample",
                 "Models",

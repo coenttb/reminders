@@ -2,6 +2,7 @@ public import Dependencies
 import Models
 import Reminder
 public import Reminders
+import Reminders_Dependency
 public import Reminders_Sample
 import Reminders_SQL
 import SQLiteData
@@ -37,6 +38,7 @@ extension DependencyValues {
             try Reminders.Schema.install(db, default: List<Reminder>.ID(uuid()))
         }
         defaultDatabase = database
+        reminders = .sqlite(database)
     }
 }
 

@@ -1,16 +1,15 @@
 import Foundation
 import Reminder
 import Reminders
-import Reminders_SQL
 
-extension Reminder.Record.Draft {
+extension Reminder {
     subscript(dueOn now: Date, calendar calendar: Calendar) -> Bool {
         get { due != nil }
         set { set(due: newValue ? calendar.startOfDay(for: now) : nil) }
     }
 
     subscript(timeOn now: Date, calendar calendar: Calendar) -> Bool {
-        get { hasTime }
+        get { due?.hasTime == true }
         set { set(hasTime: newValue, at: now, calendar: calendar) }
     }
 

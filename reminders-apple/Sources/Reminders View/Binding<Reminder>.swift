@@ -1,9 +1,9 @@
 import Foundation
 import Reminder
-import Reminders_SQL
+import Reminders
 import SwiftUI
 
-extension Binding<Reminder.Record.Draft> {
+extension Binding<Reminder> {
     func dueOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now, calendar: calendar]] }
     func timeOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now, calendar: calendar]] }
     func repeatFrequency(in calendar: Calendar) -> Binding<Calendar.RecurrenceRule.Frequency?> { self[dynamicMember: \.[repeatFrequency: calendar]] }
