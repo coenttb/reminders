@@ -94,8 +94,8 @@ import Tagged
         #expect(overview.counts == Reminders.Overview.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         #expect(overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
         #expect(overview.lists.map(\.count) == [4, 2, 2])
-        #expect(overview.usedTags.map(\.rawValue) == ["adulting", "car", "kids", "night", "optional", "social", "someday"])
-        #expect(overview.rankedTags.prefix(3).map(\.rawValue) == ["social", "adulting", "optional"])
+        #expect(Set(overview.tags.filter { $0.count > 0 }.map(\.tag.rawValue)) == ["adulting", "car", "kids", "night", "optional", "social", "someday"])
+        #expect(overview.tags.prefix(3).map(\.tag.rawValue) == ["social", "adulting", "optional"])
         try database.write { db in try Reminder.Record.find(sample.reminders[0].id).delete().execute(db) }
         #expect(try self.overview(database).lists.map(\.count) == [3, 2, 2])
     }
@@ -233,7 +233,7 @@ import Tagged
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("Car"))
         #expect(try stored(wash.id, database)?.tags == ["Car"])
         #expect(try detail(.tags(["Car"]), database).reminders.map(\.title) == ["Wash"])
-        #expect(try overview(database).usedTags.map(\.rawValue) == ["adulting", "Car", "kids", "night", "optional", "someday"])
+        #expect(Set(try overview(database).tags.filter { $0.count > 0 }.map(\.tag.rawValue)) == ["adulting", "Car", "kids", "night", "optional", "someday"])
         #expect(try database.write { db in try Tag<Reminder>.Record.rename("kids", to: "car", in: db) } == "Car")
         #expect(try stored(sample.reminders[3].id, database)?.tags == ["Car"])
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 5)
@@ -246,7 +246,7 @@ import Tagged
             _ = try Tag<Reminder>.Record.rename("car", to: "Car", in: db)
             try Tag<Reminder>.Record.add("Cat", in: db)
         }
-        #expect(try overview(database).rankedTags.map(\.rawValue) == ["social", "adulting", "optional", "someday", "Car", "kids", "night", "Cat"])
+        #expect(try overview(database).tags.map(\.tag.rawValue) == ["social", "adulting", "optional", "someday", "Car", "kids", "night", "Cat"])
         #expect(try results(Reminders.Search.Query(text: "#c"), database).suggestions.map(\.rawValue) == ["Car", "Cat"])
         #expect(try results(Reminders.Search.Query(text: "#so"), database).suggestions.map(\.rawValue) == ["social", "someday"])
         #expect(try results(Reminders.Search.Query(text: "#so", tokens: [.tag("social")]), database).suggestions.map(\.rawValue) == ["someday"])

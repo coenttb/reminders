@@ -30,23 +30,4 @@ extension Reminders.Search.Query {
     public var matchedText: String { tagPrefix == nil ? text : "" }
 
     public var tags: [Tag<Reminder>] { tokens.compactMap { if case let .tag(tag) = $0 { tag } else { nil } } }
-
-    public static func committingText(_ search: Self) -> Self {
-        guard search.tagPrefix == nil, !search.text.trimmed.isEmpty else { return search }
-        var committed = search
-        committed.tokens.append(.near(search.text.trimmed))
-        committed.text = ""
-        return committed
-    }
-
-    public mutating func commitText() { self = Self.committingText(self) }
-
-    public static func adding(_ search: Self, tag: Tag<Reminder>) -> Self {
-        var added = search
-        added.tokens.append(.tag(tag))
-        added.text = ""
-        return added
-    }
-
-    public mutating func add(tag: Tag<Reminder>) { self = Self.adding(self, tag: tag) }
 }

@@ -63,9 +63,7 @@ import Tagged
                 Tag<Reminder>.Entry(tag: Tag("car"), count: 0),
             ]
         )
-        #expect(overview.list(list) == personal && overview.list(List<Reminder>.ID(UUID())) == nil)
-        #expect(overview.rankedTags.map(\.rawValue) == ["social", "Adulting", "car"])
-        #expect(overview.usedTags.map(\.rawValue) == ["Adulting", "social"])
+        #expect(overview.lists.map(\.list) == [personal] && overview.tags.map(\.tag.rawValue) == ["social", "Adulting", "car"])
         let record = Reminder.Record(id: Reminder.ID(UUID()), listID: list, title: "Call", created: now)
         let call = Reminder(Reminder.Record.Row(reminder: record, tags: []))
         let detail = Reminders.Filter.Detail.Contents(filter: .list(list), preference: .default(for: .list(list)), rows: [call])
@@ -73,5 +71,15 @@ import Tagged
         let results = Reminders.Search.Contents(sections: [Reminders.Search.Contents.Section(list: personal, rows: [Reminder(Reminder.Record.Row(reminder: record, tags: ["a"]))])])
         #expect(results.shown == 1 && results.sections.first?.id == list)
         #expect(Reminders.Session.Record().filter == nil && Reminders.Session.Record(filter: Reminders.Filter.Key(.today), editing: record.id).editing == record.id)
+    }
+
+    @Test func `filters round-trip through their keys`() {
+        let id = List<Reminder>.ID(UUID())
+        for filter in [Reminders.Filter.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b, c"]), .today] {
+            #expect(Reminders.Filter(key: Reminders.Filter.Key(filter)) == filter)
+        }
+        #expect(Reminders.Filter.Key(.tags(["b", "a"])) == Reminders.Filter.Key(.tags(["a", "b"])))
+        #expect(Reminders.Filter.Key(.list(id)).rawValue == "list_\(id.rawValue.uuidString)")
+        #expect(Reminders.Filter(key: Reminders.Filter.Key(rawValue: "list_not-a-uuid")) == nil)
     }
 }

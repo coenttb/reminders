@@ -1,10 +1,12 @@
 import Foundation
 import Models
+public import Reminders
 import Standard_Library_Extensions
+public import StructuredQueries
 import Tagged
 
 extension Reminders.Filter {
-    public struct Key: RawRepresentable, Hashable, Sendable {
+    public struct Key: RawRepresentable, Hashable, Sendable, QueryBindable {
         public var rawValue: String
 
         public init(rawValue: String) {
