@@ -103,7 +103,7 @@ extension Reminder.Record.TableColumns {
         case .creationDate: fragment.append("\(created), \(position)")
         case .manual: fragment.append("\(position)")
         case .priority: fragment.append("\(priority.ifnull(0).desc()), \(flagged.desc()), \(position)")
-        case .title: fragment.append("\(title.collate(localizedCaseInsensitive)), \(position)")
+        case .title: fragment.append("\(title.collate($localizedCaseInsensitive)), \(position)")
         }
         return SQLQueryExpression(fragment)
     }

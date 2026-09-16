@@ -160,7 +160,7 @@ extension Reminder.Schema {
             db.add(function: $localizedCaseInsensitiveContains)
             db.add(function: $hasCaseInsensitivePrefix)
             db.add(function: $searchFolded)
-            db.add(collation: localizedCaseInsensitive)
+            db.add(collation: $localizedCaseInsensitive)
             db.add(collation: .canonical)
         }
     }
