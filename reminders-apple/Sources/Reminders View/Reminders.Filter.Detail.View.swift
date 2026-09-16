@@ -147,7 +147,7 @@ extension Reminders.Filter.Detail.View: SwiftUI::View {
                     .opacity(titleVisible ? 1 : 0)
                     .animation(.default.speed(2), value: titleVisible)
             }
-            if filter.isList, editing == nil, !editMode.isEditing {
+            if case .list = filter, editing == nil, !editMode.isEditing {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
                     Button("New Reminder", systemImage: "plus", action: newReminder)
@@ -227,7 +227,7 @@ extension Reminders.Filter.Detail.View {
 
     private var rowActions: Reminder.Row.Actions {
         var actions = rows
-        if !detail.filter.isList { actions.edit = nil }
+        if case .list = detail.filter {} else { actions.edit = nil }
         return actions
     }
 }

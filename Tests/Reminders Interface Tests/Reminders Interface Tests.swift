@@ -12,7 +12,7 @@ import Tagged
     let list = List<Reminder>.ID(UUID())
 
     func reminder(_ title: String = "x") -> Reminder {
-        Reminder(id: Reminder.ID(UUID()), list: list, title: title)
+        Reminder(id: Reminder.ID(UUID()), list: list, title: title, created: .distantPast)
     }
 
     @Test func `date and time presets resolve against now`() throws {

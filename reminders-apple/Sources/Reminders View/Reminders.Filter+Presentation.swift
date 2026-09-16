@@ -11,7 +11,7 @@ extension Reminders.Filter {
         case .flagged: "Flagged"
         case .list: nil
         case .scheduled: "Scheduled"
-        case let .tags(tags): tags.count == 1 ? Tag<Reminder>.hashtag(tags[0]) : tags.isEmpty ? "Tags" : "\(tags.count) tags"
+        case let .tags(tags): tags.count == 1 ? tags.first.map(Tag<Reminder>.hashtag) : tags.isEmpty ? "Tags" : "\(tags.count) tags"
         case .today: "Today"
         }
     }

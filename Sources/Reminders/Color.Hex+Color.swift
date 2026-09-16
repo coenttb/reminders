@@ -1,16 +1,5 @@
 public import Organizing
-public import StructuredQueries
 import Standard_Library_Extensions
-
-extension Color {
-    public struct Hex: RawRepresentable, Hashable, Sendable, QueryBindable {
-        public var rawValue: Int64
-        
-        public init(rawValue: Int64) {
-            self.rawValue = rawValue
-        }
-    }
-}
 
 extension Color.Hex {
     public init(_ color: Color) {

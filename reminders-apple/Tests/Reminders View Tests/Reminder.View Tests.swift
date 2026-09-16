@@ -24,9 +24,9 @@ import Testing
     @Test func `filters name themselves except lists, and tags show as hashtags`() {
         #expect(Reminders.Filter.today.title == "Today" && Reminders.Filter.list(list).title == nil)
         #expect(Reminders.Filter.tags(["a"]).title == "#a" && Reminders.Filter.tags(["a", "b"]).title == "2 tags")
-        let reminder = Reminder(id: Reminder.ID(UUID()), list: list, tags: ["kids", "car"])
+        let reminder = Reminder(id: Reminder.ID(UUID()), list: list, tags: ["kids", "car"], created: .distantPast)
         #expect(Tag<Reminder>(title: "kids").hashtag == "#kids" && reminder.tagLine == "#car #kids")
-        #expect(Reminder(id: reminder.id, list: list).tagLine.isEmpty)
+        #expect(Reminder(id: reminder.id, list: list, created: .distantPast).tagLine.isEmpty)
     }
 
     @Test func `the day is the calendar's, not the process time zone's`() throws {

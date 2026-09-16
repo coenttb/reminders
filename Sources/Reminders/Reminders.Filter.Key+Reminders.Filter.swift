@@ -1,6 +1,5 @@
 import Foundation
 import Organizing
-public import Reminders
 import Standard_Library_Extensions
 import Tagged
 
@@ -16,7 +15,7 @@ extension Reminders.Filter {
             if let uuid = raw.removing(prefix: "list_").flatMap({ UUID(uuidString: String($0)) }) {
                 self = .list(List<Reminder>.ID(uuid))
             } else if let tags = raw.removing(prefix: "tags_") {
-                self = .tags(tags.split(separator: Character.unitSeparator).map { Tag<Reminder>.ID(String($0)) })
+                self = .tags(Set(tags.split(separator: Character.unitSeparator).map { Tag<Reminder>.ID(String($0)) }))
             } else {
                 return nil
             }

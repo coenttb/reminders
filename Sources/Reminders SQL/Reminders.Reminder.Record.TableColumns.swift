@@ -32,7 +32,7 @@ extension Reminders.Reminder.Record.TableColumns {
         case .flagged: SQLQueryExpression("\(flagged)")
         case let .list(id): SQLQueryExpression("\(listID.eq(id))")
         case .scheduled: SQLQueryExpression("\(isScheduled)")
-        case let .tags(tags): SQLQueryExpression("\(Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.in(tags) }.exists())")
+        case let .tags(tags): SQLQueryExpression("\(Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.in(Array(tags)) }.exists())")
         case .today: SQLQueryExpression("\(isDue(during: today))")
         }
     }

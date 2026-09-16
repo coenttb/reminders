@@ -1,12 +1,11 @@
 import Foundation
 import Organizing
-public import Reminders
-public import StructuredQueries
 import Standard_Library_Extensions
 import Tagged
 
 extension Reminders.Filter {
-    public struct Key: RawRepresentable, Hashable, Sendable, QueryBindable {
+    /// A filter as one string, the form a row stores.
+    public struct Key: RawRepresentable, Hashable, Sendable {
         public var rawValue: String
 
         public init(rawValue: String) {
@@ -16,7 +15,7 @@ extension Reminders.Filter {
 }
 
 extension Reminders.Filter.Key {
-    private static let separator = String(Character.unitSeparator)
+    static let separator = String(Character.unitSeparator)
 
     public init(_ filter: Reminders.Filter) {
         rawValue = switch filter {

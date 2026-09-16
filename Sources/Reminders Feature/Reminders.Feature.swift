@@ -38,7 +38,7 @@ extension Reminders {
             public subscript(draft id: Reminder.ID) -> Reminder {
                 get {
                     if let editing, editing.id == id { return editing.draft }
-                    return Reminder(id: id, list: overview.lists.first?.id ?? List<Reminder>.ID(Self.noList))
+                    return Reminder(id: id, list: overview.lists.first?.id ?? List<Reminder>.ID(Self.noList), created: .distantPast)
                 }
                 set {
                     guard editing?.id == id else { return }

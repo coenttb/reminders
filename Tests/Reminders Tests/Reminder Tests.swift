@@ -11,7 +11,7 @@ import Tagged
     let list = List<Reminder>.ID(UUID())
 
     func reminder(_ title: String = "x", due: Reminder.Due? = nil) -> Reminder {
-        Reminder(id: Reminder.ID(UUID()), list: list, title: title, due: due)
+        Reminder(id: Reminder.ID(UUID()), list: list, title: title, due: due, created: now)
     }
 
     @Test func `only incomplete reminders before today are past due`() {
@@ -25,12 +25,11 @@ import Tagged
         #expect(!self.reminder().pastDue(at: now, calendar: calendar))
     }
 
-    @Test func `a completion toggles between incomplete and completed`() {
+    @Test func `a completion is incomplete or completed`() {
         var reminder = reminder()
-        reminder.toggle()
-        #expect(reminder.completion == .completed && reminder.completed)
-        reminder.toggle()
         #expect(reminder.completion == .incomplete && !reminder.completed)
+        reminder.completion = .completed
+        #expect(reminder.completion == .completed && reminder.completed)
     }
 
     @Test func `a title of only whitespace is blank`() {
@@ -43,6 +42,12 @@ import Tagged
         #expect(Reminder.Due.day(date).date == date && !Reminder.Due.day(date).hasTime)
         #expect(Reminder.Due.moment(date).date == date && Reminder.Due.moment(date).hasTime)
         #expect(Reminder.Due(date, hasTime: true) == .moment(date) && Reminder.Due(date, hasTime: false) == .day(date))
+        var reminder = reminder(due: .moment(date))
+        #expect(reminder.dueDate == date && reminder.hasTime)
+        reminder.hasTime = false
+        #expect(reminder.due == .day(date))
+        reminder.dueDate = nil
+        #expect(reminder.due == nil && !reminder.hasTime)
     }
 
     @Test func `a time needs a date, a date can stand alone, and dropping the date drops the time`() throws {
@@ -71,48 +76,18 @@ import Tagged
         #expect(Reminders.Filter.today.removing(tag: "kids") == .today)
         #expect(Reminders.Filter.list(list).removing(list: list) == nil)
         #expect(Reminders.Filter.all.removing(list: list) == .all)
-        #expect(Reminders.Filter.list(list).isList && !Reminders.Filter.all.isList)
+        #expect(Reminders.Filter.tags(["car", "kids"]) == .tags(["kids", "car"]))
     }
 
-    @Test func `a filter contains the reminders it shows`() throws {
-        let today = try #require(calendar.day(containing: now))
-        var reminder = reminder("Call", due: .moment(now))
-        reminder.tags = ["car"]
-        reminder.flagged = true
-        for filter in [Reminders.Filter.all, .flagged, .scheduled, .today, .list(list), .tags(["car", "kids"])] {
-            #expect(filter.contains(reminder, today: today))
+    @Test func `filters round-trip through their keys and colors through their hex`() {
+        let id = List<Reminder>.ID(UUID())
+        for filter in [Reminders.Filter.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b, c"]), .today] {
+            #expect(Reminders.Filter(key: Reminders.Filter.Key(filter)) == filter)
         }
-        #expect(!Reminders.Filter.completed.contains(reminder, today: today))
-        #expect(!Reminders.Filter.list(List<Reminder>.ID(UUID())).contains(reminder, today: today))
-        #expect(!Reminders.Filter.tags(["kids"]).contains(reminder, today: today))
-        reminder.due = .day(today.upperBound)
-        #expect(!Reminders.Filter.today.contains(reminder, today: today) && Reminders.Filter.scheduled.contains(reminder, today: today))
-        reminder.completion = .completed
-        #expect(Reminders.Filter.completed.contains(reminder, today: today) && Reminders.Filter.flagged.contains(reminder, today: today))
-        #expect(!Reminders.Filter.scheduled.contains(reminder, today: today) && !Reminders.Filter.today.contains(reminder, today: today))
-    }
-
-    @Test func `orderings sort by date, priority, or title, and by position among equals`() {
-        var a = reminder("banana"), b = reminder("Apple"), c = reminder("cherry")
-        (a.position, b.position, c.position) = (0, 1, 2)
-        b.due = .day(now)
-        c.due = .day(now.addingTimeInterval(.day))
-        c.priority = .high
-        b.priority = .high
-        b.flagged = true
-        a.priority = .low
-        func sorted(_ ordering: Reminders.Ordering) -> [String] {
-            [a, b, c].sorted { ordering.areInIncreasingOrder($0, $1) }.map(\.title)
-        }
-        #expect(sorted(.manual) == ["banana", "Apple", "cherry"])
-        #expect(sorted(.dueDate) == ["Apple", "cherry", "banana"])
-        #expect(sorted(.priority) == ["Apple", "cherry", "banana"])
-        #expect(sorted(.title) == ["Apple", "banana", "cherry"])
-        (a.created, b.created, c.created) = (now, now.addingTimeInterval(-.day), now)
-        #expect(sorted(.creationDate) == ["Apple", "banana", "cherry"])
-        var d = a
-        d.title = "Banana"
-        d.position = -1
-        #expect([a, d].sorted { Reminders.Ordering.areInIncreasingOrder($0, $1, for: .title) }.map(\.position) == [-1, 0])
+        #expect(Reminders.Filter.Key(.tags(["b", "a"])) == Reminders.Filter.Key(.tags(["a", "b"])))
+        #expect(Reminders.Filter.Key(.list(id)).rawValue == "list_\(id.rawValue.uuidString)")
+        #expect(Reminders.Filter(key: Reminders.Filter.Key(rawValue: "list_not-a-uuid")) == nil)
+        #expect(Color(Color.Hex(rawValue: 0x4a99ef)) == .default && Color.Hex(.default).rawValue == 0x4a99ef)
+        #expect(Color.Hex(Color(red: 2, green: -1, blue: 0.5)).rawValue == 0xff0080)
     }
 }

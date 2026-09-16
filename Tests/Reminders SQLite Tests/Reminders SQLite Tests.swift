@@ -216,7 +216,7 @@ import Tagged
         #expect(try database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("friends")) }.fetchCount(db) } == 0)
         #expect(try database.write { db in try Tag<Reminder>.Record.add("Someday", in: db) } == "someday")
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
-        let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["CAR"])
+        let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["CAR"], created: now)
         try database.write { db in
             try Reminder.Record.insert { Reminder.Record(wash) }.execute(db)
             try Reminder.Record.placeLast(wash.id).execute(db)
@@ -306,7 +306,7 @@ import Tagged
     @Test func `a row continues beneath its anchor and moves keep the positions they were given`() throws {
         let (database, sample) = try makeDatabase()
         let haircut = sample.reminders[1]
-        let next = Reminder(id: Reminder.ID(UUID()), list: haircut.list, position: haircut.position + 1)
+        let next = Reminder(id: Reminder.ID(UUID()), list: haircut.list, position: haircut.position + 1, created: now)
         try database.write { db in
             try Reminder.Record.makeRoom(after: haircut.position).execute(db)
             try Reminder.Record.insert { Reminder.Record(next) }.execute(db)
@@ -339,7 +339,7 @@ import Tagged
 
     @Test func `a tag is one tag in any case, including beyond ASCII, and links follow a rename`() throws {
         let (database, sample) = try makeDatabase()
-        let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["Café"])
+        let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["Café"], created: now)
         try database.write { db in
             try Reminder.Record.insert { Reminder.Record(wash) }.execute(db)
             try Reminders.Tagging.attach(wash.tags, to: wash.id, in: db)
@@ -407,7 +407,7 @@ import Tagged
         let utc = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "UTC")!)
         let tokyo = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "Asia/Tokyo")!)
         let due = utc.date(from: DateComponents(year: 2009, month: 2, day: 14, hour: 1))!
-        let late = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Late", due: .day(due))
+        let late = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Late", due: .day(due), created: now)
         try database.write { db in
             try Reminder.Record.delete().execute(db)
             try Reminder.Record.insert { Reminder.Record(late) }.execute(db)

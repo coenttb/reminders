@@ -84,7 +84,7 @@ extension Reminders.Overview.View: SwiftUI::View {
         }
         if !overview.usedTags.isEmpty {
             Section {
-                Tag<Reminder>.Cloud(overview.usedTags, open: { open(.tags($0)) }, delete: deleteTag)
+                Tag<Reminder>.Cloud(overview.usedTags, open: { open(.tags(Set($0))) }, delete: deleteTag)
             } header: {
                 header("Tags")
             }
