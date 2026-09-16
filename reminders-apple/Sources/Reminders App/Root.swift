@@ -68,8 +68,36 @@ extension Root {
             .onSubmit(of: .search) { store.send(.searchSubmitted) }
             .toolbar {
                 #if DEBUG
+                // The seed menu: the reference fixture, three deterministic scales, the same
+                // scales on a fresh seed, a replay of the last seed, and an empty database.
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Seed data", systemImage: "leaf") { store.send(.seedButtonTapped) }
+                    Menu {
+                        Button("Reference sample", systemImage: "leaf") { store.send(.seedButtonTapped) }
+                        Section("Fixed seed") {
+                            ForEach([Reminder.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
+                                Button(scale.title) { store.send(.seedGenerated(scale, seed: 1)) }
+                            }
+                        }
+                        Section("Random seed") {
+                            ForEach([Reminder.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
+                                Button(scale.title) { store.send(.seedGenerated(scale, seed: nil)) }
+                            }
+                        }
+                        if let last = store.lastSeed {
+                            Button("Replay \(last.description)", systemImage: "arrow.counterclockwise") {
+                                store.send(.seedGenerated(last.scale, seed: last.value))
+                            }
+                        }
+                        Divider()
+                        Button("Delete everything", systemImage: "trash", role: .destructive) { store.send(.deleteEverythingButtonTapped) }
+                    } label: {
+                        if store.isSeeding {
+                            ProgressView()
+                        } else {
+                            Label("Seed data", systemImage: "leaf")
+                        }
+                    }
+                    .disabled(store.isSeeding)
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {

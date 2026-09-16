@@ -196,18 +196,31 @@ extension Reminder.Sample {
         try List<Reminder>.Record.delete().execute(db)
         try Tag<Reminder>.Record.delete().execute(db)
         try Reminder.Filter.Preference.Record.delete().execute(db)
-        for list in sample.lists {
-            try List<Reminder>.Record.insert { List<Reminder>.Record(list) }.execute(db)
+        // Rows go in by the few hundred: a generated sample has a hundred thousand reminders,
+        // and one statement per row was the whole seeding time.
+        for lists in sample.lists.chunks(of: 200) {
+            try List<Reminder>.Record.insert { lists.map(List<Reminder>.Record.init) }.execute(db)
         }
-        for tag in sample.tags {
-            try Tag<Reminder>.Record.insert { Tag<Reminder>.Record(tag) }.execute(db)
+        for tags in sample.tags.sorted { $0.title < $1.title }.chunks(of: 500) {
+            try Tag<Reminder>.Record.insert { tags.map(Tag<Reminder>.Record.init) }.execute(db)
         }
-        for reminder in sample.reminders {
-            try Reminder.Record.insert { Reminder.Record(reminder) }.execute(db)
-            try Reminder.Tagging.attach(reminder.tags, to: reminder.id, in: db)
+        for reminders in sample.reminders.chunks(of: 200) {
+            try Reminder.Record.insert { reminders.map(Reminder.Record.init) }.execute(db)
+        }
+        // A sample's tags are canonical by construction, so the links need no title lookup.
+        let taggings = sample.reminders.flatMap { reminder in reminder.tags.sorted().map { Reminder.Tagging(reminderID: reminder.id, tagID: $0) } }
+        for chunk in taggings.chunks(of: 500) {
+            try Reminder.Tagging.insert { Array(chunk) }.execute(db)
         }
         try Reminder.Session.Record.upsert { Reminder.Session.Record(Reminder.Session()) }.execute(db)
     }
 
     public func replace(in db: Database) throws { try Self.replace(with: self, in: db) }
+}
+
+extension Collection where Index == Int {
+    /// Consecutive slices of at most `size` elements.
+    fileprivate func chunks(of size: Int) -> [SubSequence] {
+        stride(from: startIndex, to: endIndex, by: size).map { self[$0..<Swift.min($0 + size, endIndex)] }
+    }
 }

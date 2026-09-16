@@ -387,6 +387,24 @@ import Tagged
         try Reminder.Schema.migrate(database)
     }
 
+    @Test func `a generated sample at scale is written in one transaction and read back whole`() throws {
+        let database = try Reminder.Schema.inMemoryDatabase()
+        let sample = Reminder.Sample.generated(.medium, seed: 1, at: now, calendar: calendar)
+        try database.write { db in try sample.replace(in: db) }
+        #expect(try database.read { db in try Reminder.Record.all.fetchCount(db) } == 1_000)
+        #expect(try database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 10)
+        #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 30)
+        let links = sample.reminders.reduce(0) { $0 + $1.tags.count }
+        #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == links)
+        let first = try #require(sample.reminders.first)
+        #expect(try stored(first.id, database) == first)
+        #expect(try overview(database).lists.count == 10)
+        #expect(try overview(database).counts.all == sample.reminders.count { !$0.completed })
+        // Replacing again replaces, not appends.
+        try database.write { db in try Reminder.sample(at: now).replace(in: db) }
+        #expect(try database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
+    }
+
     @Test func `today is decided by the calendar's day, not the process time zone`() throws {
         let (database, sample) = try makeDatabase()
         let utc = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "UTC")!)

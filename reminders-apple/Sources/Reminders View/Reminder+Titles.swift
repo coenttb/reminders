@@ -1,5 +1,6 @@
 import Organizing
 public import Reminders
+public import Reminders_Application
 import Standard_Library_Extensions
 import Tagged
 
@@ -61,6 +62,19 @@ extension Reminder.Filter {
         case .scheduled: "Scheduled"
         case let .tags(tags): tags.count == 1 ? Tag<Reminder>.hashtag(tags[0]) : tags.isEmpty ? "Tags" : "\(tags.count) tags"
         case .today: "Today"
+        }
+    }
+}
+
+extension Reminder.Sample.Scale {
+    /// The name the debug seed menu shows, with the reminder count.
+    public var title: String {
+        let count = reminders >= 1_000 ? "\(reminders / 1_000)k" : "\(reminders)"
+        switch self {
+        case .medium: return "Medium (\(count))"
+        case .large: return "Large (\(count))"
+        case .extreme: return "Extreme (\(count))"
+        default: return "\(lists) lists × \(remindersPerList) (\(count))"
         }
     }
 }

@@ -101,4 +101,26 @@ import Tagged
         #expect(detail.reminders == [row.reminder] && row.id == row.reminder.id)
         #expect(Reminder.Session().filter == nil && Reminder.Session(filter: .today, editing: row.id).editing == row.id)
     }
+
+    @Test func `a generated sample is a function of its seed and fills its scale`() {
+        let scale = Reminder.Sample.Scale(lists: 4, remindersPerList: 50, tags: 25)
+        let a = Reminder.Sample.generated(scale, seed: 7, at: now, calendar: calendar)
+        let b = Reminder.Sample.generated(scale, seed: 7, at: now, calendar: calendar)
+        let c = Reminder.Sample.generated(scale, seed: 8, at: now, calendar: calendar)
+        #expect(a == b)
+        #expect(a != c)
+        #expect(a.lists.count == 4 && a.reminders.count == 200 && a.tags.count == 25)
+        #expect(a.lists.map(\.title) == ["Personal", "Family", "Business", "Errands"])
+        #expect(a.tags.contains(Tag(title: "adulting")) && a.tags.contains(Tag(title: "adulting2")))
+        // Every reminder belongs to one of the lists, every tag it carries is in the set, and
+        // identifiers are distinct; positions follow the manual order.
+        let listIDs = Set(a.lists.map(\.id)), tagIDs = Set(a.tags.map(\.id))
+        #expect(a.reminders.allSatisfy { listIDs.contains($0.list) && $0.tags.isSubset(of: tagIDs) })
+        #expect(Set(a.reminders.map(\.id)).count == 200)
+        #expect(a.reminders.map(\.position) == Array(0..<200))
+        #expect(a.reminders.allSatisfy { $0.created <= now && $0.created > now.addingTimeInterval(-366 * 86_400) })
+        #expect(!a.reminders.filter(\.completed).isEmpty && !a.reminders.filter { $0.due != nil }.isEmpty)
+        #expect(Reminder.Sample.Scale.extreme.reminders == 100_000)
+        #expect(Reminder.Sample.Seed(scale: scale, value: 255).description == "0xFF")
+    }
 }

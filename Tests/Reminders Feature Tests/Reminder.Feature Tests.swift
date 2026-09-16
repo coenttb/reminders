@@ -576,6 +576,17 @@ struct `Reminder feature` {
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
         await store.send(.seedButtonTapped)?.value
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
+        // A generated seed remembers itself and clears the seeding flag once written.
+        let scale = Reminder.Sample.Scale(lists: 2, remindersPerList: 5, tags: 3)
+        await store.send(.seedGenerated(scale, seed: 42)) {
+            $0.lastSeed = Reminder.Sample.Seed(scale: scale, value: 42)
+            $0.isSeeding = true
+        }?.value
+        await store.expect { $0.isSeeding = false }
+        #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 10)
+        await store.send(.deleteEverythingButtonTapped)?.value
+        #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 0)
+        #expect(try await database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 1)
         await store.dismount()
     }
 

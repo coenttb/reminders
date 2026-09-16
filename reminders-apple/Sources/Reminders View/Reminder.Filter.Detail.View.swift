@@ -135,16 +135,14 @@ extension Reminder.Filter.Detail.View {
         .environment(\.defaultMinListRowHeight, 42)
         // Rows animate when they appear, leave, or move; a keystroke in the edited row does not.
         .animation(.default, value: detail.rows.map(\.id))
-        // The row being edited takes the keyboard and comes up above it; a new row is read back
-        // from the database a moment after it starts, so the focus waits for it.
+        // The row being edited takes the keyboard and comes up above it. A new row is read back
+        // from the database a moment after it starts — longer in a long list — so the focus is
+        // set once the row is among the rows, not after a fixed wait.
         .onChange(of: editing, initial: true) { _, editing in
-            guard let editing else { return focus = nil }
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(80))
-                focus = .title(editing)
-                withAnimation { proxy.scrollTo(editing, anchor: .center) }
-            }
+            guard editing != nil else { return focus = nil }
+            focusEditing(proxy)
         }
+        .onChange(of: detail.rows.map(\.id)) { _, _ in focusEditing(proxy) }
         }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top > titleHeight
@@ -186,13 +184,18 @@ extension Reminder.Filter.Detail.View {
                         Button("Show List Info", systemImage: "info.circle", action: info)
                     }
                     Button("Select Reminders", systemImage: "checkmark.circle") { withAnimation { editMode = .active } }
+                    // Choosing an ordering is an intent the feature writes, not state the view owns,
+                    // so the items are buttons with the checkmark on the current one (as the chips do).
                     Menu {
-                        Picker("Sort By", selection: Binding(get: { preference.ordering }, set: order)) {
-                            ForEach(Reminder.Ordering.allCases, id: \.self) { ordering in
-                                Text(ordering.title).tag(ordering)
+                        ForEach(Reminder.Ordering.allCases, id: \.self) { ordering in
+                            Button { order(ordering) } label: {
+                                if ordering == preference.ordering {
+                                    Label(ordering.title, systemImage: "checkmark")
+                                } else {
+                                    Text(ordering.title)
+                                }
                             }
                         }
-                        .pickerStyle(.inline)
                     } label: {
                         Text("Sort By")
                         Text(preference.ordering.title)
@@ -223,6 +226,23 @@ extension Reminder.Filter.Detail.View {
 }
 
 extension Reminder.Filter.Detail.View {
+    /// Scrolls the edited row into view once it exists, then focuses its title. The row is
+    /// focused after the scroll: a List row far down a long list has no field to focus until
+    /// it has been brought on screen, and a focus set before that is dropped.
+    private func focusEditing(_ proxy: ScrollViewProxy) {
+        guard let editing, focus != .title(editing), focus != .notes(editing), detail.rows.contains(where: { $0.id == editing }) else { return }
+        Task { @MainActor in
+            withAnimation { proxy.scrollTo(editing, anchor: .center) }
+            for _ in 0..<3 {
+                try? await Task.sleep(for: .milliseconds(120))
+                guard self.editing == editing, focus != .notes(editing) else { return }
+                focus = .title(editing)
+                try? await Task.sleep(for: .milliseconds(120))
+                if focus == .title(editing) { return }
+            }
+        }
+    }
+
     /// Rows edit in place only inside a list; elsewhere a tap opens details.
     private var rowActions: Reminder.Row.Actions {
         var actions = rows

@@ -38,6 +38,10 @@ extension Reminder {
             public var search = Reminder.Search()
             /// The day the screens call today, by the feature's calendar; nil until mounted.
             public var today: Range<Date>?
+            /// The last generated seed, for the debug menu to show and replay.
+            public var lastSeed: Reminder.Sample.Seed?
+            /// Whether a seed is being written; the menu disables itself meanwhile.
+            public var isSeeding = false
 
             /// The open filter, read from the database; nil while no filter is open.
             @DebugSnapshotIgnored @Fetch public var detail: Reminder.Filter.Detail? = nil
@@ -98,6 +102,9 @@ extension Reminder {
             case searchSubmitted
             case searchTagTapped(Tag<Reminder>.ID)
             case seedButtonTapped
+            /// A generated sample at a scale; no seed value draws a fresh one.
+            case seedGenerated(Reminder.Sample.Scale, seed: UInt64?)
+            case deleteEverythingButtonTapped
             case showCompletedButtonTapped
             case tagDeleted(Tag<Reminder>.ID)
             case tagTapped(Tag<Reminder>.ID)
@@ -110,6 +117,7 @@ extension Reminder {
         @Dependency(\.date.now) var now
         @Dependency(\.defaultDatabase) var database
         @Dependency(\.uuid) var uuid
+        @Dependency(\.withRandomNumberGenerator) var withRandomNumberGenerator
 
         public init() {}
 
@@ -310,6 +318,33 @@ extension Reminder {
                     store.addTask {
                         try await attempt {
                             try write { db in try sample.replace(in: db) }
+                            try store.modify {
+                                $0.filter = nil
+                                $0.editing = nil
+                            }
+                        }
+                    }
+                case let .seedGenerated(scale, seed):
+                    let value = seed ?? withRandomNumberGenerator { UInt64.random(in: .min ... .max, using: &$0) }
+                    state.lastSeed = Reminder.Sample.Seed(scale: scale, value: value)
+                    state.isSeeding = true
+                    store.addTask {
+                        try await attempt {
+                            // Generated and written off the main actor: a hundred thousand rows take seconds.
+                            let sample = Reminder.Sample.generated(scale, seed: value, at: now, calendar: calendar)
+                            try await database.write { db in try sample.replace(in: db) }
+                            try store.modify {
+                                $0.filter = nil
+                                $0.editing = nil
+                            }
+                        }
+                        try store.modify { $0.isSeeding = false }
+                    }
+                case .deleteEverythingButtonTapped:
+                    let empty = Reminder.Sample(lists: [List(id: List<Reminder>.ID(uuid()))])
+                    store.addTask {
+                        try await attempt {
+                            try write { db in try empty.replace(in: db) }
                             try store.modify {
                                 $0.filter = nil
                                 $0.editing = nil
