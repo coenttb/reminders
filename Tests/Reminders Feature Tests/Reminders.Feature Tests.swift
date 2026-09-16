@@ -40,10 +40,10 @@ struct `Reminder feature` {
 
     func makeStore(
         clock: TestClock<Duration> = TestClock(),
-        restoring: @escaping @Sendable (inout Reminder.Feature.State.DebugSnapshot) -> Void = { _ in }
-    ) async throws -> TestStoreActor<Reminder.Feature> {
+        restoring: @escaping @Sendable (inout Reminders.Feature.State.DebugSnapshot) -> Void = { _ in }
+    ) async throws -> TestStoreActor<Reminders.Feature> {
         await withDependencies { $0.continuousClock = clock } operation: {
-            await TestStoreActor(initialState: Reminder.Feature.State()) { Reminder.Feature() } changes: { [today] in
+            await TestStoreActor(initialState: Reminders.Feature.State()) { Reminders.Feature() } changes: { [today] in
                 $0.today = today
                 restoring(&$0)
             }
@@ -326,7 +326,7 @@ struct `Reminder feature` {
         let store = try await makeStore(clock: clock)
         await store.modify { $0.search.text = "Tak" } changes: { $0.search.text = "Tak" }
         let typed = await store.modify { $0.search.text = "Take" } changes: { $0.search.text = "Take" }
-        await clock.advance(by: Reminder.Feature.searchPause - .milliseconds(1))
+        await clock.advance(by: Reminders.Feature.searchPause - .milliseconds(1))
         #expect(await store.state.results.reminders.isEmpty)
         await clock.advance(by: .milliseconds(1))
         await typed?.value

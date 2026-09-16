@@ -11,12 +11,12 @@ import Tagged
 extension Root {
     struct Detail {
         private var filter: Reminders.Filter
-        private var store: StoreOf<Reminder.Feature>
+        private var store: StoreOf<Reminders.Feature>
         @Dependency(\.date.now) private var now
         @Dependency(\.calendar) private var calendar
         @Environment(\.scenePhase) private var scenePhase
 
-        init(_ filter: Reminders.Filter, store: StoreOf<Reminder.Feature>) {
+        init(_ filter: Reminders.Filter, store: StoreOf<Reminders.Feature>) {
             self.filter = filter
             self.store = store
         }

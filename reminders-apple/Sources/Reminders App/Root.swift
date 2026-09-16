@@ -12,13 +12,13 @@ public import SwiftUI
 import Tagged
 
 public struct Root {
-    @Bindable private var store: StoreOf<Reminder.Feature>
+    @Bindable private var store: StoreOf<Reminders.Feature>
     @Dependency(\.date.now) private var now
     @Dependency(\.calendar) private var calendar
     @Environment(\.scenePhase) private var scenePhase
     @State private var editMode: EditMode = .inactive
 
-    public init(store: StoreOf<Reminder.Feature>) {
+    public init(store: StoreOf<Reminders.Feature>) {
         self.store = store
     }
 }

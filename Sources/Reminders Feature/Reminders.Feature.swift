@@ -12,10 +12,10 @@ public import SQLiteData
 import Standard_Library_Extensions
 public import Tagged
 
-extension Reminder {
+extension Reminders {
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Sendable {
-            public typealias Feature = Reminder.Feature
+            public typealias Feature = Reminders.Feature
 
             public var destination: Destination.State?
             public var filter: Reminders.Filter?
@@ -394,7 +394,7 @@ extension Reminder {
     }
 }
 
-extension Reminder.Feature {
+extension Reminders.Feature {
     public static let searchPause: Duration = .milliseconds(250)
 
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
@@ -578,7 +578,7 @@ extension Reminder.Feature {
     }
 }
 
-extension Reminder.Feature.State {
+extension Reminders.Feature.State {
     fileprivate mutating func endEditing(_ session: UUID?) {
         guard let session, editing?.session == session else { return }
         editing = nil

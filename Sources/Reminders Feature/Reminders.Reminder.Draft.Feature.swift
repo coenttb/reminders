@@ -4,7 +4,7 @@ public import Organizing
 public import Reminders
 public import Tagged
 
-extension Reminder {
+extension Reminders.Reminder {
     public struct Draft: Hashable, Sendable {
         public var reminder: Reminder
         public let original: Reminder
@@ -22,7 +22,7 @@ extension Reminder {
     }
 }
 
-extension Reminder.Draft {
+extension Reminders.Reminder.Draft {
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Sendable {
             public typealias Feature = Reminder.Draft.Feature
