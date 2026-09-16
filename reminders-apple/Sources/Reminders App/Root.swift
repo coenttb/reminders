@@ -3,7 +3,7 @@ public import ComposableArchitecture2
 import Dependencies
 import Organizing
 public import Reminders
-import Reminders_Application
+import Reminders_Interface
 import Reminders_Sample
 public import Reminders_Feature
 import Reminders_View
@@ -28,7 +28,7 @@ extension Root: SwiftUI::View {
         NavigationStack {
             SwiftUI.List {
                 if store.search.isActive {
-                    Reminder.Search.View(
+                    Reminders.Search.View(
                         store.search,
                         results: store.results,
                         now: now,
@@ -44,7 +44,7 @@ extension Root: SwiftUI::View {
                         endReached: { store.send(.resultsEndReached) }
                     )
                 } else {
-                    Reminder.Overview.View(
+                    Reminders.Overview.View(
                         store.overview,
                         now: now,
                         calendar: calendar,

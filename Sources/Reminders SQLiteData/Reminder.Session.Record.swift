@@ -1,16 +1,16 @@
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SQLiteData
 public import Tagged
 
-extension Reminder.Session {
+extension Reminders.Session {
     @Table("session")
     public struct Record: Identifiable, Sendable {
         public let id: Int
-        public var filter: Reminder.Filter.Key?
+        public var filter: Reminders.Filter.Key?
         public var editing: Reminder.ID?
 
-        init(id: Int = 1, filter: Reminder.Filter.Key? = nil, editing: Reminder.ID? = nil) {
+        init(id: Int = 1, filter: Reminders.Filter.Key? = nil, editing: Reminder.ID? = nil) {
             self.id = id
             self.filter = filter
             self.editing = editing
@@ -18,20 +18,20 @@ extension Reminder.Session {
     }
 }
 
-extension Reminder.Session.Record {
-    public init(id: Int = 1, _ session: Reminder.Session) {
-        self.init(id: id, filter: session.filter.map(Reminder.Filter.Key.init), editing: session.editing)
+extension Reminders.Session.Record {
+    public init(id: Int = 1, _ session: Reminders.Session) {
+        self.init(id: id, filter: session.filter.map(Reminders.Filter.Key.init), editing: session.editing)
     }
 }
 
-extension Reminder.Session.Record {
-    public static var state: Where<Reminder.Session.Record> { Reminder.Session.Record.find(1) }
+extension Reminders.Session.Record {
+    public static var state: Where<Reminders.Session.Record> { Reminders.Session.Record.find(1) }
 
-    public static func set(filter: Reminder.Filter?) -> UpdateOf<Reminder.Session.Record> {
-        Reminder.Session.Record.find(1).update { $0.filter = filter.map(Reminder.Filter.Key.init) }
+    public static func set(filter: Reminders.Filter?) -> UpdateOf<Reminders.Session.Record> {
+        Reminders.Session.Record.find(1).update { $0.filter = filter.map(Reminders.Filter.Key.init) }
     }
 
-    public static func set(editing: Reminder.ID?) -> UpdateOf<Reminder.Session.Record> {
-        Reminder.Session.Record.find(1).update { $0.editing = editing }
+    public static func set(editing: Reminder.ID?) -> UpdateOf<Reminders.Session.Record> {
+        Reminders.Session.Record.find(1).update { $0.editing = editing }
     }
 }

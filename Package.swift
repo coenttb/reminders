@@ -7,7 +7,7 @@ let package = Package(
     platforms: [.iOS(.v27), .macOS(.v27)],
     products: [
         .library(name: "Reminders", targets: ["Reminders"]),
-        .library(name: "Reminders Application", targets: ["Reminders Application"]),
+        .library(name: "Reminders Interface", targets: ["Reminders Interface"]),
         .library(name: "Reminders Sample", targets: ["Reminders Sample"]),
         .library(name: "Reminders SQLiteData", targets: ["Reminders SQLiteData"]),
         .library(name: "Reminders Feature", targets: ["Reminders Feature"]),
@@ -31,7 +31,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Reminders Application",
+            name: "Reminders Interface",
             dependencies: [
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
@@ -55,7 +55,7 @@ let package = Package(
             name: "Reminders SQLiteData",
             dependencies: [
                 "Reminders",
-                "Reminders Application",
+                "Reminders Interface",
                 "Reminders Sample",
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
@@ -67,7 +67,7 @@ let package = Package(
             name: "Reminders Feature",
             dependencies: [
                 "Reminders",
-                "Reminders Application",
+                "Reminders Interface",
                 "Reminders Sample",
                 "Reminders SQLiteData",
                 .product(name: "Organizing", package: "organizing"),
@@ -89,10 +89,10 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "Reminders Application Tests",
+            name: "Reminders Interface Tests",
             dependencies: [
                 "Reminders",
-                "Reminders Application",
+                "Reminders Interface",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "Tagged", package: "swift-tagged"),

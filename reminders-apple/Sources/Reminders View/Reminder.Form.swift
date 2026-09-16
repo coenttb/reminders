@@ -1,7 +1,7 @@
 import Foundation
 public import Organizing
 public import Reminders
-import Reminders_Application
+import Reminders_Interface
 import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
@@ -160,7 +160,7 @@ extension Reminder.Form: SwiftUI::View {
     private var quickBar: some SwiftUI.View {
         HStack {
             Menu {
-                ForEach(Reminder.Due.Preset.allCases, id: \.self) { preset in
+                ForEach(Reminders.Reminder.Due.Preset.allCases, id: \.self) { preset in
                     let date = preset.date(at: now, calendar: calendar)
                     Button(preset.title, systemImage: "\(calendar.component(.day, from: date)).calendar") {
                         reminder.set(datePreset: preset, at: now, calendar: calendar)

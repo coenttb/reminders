@@ -1,7 +1,7 @@
 public import Reminders
 public import SwiftUI
 
-extension Reminder.Filter.Tile {
+extension Reminders.Filter.Tile {
     public struct Fill: Hashable, Sendable {
         public var top: SwiftUI.Color
         public var bottom: SwiftUI.Color
@@ -13,7 +13,7 @@ extension Reminder.Filter.Tile {
     }
 }
 
-extension Reminder.Filter.Tile.Fill {
+extension Reminders.Filter.Tile.Fill {
     public static let today: Self = .init(
         top: .init(red: 125 / 255, green: 195 / 255, blue: 239 / 255),
         bottom: .init(red: 102 / 255, green: 185 / 255, blue: 237 / 255)

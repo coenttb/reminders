@@ -5,7 +5,7 @@ public import Reminders
 import Standard_Library_Extensions
 public import Tagged
 
-extension Reminder {
+extension Reminders {
     public struct Search: Hashable, Sendable {
         public var text: String
         public var tokens: [Token]
@@ -19,7 +19,7 @@ extension Reminder {
     }
 }
 
-extension Reminder.Search {
+extension Reminders.Search {
     public var isActive: Bool { !text.isEmpty || !tokens.isEmpty }
 
     public var tagPrefix: String? {

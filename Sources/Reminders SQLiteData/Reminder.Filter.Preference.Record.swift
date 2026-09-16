@@ -1,16 +1,16 @@
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SQLiteData
 
-extension Reminder.Filter.Preference {
+extension Reminders.Filter.Preference {
     @Table("preferences")
     public struct Record: Sendable {
         @Column(primaryKey: true)
-        public var key: Reminder.Filter.Key
+        public var key: Reminders.Filter.Key
         public var ordering = ""
         public var showCompleted = false
 
-        init(key: Reminder.Filter.Key, ordering: String = "", showCompleted: Bool = false) {
+        init(key: Reminders.Filter.Key, ordering: String = "", showCompleted: Bool = false) {
             self.key = key
             self.ordering = ordering
             self.showCompleted = showCompleted
@@ -18,26 +18,26 @@ extension Reminder.Filter.Preference {
     }
 }
 
-extension Reminder.Filter.Preference.Record {
-    public init(key: Reminder.Filter.Key, _ preference: Reminder.Filter.Preference) {
+extension Reminders.Filter.Preference.Record {
+    public init(key: Reminders.Filter.Key, _ preference: Reminders.Filter.Preference) {
         self.init(key: key, ordering: preference.ordering.rawValue, showCompleted: preference.showCompleted)
     }
 }
 
-extension Reminder.Filter.Preference.Record: Identifiable {
-    public var id: Reminder.Filter.Key { key }
+extension Reminders.Filter.Preference.Record: Identifiable {
+    public var id: Reminders.Filter.Key { key }
 }
 
-extension Reminder.Filter.Preference.Record {
-    public static func preference(for filter: Reminder.Filter) -> Where<Reminder.Filter.Preference.Record> {
-        Reminder.Filter.Preference.Record.find(Reminder.Filter.Key(filter))
+extension Reminders.Filter.Preference.Record {
+    public static func preference(for filter: Reminders.Filter) -> Where<Reminders.Filter.Preference.Record> {
+        Reminders.Filter.Preference.Record.find(Reminders.Filter.Key(filter))
     }
 
-    public static func set(ordering: Reminder.Ordering, for filter: Reminder.Filter) -> InsertOf<Reminder.Filter.Preference.Record> {
+    public static func set(ordering: Reminders.Ordering, for filter: Reminders.Filter) -> InsertOf<Reminders.Filter.Preference.Record> {
         var preference = filter.defaultPreference
         preference.ordering = ordering
-        return Reminder.Filter.Preference.Record.insert {
-            Reminder.Filter.Preference.Record(key: Reminder.Filter.Key(filter), preference)
+        return Reminders.Filter.Preference.Record.insert {
+            Reminders.Filter.Preference.Record(key: Reminders.Filter.Key(filter), preference)
         } onConflict: {
             $0.key
         } doUpdate: { row, excluded in
@@ -45,11 +45,11 @@ extension Reminder.Filter.Preference.Record {
         }
     }
 
-    public static func toggleShowCompleted(for filter: Reminder.Filter) -> InsertOf<Reminder.Filter.Preference.Record> {
+    public static func toggleShowCompleted(for filter: Reminders.Filter) -> InsertOf<Reminders.Filter.Preference.Record> {
         var preference = filter.defaultPreference
         preference.showCompleted.toggle()
-        return Reminder.Filter.Preference.Record.insert {
-            Reminder.Filter.Preference.Record(key: Reminder.Filter.Key(filter), preference)
+        return Reminders.Filter.Preference.Record.insert {
+            Reminders.Filter.Preference.Record(key: Reminders.Filter.Key(filter), preference)
         } onConflict: {
             $0.key
         } doUpdate: { row, _ in

@@ -25,7 +25,7 @@ let package = Package(
             name: "Reminders View",
             dependencies: [
                 .product(name: "Reminders", package: "reminders"),
-                .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
@@ -38,7 +38,7 @@ let package = Package(
             name: "Reminders App",
             dependencies: [
                 .product(name: "Reminders", package: "reminders"),
-                .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Reminders Feature", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),
@@ -56,7 +56,7 @@ let package = Package(
             dependencies: [
                 "Reminders View",
                 .product(name: "Reminders", package: "reminders"),
-                .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
@@ -69,7 +69,7 @@ let package = Package(
             dependencies: [
                 "Reminders App",
                 .product(name: "Reminders", package: "reminders"),
-                .product(name: "Reminders Application", package: "reminders"),
+                .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),
                 .product(name: "Reminders Feature", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),

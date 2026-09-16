@@ -3,7 +3,7 @@ public import Reminders
 import Standard_Library_Extensions
 public import Tagged
 
-extension Reminder {
+extension Reminders {
     public struct Overview: Hashable, Sendable {
         public var lists: [List<Reminder>.Entry]
         public var counts: Filter.Counts

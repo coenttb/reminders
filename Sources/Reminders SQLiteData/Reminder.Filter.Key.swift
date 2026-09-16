@@ -5,7 +5,7 @@ public import SQLiteData
 import Standard_Library_Extensions
 import Tagged
 
-extension Reminder.Filter {
+extension Reminders.Filter {
     public struct Key: RawRepresentable, Hashable, Sendable, QueryBindable {
         public var rawValue: String
 
@@ -15,10 +15,10 @@ extension Reminder.Filter {
     }
 }
 
-extension Reminder.Filter.Key {
+extension Reminders.Filter.Key {
     private static let separator = String(Character.unitSeparator)
 
-    public init(_ filter: Reminder.Filter) {
+    public init(_ filter: Reminders.Filter) {
         rawValue = switch filter {
         case .all: "all"
         case .completed: "completed"

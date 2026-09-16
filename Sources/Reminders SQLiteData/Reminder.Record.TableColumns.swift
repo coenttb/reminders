@@ -1,7 +1,7 @@
 public import Foundation
 import Organizing
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SQLiteData
 import Standard_Library_Extensions
 import Tagged
@@ -27,7 +27,7 @@ extension Reminder.Record.TableColumns {
         !isCompleted && due.isNot(nil) && due.gte(Date?.some(day.lowerBound)) && due.lt(Date?.some(day.upperBound))
     }
 
-    public func belongs(to filter: Reminder.Filter, today: Range<Date>) -> SQLQueryExpression<Bool> {
+    public func belongs(to filter: Reminders.Filter, today: Range<Date>) -> SQLQueryExpression<Bool> {
         switch filter {
         case .all: SQLQueryExpression("1")
         case .completed: SQLQueryExpression("\(isCompleted)")
@@ -51,7 +51,7 @@ extension Reminder.Record.TableColumns {
         Reminder.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(tag) }.exists()
     }
 
-    public func matches(_ search: Reminder.Search) -> SQLQueryExpression<Bool> {
+    public func matches(_ search: Reminders.Search) -> SQLQueryExpression<Bool> {
         guard search.matchesReminders else { return SQLQueryExpression("0") }
         var predicate = SQLQueryExpression<Bool>(search.matchedText.isEmpty ? "1" : "(\(matches(search.matchedText)))")
         for token in search.tokens {
@@ -81,7 +81,7 @@ extension Reminder.Record.TableColumns {
         return SQLQueryExpression("\(Case().when(id.eq(place.id), then: value).else(column))")
     }
 
-    public func ordered(by ordering: Reminder.Ordering, showCompleted: Bool, placing place: Reminder? = nil) -> SQLQueryExpression<Bool> {
+    public func ordered(by ordering: Reminders.Ordering, showCompleted: Bool, placing place: Reminder? = nil) -> SQLQueryExpression<Bool> {
         let due = placed(due, place?.due?.date, of: place)
         let position = placed(position, place?.position ?? 0, of: place)
         let priority = placed(priority, place?.priority?.rawValue, of: place)

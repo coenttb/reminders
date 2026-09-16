@@ -56,9 +56,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders Application"
-               BuildableName = "Reminders Application"
-               BlueprintName = "Reminders Application"
+               BlueprintIdentifier = "Reminders Interface"
+               BuildableName = "Reminders Interface"
+               BlueprintName = "Reminders Interface"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -140,9 +140,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders Application Tests"
-               BuildableName = "Reminders Application Tests"
-               BlueprintName = "Reminders Application Tests"
+               BlueprintIdentifier = "Reminders Interface Tests"
+               BuildableName = "Reminders Interface Tests"
+               BlueprintName = "Reminders Interface Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -276,9 +276,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders Application Tests"
-               BuildableName = "Reminders Application Tests"
-               BlueprintName = "Reminders Application Tests"
+               BlueprintIdentifier = "Reminders Interface Tests"
+               BuildableName = "Reminders Interface Tests"
+               BlueprintName = "Reminders Interface Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

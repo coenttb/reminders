@@ -1,7 +1,7 @@
 public import Foundation
 public import Reminders
 
-extension Reminder.Due.Preset {
+extension Reminders.Reminder.Due.Preset {
     public enum Time: Int, CaseIterable, Hashable, Sendable {
         case morning = 9, midday = 12, afternoon = 15, evening = 18, night = 21
 
@@ -9,7 +9,7 @@ extension Reminder.Due.Preset {
     }
 }
 
-extension Reminder {
+extension Reminders.Reminder {
     public static func setting(_ reminder: Self, timePreset preset: Due.Preset.Time?, at now: Date, calendar: Calendar) -> Self {
         var set = reminder
         let day = reminder.due?.date ?? now

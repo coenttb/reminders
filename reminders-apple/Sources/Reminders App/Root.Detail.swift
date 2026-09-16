@@ -2,7 +2,7 @@ import ComposableArchitecture2
 import Dependencies
 import Organizing
 import Reminders
-import Reminders_Application
+import Reminders_Interface
 import Reminders_Feature
 import Reminders_View
 import SwiftUI
@@ -10,13 +10,13 @@ import Tagged
 
 extension Root {
     struct Detail {
-        private var filter: Reminder.Filter
+        private var filter: Reminders.Filter
         private var store: StoreOf<Reminder.Feature>
         @Dependency(\.date.now) private var now
         @Dependency(\.calendar) private var calendar
         @Environment(\.scenePhase) private var scenePhase
 
-        init(_ filter: Reminder.Filter, store: StoreOf<Reminder.Feature>) {
+        init(_ filter: Reminders.Filter, store: StoreOf<Reminder.Feature>) {
             self.filter = filter
             self.store = store
         }
@@ -26,8 +26,8 @@ extension Root {
 extension Root.Detail: SwiftUI::View {
     @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
-        let detail = store.detail ?? Reminder.Filter.Detail(filter: filter, preference: filter.defaultPreference)
-        Reminder.Filter.Detail.View(
+        let detail = store.detail ?? Reminders.Filter.Detail(filter: filter, preference: filter.defaultPreference)
+        Reminders.Filter.Detail.View(
             detail,
             title: filter.title ?? list?.title ?? "",
             editing: store.editing?.id,

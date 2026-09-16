@@ -1,9 +1,9 @@
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SQLiteData
 
-extension Reminder.Completion.Pending.Request: FetchKeyRequest {
-    public func fetch(_ db: Database) throws -> Reminder.Completion.Pending {
-        Reminder.Completion.Pending(Set(try Reminder.Record.where { $0.isPending }.select(\.id).fetchAll(db)))
+extension Reminders.Pending.Request: FetchKeyRequest {
+    public func fetch(_ db: Database) throws -> Reminders.Pending {
+        Reminders.Pending(Set(try Reminder.Record.where { $0.isPending }.select(\.id).fetchAll(db)))
     }
 }

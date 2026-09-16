@@ -1,11 +1,11 @@
 import Foundation
 import Organizing
 import Reminders
-import Reminders_Application
+import Reminders_Interface
 public import SQLiteData
 import Tagged
 
-extension Reminder.Overview.Request {
+extension Reminders.Overview.Request {
     @Selection
     struct Counts {
         let all: Int

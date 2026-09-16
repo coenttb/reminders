@@ -1,7 +1,7 @@
 import Foundation
 import Organizing
 public import Reminders
-import Reminders_Application
+import Reminders_Interface
 import Reminders_Sample
 public import SQLiteData
 

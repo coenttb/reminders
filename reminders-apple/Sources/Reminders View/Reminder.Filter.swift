@@ -3,7 +3,7 @@ public import Reminders
 public import SwiftUI
 import Tagged
 
-extension Reminder.Filter {
+extension Reminders.Filter {
     public var title: String? {
         switch self {
         case .all: "All"
@@ -17,7 +17,7 @@ extension Reminder.Filter {
     }
 }
 
-extension Reminder.Filter {
+extension Reminders.Filter {
     public func color(list: Organizing.Color?) -> SwiftUI.Color {
         switch self {
         case .all: .primary
@@ -30,8 +30,8 @@ extension Reminder.Filter {
     }
 }
 
-extension Reminder.Filter {
-    public static func smart(flagged: Bool) -> [Reminder.Filter] {
+extension Reminders.Filter {
+    public static func smart(flagged: Bool) -> [Reminders.Filter] {
         flagged ? [.today, .scheduled, .all, .flagged, .completed] : [.today, .scheduled, .all, .completed]
     }
 }

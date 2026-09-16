@@ -4,8 +4,8 @@ public import Reminders
 import Standard_Library_Extensions
 import Tagged
 
-extension Reminder.Filter {
-    public init?(key: Reminder.Filter.Key) {
+extension Reminders.Filter {
+    public init?(key: Reminders.Filter.Key) {
         switch key.rawValue {
         case "all": self = .all
         case "completed": self = .completed

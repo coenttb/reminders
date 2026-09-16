@@ -1,23 +1,23 @@
 public import Reminders
 
-extension Reminder.Filter {
+extension Reminders.Filter {
     public struct Preference: Hashable, Sendable {
-        public var ordering: Reminder.Ordering
+        public var ordering: Reminders.Ordering
         public var showCompleted: Bool
 
-        public init(ordering: Reminder.Ordering = .dueDate, showCompleted: Bool = false) {
+        public init(ordering: Reminders.Ordering = .dueDate, showCompleted: Bool = false) {
             self.ordering = ordering
             self.showCompleted = showCompleted
         }
     }
 }
 
-extension Reminder.Filter.Preference {
-    public static func `default`(for filter: Reminder.Filter) -> Self {
+extension Reminders.Filter.Preference {
+    public static func `default`(for filter: Reminders.Filter) -> Self {
         Self(showCompleted: filter == .completed)
     }
 }
 
-extension Reminder.Filter {
+extension Reminders.Filter {
     public var defaultPreference: Preference { Preference.default(for: self) }
 }

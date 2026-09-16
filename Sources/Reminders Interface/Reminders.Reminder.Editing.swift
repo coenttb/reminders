@@ -1,7 +1,7 @@
 public import Foundation
 public import Reminders
 
-extension Reminder {
+extension Reminders.Reminder {
     public struct Editing: Hashable, Sendable {
         public var draft: Reminder
         public var saved: Reminder

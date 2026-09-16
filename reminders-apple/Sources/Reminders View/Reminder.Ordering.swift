@@ -1,6 +1,6 @@
 public import Reminders
 
-extension Reminder.Ordering {
+extension Reminders.Ordering {
     public var title: String {
         switch self {
         case .dueDate: "Deadline"

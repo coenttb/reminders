@@ -1,13 +1,13 @@
 import Foundation
 import Organizing
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SQLiteData
 import Tagged
 
-extension Reminder.Search.Results.Request: FetchKeyRequest {
-    public func fetch(_ db: Database) throws -> Reminder.Search.Results {
-        var results = Reminder.Search.Results()
+extension Reminders.Search.Request: FetchKeyRequest {
+    public func fetch(_ db: Database) throws -> Reminders.Search.Results {
+        var results = Reminders.Search.Results()
         guard search.matchesReminders || search.tagPrefix != nil else { return results }
         if let prefix = search.tagPrefix {
             let taken = search.tags.map(\.rawValue)
@@ -37,7 +37,7 @@ extension Reminder.Search.Results.Request: FetchKeyRequest {
             if results.sections.last?.list.id == row.list.id {
                 results.sections[results.sections.count - 1].reminders.append(Reminder(row))
             } else {
-                results.sections.append(Reminder.Search.Results.Section(list: List(row.list), reminders: [Reminder(row)]))
+                results.sections.append(Reminders.Search.Results.Section(list: List(row.list), reminders: [Reminder(row)]))
             }
         }
         return results

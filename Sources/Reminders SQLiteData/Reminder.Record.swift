@@ -1,7 +1,7 @@
 public import Foundation
 public import Organizing
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SQLiteData
 import Standard_Library_Extensions
 public import Tagged
@@ -152,11 +152,11 @@ extension Reminder.Record {
         }
     }
 
-    public static func deleteCompleted(in filter: Reminder.Filter, today: Range<Date>) -> DeleteOf<Reminder.Record> {
+    public static func deleteCompleted(in filter: Reminders.Filter, today: Range<Date>) -> DeleteOf<Reminder.Record> {
         Reminder.Record.where { $0.isDone && $0.belongs(to: filter, today: today) }.delete()
     }
 
-    public static func deleteCompleted(matching search: Reminder.Search, dueBefore cutoff: Date?) -> DeleteOf<Reminder.Record> {
+    public static func deleteCompleted(matching search: Reminders.Search, dueBefore cutoff: Date?) -> DeleteOf<Reminder.Record> {
         Reminder.Record
             .where { $0.isDone && $0.matches(search) }
             .where { if let cutoff { $0.due.lt(Date?.some(cutoff)) } }

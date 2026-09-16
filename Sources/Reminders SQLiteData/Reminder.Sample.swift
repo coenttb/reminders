@@ -1,6 +1,6 @@
 import Organizing
 public import Reminders
-import Reminders_Application
+import Reminders_Interface
 public import Reminders_Sample
 public import SQLiteData
 import Standard_Library_Extensions
@@ -8,7 +8,7 @@ import Tagged
 
 extension Reminder.Sample {
     public static func initialize(with sample: Self, in db: Database) throws {
-        guard try Reminder.Session.Record.state.fetchCount(db) == 0 else { return }
+        guard try Reminders.Session.Record.state.fetchCount(db) == 0 else { return }
         try replace(with: sample, in: db)
     }
 
@@ -19,7 +19,7 @@ extension Reminder.Sample {
         try Reminder.Record.delete().execute(db)
         try List<Reminder>.Record.delete().execute(db)
         try Tag<Reminder>.Record.delete().execute(db)
-        try Reminder.Filter.Preference.Record.delete().execute(db)
+        try Reminders.Filter.Preference.Record.delete().execute(db)
         for lists in sample.lists.chunks(of: 200) as [ArraySlice<List<Reminder>>] {
             try List<Reminder>.Record.insert { lists.map(List<Reminder>.Record.init) }.execute(db)
         }
@@ -33,7 +33,7 @@ extension Reminder.Sample {
         for chunk in taggings.chunks(of: 500) as [ArraySlice<Reminder.Tagging>] {
             try Reminder.Tagging.insert { Array(chunk) }.execute(db)
         }
-        try Reminder.Session.Record.upsert { Reminder.Session.Record(Reminder.Session()) }.execute(db)
+        try Reminders.Session.Record.upsert { Reminders.Session.Record(Reminders.Session()) }.execute(db)
     }
 
     public func replace(in db: Database) throws { try Self.replace(with: self, in: db) }

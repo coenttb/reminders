@@ -1,11 +1,11 @@
 import Foundation
 public import Organizing
 public import Reminders
-import Reminders_Application
+import Reminders_Interface
 public import SQLiteData
 import Tagged
 
-extension Reminder.Search.Results.Request {
+extension Reminders.Search.Request {
     @Selection
     struct Match {
         let reminder: Reminder.Record

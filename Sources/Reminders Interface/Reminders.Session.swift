@@ -1,6 +1,6 @@
 public import Reminders
 
-extension Reminder {
+extension Reminders {
     public struct Session: Hashable, Sendable {
         public var filter: Filter?
         public var editing: Reminder.ID?

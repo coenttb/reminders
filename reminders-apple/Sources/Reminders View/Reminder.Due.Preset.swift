@@ -1,7 +1,7 @@
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 
-extension Reminder.Due.Preset {
+extension Reminders.Reminder.Due.Preset {
     public var title: String {
         switch self {
         case .today: "Today"

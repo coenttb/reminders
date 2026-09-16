@@ -1,11 +1,11 @@
 import Foundation
 public import Organizing
 public import Reminders
-import Reminders_Application
+import Reminders_Interface
 public import SQLiteData
 import Tagged
 
-extension Reminder.Overview.Request {
+extension Reminders.Overview.Request {
     @Selection
     struct Entry {
         let list: List<Reminder>.Record

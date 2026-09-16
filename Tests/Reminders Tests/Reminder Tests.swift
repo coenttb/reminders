@@ -66,12 +66,12 @@ import Tagged
     }
 
     @Test func `a filter narrows and closes as its tags and list go`() {
-        #expect(Reminder.Filter.tags(["car", "kids"]).removing(tag: "car") == .tags(["kids"]))
-        #expect(Reminder.Filter.tags(["kids"]).removing(tag: "kids") == nil)
-        #expect(Reminder.Filter.today.removing(tag: "kids") == .today)
-        #expect(Reminder.Filter.list(list).removing(list: list) == nil)
-        #expect(Reminder.Filter.all.removing(list: list) == .all)
-        #expect(Reminder.Filter.list(list).isList && !Reminder.Filter.all.isList)
+        #expect(Reminders.Filter.tags(["car", "kids"]).removing(tag: "car") == .tags(["kids"]))
+        #expect(Reminders.Filter.tags(["kids"]).removing(tag: "kids") == nil)
+        #expect(Reminders.Filter.today.removing(tag: "kids") == .today)
+        #expect(Reminders.Filter.list(list).removing(list: list) == nil)
+        #expect(Reminders.Filter.all.removing(list: list) == .all)
+        #expect(Reminders.Filter.list(list).isList && !Reminders.Filter.all.isList)
     }
 
     @Test func `a filter contains the reminders it shows`() throws {
@@ -79,17 +79,17 @@ import Tagged
         var reminder = reminder("Call", due: .moment(now))
         reminder.tags = ["car"]
         reminder.flagged = true
-        for filter in [Reminder.Filter.all, .flagged, .scheduled, .today, .list(list), .tags(["car", "kids"])] {
+        for filter in [Reminders.Filter.all, .flagged, .scheduled, .today, .list(list), .tags(["car", "kids"])] {
             #expect(filter.contains(reminder, today: today))
         }
-        #expect(!Reminder.Filter.completed.contains(reminder, today: today))
-        #expect(!Reminder.Filter.list(List<Reminder>.ID(UUID())).contains(reminder, today: today))
-        #expect(!Reminder.Filter.tags(["kids"]).contains(reminder, today: today))
+        #expect(!Reminders.Filter.completed.contains(reminder, today: today))
+        #expect(!Reminders.Filter.list(List<Reminder>.ID(UUID())).contains(reminder, today: today))
+        #expect(!Reminders.Filter.tags(["kids"]).contains(reminder, today: today))
         reminder.due = .day(today.upperBound)
-        #expect(!Reminder.Filter.today.contains(reminder, today: today) && Reminder.Filter.scheduled.contains(reminder, today: today))
+        #expect(!Reminders.Filter.today.contains(reminder, today: today) && Reminders.Filter.scheduled.contains(reminder, today: today))
         reminder.completion = .completed
-        #expect(Reminder.Filter.completed.contains(reminder, today: today) && Reminder.Filter.flagged.contains(reminder, today: today))
-        #expect(!Reminder.Filter.scheduled.contains(reminder, today: today) && !Reminder.Filter.today.contains(reminder, today: today))
+        #expect(Reminders.Filter.completed.contains(reminder, today: today) && Reminders.Filter.flagged.contains(reminder, today: today))
+        #expect(!Reminders.Filter.scheduled.contains(reminder, today: today) && !Reminders.Filter.today.contains(reminder, today: today))
     }
 
     @Test func `orderings sort by date, priority, or title, and by position among equals`() {
@@ -101,7 +101,7 @@ import Tagged
         b.priority = .high
         b.flagged = true
         a.priority = .low
-        func sorted(_ ordering: Reminder.Ordering) -> [String] {
+        func sorted(_ ordering: Reminders.Ordering) -> [String] {
             [a, b, c].sorted { ordering.areInIncreasingOrder($0, $1) }.map(\.title)
         }
         #expect(sorted(.manual) == ["banana", "Apple", "cherry"])
@@ -113,6 +113,6 @@ import Tagged
         var d = a
         d.title = "Banana"
         d.position = -1
-        #expect([a, d].sorted { Reminder.Ordering.areInIncreasingOrder($0, $1, for: .title) }.map(\.position) == [-1, 0])
+        #expect([a, d].sorted { Reminders.Ordering.areInIncreasingOrder($0, $1, for: .title) }.map(\.position) == [-1, 0])
     }
 }

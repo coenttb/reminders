@@ -2,7 +2,7 @@ import Foundation
 import FoundationEssentials_Extensions
 import Organizing
 import Reminders
-import Reminders_Application
+import Reminders_Interface
 import Reminders_View
 import SwiftUI
 import Tagged
@@ -12,18 +12,18 @@ import Testing
     let list = List<Reminder>.ID(UUID())
 
     @Test func `the sort menu and the chips name the domain's values as the stock app does`() {
-        #expect(Reminder.Ordering.allCases.map(\.title) == ["Manual", "Deadline", "Creation Date", "Priority", "Title"])
+        #expect(Reminders.Ordering.allCases.map(\.title) == ["Manual", "Deadline", "Creation Date", "Priority", "Title"])
         #expect(Reminder.Priority.allCases.map(\.title) == ["Low", "Medium", "High"])
         #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
         #expect(Reminder.Repeat.allCases.map(\.title) == ["Never", "Daily", "Weekly", "Monthly", "Yearly"])
         #expect(Reminder.Location.allCases.map(\.title) == ["Getting in Car", "Getting out of Car"])
-        #expect(Reminder.Due.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
-        #expect(Reminder.Due.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
+        #expect(Reminders.Reminder.Due.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
+        #expect(Reminders.Reminder.Due.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
     }
 
     @Test func `filters name themselves except lists, and tags show as hashtags`() {
-        #expect(Reminder.Filter.today.title == "Today" && Reminder.Filter.list(list).title == nil)
-        #expect(Reminder.Filter.tags(["a"]).title == "#a" && Reminder.Filter.tags(["a", "b"]).title == "2 tags")
+        #expect(Reminders.Filter.today.title == "Today" && Reminders.Filter.list(list).title == nil)
+        #expect(Reminders.Filter.tags(["a"]).title == "#a" && Reminders.Filter.tags(["a", "b"]).title == "2 tags")
         let reminder = Reminder(id: Reminder.ID(UUID()), list: list, tags: ["kids", "car"])
         #expect(Tag<Reminder>(title: "kids").hashtag == "#kids" && reminder.tagLine == "#car #kids")
         #expect(Reminder(id: reminder.id, list: list).tagLine.isEmpty)
@@ -43,7 +43,7 @@ import Testing
         let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20)))
         let evening = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 18)))
         let style = Date.FormatStyle(date: .omitted, time: .shortened, calendar: calendar, timeZone: calendar.timeZone)
-        #expect(Reminder.Due.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
+        #expect(Reminders.Reminder.Due.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.moment(evening).timeDescription(calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.day(evening).timeDescription(calendar: calendar) == nil)
     }
@@ -74,8 +74,8 @@ import Testing
         let color = Organizing.Color(red: 237 / 255, green: 137 / 255, blue: 53 / 255)
         let round = Organizing.Color(SwiftUI.Color(color))
         #expect(abs(round.red - color.red) < 0.002 && abs(round.green - color.green) < 0.002 && abs(round.blue - color.blue) < 0.002)
-        #expect(Reminder.Filter.flagged.color(list: nil) == .orange)
-        #expect(Reminder.Filter.list(list).color(list: color) == SwiftUI.Color(color))
+        #expect(Reminders.Filter.flagged.color(list: nil) == .orange)
+        #expect(Reminders.Filter.list(list).color(list: color) == SwiftUI.Color(color))
         #expect(Organizing.List<Reminder>.Form.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])
     }
 }

@@ -1,14 +1,14 @@
 import Foundation
 import Organizing
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SQLiteData
 import Tagged
 
-extension Reminder.Filter.Detail.Request: FetchKeyRequest {
-    public func fetch(_ db: Database) throws -> Reminder.Filter.Detail? {
+extension Reminders.Filter.Detail.Request: FetchKeyRequest {
+    public func fetch(_ db: Database) throws -> Reminders.Filter.Detail? {
         guard let filter else { return nil }
-        let preference = try Reminder.Filter.Preference.Record.preference(for: filter).fetchOne(db).map(Reminder.Filter.Preference.init) ?? filter.defaultPreference
+        let preference = try Reminders.Filter.Preference.Record.preference(for: filter).fetchOne(db).map(Reminders.Filter.Preference.init) ?? filter.defaultPreference
         var list: List<Reminder>?
         if case let .list(id) = filter {
             list = try List<Reminder>.Record.find(id).fetchOne(db).map(List<Reminder>.init)
@@ -23,11 +23,11 @@ extension Reminder.Filter.Detail.Request: FetchKeyRequest {
             .limit(limit ?? total)
             .rows()
             .fetchAll(db)
-        return Reminder.Filter.Detail(
+        return Reminders.Filter.Detail(
             filter: filter,
             color: list?.color,
             preference: preference,
-            rows: rows.map { Reminder.Filter.Detail.Row(reminder: Reminder($0), color: Color($0.color)) },
+            rows: rows.map { Reminders.Filter.Detail.Row(reminder: Reminder($0), color: Color($0.color)) },
             total: total,
             completedCount: completedCount
         )

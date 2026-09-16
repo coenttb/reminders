@@ -1,7 +1,7 @@
 public import Reminders
 public import Tagged
 
-extension Reminder.Completion {
+extension Reminders {
     public struct Pending: Hashable, Sendable {
         public var ids: Set<Reminder.ID>
 
@@ -11,7 +11,7 @@ extension Reminder.Completion {
     }
 }
 
-extension Reminder.Completion.Pending {
+extension Reminders.Pending {
     public static let grace: Duration = .seconds(5)
 
     public var isEmpty: Bool { ids.isEmpty }
@@ -31,7 +31,7 @@ extension Reminder.Completion.Pending {
     public mutating func elapse() { self = Self.elapsing(self) }
 }
 
-extension Reminder.Completion.Pending: ExpressibleByArrayLiteral {
+extension Reminders.Pending: ExpressibleByArrayLiteral {
     public init(arrayLiteral ids: Reminder.ID...) {
         self.init(Set(ids))
     }

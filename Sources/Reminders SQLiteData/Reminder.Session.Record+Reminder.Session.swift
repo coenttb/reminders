@@ -1,8 +1,8 @@
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 
-extension Reminder.Session {
-    public init(_ record: Reminder.Session.Record) {
-        self.init(filter: record.filter.flatMap(Reminder.Filter.init(key:)), editing: record.editing)
+extension Reminders.Session {
+    public init(_ record: Reminders.Session.Record) {
+        self.init(filter: record.filter.flatMap(Reminders.Filter.init(key:)), editing: record.editing)
     }
 }

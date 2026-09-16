@@ -1,12 +1,12 @@
 public import Foundation
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SwiftUI
 
-extension Reminder.Filter.Detail {
+extension Reminders.Filter.Detail {
     public struct View {
         private var title: String
-        private var detail: Reminder.Filter.Detail
+        private var detail: Reminders.Filter.Detail
         private var editing: Reminder.ID?
         private var now: Date
         private var calendar: Calendar
@@ -16,7 +16,7 @@ extension Reminder.Filter.Detail {
         private var done: () -> Void
         private var backgroundTapped: () -> Void
         private var move: (IndexSet, Int) -> Void
-        private var order: (Reminder.Ordering) -> Void
+        private var order: (Reminders.Ordering) -> Void
         private var toggleCompleted: () -> Void
         private var newReminder: () -> Void
         private var endReached: () -> Void
@@ -29,7 +29,7 @@ extension Reminder.Filter.Detail {
         @FocusState private var focus: Reminder.Focus?
 
         public init(
-            _ detail: Reminder.Filter.Detail,
+            _ detail: Reminders.Filter.Detail,
             title: String,
             editing: Reminder.ID?,
             now: Date,
@@ -40,7 +40,7 @@ extension Reminder.Filter.Detail {
             done: @escaping () -> Void,
             backgroundTapped: @escaping () -> Void,
             move: @escaping (IndexSet, Int) -> Void,
-            order: @escaping (Reminder.Ordering) -> Void,
+            order: @escaping (Reminders.Ordering) -> Void,
             toggleCompleted: @escaping () -> Void,
             newReminder: @escaping () -> Void,
             endReached: @escaping () -> Void,
@@ -70,7 +70,7 @@ extension Reminder.Filter.Detail {
     }
 }
 
-extension Reminder.Filter.Detail.View: SwiftUI::View {
+extension Reminders.Filter.Detail.View: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let filter = detail.filter
         let color = filter.color(list: detail.color)
@@ -114,7 +114,7 @@ extension Reminder.Filter.Detail.View: SwiftUI::View {
                     Reminder.Row(row.reminder, color: SwiftUI.Color(row.color), now: now, calendar: calendar, actions: rowActions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if Reminder.Window<Reminder.Filter>.nearsEnd(index, of: shown, total: total) { endReached() } }
+                        .onAppear { if Reminders.Window<Reminders.Filter>.nearsEnd(index, of: shown, total: total) { endReached() } }
                 }
             }
             .onMove(perform: move)
@@ -173,7 +173,7 @@ extension Reminder.Filter.Detail.View: SwiftUI::View {
                     }
                     Button("Select Reminders", systemImage: "checkmark.circle") { withAnimation { editMode = .active } }
                     Menu {
-                        ForEach(Reminder.Ordering.allCases, id: \.self) { ordering in
+                        ForEach(Reminders.Ordering.allCases, id: \.self) { ordering in
                             Button { order(ordering) } label: {
                                 if ordering == preference.ordering {
                                     Label(ordering.title, systemImage: "checkmark")
@@ -210,7 +210,7 @@ extension Reminder.Filter.Detail.View: SwiftUI::View {
     }
 }
 
-extension Reminder.Filter.Detail.View {
+extension Reminders.Filter.Detail.View {
     private func focusEditing(_ proxy: ScrollViewProxy) {
         guard let editing, focus != .title(editing), focus != .notes(editing), detail.rows.contains(where: { $0.id == editing }) else { return }
         Task { @MainActor in

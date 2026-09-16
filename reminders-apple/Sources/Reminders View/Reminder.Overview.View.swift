@@ -1,16 +1,16 @@
 public import Foundation
 public import Organizing
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SwiftUI
 public import Tagged
 
-extension Reminder.Overview {
+extension Reminders.Overview {
     public struct View {
-        private var overview: Reminder.Overview
+        private var overview: Reminders.Overview
         private var now: Date
         private var calendar: Calendar
-        private var open: (Reminder.Filter) -> Void
+        private var open: (Reminders.Filter) -> Void
         private var details: (Organizing.List<Reminder>.ID) -> Void
         private var delete: (Organizing.List<Reminder>.ID) -> Void
         private var move: (IndexSet, Int) -> Void
@@ -18,10 +18,10 @@ extension Reminder.Overview {
         @Environment(\.editMode) private var editMode
 
         public init(
-            _ overview: Reminder.Overview,
+            _ overview: Reminders.Overview,
             now: Date,
             calendar: Calendar,
-            open: @escaping (Reminder.Filter) -> Void,
+            open: @escaping (Reminders.Filter) -> Void,
             details: @escaping (Organizing.List<Reminder>.ID) -> Void,
             delete: @escaping (Organizing.List<Reminder>.ID) -> Void,
             move: @escaping (IndexSet, Int) -> Void,
@@ -39,27 +39,27 @@ extension Reminder.Overview {
     }
 }
 
-extension Reminder.Overview.View: SwiftUI::View {
+extension Reminders.Overview.View: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let counts = overview.counts
         Section {
             if editMode?.wrappedValue.isEditing == true {
-                ForEach(Reminder.Filter.smart(flagged: counts.flagged > 0), id: \.self) { filter in
+                ForEach(Reminders.Filter.smart(flagged: counts.flagged > 0), id: \.self) { filter in
                     HStack(spacing: 16) {
-                        Reminder.Filter.Tile.badge(for: filter, day: calendar.component(.day, from: now))
+                        Reminders.Filter.Tile.badge(for: filter, day: calendar.component(.day, from: now))
                         Text(filter.title ?? "")
                     }
                 }
                 .onMove { _, _ in }
             } else {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    Reminder.Filter.Tile(.today, glyph: .today(day: calendar.component(.day, from: now)), fill: .today, count: counts.today, open: open)
-                    Reminder.Filter.Tile(.scheduled, glyph: .symbol("calendar"), fill: .scheduled, count: counts.scheduled, open: open)
-                    Reminder.Filter.Tile(.all, glyph: .symbol("tray.fill"), fill: .all, count: counts.all, open: open)
+                    Reminders.Filter.Tile(.today, glyph: .today(day: calendar.component(.day, from: now)), fill: .today, count: counts.today, open: open)
+                    Reminders.Filter.Tile(.scheduled, glyph: .symbol("calendar"), fill: .scheduled, count: counts.scheduled, open: open)
+                    Reminders.Filter.Tile(.all, glyph: .symbol("tray.fill"), fill: .all, count: counts.all, open: open)
                     if counts.flagged > 0 {
-                        Reminder.Filter.Tile(.flagged, glyph: .symbol("flag.fill"), fill: .flagged, count: counts.flagged, open: open)
+                        Reminders.Filter.Tile(.flagged, glyph: .symbol("flag.fill"), fill: .flagged, count: counts.flagged, open: open)
                     }
-                    Reminder.Filter.Tile(.completed, glyph: .symbol("checkmark"), fill: .completed, count: nil, open: open)
+                    Reminders.Filter.Tile(.completed, glyph: .symbol("checkmark"), fill: .completed, count: nil, open: open)
                 }
                 .buttonStyle(.plain)
                 .listRowBackground(SwiftUI.Color.clear)

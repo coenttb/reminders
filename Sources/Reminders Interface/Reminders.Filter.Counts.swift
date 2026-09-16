@@ -1,6 +1,6 @@
 public import Reminders
 
-extension Reminder.Filter {
+extension Reminders.Filter {
     public struct Counts: Hashable, Sendable {
         public var all: Int
         public var flagged: Int

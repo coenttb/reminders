@@ -2,7 +2,7 @@ public import Organizing
 public import Reminders
 public import Tagged
 
-extension Reminder.Search {
+extension Reminders.Search {
     public struct Results: Hashable, Sendable {
         public var sections: [Section]
         public var total: Int

@@ -1,6 +1,6 @@
 public import Reminders
 
-extension Reminder {
+extension Reminders {
     public struct Window<Key: Hashable & Sendable>: Hashable, Sendable {
         public var key: Key?
         public var rows: Int?

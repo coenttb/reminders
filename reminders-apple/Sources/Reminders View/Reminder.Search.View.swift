@@ -1,14 +1,14 @@
 public import Foundation
 public import Organizing
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SwiftUI
 public import Tagged
 
-extension Reminder.Search {
+extension Reminders.Search {
     public struct View {
-        private var search: Reminder.Search
-        private var results: Reminder.Search.Results
+        private var search: Reminders.Search
+        private var results: Reminders.Search.Results
         private var now: Date
         private var calendar: Calendar
         private var rows: Reminder.Row.Actions
@@ -18,8 +18,8 @@ extension Reminder.Search {
         private var endReached: () -> Void
 
         public init(
-            _ search: Reminder.Search,
-            results: Reminder.Search.Results,
+            _ search: Reminders.Search,
+            results: Reminders.Search.Results,
             now: Date,
             calendar: Calendar,
             rows: Reminder.Row.Actions,
@@ -41,7 +41,7 @@ extension Reminder.Search {
     }
 }
 
-extension Reminder.Search.View: SwiftUI::View {
+extension Reminders.Search.View: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let suggestions = results.suggestions
         let completed = results.completedCount
@@ -93,7 +93,7 @@ extension Reminder.Search.View: SwiftUI::View {
                     Reminder.Row(reminder, color: SwiftUI.Color(section.list.color), now: now, calendar: calendar, actions: rows)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if Reminder.Window<Reminder.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { endReached() } }
+                        .onAppear { if Reminders.Window<Reminders.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { endReached() } }
                 }
             } header: {
                 Text(section.list.title)

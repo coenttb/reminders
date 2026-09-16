@@ -1,6 +1,6 @@
 public import Foundation
 public import Reminders
-import Reminders_Application
+import Reminders_Interface
 public import SwiftUI
 public import Tagged
 

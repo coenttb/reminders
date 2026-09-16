@@ -1,6 +1,6 @@
 public import Foundation
 public import Reminders
-public import Reminders_Application
+public import Reminders_Interface
 public import SwiftUI
 
 extension Reminder {
@@ -35,15 +35,15 @@ extension Reminder.Editor {
         public var complete: (Reminder.ID) -> Void
         public var details: (Reminder.ID) -> Void
         public var submit: () -> Void
-        public var setDate: (Reminder.ID, Reminder.Due.Preset?) -> Void
-        public var setTime: (Reminder.ID, Reminder.Due.Preset.Time?) -> Void
+        public var setDate: (Reminder.ID, Reminders.Reminder.Due.Preset?) -> Void
+        public var setTime: (Reminder.ID, Reminders.Reminder.Due.Preset.Time?) -> Void
 
         public init(
             complete: @escaping (Reminder.ID) -> Void,
             details: @escaping (Reminder.ID) -> Void,
             submit: @escaping () -> Void,
-            setDate: @escaping (Reminder.ID, Reminder.Due.Preset?) -> Void,
-            setTime: @escaping (Reminder.ID, Reminder.Due.Preset.Time?) -> Void
+            setDate: @escaping (Reminder.ID, Reminders.Reminder.Due.Preset?) -> Void,
+            setTime: @escaping (Reminder.ID, Reminders.Reminder.Due.Preset.Time?) -> Void
         ) {
             self.complete = complete
             self.details = details
@@ -112,7 +112,7 @@ extension Reminder.Editor: SwiftUI::View {
         Menu {
             Button { actions.setDate(reminder.id, nil) } label: { checked("None", reminder.due == nil) }
             Divider()
-            ForEach(Reminder.Due.Preset.allCases, id: \.self) { preset in
+            ForEach(Reminders.Reminder.Due.Preset.allCases, id: \.self) { preset in
                 Button { actions.setDate(reminder.id, preset) } label: {
                     let date = preset.date(at: now, calendar: calendar)
                     let current = reminder.due.map { calendar.isDate($0.date, inSameDayAs: date) } ?? false
@@ -137,7 +137,7 @@ extension Reminder.Editor: SwiftUI::View {
         Menu {
             Button { actions.setTime(reminder.id, nil) } label: { checked("None", reminder.due?.hasTime != true) }
             Divider()
-            ForEach(Reminder.Due.Preset.Time.allCases, id: \.self) { preset in
+            ForEach(Reminders.Reminder.Due.Preset.Time.allCases, id: \.self) { preset in
                 Button { actions.setTime(reminder.id, preset) } label: {
                     let current = reminder.due.map { $0.hasTime && calendar.component(.hour, from: $0.date) == preset.hour && calendar.component(.minute, from: $0.date) == 0 } == true
                     Text(preset.description(on: now, calendar: calendar) ?? preset.title)

@@ -6,7 +6,7 @@ import Foundation
 import Organizing
 import Reminders
 import Reminders_App
-import Reminders_Application
+import Reminders_Interface
 import Reminders_Feature
 import SQLiteData
 import SwiftUI
