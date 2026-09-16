@@ -1,5 +1,5 @@
 public import Models
-public import Tagged
+import Tagged
 
 extension Tag.Picker {
     public struct Actions {

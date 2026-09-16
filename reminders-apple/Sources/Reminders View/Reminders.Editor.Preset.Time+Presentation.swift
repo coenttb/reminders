@@ -1,9 +1,9 @@
 public import Foundation
+import Reminder
 import FoundationEssentials_Extensions
-public import Reminder
 public import Reminders
 
-extension Reminder.Due.Preset.Time {
+extension Reminders.Editor.Preset.Time {
     public var title: String {
         switch self {
         case .morning: "Morning"

@@ -19,7 +19,7 @@ extension Reminders.Overview {
 
 extension Reminders.Overview.Contents {
     public var usedTags: [Tag<Reminder>] {
-        tags.filter { $0.count > 0 }.map(\.tag).sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        tags.filter { $0.count > 0 }.map(\.tag).sorted { $0.rawValue.localizedCaseInsensitiveCompare($1.rawValue) == .orderedAscending }
     }
 
     public var rankedTags: [Tag<Reminder>] { tags.map(\.tag) }

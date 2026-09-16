@@ -20,7 +20,7 @@ extension Reminder.Record {
         return id
     }
 
-    public static func save(_ draft: Draft, tags: Set<Tag<Reminder>.ID>, isNew: Bool, in db: Database) throws -> Reminder.ID? {
+    public static func save(_ draft: Draft, tags: Set<Tag<Reminder>>, isNew: Bool, in db: Database) throws -> Reminder.ID? {
         if isNew {
             let id = try append(draft, in: db)
             try Reminders.Tagging.attach(tags, to: id, in: db)

@@ -1,6 +1,5 @@
 import Models
 public import Reminder
-import Tagged
 
 extension Reminder {
     public var tagLine: String {

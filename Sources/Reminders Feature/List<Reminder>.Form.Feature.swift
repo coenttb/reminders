@@ -3,7 +3,7 @@ public import Dependencies
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_Dependency
+import Reminders_Dependency
 import Foundation
 
 extension Models.List<Reminder>.Form {

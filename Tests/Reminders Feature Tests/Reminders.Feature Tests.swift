@@ -504,7 +504,7 @@ struct `Reminder feature` {
             if case var .reminder(form) = $0.destination { form.draft.tags.remove("optional"); $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
-        #expect(try await database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("later")) }.fetchCount(db) } == 2)
+        #expect(try await database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>("later")) }.fetchCount(db) } == 2)
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("optional") == false)
         await store.dismount()
     }

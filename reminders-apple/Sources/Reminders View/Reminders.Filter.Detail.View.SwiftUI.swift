@@ -1,6 +1,7 @@
 public import Models
 public import Reminder
 public import Reminders
+public import Reminders_Feature
 public import SwiftUI
 public import Tagged
 

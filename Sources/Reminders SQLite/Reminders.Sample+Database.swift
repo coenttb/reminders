@@ -24,7 +24,7 @@ extension Reminders.Sample {
         for lists in Array(sample.lists.enumerated()).chunks(of: 200) as [ArraySlice<(offset: Int, element: List<Reminder>)>] {
             try List<Reminder>.Record.insert { lists.map { List<Reminder>.Record($0.element, position: $0.offset) } }.execute(db)
         }
-        for tags in sample.tags.sorted(by: { $0.title < $1.title }).chunks(of: 500) as [ArraySlice<Tag<Reminder>>] {
+        for tags in sample.tags.sorted().chunks(of: 500) as [ArraySlice<Tag<Reminder>>] {
             try Tag<Reminder>.Record.insert { tags.map(Tag<Reminder>.Record.init) }.execute(db)
         }
         for reminders in Array(sample.reminders.enumerated()).chunks(of: 200) as [ArraySlice<(offset: Int, element: Reminder)>] {

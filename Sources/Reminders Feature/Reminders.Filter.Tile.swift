@@ -1,3 +1,4 @@
+public import Reminders
 
 extension Reminders.Filter {
     public struct Tile {

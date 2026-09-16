@@ -1,7 +1,7 @@
 public import Models
 public import Reminder
 public import StructuredQueries
-public import Tagged
+import Tagged
 
 extension Tag<Reminder> {
     @Table("tags")
@@ -17,13 +17,13 @@ extension Tag<Reminder> {
 
 extension Tag<Reminder>.Record {
     public init(_ tag: Tag<Reminder>) {
-        self.init(title: tag.title)
+        self.init(title: tag.rawValue)
     }
 }
 
 extension Tag<Reminder> {
     public init(_ record: Tag<Reminder>.Record) {
-        self.init(title: record.title)
+        self.init(record.title)
     }
 }
 
@@ -38,7 +38,7 @@ extension Tag<Reminder>.Record {
         Tag<Reminder>.Record.where { $0.title.eq(title) }.select(\.title)
     }
 
-    public static func delete(_ id: Tag<Reminder>.ID) -> DeleteOf<Tag<Reminder>.Record> {
+    public static func delete(_ id: Tag<Reminder>) -> DeleteOf<Tag<Reminder>.Record> {
         Tag<Reminder>.Record.find(id.rawValue).delete()
     }
 

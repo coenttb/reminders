@@ -1,4 +1,5 @@
 import Reminders
+import Reminders_Feature
 import Models
 import Reminder
 public import SwiftUI

@@ -31,7 +31,7 @@ import Tagged
         #expect(a != c)
         #expect(a.lists.count == 4 && a.reminders.count == 200 && a.tags.count == 25)
         #expect(a.lists.map(\.title) == ["Personal", "Family", "Business", "Errands"])
-        #expect(a.tags.contains(Tag(title: "adulting")) && a.tags.contains(Tag(title: "adulting2")))
+        #expect(a.tags.contains(Tag("adulting")) && a.tags.contains(Tag("adulting2")))
         let listIDs = Set(a.lists.map(\.id)), tagIDs = Set(a.tags.map(\.id))
         #expect(a.reminders.allSatisfy { listIDs.contains($0.list) && $0.tags.isSubset(of: tagIDs) })
         #expect(Set(a.reminders.map(\.id)).count == 200)

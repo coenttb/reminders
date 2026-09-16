@@ -3,6 +3,7 @@ import FoundationEssentials_Extensions
 import Models
 import Reminder
 import Reminders
+import Reminders_Feature
 import Reminders_View
 import SwiftUI
 import Tagged
@@ -17,8 +18,8 @@ import Testing
         #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
         #expect(Reminder.repeatOptions.map(\.title) == ["Daily", "Weekly", "Monthly", "Yearly"])
         #expect(Calendar.RecurrenceRule(calendar: Calendar(identifier: .gregorian), frequency: .weekly).title == "Weekly")
-        #expect(Reminder.Due.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
-        #expect(Reminder.Due.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
+        #expect(Reminders.Editor.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
+        #expect(Reminders.Editor.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
     }
 
     @Test func `filters name themselves except lists, and tags show as hashtags`() {
@@ -29,7 +30,7 @@ import Testing
         let reminder = Reminder(id: Reminder.ID(UUID()), list: list, created: .distantPast)
         var tagged = reminder
         tagged.tags = ["kids", "car"]
-        #expect(Tag<Reminder>(title: "kids").hashtag == "#kids" && tagged.tagLine == "#car #kids")
+        #expect(Tag<Reminder>("kids").hashtag == "#kids" && tagged.tagLine == "#car #kids")
         #expect(reminder.tagLine.isEmpty)
     }
 
@@ -47,7 +48,7 @@ import Testing
         let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20)))
         let evening = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 18)))
         let style = Date.FormatStyle(date: .omitted, time: .shortened, calendar: calendar, timeZone: calendar.timeZone)
-        #expect(Reminder.Due.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
+        #expect(Reminders.Editor.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.moment(evening).timeDescription(calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.day(evening).timeDescription(calendar: calendar) == nil)
     }

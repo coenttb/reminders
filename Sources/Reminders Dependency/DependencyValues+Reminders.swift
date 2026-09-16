@@ -11,17 +11,19 @@ extension DependencyValues {
 extension Reminders: TestDependencyKey {
     public static var testValue: Reminders {
         Reminders(
-            overview: Overview(
-                client: Overview.Client(fetch: unimplemented("\\.reminders.overview.client.fetch", placeholder: Overview.Contents()))
+            overview: .init(
+                client: .init(
+                    fetch: unimplemented("\\.reminders.overview.client.fetch", placeholder: Overview.Contents())
+                )
             ),
-            search: Search(
-                client: Search.Client(
+            search: .init(
+                client: .init(
                     search: unimplemented("\\.reminders.search.client.search", placeholder: Search.Contents()),
                     deleteCompleted: unimplemented("\\.reminders.search.client.deleteCompleted")
                 )
             ),
-            detail: Filter.Detail(
-                client: Filter.Detail.Client(
+            detail: .init(
+                client: .init(
                     fetch: unimplemented("\\.reminders.detail.client.fetch", placeholder: nil),
                     setOrdering: unimplemented("\\.reminders.detail.client.setOrdering"),
                     toggleShowCompleted: unimplemented("\\.reminders.detail.client.toggleShowCompleted"),
@@ -29,8 +31,8 @@ extension Reminders: TestDependencyKey {
                     move: unimplemented("\\.reminders.detail.client.move")
                 )
             ),
-            editor: Editor(
-                client: Editor.Client(
+            editor: .init(
+                client: .init(
                     reminder: unimplemented("\\.reminders.editor.client.reminder", placeholder: nil),
                     start: unimplemented("\\.reminders.editor.client.start", placeholder: nil),
                     save: unimplemented("\\.reminders.editor.client.save", placeholder: false),
@@ -38,22 +40,22 @@ extension Reminders: TestDependencyKey {
                     delete: unimplemented("\\.reminders.editor.client.delete")
                 )
             ),
-            lists: Lists(
-                client: Lists.Client(
+            lists: .init(
+                client: .init(
                     save: unimplemented("\\.reminders.lists.client.save", placeholder: false),
                     delete: unimplemented("\\.reminders.lists.client.delete"),
                     reorder: unimplemented("\\.reminders.lists.client.reorder")
                 )
             ),
-            tags: Tags(
-                client: Tags.Client(
+            tags: .init(
+                client: .init(
                     add: unimplemented("\\.reminders.tags.client.add", placeholder: nil),
                     rename: unimplemented("\\.reminders.tags.client.rename", placeholder: nil),
                     delete: unimplemented("\\.reminders.tags.client.delete")
                 )
             ),
-            restoration: Restoration(
-                client: Restoration.Client(
+            restoration: .init(
+                client: .init(
                     current: unimplemented("\\.reminders.restoration.client.current", placeholder: Session()),
                     setFilter: unimplemented("\\.reminders.restoration.client.setFilter"),
                     setEditing: unimplemented("\\.reminders.restoration.client.setEditing")

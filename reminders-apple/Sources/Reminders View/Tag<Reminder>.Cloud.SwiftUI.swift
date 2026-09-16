@@ -1,8 +1,8 @@
-public import Reminders
+import Reminders
+public import Reminders_Feature
 public import Models
 public import Reminder
 public import SwiftUI
-import Tagged
 
 extension Tag<Reminder>.Cloud {
     public struct SwiftUI {
@@ -19,11 +19,11 @@ extension Tag<Reminder>.Cloud {
 extension Tag<Reminder>.Cloud.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         Tag<Reminder>.Cloud.Flow(spacing: 8) {
-            Button { cloud.actions.open(tags.map(\.id)) } label: { Tag<Reminder>.Pill(title: "All Tags") }
+            Button { cloud.actions.open(tags) } label: { Tag<Reminder>.Pill(title: "All Tags") }
             ForEach(tags) { tag in
-                Button { cloud.actions.open([tag.id]) } label: { Tag<Reminder>.Pill(title: Tag<Reminder>.hashtag(tag.id)) }
+                Button { cloud.actions.open([tag]) } label: { Tag<Reminder>.Pill(title: tag.hashtag) }
                     .contextMenu {
-                        Button("Delete Tag", systemImage: "trash", role: .destructive) { cloud.actions.delete(tag.id) }
+                        Button("Delete Tag", systemImage: "trash", role: .destructive) { cloud.actions.delete(tag) }
                     }
             }
         }

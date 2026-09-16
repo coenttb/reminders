@@ -1,6 +1,7 @@
 public import Models
 public import Reminder
-public import Reminders
+import Reminders
+public import Reminders_Feature
 public import SwiftUI
 
 extension Models.List<Reminder>.Row {

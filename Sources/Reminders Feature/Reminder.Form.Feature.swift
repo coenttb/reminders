@@ -3,9 +3,9 @@ public import Dependencies
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_Dependency
+import Reminders_Dependency
 import Standard_Library_Extensions
-public import Tagged
+import Tagged
 import Foundation
 
 extension Reminder.Form {
@@ -37,8 +37,8 @@ extension Reminder.Form {
             case cancelButtonTapped
             case saveButtonTapped
             case tagAdded(String)
-            case tagDeleted(Tag<Reminder>.ID)
-            case tagRenamed(Tag<Reminder>.ID, String)
+            case tagDeleted(Tag<Reminder>)
+            case tagRenamed(Tag<Reminder>, String)
         }
 
         @Dependency(\.reminders) var reminders

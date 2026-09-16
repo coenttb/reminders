@@ -1,4 +1,4 @@
-public import Foundation
+import Foundation
 public import Reminder
 public import Reminders
 public import Tagged

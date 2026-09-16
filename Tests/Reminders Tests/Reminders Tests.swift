@@ -34,11 +34,11 @@ import Tagged
     @Test func `date and time presets resolve against now`() throws {
         let now = try #require(Date(year: 2026, month: 9, day: 15, hour: 8, minute: 30, in: calendar))
         let tomorrow = try #require(Date(year: 2026, month: 9, day: 16, in: calendar))
-        #expect(Reminder.Due.Preset.today.date(at: now, calendar: calendar) == calendar.startOfDay(for: now))
-        #expect(Reminder.Due.Preset.date(for: .tomorrow, at: now, calendar: calendar) == tomorrow)
-        #expect(calendar.component(.weekday, from: Reminder.Due.Preset.thisWeekend.date(at: now, calendar: calendar)) == 7)
-        #expect(calendar.component(.weekday, from: Reminder.Due.Preset.nextWeek.date(at: now, calendar: calendar)) == 2)
-        #expect(Reminder.Due.Preset.Time.allCases.map(\.hour) == [9, 12, 15, 18, 21])
+        #expect(Reminders.Editor.Preset.today.date(at: now, calendar: calendar) == calendar.startOfDay(for: now))
+        #expect(Reminders.Editor.Preset.date(for: .tomorrow, at: now, calendar: calendar) == tomorrow)
+        #expect(calendar.component(.weekday, from: Reminders.Editor.Preset.thisWeekend.date(at: now, calendar: calendar)) == 7)
+        #expect(calendar.component(.weekday, from: Reminders.Editor.Preset.nextWeek.date(at: now, calendar: calendar)) == 2)
+        #expect(Reminders.Editor.Preset.Time.allCases.map(\.hour) == [9, 12, 15, 18, 21])
         var due: Reminder.Due? = nil
         due = Reminder.Due.applying(.evening, to: due, at: now, calendar: calendar)
         let evening = try #require(due)
@@ -46,9 +46,9 @@ import Tagged
         due = Reminder.Due.applying(.tomorrow, to: due, at: now, calendar: calendar)
         let moved = try #require(due)
         #expect(calendar.isDate(moved.date, inSameDayAs: tomorrow) && calendar.component(.hour, from: moved.date) == 18 && moved.hasTime)
-        due = Reminder.Due.applying(Reminder.Due.Preset.Time?.none, to: due, at: now, calendar: calendar)
+        due = Reminder.Due.applying(Reminders.Editor.Preset.Time?.none, to: due, at: now, calendar: calendar)
         #expect(due == .day(tomorrow))
-        due = Reminder.Due.applying(Reminder.Due.Preset?.none, to: due, at: now, calendar: calendar)
+        due = Reminder.Due.applying(Reminders.Editor.Preset?.none, to: due, at: now, calendar: calendar)
         #expect(due == nil)
     }
 

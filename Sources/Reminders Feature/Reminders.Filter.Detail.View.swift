@@ -1,4 +1,6 @@
+public import Reminders
 public import Foundation
+public import Models
 public import Reminder
 public import Tagged
 

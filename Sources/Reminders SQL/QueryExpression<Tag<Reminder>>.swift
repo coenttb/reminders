@@ -1,8 +1,7 @@
 import Models
 import Reminder
 package import StructuredQueries
-import Tagged
 
-extension QueryExpression<Tag<Reminder>.ID> {
+extension QueryExpression<Tag<Reminder>> {
     package var text: SQLQueryExpression<String> { SQLQueryExpression("\(self)") }
 }

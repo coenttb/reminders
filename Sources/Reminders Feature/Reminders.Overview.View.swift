@@ -1,3 +1,4 @@
+public import Reminders
 public import Foundation
 
 extension Reminders.Overview {

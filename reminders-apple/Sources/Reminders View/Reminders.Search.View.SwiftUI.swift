@@ -1,6 +1,7 @@
 import Models
 import Reminder
 public import Reminders
+public import Reminders_Feature
 public import SwiftUI
 import Tagged
 
@@ -26,7 +27,7 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
                 ScrollView(.horizontal) {
                     HStack {
                         ForEach(suggestions) { tag in
-                            Button(Tag<Reminder>.hashtag(tag.id)) { actions.addTag(tag.id) }.buttonStyle(.glass)
+                            Button(tag.hashtag) { actions.addTag(tag) }.buttonStyle(.glass)
                         }
                     }
                 }

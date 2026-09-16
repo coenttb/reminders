@@ -1,8 +1,8 @@
 public import Models
-public import Tagged
+import Tagged
 
 extension Tag {
-    public static func hashtag(_ id: ID) -> String { "#\(id.rawValue)" }
+    public static func hashtag(_ tag: Self) -> String { "#\(tag.rawValue)" }
 
-    public var hashtag: String { Self.hashtag(id) }
+    public var hashtag: String { Self.hashtag(self) }
 }

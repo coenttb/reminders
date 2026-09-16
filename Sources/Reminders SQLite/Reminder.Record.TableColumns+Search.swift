@@ -3,7 +3,6 @@ public import Reminder
 public import Reminders
 public import Reminders_SQL
 public import SQLiteData
-import Tagged
 
 extension Reminder.Record.TableColumns {
     func matches(_ text: String) -> some QueryExpression<Bool> {

@@ -7,7 +7,7 @@ import Synchronization
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_Dependency
+import Reminders_Dependency
 import Reminders_SQLite
 public import SQLiteData
 public import Tagged
@@ -48,7 +48,7 @@ extension Reminders {
             case appBackgrounded
             case backgroundTapped
             case clearCompletedButtonTapped
-            case datePresetSelected(Reminder.ID, Reminder.Due.Preset?)
+            case datePresetSelected(Reminder.ID, Reminders.Editor.Preset?)
             case deleteCompletedButtonTapped(olderThanMonths: Int?)
             case destination(Destination.Action)
             case detailEndReached
@@ -68,12 +68,12 @@ extension Reminders {
             case resultsEndReached
             case searchCompletedButtonTapped
             case searchSubmitted
-            case searchTagTapped(Tag<Reminder>.ID)
+            case searchTagTapped(Tag<Reminder>)
             case databaseReplaced
             case showCompletedButtonTapped
-            case tagDeleted(Tag<Reminder>.ID)
-            case tagTapped(Tag<Reminder>.ID)
-            case timePresetSelected(Reminder.ID, Reminder.Due.Preset.Time?)
+            case tagDeleted(Tag<Reminder>)
+            case tagTapped(Tag<Reminder>)
+            case timePresetSelected(Reminder.ID, Reminders.Editor.Preset.Time?)
             case titleSubmitted
         }
 

@@ -1,5 +1,6 @@
 public import Reminder
-public import Reminders
+import Reminders
+public import Reminders_Feature
 public import SwiftUI
 
 extension Reminder.Editor {
@@ -77,7 +78,7 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
         return Menu {
             Button { actions.setDate(id, nil) } label: { checked("None", draft.due == nil) }
             Divider()
-            ForEach(Reminder.Due.Preset.allCases, id: \.self) { preset in
+            ForEach(Reminders.Editor.Preset.allCases, id: \.self) { preset in
                 Button { actions.setDate(id, preset) } label: {
                     let date = preset.date(at: now, calendar: calendar)
                     let current = draft.due.map { calendar.isDate($0.date, inSameDayAs: date) } ?? false
@@ -103,7 +104,7 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
         return Menu {
             Button { actions.setTime(id, nil) } label: { checked("None", draft.due?.hasTime != true) }
             Divider()
-            ForEach(Reminder.Due.Preset.Time.allCases, id: \.self) { preset in
+            ForEach(Reminders.Editor.Preset.Time.allCases, id: \.self) { preset in
                 Button { actions.setTime(id, preset) } label: {
                     let current = draft.due.map { $0.hasTime && calendar.component(.hour, from: $0.date) == preset.hour && calendar.component(.minute, from: $0.date) == 0 } == true
                     Text(preset.description(on: now, calendar: calendar) ?? preset.title)

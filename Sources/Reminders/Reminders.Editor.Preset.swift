@@ -1,15 +1,14 @@
 public import Foundation
-public import Reminder
 import FoundationEssentials_Extensions
 import FoundationInternationalization_Extensions
 
-extension Reminder.Due {
+extension Reminders.Editor {
     public enum Preset: CaseIterable, Hashable, Sendable {
         case today, tomorrow, thisWeekend, nextWeek
     }
 }
 
-extension Reminder.Due.Preset {
+extension Reminders.Editor.Preset {
     public static func date(for preset: Self, at now: Date, calendar: Calendar) -> Date {
         let today = calendar.startOfDay(for: now)
         let day: Date? = switch preset {

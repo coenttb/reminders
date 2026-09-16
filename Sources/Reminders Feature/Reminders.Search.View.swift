@@ -1,5 +1,7 @@
+public import Reminders
 public import Tagged
 public import Foundation
+public import Models
 public import Reminder
 
 extension Reminders.Search {

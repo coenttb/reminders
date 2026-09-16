@@ -3,7 +3,6 @@ public import Reminder
 import Reminders
 public import Reminders_SQL
 public import SQLiteData
-import Tagged
 
 extension Reminder.Record.TableColumns {
     public var tagTitles: some QueryExpression<[String].JSONRepresentation> {

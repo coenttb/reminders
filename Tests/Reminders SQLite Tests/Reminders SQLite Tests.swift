@@ -94,8 +94,8 @@ import Tagged
         #expect(overview.counts == Reminders.Overview.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         #expect(overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
         #expect(overview.lists.map(\.count) == [4, 2, 2])
-        #expect(overview.usedTags.map(\.title) == ["adulting", "car", "kids", "night", "optional", "social", "someday"])
-        #expect(overview.rankedTags.prefix(3).map(\.title) == ["social", "adulting", "optional"])
+        #expect(overview.usedTags.map(\.rawValue) == ["adulting", "car", "kids", "night", "optional", "social", "someday"])
+        #expect(overview.rankedTags.prefix(3).map(\.rawValue) == ["social", "adulting", "optional"])
         try database.write { db in try Reminder.Record.find(sample.reminders[0].id).delete().execute(db) }
         #expect(try self.overview(database).lists.map(\.count) == [3, 2, 2])
     }
@@ -217,7 +217,7 @@ import Tagged
         #expect(try detail(.tags(["friends"]), database).reminders.count == 2)
         #expect(try stored(sample.reminders[3].id, database)?.tags == ["car", "kids", "friends"])
         try database.write { db in try Tag<Reminder>.Record.delete("friends").execute(db) }
-        #expect(try database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("friends")) }.fetchCount(db) } == 0)
+        #expect(try database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>("friends")) }.fetchCount(db) } == 0)
         #expect(try database.write { db in try Tag<Reminder>.Record.add("Someday", in: db) } == "someday")
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
         let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["CAR"], created: now)
@@ -233,7 +233,7 @@ import Tagged
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("Car"))
         #expect(try stored(wash.id, database)?.tags == ["Car"])
         #expect(try detail(.tags(["Car"]), database).reminders.map(\.title) == ["Wash"])
-        #expect(try overview(database).usedTags.map(\.title) == ["adulting", "Car", "kids", "night", "optional", "someday"])
+        #expect(try overview(database).usedTags.map(\.rawValue) == ["adulting", "Car", "kids", "night", "optional", "someday"])
         #expect(try database.write { db in try Tag<Reminder>.Record.rename("kids", to: "car", in: db) } == "Car")
         #expect(try stored(sample.reminders[3].id, database)?.tags == ["Car"])
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 5)
@@ -246,10 +246,10 @@ import Tagged
             _ = try Tag<Reminder>.Record.rename("car", to: "Car", in: db)
             try Tag<Reminder>.Record.add("Cat", in: db)
         }
-        #expect(try overview(database).rankedTags.map(\.title) == ["social", "adulting", "optional", "someday", "Car", "kids", "night", "Cat"])
-        #expect(try results(Reminders.Search.Query(text: "#c"), database).suggestions.map(\.title) == ["Car", "Cat"])
-        #expect(try results(Reminders.Search.Query(text: "#so"), database).suggestions.map(\.title) == ["social", "someday"])
-        #expect(try results(Reminders.Search.Query(text: "#so", tokens: [.tag("social")]), database).suggestions.map(\.title) == ["someday"])
+        #expect(try overview(database).rankedTags.map(\.rawValue) == ["social", "adulting", "optional", "someday", "Car", "kids", "night", "Cat"])
+        #expect(try results(Reminders.Search.Query(text: "#c"), database).suggestions.map(\.rawValue) == ["Car", "Cat"])
+        #expect(try results(Reminders.Search.Query(text: "#so"), database).suggestions.map(\.rawValue) == ["social", "someday"])
+        #expect(try results(Reminders.Search.Query(text: "#so", tokens: [.tag("social")]), database).suggestions.map(\.rawValue) == ["someday"])
     }
 
     @Test func `search matches text and tag tokens and can clear completed matches`() throws {

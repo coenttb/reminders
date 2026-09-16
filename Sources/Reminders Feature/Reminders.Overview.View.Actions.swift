@@ -1,3 +1,4 @@
+public import Reminders
 public import Foundation
 public import Models
 public import Reminder
@@ -9,14 +10,14 @@ extension Reminders.Overview.View {
         public var details: (List<Reminder>.ID) -> Void
         public var delete: (List<Reminder>.ID) -> Void
         public var move: (IndexSet, Int) -> Void
-        public var deleteTag: (Tag<Reminder>.ID) -> Void
+        public var deleteTag: (Tag<Reminder>) -> Void
 
         public init(
             open: @escaping (Reminders.Filter) -> Void,
             details: @escaping (List<Reminder>.ID) -> Void,
             delete: @escaping (List<Reminder>.ID) -> Void,
             move: @escaping (IndexSet, Int) -> Void,
-            deleteTag: @escaping (Tag<Reminder>.ID) -> Void
+            deleteTag: @escaping (Tag<Reminder>) -> Void
         ) {
             self.open = open
             self.details = details

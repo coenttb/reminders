@@ -47,7 +47,7 @@ extension Reminders {
                 Reminder(id: Reminder.ID(id(19)), list: business, title: "Send weekly emails", due: .day(day(-2)), priority: .medium, completed: true, created: day(-14)),
                 Reminder(id: Reminder.ID(id(20)), list: business, title: "Prepare for WWDC", due: .day(day(2)), tags: ["social"], created: day(-4)),
             ],
-            tags: Set(["car", "kids", "someday", "optional", "social", "night", "adulting"].map(Tag<Reminder>.init(title:)))
+            tags: Set(["car", "kids", "someday", "optional", "social", "night", "adulting"].map(Tag<Reminder>.init(_:)))
         )
     }
 }
@@ -75,9 +75,9 @@ extension Reminders.Sample {
                     let day = calendar.startOfDay(for: now).addingTimeInterval(Double(random.next(in: 0..<120) - 30) * 86_400)
                     due = random.chance(1, in: 2) ? .day(day) : .moment(day.addingTimeInterval(Double(random.next(in: 6..<22)) * 3_600))
                 }
-                var tags: Set<Tag<Reminder>.ID> = []
+                var tags: Set<Tag<Reminder>> = []
                 if !tagTitles.isEmpty, random.chance(2, in: 5) {
-                    for _ in 0..<random.next(in: 1..<4) { tags.insert(Tag<Reminder>.ID(rawValue: tagTitles[random.next(in: 0..<tagTitles.count)])) }
+                    for _ in 0..<random.next(in: 1..<4) { tags.insert(Tag<Reminder>(tagTitles[random.next(in: 0..<tagTitles.count)])) }
                 }
                 reminders.append(
                     Reminder(
@@ -95,6 +95,6 @@ extension Reminders.Sample {
                 )
             }
         }
-        return Reminders.Sample(lists: lists, reminders: reminders, tags: Set(tagTitles.map(Tag<Reminder>.init(title:))))
+        return Reminders.Sample(lists: lists, reminders: reminders, tags: Set(tagTitles.map(Tag<Reminder>.init(_:))))
     }
 }

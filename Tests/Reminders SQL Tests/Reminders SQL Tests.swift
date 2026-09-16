@@ -58,14 +58,14 @@ import Tagged
             lists: [List<Reminder>.Entry(List<Reminder>.Record.Entry(list: List<Reminder>.Record(personal), count: 2))],
             counts: Reminders.Overview.Counts(Reminder.Record.Counts(all: 2)),
             tags: [
-                Tag<Reminder>.Entry(Tag<Reminder>.Record.Entry(tag: Tag<Reminder>.Record(Tag(title: "social")), count: 3)),
-                Tag<Reminder>.Entry(tag: Tag(title: "Adulting"), count: 1),
-                Tag<Reminder>.Entry(tag: Tag(title: "car"), count: 0),
+                Tag<Reminder>.Entry(Tag<Reminder>.Record.Entry(tag: Tag<Reminder>.Record(Tag("social")), count: 3)),
+                Tag<Reminder>.Entry(tag: Tag("Adulting"), count: 1),
+                Tag<Reminder>.Entry(tag: Tag("car"), count: 0),
             ]
         )
         #expect(overview.list(list) == personal && overview.list(List<Reminder>.ID(UUID())) == nil)
-        #expect(overview.rankedTags.map(\.title) == ["social", "Adulting", "car"])
-        #expect(overview.usedTags.map(\.title) == ["Adulting", "social"])
+        #expect(overview.rankedTags.map(\.rawValue) == ["social", "Adulting", "car"])
+        #expect(overview.usedTags.map(\.rawValue) == ["Adulting", "social"])
         let record = Reminder.Record(id: Reminder.ID(UUID()), listID: list, title: "Call", created: now)
         let call = Reminder(Reminder.Record.Row(reminder: record, tags: []))
         let detail = Reminders.Filter.Detail.Contents(filter: .list(list), preference: .default(for: .list(list)), rows: [call])

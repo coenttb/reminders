@@ -3,7 +3,6 @@ package import Models
 public import Reminder
 public import Reminders
 public import StructuredQueries
-import Tagged
 
 extension Reminder.Record.TableColumns {
     public var isCompleted: SQLQueryExpression<Bool> { SQLQueryExpression("\(completed.eq(true))") }
@@ -28,7 +27,7 @@ extension Reminder.Record.TableColumns {
         }
     }
 
-    package func carries(_ tag: Tag<Reminder>.ID) -> some QueryExpression<Bool> {
+    package func carries(_ tag: Tag<Reminder>) -> some QueryExpression<Bool> {
         Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(tag) }.exists()
     }
 }

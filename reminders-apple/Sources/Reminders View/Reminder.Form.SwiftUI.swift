@@ -1,9 +1,10 @@
 public import Models
 public import Reminder
-public import Reminders
+import Reminders
+public import Reminders_Feature
 import Standard_Library_Extensions
 public import SwiftUI
-public import Tagged
+import Tagged
 
 extension Reminder.Form {
     public struct SwiftUI {
@@ -135,7 +136,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
         let (now, calendar) = (form.now, form.calendar)
         return HStack {
             Menu {
-                ForEach(Reminder.Due.Preset.allCases, id: \.self) { preset in
+                ForEach(Reminders.Editor.Preset.allCases, id: \.self) { preset in
                     let date = preset.date(at: now, calendar: calendar)
                     Button(preset.title, systemImage: "\(calendar.component(.day, from: date)).calendar") {
                         draft.set(datePreset: preset, at: now, calendar: calendar)

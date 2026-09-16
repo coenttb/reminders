@@ -12,7 +12,7 @@ public struct Reminder: Identifiable, Hashable, Sendable {
     public var priority: Priority?
     public var flagged: Bool
     public var completed: Bool
-    public var tags: Set<Tag<Reminder>.ID>
+    public var tags: Set<Tag<Reminder>>
     public var created: Date
 
     public init(
@@ -25,7 +25,7 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         priority: Priority? = nil,
         flagged: Bool = false,
         completed: Bool = false,
-        tags: Set<Tag<Reminder>.ID> = [],
+        tags: Set<Tag<Reminder>> = [],
         created: Date
     ) {
         self.id = id
