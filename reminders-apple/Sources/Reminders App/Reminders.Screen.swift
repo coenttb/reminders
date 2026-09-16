@@ -43,6 +43,7 @@ extension Reminders.Screen: SwiftUI::View {
                         view: Reminders.Search.View(
                             query: store.search,
                             window: store.resultsWindow,
+                            grace: store.gracing,
                             now: now,
                             calendar: calendar,
                             actions: Reminders.Search.View.Actions(
@@ -171,6 +172,7 @@ extension Reminders.Screen: SwiftUI::View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store.send(.appActivated) }
+            if phase == .background { store.send(.appBackgrounded) }
         }
         .alert("Something went wrong", isPresented: $store.failure.isPresent) {
             Button("OK") {}

@@ -12,7 +12,7 @@ extension Reminders.Overview.Request: FetchKeyRequest {
                 .group(by: \.id)
                 .order(by: \.position)
                 .leftJoin(Reminder.Record.all) { $0.id.eq($1.listID) }
-                .select { List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.status.eq(Reminder.Record.Status.incomplete))) }
+                .select { List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.eq(false))) }
                 .fetchAll(db)
                 .map(List<Reminder>.Entry.init),
             counts: Reminders.Overview.Counts(

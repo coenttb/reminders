@@ -163,39 +163,18 @@ import Tagged
         #expect(try detail(personal, database, place: Reminders.Placement(groceries, position: 0)).reminders.last?.id == groceries.id)
     }
 
-    @Test func `a reminder in its grace period stays in place and counts as completed`() throws {
+    @Test func `a toggle flips completion and a toggle of a missing row is nothing`() throws {
         let (database, sample) = try makeDatabase()
         let groceries = sample.reminders[0].id
-        let personal = Reminders.Filter.list(sample.reminders[0].list)
         try database.write { db in try Reminder.Record.toggle(groceries).execute(db) }
         #expect(try stored(groceries, database)?.completed == true)
-        #expect(try database.read { db in try Reminders.Pending.Request().fetch(db) } == [groceries])
         #expect(try overview(database).counts.all == 7)
-        #expect(try detail(personal, database).reminders.last?.id == groceries)
-        try database.write { db in try Reminders.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
-        let haircut = sample.reminders[1].id
-        let place = try detail(personal, database).reminders.map(\.id).firstIndex(of: haircut)
-        try database.write { db in try Reminder.Record.toggle(haircut).execute(db) }
-        let moved = try detail(personal, database).reminders.map(\.id)
-        #expect(moved.firstIndex(of: haircut).map { $0 > (place ?? 0) } == true, "\(moved)")
-        try database.write { db in
-            try Reminder.Record.toggle(haircut).execute(db)
-            try Reminders.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db)
-        }
-        try database.write { db in try Reminder.Record.toggle(groceries).execute(db) }
-        #expect(try stored(groceries, database)?.completed == false)
-        #expect(try database.read { db in try Reminder.Record.where { $0.isPending }.fetchCount(db) } == 0)
-        try database.write { db in
-            try Reminder.Record.toggle(groceries).execute(db)
-            try Reminder.Record.completePending.execute(db)
-        }
-        #expect(try stored(groceries, database)?.completed == true)
-        #expect(try database.read { db in try Reminders.Pending.Request().fetch(db) }.isEmpty)
         try database.write { db in
             try Reminder.Record.toggle(groceries).execute(db)
             try Reminder.Record.toggle(Reminder.ID(UUID())).execute(db)
         }
         #expect(try stored(groceries, database)?.completed == false)
+        #expect(try overview(database).counts.all == 8)
     }
 
     @Test func `deleting a list takes its reminders and the last one is replaced by the default`() throws {
@@ -296,13 +275,13 @@ import Tagged
             try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(text: "Take"), dueBefore: calendar.date(byAdding: .month, value: -1, to: now)).execute(db)
         }
         #expect(try count(database) == 10)
-        #expect(try database.read { db in try Reminders.Pending.Request().fetch(db) }.contains(sample.reminders[7].id))
+        #expect(try stored(sample.reminders[7].id, database)?.completed == true)
         #expect(try detail(.completed, database).reminders.map(\.title) == ["Get laundry", "Send weekly emails", "Take out trash"])
         try database.write { db in try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(text: "#so"), dueBefore: nil).execute(db) }
         #expect(try count(database) == 10)
         try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .completed, today: today).execute(db) }
-        #expect(try count(database) == 8)
-        #expect(try detail(.completed, database).reminders.map(\.title) == ["Take out trash"])
+        #expect(try count(database) == 7)
+        #expect(try detail(.completed, database).reminders.isEmpty)
     }
 
     @Test func `a save writes the form's columns last, replaces the tags, and leaves completion and position to the timer and the order`() throws {
@@ -493,7 +472,7 @@ import Tagged
             try database.write { db in try #sql("UPDATE reminders SET due = 'garbage' WHERE id = \(sample.reminders[0].id)").execute(db) }
         }
         #expect(throws: (any Error).self) {
-            try database.write { db in try #sql("UPDATE reminders SET status = 7 WHERE id = \(sample.reminders[0].id)").execute(db) }
+            try database.write { db in try #sql("UPDATE reminders SET completed = 7 WHERE id = \(sample.reminders[0].id)").execute(db) }
         }
         #expect(try detail(.all, database).reminders.count == 8)
         var configuration = Configuration()
@@ -514,7 +493,7 @@ import Tagged
         #expect(repaired?.due == nil && repaired?.completed == false && repaired?.priority == nil && repaired?.tags == ["car"])
         let kept = try old.read { db in try Reminder.Record.find(good).rows().fetchOne(db).map(Reminder.init) }
         #expect(kept?.completed == true && kept?.priority == .high && kept?.due != nil)
-        #expect(try old.read { db in try Reminders.Pending.Request().fetch(db) } == [good])
+        #expect(try old.read { db in try #sql("SELECT completed FROM reminders WHERE id = \(good)", as: Int.self).fetchOne(db) } == 1)
         try old.write { db in try List<Reminder>.Record.find(list).delete().execute(db) }
         #expect(try old.read { db in try Reminders.Tagging.all.fetchCount(db) } == 0)
     }
@@ -555,12 +534,12 @@ import Tagged
         #expect(try results(Reminders.Search.Query(text: "OATMEAL", showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
     }
 
-    @Test func `Today and the pending set are read through indexes, not a scan of every reminder`() throws {
+    @Test func `Today and the completed set are read through indexes, not a scan of every reminder`() throws {
         let (database, _) = try makeDatabase()
         let today = try plan(Reminder.Record.where { $0.isDue(during: self.today) }.rows(), database)
         #expect(today.contains { $0.contains("idx_reminders_due") }, "\(today)")
-        let pending = try plan(Reminder.Record.where { $0.isPending }.select(\.id), database)
-        #expect(pending.contains { $0.contains("idx_reminders_status") }, "\(pending)")
+        let completed = try plan(Reminder.Record.where { $0.isCompleted }.select(\.id), database)
+        #expect(completed.contains { $0.contains("idx_reminders_completed") }, "\(completed)")
         #expect(try overview(database).counts.today == 2)
         #expect(try detail(.today, database).rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"])
     }

@@ -77,10 +77,10 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
                         draft: draft,
                         color: color(reminder.list),
                         focus: $focus,
-                        view: Reminder.Editor(id: id, now: view.now, calendar: view.calendar, actions: actions.editor)
+                        view: Reminder.Editor(id: id, completed: reminder.completed || view.grace.contains(id), now: view.now, calendar: view.calendar, actions: actions.editor)
                     )
                 } else {
-                    Reminder.Row.SwiftUI(reminder: reminder, color: color(reminder.list), view: row)
+                    Reminder.Row.SwiftUI(reminder: reminder, completed: reminder.completed || view.grace.contains(id), color: color(reminder.list), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if view.window.nearsEnd(index, of: shown, total: total) { actions.endReached() } }

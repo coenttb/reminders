@@ -87,15 +87,14 @@ struct `Reminder feature` {
     @Test func `completing a reminder finishes after the grace period and everything persists`() async throws {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
-        @Fetch(Reminders.Pending.Request()) var pending: Set<Reminder.ID> = []
-        await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
-        try await until($pending) { [groceries] in $0 == [groceries.id] }
-        #expect(try await stored(groceries.id)?.completed == true)
+        let grace = await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(0)] }
+        #expect(try await stored(groceries.id)?.completed == false)
         await clock.advance(by: .seconds(5))
-        try await until($pending) { $0.isEmpty }
+        await grace?.value
+        try await store.expect { $0.grace = [:] }
         #expect(try await stored(groceries.id)?.completed == true)
         await store.send(.newReminderButtonTapped) { [personal, now] in
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder(id: Reminder.ID(UUID(0)), list: personal, created: now), original: nil)))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder(id: Reminder.ID(UUID(1)), list: personal, created: now), original: nil)))
         }?.value
         await store.modify {
             if case var .reminder(form) = $0.destination { form.draft.title = "Water plants"; $0.destination = .reminder(form) }
@@ -336,91 +335,52 @@ struct `Reminder feature` {
         await store.dismount()
     }
 
-    @Test func `a second tap restarts the grace period, a reversal is not undone, and a quit mid-period resumes it`() async throws {
+    @Test func `a second tap inside the grace period takes the first back without a write`() async throws {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
-        @Fetch(Reminders.Pending.Request()) var pending: Set<Reminder.ID> = []
-        let (haircut, doctor) = (sample.reminders[1].id, sample.reminders[2].id)
-        await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
-        try await until($pending) { [groceries] in $0 == [groceries.id] }
-        await clock.advance(by: .seconds(4))
-        await store.send(.reminderCompleteButtonTapped(haircut))?.value
-        try await until($pending) { [groceries] in $0 == [groceries.id, haircut] }
-        await clock.advance(by: .seconds(4))
-        #expect(try await stored(groceries.id)?.completed == true)
-        #expect(try await stored(haircut)?.completed == true)
-        await clock.advance(by: .seconds(1))
-        try await until($pending) { $0.isEmpty }
-        #expect(try await stored(groceries.id)?.completed == true)
-        #expect(try await stored(haircut)?.completed == true)
-        await store.send(.reminderCompleteButtonTapped(doctor))?.value
-        try await until($pending) { $0 == [doctor] }
+        let grace = await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(0)] }
         await clock.advance(by: .seconds(2))
-        await store.send(.reminderCompleteButtonTapped(doctor))?.value
-        try await until($pending) { $0.isEmpty }
+        await store.send(.reminderCompleteButtonTapped(groceries.id)) { $0.grace = [:] }?.value
+        try await block("UPDATE OF completed", on: "reminders", reason: "completion locked")
         await clock.advance(by: .seconds(5))
-        #expect(try await stored(doctor)?.completed == false)
+        await grace?.value
+        #expect(try await stored(groceries.id)?.completed == false)
+        #expect(await store.state.failure == nil)
+        try await unblock()
         await store.dismount()
-        try await database.write { db in try Reminder.Record.toggle(doctor).execute(db) }
-        try await until($pending) { $0 == [doctor] }
-        let revived = try await makeStore(clock: clock)
-        await clock.advance(by: .seconds(5))
-        try await until($pending) { $0.isEmpty }
-        #expect(try await stored(doctor)?.completed == true)
-        await revived.dismount()
     }
 
-    @Test func `the grace period follows the table: a failed tap starts nothing, a deletion stops it, and another writer starts it`() async throws {
-        try await TestExhaustivity.$current.withValue(.off) {
-            let clock = TestClock()
-            let store = try await makeStore(clock: clock)
-            @Fetch(Reminders.Pending.Request()) var pending: Set<Reminder.ID> = []
-            let haircut = sample.reminders[1].id
-            try await block("UPDATE OF status", on: "reminders", reason: "status locked")
-            await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
-            #expect(await store.state.failure?.contains("status locked") == true)
-            #expect(await store.state.pending == [])
-            try await unblock()
-            await clock.advance(by: .seconds(5))
-            #expect(try await stored(groceries.id)?.completed == false)
-            await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
-            await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
-            await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
-            try await until($pending) { [groceries] in $0 == [groceries.id] }
-            await clock.advance(by: .seconds(4))
-            await store.send(.reminderDeleted(groceries.id))?.value
-            try await until($pending) { $0.isEmpty }
-            await clock.advance(by: .seconds(5))
-            #expect(try await stored(groceries.id) == nil)
-            try await database.write { db in try Reminder.Record.toggle(haircut).execute(db) }
-            try await until($pending) { $0 == [haircut] }
-            await clock.advance(by: .seconds(5))
-            try await until($pending) { $0.isEmpty }
-            #expect(try await stored(haircut)?.completed == true)
-            await store.dismount()
-        }
-    }
-
-    @Test func `a pending timer does not touch a newer editing session`() async throws {
+    @Test func `a completed reminder is reopened at once, and leaving the feature writes what is still in grace`() async throws {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
-        @Fetch(Reminders.Pending.Request()) var pending: Set<Reminder.ID> = []
+        let walk = sample.reminders[3]
+        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
+        try await until(store.state.$detail) { $0?.rows.isEmpty == false }
+        await store.send(.showCompletedButtonTapped)?.value
+        try await until(store.state.$detail) { $0?.ids.contains(walk.id) == true }
+        await store.send(.reminderCompleteButtonTapped(walk.id))?.value
+        #expect(try await stored(walk.id)?.completed == false)
+        await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(0)] }
+        await store.dismount()
+        #expect(try await stored(groceries.id)?.completed == true)
+    }
+
+    @Test func `a grace period that ends does not touch a newer editing session`() async throws {
+        let clock = TestClock()
+        let store = try await makeStore(clock: clock)
         let haircut = sample.reminders[1]
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let groceriesRow0 = try await row(groceries.id)
         await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
-        await store.send(.reminderCompleteButtonTapped(groceries.id)) {
-            $0.editing?.draft.completed = true
-            $0.editing?.original.completed = true
-        }?.value
-        try await until($pending) { [groceries] in $0 == [groceries.id] }
+        let grace = await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(1)] }
         let haircutRow = try await row(haircut.id)
-        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow, session: UUID(1)) }?.value
+        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow, session: UUID(2)) }?.value
         await clock.advance(by: .seconds(5))
-        try await until($pending) { $0.isEmpty }
+        await grace?.value
+        try await store.expect { $0.grace = [:] }
         #expect(try await stored(groceries.id)?.completed == true)
         let editing = try #require(await store.state.editing)
-        #expect(editing.id == haircut.id && editing.session == UUID(1) && editing.draft == haircutRow.reminder)
+        #expect(editing.id == haircut.id && editing.session == UUID(2) && editing.draft == haircutRow.reminder)
         await store.send(.doneButtonTapped) { $0.editing = nil }?.value
         await store.dismount()
     }

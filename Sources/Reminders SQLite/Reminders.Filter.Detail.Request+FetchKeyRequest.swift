@@ -9,9 +9,9 @@ extension Reminders.Filter.Detail.Request: FetchKeyRequest {
         let preference = try Reminders.Filter.Preference.Record.preference(for: filter).fetchOne(db).map(Reminders.Filter.Preference.init) ?? .default(for: filter)
         let shown = Reminder.Record
             .where { $0.belongs(to: filter, today: today) }
-            .where { if !preference.showCompleted { !$0.isDone } }
+            .where { if !preference.showCompleted { !$0.isCompleted } }
         let total = try shown.fetchCount(db)
-        let completedCount = preference.showCompleted ? try shown.where { $0.isDone }.fetchCount(db) : 0
+        let completedCount = preference.showCompleted ? try shown.where { $0.isCompleted }.fetchCount(db) : 0
         let rows = try shown
             .order { $0.ordered(by: preference.ordering, showCompleted: preference.showCompleted, placing: place) }
             .limit(limit ?? total)

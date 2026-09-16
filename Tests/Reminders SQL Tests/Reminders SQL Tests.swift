@@ -25,7 +25,7 @@ import Tagged
             created: now.addingTimeInterval(-86_400)
         )
         let draft = Reminder.Record.Draft(reminder, position: 4)
-        #expect(draft.id == reminder.id && draft.dueDate == now && draft.hasTime && draft.status == .completed)
+        #expect(draft.id == reminder.id && draft.dueDate == now && draft.hasTime && draft.completed)
         let record = Reminder.Record(
             id: reminder.id,
             listID: reminder.list,
@@ -35,16 +35,13 @@ import Tagged
             hasTime: true,
             flagged: true,
             priority: .high,
-            status: .completed,
+            completed: true,
             position: 4,
             repeats: reminder.repeats,
             created: reminder.created
         )
         #expect(Reminder.Record.Draft(record) == draft)
         #expect(Reminder(Reminder.Record.Row(reminder: record, tags: ["car", "kids"])) == reminder)
-        var pending = record
-        pending.status = .pending
-        #expect(pending.completed && Reminder(Reminder.Record.Row(reminder: pending, tags: [])).completed)
         #expect(Reminders.Overview.Counts(Reminder.Record.Counts(all: 3, flagged: 1))[.all] == 3 && Reminders.Overview.Counts()[.completed] == nil)
     }
 

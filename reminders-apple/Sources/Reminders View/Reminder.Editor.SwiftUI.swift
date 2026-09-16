@@ -23,8 +23,8 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
         let (id, actions) = (view.id, view.actions)
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(id) } label: {
-                Image(systemName: draft.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(draft.completed ? color : SwiftUI::Color(.systemGray3))
+                Image(systemName: view.completed ? "circle.inset.filled" : "circle")
+                    .foregroundStyle(view.completed ? color : SwiftUI::Color(.systemGray3))
                     .font(.title2)
             }
             .buttonStyle(.borderless)

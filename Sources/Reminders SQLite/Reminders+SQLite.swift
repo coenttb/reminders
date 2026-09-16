@@ -42,12 +42,6 @@ extension Reminders {
                     }
                 )
             ),
-            pending: Pending(
-                client: Pending.Client(
-                    fetch: { request in try read(request.fetch) },
-                    complete: { try write { db in try Reminder.Record.completePending.execute(db) } }
-                )
-            ),
             editor: Editor(
                 client: Editor.Client(
                     reminder: { id in
@@ -73,7 +67,7 @@ extension Reminders {
                     toggle: { id in
                         try write { db in
                             try Reminder.Record.toggle(id).execute(db)
-                            return try Reminder.Record.find(id).select(\.status).fetchOne(db).map { $0 != .incomplete }
+                            return try Reminder.Record.find(id).select(\.completed).fetchOne(db)
                         }
                     },
                     delete: { id in

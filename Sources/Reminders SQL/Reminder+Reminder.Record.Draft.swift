@@ -11,7 +11,7 @@ extension Reminder.Record.Draft {
             hasTime: reminder.due?.hasTime ?? false,
             flagged: reminder.flagged,
             priority: reminder.priority,
-            status: reminder.completed ? .completed : .incomplete,
+            completed: reminder.completed,
             position: position,
             repeats: reminder.repeats,
             created: reminder.created

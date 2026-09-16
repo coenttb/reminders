@@ -5,11 +5,13 @@ public import SwiftUI
 extension Reminder.Row {
     public struct SwiftUI {
         private var reminder: Reminder
+        private var completed: Bool
         private var color: SwiftUI::Color
         private var view: Reminder.Row
 
-        public init(reminder: Reminder, color: SwiftUI::Color, view: Reminder.Row) {
+        public init(reminder: Reminder, completed: Bool? = nil, color: SwiftUI::Color, view: Reminder.Row) {
             self.reminder = reminder
+            self.completed = completed ?? reminder.completed
             self.color = color
             self.view = view
         }
@@ -21,23 +23,23 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
         let actions = view.actions
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
-                Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(reminder.completed ? color : SwiftUI::Color(.systemGray3))
+                Image(systemName: completed ? "circle.inset.filled" : "circle")
+                    .foregroundStyle(completed ? color : SwiftUI::Color(.systemGray3))
                     .font(.title2)
                     .frame(width: 26, height: 20)
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(reminder.completed ? "Completed" : "Complete")
+            .accessibilityLabel(completed ? "Completed" : "Complete")
             Button { (actions.edit ?? actions.details)(reminder.id) } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         if let priority = reminder.priority {
                             Text(priority.marks)
-                                .foregroundStyle(reminder.completed ? .secondary : color)
+                                .foregroundStyle(completed ? .secondary : color)
                         }
-                        Text(reminder.title).foregroundStyle(reminder.completed ? .secondary : .primary)
+                        Text(reminder.title).foregroundStyle(completed ? .secondary : .primary)
                         Spacer(minLength: 0)
-                        if reminder.flagged, !reminder.completed {
+                        if reminder.flagged, !completed {
                             Image(systemName: "flag.fill").foregroundStyle(.orange).font(.footnote)
                         }
                     }

@@ -6,17 +6,7 @@ public import StructuredQueries
 import Tagged
 
 extension Reminder.Record.TableColumns {
-    public var isCompleted: some QueryExpression<Bool> {
-        status.neq(Reminder.Record.Status.incomplete)
-    }
-
-    public var isPending: some QueryExpression<Bool> {
-        status.eq(Reminder.Record.Status.pending)
-    }
-
-    public var isDone: some QueryExpression<Bool> {
-        status.eq(Reminder.Record.Status.completed)
-    }
+    public var isCompleted: SQLQueryExpression<Bool> { SQLQueryExpression("\(completed.eq(true))") }
 
     public var isScheduled: some QueryExpression<Bool> {
         !isCompleted && dueDate.isNot(nil)

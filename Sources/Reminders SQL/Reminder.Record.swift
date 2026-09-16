@@ -17,7 +17,7 @@ extension Reminder {
         public var hasTime: Bool = false
         public var flagged: Bool = false
         public var priority: Reminder.Priority?
-        public var status: Status = .incomplete
+        public var completed: Bool = false
         public var position: Int = 0
         @Column(as: Calendar.RecurrenceRule.JSONRepresentation?.self)
         public var repeats: Calendar.RecurrenceRule?
@@ -32,7 +32,7 @@ extension Reminder {
             hasTime: Bool = false,
             flagged: Bool = false,
             priority: Reminder.Priority? = nil,
-            status: Status = .incomplete,
+            completed: Bool = false,
             position: Int = 0,
             repeats: Calendar.RecurrenceRule? = nil,
             created: Date
@@ -45,7 +45,7 @@ extension Reminder {
             self.hasTime = hasTime
             self.flagged = flagged
             self.priority = priority
-            self.status = status
+            self.completed = completed
             self.position = position
             self.repeats = repeats
             self.created = created
@@ -57,13 +57,7 @@ extension Reminder.Record.Draft: Hashable, Sendable {}
 
 extension Reminder.Record {
     public static func toggle(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
-        Reminder.Record.find(id).update {
-            $0.status = Case($0.status).when(Status.incomplete, then: Status.pending).else(Status.incomplete)
-        }
-    }
-
-    public static var completePending: UpdateOf<Reminder.Record> {
-        Reminder.Record.where { $0.isPending }.update { $0.status = #bind(Status.completed) }
+        Reminder.Record.find(id).update { $0.completed = !$0.completed }
     }
 
     public static func placeLast(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
@@ -92,6 +86,6 @@ extension Reminder.Record {
     }
 
     public static func deleteCompleted(in filter: Reminders.Filter, today: Range<Date>) -> DeleteOf<Reminder.Record> {
-        Reminder.Record.where { $0.isDone && $0.belongs(to: filter, today: today) }.delete()
+        Reminder.Record.where { $0.isCompleted && $0.belongs(to: filter, today: today) }.delete()
     }
 }

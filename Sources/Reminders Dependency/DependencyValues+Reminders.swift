@@ -29,12 +29,6 @@ extension Reminders: TestDependencyKey {
                     move: unimplemented("\\.reminders.detail.client.move")
                 )
             ),
-            pending: Pending(
-                client: Pending.Client(
-                    fetch: unimplemented("\\.reminders.pending.client.fetch", placeholder: []),
-                    complete: unimplemented("\\.reminders.pending.client.complete")
-                )
-            ),
             editor: Editor(
                 client: Editor.Client(
                     reminder: unimplemented("\\.reminders.editor.client.reminder", placeholder: nil),

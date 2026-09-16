@@ -37,6 +37,7 @@ extension Reminders.Filter.Screen: SwiftUI::View {
                 filter: filter,
                 window: store.detailWindow,
                 editing: store.editing?.id,
+                grace: store.gracing,
                 now: now,
                 calendar: calendar,
                 actions: actions
