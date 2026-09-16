@@ -1,9 +1,10 @@
 import Foundation
 import Reminders
+import Reminders_SQL
 
-extension Reminders.Reminder.Fields {
+extension Reminders.Reminder.Record.Draft {
     subscript(dueOn now: Date, calendar calendar: Calendar) -> Bool {
-        get { dueDate != nil }
+        get { due != nil }
         set { set(due: newValue ? calendar.startOfDay(for: now) : nil) }
     }
 
@@ -13,7 +14,7 @@ extension Reminders.Reminder.Fields {
     }
 
     subscript(date fallback: Date) -> Date {
-        get { dueDate ?? fallback }
+        get { due?.date ?? fallback }
         set { set(due: newValue) }
     }
 }

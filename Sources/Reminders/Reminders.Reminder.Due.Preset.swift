@@ -1,7 +1,6 @@
 public import Foundation
 import FoundationEssentials_Extensions
 import FoundationInternationalization_Extensions
-public import Reminders
 
 extension Reminders.Reminder.Due {
     public enum Preset: CaseIterable, Hashable, Sendable {

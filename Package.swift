@@ -29,6 +29,7 @@ let package = Package(
             name: "Reminders",
             dependencies: [
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
+                .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -39,7 +40,6 @@ let package = Package(
             dependencies: [
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),

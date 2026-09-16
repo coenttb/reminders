@@ -70,6 +70,27 @@ import Tagged
         #expect(reminder.due == .day(later))
     }
 
+    @Test func `date and time presets resolve against now`() throws {
+        let now = try #require(Date(year: 2026, month: 9, day: 15, hour: 8, minute: 30, in: calendar))
+        let tomorrow = try #require(Date(year: 2026, month: 9, day: 16, in: calendar))
+        #expect(Reminders.Reminder.Due.Preset.today.date(at: now, calendar: calendar) == calendar.startOfDay(for: now))
+        #expect(Reminders.Reminder.Due.Preset.date(for: .tomorrow, at: now, calendar: calendar) == tomorrow)
+        #expect(calendar.component(.weekday, from: Reminders.Reminder.Due.Preset.thisWeekend.date(at: now, calendar: calendar)) == 7)
+        #expect(calendar.component(.weekday, from: Reminders.Reminder.Due.Preset.nextWeek.date(at: now, calendar: calendar)) == 2)
+        #expect(Reminders.Reminder.Due.Preset.Time.allCases.map(\.hour) == [9, 12, 15, 18, 21])
+        var reminder = reminder()
+        reminder.set(timePreset: .evening, at: now, calendar: calendar)
+        let evening = try #require(reminder.due)
+        #expect(evening.hasTime && calendar.component(.hour, from: evening.date) == 18)
+        reminder.set(datePreset: .tomorrow, at: now, calendar: calendar)
+        let moved = try #require(reminder.due)
+        #expect(calendar.isDate(moved.date, inSameDayAs: tomorrow) && calendar.component(.hour, from: moved.date) == 18 && moved.hasTime)
+        reminder.set(timePreset: nil, at: now, calendar: calendar)
+        #expect(reminder.due == .day(tomorrow))
+        reminder.set(datePreset: nil, at: now, calendar: calendar)
+        #expect(reminder.due == nil)
+    }
+
     @Test func `a filter narrows and closes as its tags and list go`() {
         #expect(Reminders.Filter.tags(["car", "kids"]).removing(tag: "car") == .tags(["kids"]))
         #expect(Reminders.Filter.tags(["kids"]).removing(tag: "kids") == nil)
