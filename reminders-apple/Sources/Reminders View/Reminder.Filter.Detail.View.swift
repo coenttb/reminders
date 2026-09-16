@@ -109,9 +109,9 @@ extension Reminder.Filter.Detail.View {
             let (shown, total) = (detail.rows.count, detail.total)
             ForEach(Array(detail.rows.enumerated()), id: \.element.id) { index, row in
                 if row.id == editing {
-                    Reminder.Editor(reminder: draft(row.id), color: row.color.swiftUI, now: now, calendar: calendar, focus: $focus, actions: editor)
+                    Reminder.Editor(reminder: draft(row.id), color: SwiftUI.Color(row.color), now: now, calendar: calendar, focus: $focus, actions: editor)
                 } else {
-                    Reminder.Row(row.reminder, color: row.color.swiftUI, now: now, calendar: calendar, actions: rowActions)
+                    Reminder.Row(row.reminder, color: SwiftUI.Color(row.color), now: now, calendar: calendar, actions: rowActions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if Reminder.Window<Reminder.Filter>.nearsEnd(index, of: shown, total: total) { endReached() } }

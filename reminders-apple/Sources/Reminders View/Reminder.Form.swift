@@ -224,7 +224,7 @@ extension Reminder.Form {
             SwiftUI.List(lists) { list in
                 Button { reminder.list = list.id } label: {
                     HStack(spacing: 16) {
-                        Organizing.List<Reminder>.Badge(color: list.color.swiftUI)
+                        Organizing.List<Reminder>.Badge(color: SwiftUI.Color(list.color))
                         Text(list.title).foregroundStyle(.primary)
                         Spacer()
                         if list.id == reminder.list {
@@ -242,7 +242,7 @@ extension Reminder.Form {
                 Label {
                     Text("List")
                 } icon: {
-                    Organizing.List<Reminder>.Badge(color: lists.first(id: reminder.list)?.color.swiftUI ?? .blue, size: 28)
+                    Organizing.List<Reminder>.Badge(color: lists.first(id: reminder.list).map { SwiftUI.Color($0.color) } ?? .blue, size: 28)
                 }
             }
         }
@@ -301,27 +301,4 @@ extension Reminder.Form {
             Label("Location", systemImage: "location").foregroundStyle(.primary, .secondary)
         }
     }
-}
-
-extension Reminder {
-    fileprivate subscript(dueOn now: Date, calendar calendar: Calendar) -> Bool {
-        get { due != nil }
-        set { set(due: newValue ? calendar.startOfDay(for: now) : nil) }
-    }
-
-    fileprivate subscript(timeOn now: Date, calendar calendar: Calendar) -> Bool {
-        get { due?.hasTime == true }
-        set { set(hasTime: newValue, at: now, calendar: calendar) }
-    }
-
-    fileprivate subscript(date fallback: Date) -> Date {
-        get { due?.date ?? fallback }
-        set { set(due: newValue) }
-    }
-}
-
-extension Binding<Reminder> {
-    fileprivate func dueOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now, calendar: calendar]] }
-    fileprivate func timeOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now, calendar: calendar]] }
-    fileprivate func date(or fallback: Date) -> Binding<Date> { self[dynamicMember: \.[date: fallback]] }
 }

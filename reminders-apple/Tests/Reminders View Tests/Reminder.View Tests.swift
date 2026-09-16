@@ -72,10 +72,10 @@ import Testing
 
     @Test func `the list color round-trips through SwiftUI`() {
         let color = Organizing.Color(red: 237 / 255, green: 137 / 255, blue: 53 / 255)
-        let round = Organizing.Color(color.swiftUI)
+        let round = Organizing.Color(SwiftUI.Color(color))
         #expect(abs(round.red - color.red) < 0.002 && abs(round.green - color.green) < 0.002 && abs(round.blue - color.blue) < 0.002)
         #expect(Reminder.Filter.flagged.color(list: nil) == .orange)
-        #expect(Reminder.Filter.list(list).color(list: color) == color.swiftUI)
+        #expect(Reminder.Filter.list(list).color(list: color) == SwiftUI.Color(color))
         #expect(Organizing.List<Reminder>.Form.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])
     }
 }

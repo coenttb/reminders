@@ -1,6 +1,6 @@
 public import SwiftUI
 
-extension View {
+extension SwiftUI.View {
     public func discardPrompt(_ title: String, isPresented: Binding<Bool>, discard: @escaping () -> Void) -> some View {
         popover(isPresented: isPresented, arrowEdge: .top) {
             VStack(spacing: 16) {

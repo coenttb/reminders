@@ -90,7 +90,7 @@ extension Reminder.Search.View {
         ForEach(Array(results.sections.enumerated()), id: \.element.id) { position, section in
             Section {
                 ForEach(Array(section.reminders.enumerated()), id: \.element.id) { offset, reminder in
-                    Reminder.Row(reminder, color: section.list.color.swiftUI, now: now, calendar: calendar, actions: rows)
+                    Reminder.Row(reminder, color: SwiftUI.Color(section.list.color), now: now, calendar: calendar, actions: rows)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if Reminder.Window<Reminder.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { endReached() } }
@@ -98,7 +98,7 @@ extension Reminder.Search.View {
             } header: {
                 Text(section.list.title)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(section.list.color.swiftUI)
+                    .foregroundStyle(SwiftUI.Color(section.list.color))
                     .textCase(nil)
             }
             .listRowBackground(SwiftUI.Color.clear)

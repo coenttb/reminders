@@ -4,11 +4,6 @@ public import Reminders_Application
 public import SwiftUI
 
 extension Reminder {
-    public enum Focus: Hashable, Sendable {
-        case title(Reminder.ID)
-        case notes(Reminder.ID)
-    }
-
     public struct Editor: SwiftUI.View {
         @Binding private var reminder: Reminder
         private var color: SwiftUI.Color

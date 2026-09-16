@@ -20,33 +20,35 @@ extension Root {
             self.filter = filter
             self.store = store
         }
+    }
+}
 
-        var body: some View {
-            @Bindable var store = store
-            let detail = store.detail ?? Reminder.Filter.Detail(filter: filter, preference: filter.defaultPreference)
-            Reminder.Filter.Detail.View(
-                detail,
-                title: filter.title ?? list?.title ?? "",
-                editing: store.editing?.id,
-                now: now,
-                calendar: calendar,
-                draft: { $store[dynamicMember: \.[draft: $0]] },
-                rows: rows,
-                editor: editor,
-                done: { store.send(.doneButtonTapped) },
-                backgroundTapped: { store.send(.backgroundTapped) },
-                move: { store.send(.remindersMoved($0, $1)) },
-                order: { store.send(.orderingSelected($0)) },
-                toggleCompleted: { store.send(.showCompletedButtonTapped) },
-                newReminder: { store.send(.newReminderButtonTapped) },
-                endReached: { store.send(.detailEndReached) },
-                info: list.map { list in { store.send(.listDetailsButtonTapped(list.id)) } },
-                delete: list.map { list in { store.send(.listDeleted(list.id)) } },
-                clearCompleted: { store.send(.clearCompletedButtonTapped) }
-            )
-            .onChange(of: scenePhase) { _, phase in
-                if phase == .background, store.editing != nil { store.send(.doneButtonTapped) }
-            }
+extension Root.Detail {
+    var body: some View {
+        @Bindable var store = store
+        let detail = store.detail ?? Reminder.Filter.Detail(filter: filter, preference: filter.defaultPreference)
+        Reminder.Filter.Detail.View(
+            detail,
+            title: filter.title ?? list?.title ?? "",
+            editing: store.editing?.id,
+            now: now,
+            calendar: calendar,
+            draft: { $store[dynamicMember: \.[draft: $0]] },
+            rows: rows,
+            editor: editor,
+            done: { store.send(.doneButtonTapped) },
+            backgroundTapped: { store.send(.backgroundTapped) },
+            move: { store.send(.remindersMoved($0, $1)) },
+            order: { store.send(.orderingSelected($0)) },
+            toggleCompleted: { store.send(.showCompletedButtonTapped) },
+            newReminder: { store.send(.newReminderButtonTapped) },
+            endReached: { store.send(.detailEndReached) },
+            info: list.map { list in { store.send(.listDetailsButtonTapped(list.id)) } },
+            delete: list.map { list in { store.send(.listDeleted(list.id)) } },
+            clearCompleted: { store.send(.clearCompletedButtonTapped) }
+        )
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background, store.editing != nil { store.send(.doneButtonTapped) }
         }
     }
 }

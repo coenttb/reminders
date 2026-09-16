@@ -40,11 +40,11 @@ extension Organizing.List.Form {
         SwiftUI.Form {
             Section {
                 VStack(spacing: 20) {
-                    Organizing.List<Element>.Badge(color: list.color.swiftUI, size: 100)
-                        .shadow(color: list.color.swiftUI.opacity(0.45), radius: 14, y: 6)
+                    Organizing.List<Element>.Badge(color: SwiftUI.Color(list.color), size: 100)
+                        .shadow(color: SwiftUI.Color(list.color).opacity(0.45), radius: 14, y: 6)
                     TextField("List Name", text: $list.title)
                         .font(.title2.weight(.bold))
-                        .foregroundStyle(list.color.swiftUI)
+                        .foregroundStyle(SwiftUI.Color(list.color))
                         .multilineTextAlignment(.center)
                         .padding()
                         .textFieldStyle(.plain)
@@ -62,7 +62,7 @@ extension Organizing.List.Form {
                             list.color = color
                         } label: {
                             Circle()
-                                .fill(color.swiftUI)
+                                .fill(SwiftUI.Color(color))
                                 .frame(width: 40, height: 40)
                                 .overlay {
                                     if color == list.color {

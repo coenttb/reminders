@@ -33,30 +33,3 @@ extension Reminder.Due {
         Date.FormatStyle(date: date, time: time, calendar: calendar, timeZone: calendar.timeZone)
     }
 }
-
-extension Reminder.Due.Preset {
-    public var title: String {
-        switch self {
-        case .today: "Today"
-        case .tomorrow: "Tomorrow"
-        case .thisWeekend: "This Weekend"
-        case .nextWeek: "Next Week"
-        }
-    }
-}
-
-extension Reminder.Due.Preset.Time {
-    public var title: String {
-        switch self {
-        case .morning: "Morning"
-        case .midday: "Midday"
-        case .afternoon: "Afternoon"
-        case .evening: "Evening"
-        case .night: "Night"
-        }
-    }
-
-    public func description(on day: Date, calendar: Calendar) -> String? {
-        calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day)?.formatted(Reminder.Due.style(date: .omitted, time: .shortened, calendar: calendar))
-    }
-}

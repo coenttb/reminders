@@ -20,29 +20,6 @@ extension Reminder.Filter {
 }
 
 extension Reminder.Filter.Tile {
-    public struct Fill: Hashable, Sendable {
-        public var top: SwiftUI.Color
-        public var bottom: SwiftUI.Color
-
-        public init(top: SwiftUI.Color, bottom: SwiftUI.Color) {
-            self.top = top
-            self.bottom = bottom
-        }
-
-        public static let today = Fill(top: .init(red: 125 / 255, green: 195 / 255, blue: 239 / 255), bottom: .init(red: 102 / 255, green: 185 / 255, blue: 237 / 255))
-        public static let scheduled = Fill(top: .init(red: 241 / 255, green: 157 / 255, blue: 156 / 255), bottom: .init(red: 238 / 255, green: 142 / 255, blue: 140 / 255))
-        public static let all = Fill(top: .init(red: 106 / 255, green: 106 / 255, blue: 106 / 255), bottom: .init(red: 80 / 255, green: 80 / 255, blue: 80 / 255))
-        public static let flagged = Fill(top: .init(red: 243 / 255, green: 176 / 255, blue: 108 / 255), bottom: .init(red: 240 / 255, green: 160 / 255, blue: 84 / 255))
-        public static let completed = Fill(top: .init(red: 166 / 255, green: 174 / 255, blue: 179 / 255), bottom: .init(red: 155 / 255, green: 163 / 255, blue: 169 / 255))
-    }
-
-    public enum Glyph: Hashable, Sendable {
-        case symbol(String)
-        case today(day: Int)
-    }
-}
-
-extension Reminder.Filter.Tile {
     @ViewBuilder public var body: some SwiftUI.View {
         let title = filter.title ?? ""
         Button { open(filter) } label: {
@@ -76,12 +53,6 @@ extension Reminder.Filter.Tile {
         case let .today(day):
             Image(systemName: "\(day).calendar").font(.system(size: 24, weight: .medium))
         }
-    }
-}
-
-extension Reminder.Filter {
-    public static func smart(flagged: Bool) -> [Reminder.Filter] {
-        flagged ? [.today, .scheduled, .all, .flagged, .completed] : [.today, .scheduled, .all, .completed]
     }
 }
 
