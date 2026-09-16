@@ -1,6 +1,7 @@
 #if DEBUG
 public import ComposableArchitecture2
 import Dependencies
+import Foundation
 import Organizing
 public import Reminders
 public import Reminders_Sample
@@ -16,6 +17,7 @@ extension Reminders.Sample {
 
             public var lastSeed: Reminders.Sample.Seed?
             public var isSeeding = false
+            public var failure: String?
 
             public init() {}
         }
@@ -24,6 +26,7 @@ extension Reminders.Sample {
             case seedButtonTapped
             case seedGenerated(Reminders.Sample.Scale, seed: UInt64?)
             case deleteEverythingButtonTapped
+            case failureDismissed
         }
 
         @Dependency(\.calendar) var calendar
@@ -43,36 +46,45 @@ extension Reminders.Sample {
                 switch action {
                 case .seedButtonTapped:
                     let sample = Reminders.sample(at: now)
+                    state.isSeeding = true
                     store.addTask {
-                        try write { db in
-                            try sample.replace(in: db)
-                            try Reminders.Restoration.set(editing: nil).execute(db)
+                        try await attempt {
+                            try write { db in
+                                try sample.replace(in: db)
+                                try Reminders.Restoration.set(editing: nil).execute(db)
+                            }
+                            replaced()
                         }
-                        replaced()
                     }
                 case let .seedGenerated(scale, seed):
                     let value = seed ?? withRandomNumberGenerator { UInt64.random(in: .min ... .max, using: &$0) }
                     state.lastSeed = Reminders.Sample.Seed(scale: scale, value: value)
                     state.isSeeding = true
                     store.addTask {
-                        let sample = Reminders.Sample.generated(scale, seed: value, at: now, calendar: calendar)
-                        try await database.write { db in
-                            try sample.replace(in: db)
-                            try Reminders.Restoration.set(editing: nil).execute(db)
+                        try await attempt {
+                            let sample = Reminders.Sample.generated(scale, seed: value, at: now, calendar: calendar)
+                            try await database.write { db in
+                                try sample.replace(in: db)
+                                try Reminders.Restoration.set(editing: nil).execute(db)
+                            }
+                            replaced()
                         }
-                        replaced()
-                        try store.modify { $0.isSeeding = false }
                     }
                 case .deleteEverythingButtonTapped:
                     let replacement = List<Reminder>.ID(uuid())
+                    state.isSeeding = true
                     store.addTask {
-                        try write { db in
-                            try Reminders.Sample(lists: []).replace(in: db)
-                            try List<Reminder>.Record.installDefault(replacement, in: db)
-                            try Reminders.Restoration.set(editing: nil).execute(db)
+                        try await attempt {
+                            try write { db in
+                                try Reminders.Sample(lists: []).replace(in: db)
+                                try List<Reminder>.Record.installDefault(replacement, in: db)
+                                try Reminders.Restoration.set(editing: nil).execute(db)
+                            }
+                            replaced()
                         }
-                        replaced()
                     }
+                case .failureDismissed:
+                    state.failure = nil
                 }
             }
         }
@@ -81,5 +93,19 @@ extension Reminders.Sample {
 
 extension Reminders.Sample.Feature {
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
+
+    private func attempt(_ body: () async throws -> Void) async throws {
+        do {
+            try await body()
+            try store.modify { $0.isSeeding = false }
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            try store.modify {
+                $0.isSeeding = false
+                $0.failure = error.localizedDescription
+            }
+        }
+    }
 }
 #endif

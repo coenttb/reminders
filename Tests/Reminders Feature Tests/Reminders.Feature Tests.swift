@@ -607,6 +607,7 @@ struct `Reminder feature` {
         await store.send(.destination(.list(.saveButtonTapped)))?.value
         #expect(try await database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 3)
         await store.send(.destination(.list(.cancelButtonTapped))) { $0.destination = nil }?.value
+        try await until(store.state.$overview) { !$0.lists.isEmpty }
         await store.send(.newReminderButtonTapped) { [personal, now] in
             $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .start(in: personal, created: now), tags: [], original: nil)))
         }?.value

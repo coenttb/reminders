@@ -44,6 +44,11 @@ extension Reminders.Sample.Menu: SwiftUI::View {
             }
         }
         .disabled(store.isSeeding)
+        .alert("The sample was not written", isPresented: Binding(get: { store.failure != nil }, set: { if !$0 { store.send(.failureDismissed) } })) {
+            Button("OK") {}
+        } message: {
+            Text(store.failure ?? "")
+        }
     }
 }
 #endif
