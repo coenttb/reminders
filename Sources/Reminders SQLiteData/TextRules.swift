@@ -16,7 +16,13 @@ nonisolated func hasCaseInsensitivePrefix(_ text: String, _ prefix: String) -> B
     text.lowercased().hasPrefix(prefix.lowercased())
 }
 
-@DatabaseCollation
-nonisolated func localizedCaseInsensitive(_ lhs: String, _ rhs: String) -> CollationOrder {
-    CollationOrder(lhs.localizedCaseInsensitiveCompare(rhs))
+nonisolated let localizedCaseInsensitive = LocalizedCaseInsensitiveCollation()
+
+nonisolated struct LocalizedCaseInsensitiveCollation: StructuredQueriesSQLiteCore.DatabaseCollation {
+    var name: String { "localizedCaseInsensitive" }
+
+    func compare(_ lhs: UnsafeRawBufferPointer, _ rhs: UnsafeRawBufferPointer) -> CollationOrder {
+        let (lhs, rhs) = unsafe (String(decoding: lhs, as: UTF8.self), String(decoding: rhs, as: UTF8.self))
+        return CollationOrder(lhs.localizedCaseInsensitiveCompare(rhs))
+    }
 }

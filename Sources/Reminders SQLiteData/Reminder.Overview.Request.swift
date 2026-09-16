@@ -34,14 +34,14 @@ extension Reminder.Overview {
                 counts: Reminder.Filter.Counts(all: counts?.all ?? 0, flagged: counts?.flagged ?? 0, scheduled: counts?.scheduled ?? 0, today: counts?.today ?? 0),
                 usedTags: try Tag<Reminder>.Record
                     .where { $0.title.in(Reminder.Tagging.select { $0.tagID.text }) }
-                    .order { $0.title.collate($localizedCaseInsensitive) }
+                    .order { $0.title.collate(localizedCaseInsensitive) }
                     .fetchAll(db)
                     .map(\.tag),
                 rankedTags: try Tag<Reminder>.Record
                     .order { tag in
                         (
                             Reminder.Tagging.where { #sql("\($0.tagID) = \(tag.title)") }.count().desc(),
-                            tag.title.collate($localizedCaseInsensitive)
+                            tag.title.collate(localizedCaseInsensitive)
                         )
                     }
                     .fetchAll(db)

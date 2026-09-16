@@ -40,8 +40,8 @@ struct `Reminder feature` {
         clock: TestClock<Duration> = TestClock(),
         restoring: @escaping @Sendable (inout Reminder.Feature.State.DebugSnapshot) -> Void = { _ in }
     ) async throws -> TestStoreActor<Reminder.Feature> {
-        try await withDependencies { $0.continuousClock = clock } operation: {
-            try await TestStoreActor(initialState: Reminder.Feature.State()) { Reminder.Feature() } changes: { [today] in
+        await withDependencies { $0.continuousClock = clock } operation: {
+            await TestStoreActor(initialState: Reminder.Feature.State()) { Reminder.Feature() } changes: { [today] in
                 $0.today = today
                 restoring(&$0)
             }

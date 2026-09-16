@@ -160,7 +160,7 @@ extension Reminder.Schema {
             db.add(function: $localizedCaseInsensitiveContains)
             db.add(function: $hasCaseInsensitivePrefix)
             db.add(function: $searchFolded)
-            db.add(collation: $localizedCaseInsensitive)
+            db.add(collation: localizedCaseInsensitive)
             db.add(collation: .canonical)
         }
     }
@@ -191,7 +191,7 @@ extension Reminder.Sample {
         for lists in sample.lists.chunks(of: 200) {
             try List<Reminder>.Record.insert { lists.map(List<Reminder>.Record.init) }.execute(db)
         }
-        for tags in sample.tags.sorted { $0.title < $1.title }.chunks(of: 500) {
+        for tags in sample.tags.sorted(by: { $0.title < $1.title }).chunks(of: 500) {
             try Tag<Reminder>.Record.insert { tags.map(Tag<Reminder>.Record.init) }.execute(db)
         }
         for reminders in sample.reminders.chunks(of: 200) {

@@ -41,7 +41,7 @@ extension Reminder.Record.TableColumns {
 
     fileprivate func matches(_ text: String) -> some QueryExpression<Bool> {
         let folded = searchFolded(text)
-        return #sql("instr(\"reminders\".\"searchText\", \(folded)) > 0", as: Bool.self)
+        return #sql("instr(\"reminders\".\"searchText\", \(bind: folded)) > 0", as: Bool.self)
             || Reminder.Tagging
                 .where { $0.reminderID.eq(id) && $0.tagID.text.in(Tag<Reminder>.Record.where { $localizedCaseInsensitiveContains($0.title, text) }.select(\.title)) }
                 .exists()
@@ -103,7 +103,7 @@ extension Reminder.Record.TableColumns {
         case .creationDate: fragment.append("\(created), \(position)")
         case .manual: fragment.append("\(position)")
         case .priority: fragment.append("\(priority.ifnull(0).desc()), \(flagged.desc()), \(position)")
-        case .title: fragment.append("\(title.collate($localizedCaseInsensitive)), \(position)")
+        case .title: fragment.append("\(title.collate(localizedCaseInsensitive)), \(position)")
         }
         return SQLQueryExpression(fragment)
     }

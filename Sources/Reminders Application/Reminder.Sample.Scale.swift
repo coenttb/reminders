@@ -1,8 +1,8 @@
 public import Foundation
 import FoundationEssentials_Extensions
-public import Organizing
+import Organizing
 public import Reminders
-public import Tagged
+import Tagged
 
 extension Reminder.Sample {
     public struct Scale: Hashable, Sendable {

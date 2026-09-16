@@ -351,7 +351,7 @@ import Tagged
         #expect(try database.write { db in try Tag<Reminder>.Record.rename("Café", to: "CAFÉ", in: db) } == "CAFÉ")
         #expect(try stored(wash.id, database)?.tags == ["CAFÉ"])
         #expect(try detail(.tags(["CAFÉ"]), database).reminders.count == 2)
-        try database.write { db in try Tag<Reminder>.Record.add("Straße", in: db) }
+        _ = try database.write { db in try Tag<Reminder>.Record.add("Straße", in: db) }
         #expect(try database.write { db in try Tag<Reminder>.Record.rename("Straße", to: "café", in: db) } == "CAFÉ")
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("Straße") == false)
     }

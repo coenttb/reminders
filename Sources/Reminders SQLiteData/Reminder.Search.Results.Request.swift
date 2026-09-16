@@ -22,7 +22,7 @@ extension Reminder.Search.Results {
                 let taken = search.tags.map(\.rawValue)
                 results.suggestions = try Tag<Reminder>.Record
                     .where { $hasCaseInsensitivePrefix($0.title, prefix) && !$0.title.in(taken) }
-                    .order { $0.title.collate($localizedCaseInsensitive) }
+                    .order { $0.title.collate(localizedCaseInsensitive) }
                     .fetchAll(db)
                     .map(\.tag)
             }
