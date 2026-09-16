@@ -5,7 +5,7 @@ public import SQLiteData
 import Tagged
 
 extension Reminders.Reminder.Record.TableColumns {
-    public var tags: some QueryExpression<[String].JSONRepresentation> {
+    public var tagTitles: some QueryExpression<[String].JSONRepresentation> {
         Reminders.Tagging
             .where { $0.reminderID.eq(id) }
             .join(Tag<Reminder>.Record.all) { $1.title.eq($0.tagID.text) }

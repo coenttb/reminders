@@ -87,7 +87,7 @@ extension Reminders {
             ComposableArchitecture2.Update { state, action in
                 switch action {
                 case .addListButtonTapped:
-                    state.destination = .list(List<Reminder>.Form.Feature.State(draft: List<Reminder>.Record.Draft.create(), original: nil))
+                    state.destination = .list(List<Reminder>.Form.Feature.State(draft: List<Reminder>.Record.Draft.start(), original: nil))
                 case .appActivated:
                     state.today = calendar.day(containing: now)
                 case .backgroundTapped:
@@ -138,7 +138,7 @@ extension Reminders {
                     if case let .list(list) = state.filter {
                         startNewReminder(in: list, &state)
                     } else if let list = state.overview.lists.first?.id {
-                        state.destination = .reminder(Reminder.Form.Feature.State(draft: Reminder.Record.Draft.create(listID: list, created: now), tags: [], original: nil))
+                        state.destination = .reminder(Reminder.Form.Feature.State(draft: Reminder.Record.Draft.start(in: list, created: now), tags: [], original: nil))
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
@@ -359,7 +359,7 @@ extension Reminders.Feature {
             try await attempt(editing: previous?.session) {
                 let row = try write { db in
                     try commit(previous, in: db)
-                    let id = try Reminder.Record.append(Reminder.Record.Draft.create(listID: list, created: now), in: db)
+                    let id = try Reminder.Record.append(Reminder.Record.Draft.start(in: list, created: now), in: db)
                     try Reminders.Restoration.set(editing: id).execute(db)
                     return try Reminder.Record.find(id).rows().fetchOne(db)
                 }
@@ -396,7 +396,9 @@ extension Reminders.Feature {
                         return Reminders.Reminder.Editing?.none
                     }
                     try Reminder.Record.makeRoom(after: anchor.reminder.position).execute(db)
-                    let id = try Reminder.Record.add(Reminder.Record.Draft.create(listID: anchor.reminder.listID, position: anchor.reminder.position + 1, created: now), in: db)
+                    var next = Reminder.Record.Draft.start(in: anchor.reminder.listID, created: now)
+                    next.position = anchor.reminder.position + 1
+                    let id = try Reminder.Record.add(next, in: db)
                     try Reminders.Restoration.set(editing: id).execute(db)
                     guard let row = try Reminder.Record.find(id).rows().fetchOne(db) else { return nil }
                     var place = Reminder(anchor)

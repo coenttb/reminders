@@ -4,6 +4,6 @@ public import SQLiteData
 
 extension Where<Reminders.Reminder.Record> {
     public func rows() -> Select<Reminder.Record.Row, Reminder.Record, ()> {
-        select { Reminder.Record.Row.Columns(reminder: $0, tags: $0.tags) }
+        select { Reminder.Record.Row.Columns(reminder: $0, tags: $0.tagTitles) }
     }
 }

@@ -94,7 +94,7 @@ struct `Reminder feature` {
         try await until($pending) { $0.isEmpty }
         #expect(try await stored(groceries.id)?.completion == .completed)
         await store.send(.newReminderButtonTapped) { [personal, now] in
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .create(listID: personal, created: now), tags: [], original: nil)))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .start(in: personal, created: now), tags: [], original: nil)))
         }?.value
         await store.modify {
             if case var .reminder(form) = $0.destination { form.draft.title = "Water plants"; $0.destination = .reminder(form) }
@@ -602,13 +602,13 @@ struct `Reminder feature` {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
         await store.send(.addListButtonTapped) {
-            $0.destination = .list(snap(List<Reminder>.Form.Feature.State(draft: .create(), original: nil)))
+            $0.destination = .list(snap(List<Reminder>.Form.Feature.State(draft: .start(), original: nil)))
         }?.value
         await store.send(.destination(.list(.saveButtonTapped)))?.value
         #expect(try await database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 3)
         await store.send(.destination(.list(.cancelButtonTapped))) { $0.destination = nil }?.value
         await store.send(.newReminderButtonTapped) { [personal, now] in
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .create(listID: personal, created: now), tags: [], original: nil)))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .start(in: personal, created: now), tags: [], original: nil)))
         }?.value
         await store.modify {
             if case var .reminder(form) = $0.destination { form.draft.title = "Orphan"; $0.destination = .reminder(form) }

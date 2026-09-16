@@ -30,7 +30,7 @@ extension Reminders.Search.Request: FetchKeyRequest {
                 (lists.position, reminders.isDone, reminders.ordered(by: .dueDate, showCompleted: false))
             }
             .limit(limit ?? contents.total)
-            .select { Reminder.Record.Match.Columns(reminder: $0, tags: $0.tags, list: $1) }
+            .select { Reminder.Record.Match.Columns(reminder: $0, tags: $0.tagTitles, list: $1) }
             .fetchAll(db)
         for match in matches {
             let row = Reminder.Record.Row(reminder: match.reminder, tags: match.tags)

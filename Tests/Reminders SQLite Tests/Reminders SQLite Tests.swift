@@ -319,7 +319,8 @@ import Tagged
         #expect(stored?.title == "Groceries and more" && stored?.flagged == false && stored?.tags == ["someday", "adulting", "fresh"])
         #expect(stored?.completed == true && stored?.position == groceries.position)
         #expect(try self.stored(sample.reminders[1].id, database) == sample.reminders[1])
-        let bread = Reminder.Record.Draft.create(listID: groceries.list, title: "Bread", created: now)
+        var bread = Reminder.Record.Draft.start(in: groceries.list, created: now)
+        bread.title = "Bread"
         let id = try #require(try database.write { db in try Reminder.Record.save(bread, tags: ["CAR"], isNew: true, in: db) })
         #expect(try self.stored(id, database)?.tags == ["car"] && self.stored(id, database)?.position == 11)
         try database.write { db in try Reminder.Record.find(id).delete().execute(db) }
@@ -432,7 +433,9 @@ import Tagged
         #expect(milk.id.rawValue.uuidString.count == 36 && milk.listID == list)
         let errands = try #require(try database.read { db in try List<Reminder>.Record.where { $0.title.eq("Errands") }.fetchOne(db) })
         #expect(errands.id.rawValue.uuidString.count == 36)
-        let id = try database.write { db in try Reminder.Record.append(Reminder.Record.Draft.create(listID: list, title: "Eggs", created: now), in: db) }
+        var eggs = Reminder.Record.Draft.start(in: list, created: now)
+        eggs.title = "Eggs"
+        let id = try database.write { db in try Reminder.Record.append(eggs, in: db) }
         #expect(try stored(id, database)?.title == "Eggs" && stored(id, database)?.position == 1)
         #expect(try database.read { db in try #sql("SELECT searchText FROM reminders WHERE title = 'Milk'", as: String.self).fetchOne(db) } == "milk\n")
         try database.write { db in try List<Reminder>.Record.find(list).delete().execute(db) }
