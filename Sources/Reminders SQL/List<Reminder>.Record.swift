@@ -3,7 +3,7 @@ public import Reminders
 public import StructuredQueries
 public import Tagged
 
-extension List where Element == Reminder {
+extension List<Reminder>  {
     @Table("lists")
     public struct Record: Identifiable, Sendable {
         public let id: List<Reminder>.ID
