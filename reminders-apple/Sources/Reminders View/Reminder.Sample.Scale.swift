@@ -1,7 +1,7 @@
 public import Reminders
 public import Reminders_Sample
 
-extension Reminder.Sample.Scale {
+extension Reminders.Sample.Scale {
     public var title: String {
         let count = reminders >= 1_000 ? "\(reminders / 1_000)k" : "\(reminders)"
         switch self {

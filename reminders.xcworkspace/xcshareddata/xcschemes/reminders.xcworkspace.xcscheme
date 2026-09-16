@@ -84,9 +84,37 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders SQLiteData"
-               BuildableName = "Reminders SQLiteData"
-               BlueprintName = "Reminders SQLiteData"
+               BlueprintIdentifier = "Reminders SQL"
+               BuildableName = "Reminders SQL"
+               BlueprintName = "Reminders SQL"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders SQLite"
+               BuildableName = "Reminders SQLite"
+               BlueprintName = "Reminders SQLite"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders PostgreSQL"
+               BuildableName = "Reminders PostgreSQL"
+               BlueprintName = "Reminders PostgreSQL"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -168,9 +196,23 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders SQLiteData Tests"
-               BuildableName = "Reminders SQLiteData Tests"
-               BlueprintName = "Reminders SQLiteData Tests"
+               BlueprintIdentifier = "Reminders SQL Tests"
+               BuildableName = "Reminders SQL Tests"
+               BlueprintName = "Reminders SQL Tests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders SQLite Tests"
+               BuildableName = "Reminders SQLite Tests"
+               BlueprintName = "Reminders SQLite Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -296,9 +338,19 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders SQLiteData Tests"
-               BuildableName = "Reminders SQLiteData Tests"
-               BlueprintName = "Reminders SQLiteData Tests"
+               BlueprintIdentifier = "Reminders SQL Tests"
+               BuildableName = "Reminders SQL Tests"
+               BlueprintName = "Reminders SQL Tests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders SQLite Tests"
+               BuildableName = "Reminders SQLite Tests"
+               BlueprintName = "Reminders SQLite Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

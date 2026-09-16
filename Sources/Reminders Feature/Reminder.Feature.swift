@@ -6,7 +6,8 @@ public import Organizing
 public import Reminders
 public import Reminders_Interface
 public import Reminders_Sample
-import Reminders_SQLiteData
+import Reminders_SQL
+import Reminders_SQLite
 public import SQLiteData
 import Standard_Library_Extensions
 public import Tagged
@@ -22,7 +23,7 @@ extension Reminder {
             public var failure: String?
             public var search = Reminders.Search()
             public var today: Range<Date>?
-            public var lastSeed: Reminder.Sample.Seed?
+            public var lastSeed: Reminders.Sample.Seed?
             public var isSeeding = false
             public var detailWindow = Reminders.Window<Reminders.Filter>()
             public var resultsWindow = Reminders.Window<Reminders.Search>()
@@ -75,7 +76,7 @@ extension Reminder {
             case searchSubmitted
             case searchTagTapped(Tag<Reminder>.ID)
             case seedButtonTapped
-            case seedGenerated(Reminder.Sample.Scale, seed: UInt64?)
+            case seedGenerated(Reminders.Sample.Scale, seed: UInt64?)
             case deleteEverythingButtonTapped
             case showCompletedButtonTapped
             case tagDeleted(Tag<Reminder>.ID)
@@ -277,7 +278,7 @@ extension Reminder {
                 case let .searchTagTapped(tag):
                     state.search.add(tag: tag)
                 case .seedButtonTapped:
-                    let sample = Reminder.sample(at: now)
+                    let sample = Reminders.sample(at: now)
                     store.addTask {
                         try await attempt {
                             try write { db in try sample.replace(in: db) }
@@ -289,11 +290,11 @@ extension Reminder {
                     }
                 case let .seedGenerated(scale, seed):
                     let value = seed ?? withRandomNumberGenerator { UInt64.random(in: .min ... .max, using: &$0) }
-                    state.lastSeed = Reminder.Sample.Seed(scale: scale, value: value)
+                    state.lastSeed = Reminders.Sample.Seed(scale: scale, value: value)
                     state.isSeeding = true
                     store.addTask {
                         try await attempt {
-                            let sample = Reminder.Sample.generated(scale, seed: value, at: now, calendar: calendar)
+                            let sample = Reminders.Sample.generated(scale, seed: value, at: now, calendar: calendar)
                             try await database.write { db in try sample.replace(in: db) }
                             try store.modify {
                                 $0.filter = nil
@@ -303,7 +304,7 @@ extension Reminder {
                         try store.modify { $0.isSeeding = false }
                     }
                 case .deleteEverythingButtonTapped:
-                    let empty = Reminder.Sample(lists: [List(id: List<Reminder>.ID(uuid()))])
+                    let empty = Reminders.Sample(lists: [List(id: List<Reminder>.ID(uuid()))])
                     store.addTask {
                         try await attempt {
                             try write { db in try empty.replace(in: db) }
@@ -336,7 +337,7 @@ extension Reminder {
             }
             .onMount { state in
                 state.today = calendar.day(containing: now)
-                let sample = Reminder.sample(at: now)
+                let sample = Reminders.sample(at: now)
                 do {
                     let (stored, reminder) = try write { db in
                         try sample.initialize(in: db)
@@ -514,8 +515,8 @@ extension Reminder.Feature {
         guard try Reminder.Record.find(saved.id).fetchCount(db) > 0 else { return false }
         try Reminder.Record.changes(from: saved, to: draft)?.execute(db)
         let removed = saved.tags.subtracting(draft.tags)
-        if !removed.isEmpty { try Reminder.Tagging.detach(removed, from: saved.id).execute(db) }
-        try Reminder.Tagging.attach(draft.tags.subtracting(saved.tags), to: saved.id, in: db)
+        if !removed.isEmpty { try Reminders.Tagging.detach(removed, from: saved.id).execute(db) }
+        try Reminders.Tagging.attach(draft.tags.subtracting(saved.tags), to: saved.id, in: db)
         return true
     }
 
@@ -526,7 +527,7 @@ extension Reminder.Feature {
                     if form.isNew {
                         try Reminder.Record.insert { Reminder.Record(form.reminder) }.execute(db)
                         try Reminder.Record.placeLast(form.reminder.id).execute(db)
-                        try Reminder.Tagging.attach(form.reminder.tags, to: form.reminder.id, in: db)
+                        try Reminders.Tagging.attach(form.reminder.tags, to: form.reminder.id, in: db)
                         return true
                     }
                     return try update(from: form.original, to: form.reminder, in: db)

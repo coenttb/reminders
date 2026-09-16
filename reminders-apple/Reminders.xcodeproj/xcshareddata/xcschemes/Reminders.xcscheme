@@ -41,8 +41,17 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders SQLiteData Tests"
-               BuildableName = "Reminders SQLiteData Tests"
+               BlueprintIdentifier = "Reminders SQL Tests"
+               BuildableName = "Reminders SQL Tests"
+               ReferencedContainer = "container:..">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Reminders SQLite Tests"
+               BuildableName = "Reminders SQLite Tests"
                ReferencedContainer = "container:..">
             </BuildableReference>
          </TestableReference>

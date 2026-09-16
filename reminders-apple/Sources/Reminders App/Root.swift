@@ -69,12 +69,12 @@ extension Root: SwiftUI::View {
                     Menu {
                         Button("Reference sample", systemImage: "leaf") { store.send(.seedButtonTapped) }
                         Section("Fixed seed") {
-                            ForEach([Reminder.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
+                            ForEach([Reminders.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
                                 Button(scale.title) { store.send(.seedGenerated(scale, seed: 1)) }
                             }
                         }
                         Section("Random seed") {
-                            ForEach([Reminder.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
+                            ForEach([Reminders.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
                                 Button(scale.title) { store.send(.seedGenerated(scale, seed: nil)) }
                             }
                         }

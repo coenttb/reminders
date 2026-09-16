@@ -1,6 +1,6 @@
 public import Dependencies
 import Reminders
-import Reminders_SQLiteData
+import Reminders_SQLite
 import SQLiteData
 #if canImport(os)
 import os
@@ -9,7 +9,7 @@ import os
 extension DependencyValues {
     public mutating func bootstrapDatabase() throws {
         var configuration = Configuration()
-        Reminder.Schema.prepare(&configuration)
+        Reminders.Schema.prepare(&configuration)
         #if DEBUG
         let context = self.context
         configuration.prepareDatabase { db in
@@ -29,7 +29,7 @@ extension DependencyValues {
         }
         #endif
         let database = try SQLiteData.defaultDatabase(configuration: configuration)
-        try Reminder.Schema.migrate(database)
+        try Reminders.Schema.migrate(database)
         defaultDatabase = database
     }
 }

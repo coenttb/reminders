@@ -12,7 +12,8 @@ import Reminders
 import Reminders_Interface
 import Reminders_Sample
 import Reminders_Feature
-import Reminders_SQLiteData
+import Reminders_SQL
+import Reminders_SQLite
 import SQLiteData
 import Synchronization
 import Testing
@@ -25,14 +26,14 @@ import Tagged
     $0.calendar = calendar
     $0.date.now = Date(timeIntervalSince1970: 1_234_567_890)
     $0.uuid = .incrementing
-    try $0.defaultDatabase.write { db in try Reminder.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).replace(in: db) }
+    try $0.defaultDatabase.write { db in try Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).replace(in: db) }
 })
 struct `Reminder feature` {
     @Dependency(\.calendar) var calendar
     @Dependency(\.date.now) var now
     @Dependency(\.defaultDatabase) var database
 
-    let sample = Reminder.sample(at: Date(timeIntervalSince1970: 1_234_567_890))
+    let sample = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890))
     var personal: List<Reminder>.ID { sample.lists[0].id }
     var groceries: Reminder { sample.reminders[0] }
     var today: Range<Date> { calendar.day(containing: now)! }
@@ -188,8 +189,8 @@ struct `Reminder feature` {
     }
 
     @Test func `a long filter is read a window at a time, widened near its end, and whole when a row starts at its end`() async throws {
-        let scale = Reminder.Sample.Scale(lists: 1, remindersPerList: 700, tags: 5)
-        let generated = Reminder.Sample.generated(scale, seed: 1, at: now, calendar: calendar)
+        let scale = Reminders.Sample.Scale(lists: 1, remindersPerList: 700, tags: 5)
+        let generated = Reminders.Sample.generated(scale, seed: 1, at: now, calendar: calendar)
         try await database.write { db in try generated.replace(in: db) }
         let list = generated.lists[0].id
         let open = generated.reminders.count { !$0.completed }
@@ -522,7 +523,7 @@ struct `Reminder feature` {
             if case var .reminder(form) = $0.destination { form.draft.reminder.tags.remove("optional"); $0.destination = .reminder(form) }
         }?.value
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
-        #expect(try await database.read { db in try Reminder.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("later")) }.fetchCount(db) } == 2)
+        #expect(try await database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("later")) }.fetchCount(db) } == 2)
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("optional") == false)
         await store.dismount()
     }
@@ -575,9 +576,9 @@ struct `Reminder feature` {
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
         await store.send(.seedButtonTapped)?.value
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
-        let scale = Reminder.Sample.Scale(lists: 2, remindersPerList: 5, tags: 3)
+        let scale = Reminders.Sample.Scale(lists: 2, remindersPerList: 5, tags: 3)
         await store.send(.seedGenerated(scale, seed: 42)) {
-            $0.lastSeed = Reminder.Sample.Seed(scale: scale, value: 42)
+            $0.lastSeed = Reminders.Sample.Seed(scale: scale, value: 42)
             $0.isSeeding = true
         }?.value
         await store.expect { $0.isSeeding = false }
@@ -672,7 +673,7 @@ struct `Reminder feature` {
         #expect(try await database.read { db in try db.tableExists("lists") } == false)
     }
 
-    @Test(.dependency(\.defaultDatabase, try { let db = try Reminder.Schema.inMemoryDatabase(); return db }()))
+    @Test(.dependency(\.defaultDatabase, try { let db = try Reminders.Schema.inMemoryDatabase(); return db }()))
     func `the first run seeds the sample into an empty database`() async throws {
         let store = try await makeStore()
         try await until(store.state.$overview) { $0.counts.all == 8 }
