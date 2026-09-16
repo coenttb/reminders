@@ -14,7 +14,8 @@ public import Tagged
 /// the presented form, the row being edited in place with its draft, the search input, the
 /// day the screens call today, and the completion grace timer. What the screens show is read
 /// from the database through `@Fetch` properties, which follow every change to the tables
-/// they read; a user intent starts one targeted write, and the reads follow.
+/// they read; a user intent starts one targeted write, and the reads follow. A row edited in
+/// place is a draft in state until editing ends; typing writes nothing.
 ///
 /// Every write runs inside a task as the synchronous `database.write`, on the store's
 /// isolation, so writes land whole and in the order the user made them. A task that ends in a
@@ -266,7 +267,7 @@ extension Reminder {
                 case let .reminderDetailsButtonTapped(id):
                     let editing = state.editing
                     store.addTask {
-                        try await attempt {
+                        try await attempt(editing: editing?.session) {
                             let reminder = try write { db in
                                 try commit(editing, in: db)
                                 try Reminder.Session.Record.set(editing: nil).execute(db)
@@ -283,7 +284,7 @@ extension Reminder {
                     guard state.editing?.id != id else { break }
                     let editing = state.editing
                     store.addTask {
-                        try await attempt {
+                        try await attempt(editing: editing?.session) {
                             let reminder = try write { db in
                                 try commit(editing, in: db)
                                 guard let reminder = try Reminder.Record.find(id).rows().fetchOne(db)?.value else {
@@ -421,39 +422,6 @@ extension Reminder {
                     try await attempt { try await detail.load(Reminder.Filter.Detail.Request(filter: query.filter, today: today, place: query.place)) }
                 }
             }
-            // Typing is written as it happens: each change writes what differs from what the
-            // database holds, so a relaunch mid-edit finds the text. A failed write keeps the
-            // draft and its reason; the next change, or Done, writes the whole difference again.
-            .onChange(of: store.editing?.autosave) { _, autosave, _ in
-                guard let autosave, autosave.draft != autosave.saved else { return }
-                store.addTask {
-                    do {
-                        let exists = try write { db in
-                            let exists = try update(from: autosave.saved, to: autosave.draft, in: db)
-                            if !exists { try Reminder.Session.Record.set(editing: nil).execute(db) }
-                            return exists
-                        }
-                        try store.modify {
-                            guard $0.editing?.session == autosave.session else { return }
-                            if exists {
-                                $0.editing?.saved = autosave.draft
-                                $0.editing?.failure = nil
-                            } else {
-                                // Deleted by another writer: the session ends, and nothing is recreated.
-                                $0.editing = nil
-                            }
-                        }
-                    } catch is CancellationError {
-                        throw CancellationError()
-                    } catch {
-                        try store.modify {
-                            guard $0.editing?.session == autosave.session else { return }
-                            $0.editing?.failure = error.localizedDescription
-                            $0.failure = error.localizedDescription
-                        }
-                    }
-                }
-            }
             // Typing waits for a pause before it is read: each read is two passes over every
             // reminder, and the earlier task is cancelled by the next character, so a word costs
             // one read rather than one per character. A token, the completed toggle, or a
@@ -510,6 +478,21 @@ extension Reminder.Feature {
         }
     }
 
+    /// As `attempt`, for a commit of the row being edited: the failure is the row's too, if
+    /// that session is still open, so the draft stays with its reason.
+    private func attempt(editing session: UUID?, _ body: () async throws -> Void) async throws {
+        do {
+            try await body()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            try store.modify {
+                $0.failure = error.localizedDescription
+                if let session, $0.editing?.session == session { $0.editing?.failure = error.localizedDescription }
+            }
+        }
+    }
+
     /// As `attempt`, for work done for a form: the failure is the form's, if that form is
     /// still up; a form that closed meanwhile is told nothing.
     private func attempt(form session: UUID, _ body: () async throws -> Void) async throws {
@@ -536,7 +519,7 @@ extension Reminder.Feature {
         let previous = state.editing
         let id = Reminder.ID(uuid())
         store.addTask {
-            try await attempt {
+            try await attempt(editing: previous?.session) {
                 let reminder = try write { db in
                     try commit(previous, in: db)
                     try Reminder.Record.insert { Reminder.Record(Reminder(id: id, list: list, created: now)) }.execute(db)
@@ -557,7 +540,7 @@ extension Reminder.Feature {
     private func endEditing(_ state: inout State) {
         guard let editing = state.editing else { return }
         store.addTask {
-            try await attempt {
+            try await attempt(editing: editing.session) {
                 try write { db in
                     try commit(editing, in: db)
                     try Reminder.Session.Record.set(editing: nil).execute(db)
@@ -574,7 +557,7 @@ extension Reminder.Feature {
         guard let editing = state.editing, !editing.draft.isBlank else { return endEditing(&state) }
         let id = Reminder.ID(uuid())
         store.addTask {
-            try await attempt {
+            try await attempt(editing: editing.session) {
                 let next = try write { db in
                     try commit(editing, in: db)
                     guard let anchor = try Reminder.Record.find(editing.id).rows().fetchOne(db)?.value else {
@@ -700,17 +683,6 @@ extension Reminder.Feature.State {
         guard case var .list(form) = destination, form.session == session else { return }
         body(&form)
         destination = .list(form)
-    }
-}
-
-extension Reminder.Editing {
-    /// What an autosave writes: the draft against what the database holds, for a session.
-    fileprivate var autosave: Autosave { Autosave(session: session, draft: draft, saved: saved) }
-
-    fileprivate struct Autosave: Equatable {
-        var session: UUID
-        var draft: Reminder
-        var saved: Reminder
     }
 }
 

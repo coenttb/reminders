@@ -3,7 +3,7 @@ public import Reminders
 
 extension Reminder {
     /// One reminder edited in place: the draft the row's fields bind to, the value the database
-    /// holds as far as this session has written it, so each write is only what changed since,
+    /// holds as far as this session has written it, so the commit is only what changed since,
     /// and the value the row is sorted by until editing ends, so it keeps its place under any
     /// ordering. The session tells one editing of a row from a later one: a write started for
     /// a session that has ended reports to nobody.
@@ -12,7 +12,7 @@ extension Reminder {
         public var saved: Reminder
         public let place: Reminder
         public let session: UUID
-        /// Why the draft's last write did not happen; the draft stays, and the next write tries again.
+        /// Why the draft could not be written when editing ended; the draft stays, and Done tries again.
         public var failure: String?
 
         public var id: Reminder.ID { saved.id }

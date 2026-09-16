@@ -148,7 +148,7 @@ struct `Reminder feature` {
         await store.dismount()
     }
 
-    @Test func `typing in a row is written as it happens, Return continues beneath, and Done drops a blank row`() async throws {
+    @Test func `typing in a row is a draft until Return writes it and continues beneath, and Done drops a blank row`() async throws {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let first = Reminder.ID(UUID(0))
@@ -157,13 +157,10 @@ struct `Reminder feature` {
         // The new row is in the database at once, blank, and shown in the detail.
         #expect(try await stored(first)?.isBlank == true)
         try await until(store.state.$detail) { $0?.reminders.map(\.id).contains(first) == true }
-        await store.modify { $0[draft: first].title = "Milk" } changes: {
-            $0.editing?.draft.title = "Milk"
-            $0.editing?.saved.title = "Milk"
-        }?.value
-        // Typing is stored without Done or a background: what the database holds is the draft.
-        #expect(try await stored(first)?.title == "Milk")
-        #expect(await store.state.editing?.isSaved == true)
+        await store.modify { $0[draft: first].title = "Milk" } changes: { $0.editing?.draft.title = "Milk" }?.value
+        // Typing writes nothing: the row in the database is still blank until editing ends.
+        #expect(try await stored(first)?.title == "")
+        #expect(await store.state.editing?.isSaved == false)
         let second = Reminder.ID(UUID(2))
         var place = blank
         place.title = "Milk"
@@ -172,31 +169,27 @@ struct `Reminder feature` {
         let next = Reminder(id: second, list: personal, position: place.position, created: now)
         await store.send(.titleSubmitted) { $0.editing = Reminder.Editing(draft: next, saved: next, place: place, session: UUID(3)) }?.value
         try await until(store.state.$detail) { $0?.reminders.map(\.id).suffix(2) == [first, second] }
+        #expect(try await stored(first)?.title == "Milk")
         await store.send(.doneButtonTapped) { $0.editing = nil }?.value
         #expect(try await stored(second) == nil)
         #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == nil)
         await store.dismount()
     }
 
-    @Test func `a relaunch in the middle of typing finds the text and reopens the row`() async throws {
+    @Test func `a relaunch reopens the row that was being edited`() async throws {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
         let blank = Reminder(id: row, list: personal, position: 11, created: now)
         await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
-        await store.modify { $0[draft: row].title = "Bread" } changes: {
-            $0.editing?.draft.title = "Bread"
-            $0.editing?.saved.title = "Bread"
-        }?.value
-        // Quit without Done: the text and the row being edited are in the database.
+        // Quit without Done: the row being edited is in the database, as it was last written.
         await store.dismount()
         #expect(try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.editing } == row)
-        let bread = { var bread = blank; bread.title = "Bread"; return bread }()
         let revived = try await makeStore { [personal] in
             $0.filter = .list(personal)
-            $0.editing = Reminder.Editing(bread, session: UUID(2))
+            $0.editing = Reminder.Editing(blank, session: UUID(2))
         }
-        #expect(await revived.state.editing?.draft.title == "Bread")
+        #expect(await revived.state.editing?.draft == blank)
         // Leaving the detail, as the user, still ends the restored session.
         await revived.send(.filterTapped(.today)) {
             $0.filter = .today
@@ -215,7 +208,7 @@ struct `Reminder feature` {
         await revived.dismount()
     }
 
-    @Test func `a write that fails keeps the draft and its baseline, and the next write tries the whole difference again`() async throws {
+    @Test func `a commit that fails keeps the row open with its draft, and the next commit tries the whole difference again`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = try await makeStore()
             await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
@@ -224,11 +217,13 @@ struct `Reminder feature` {
             await store.modify { $0[draft: groceries.id].title = "Groceries!" }?.value
             var editing = try #require(await store.state.editing)
             #expect(editing.draft.title == "Groceries!" && editing.saved == groceries && !editing.isSaved)
+            #expect(editing.failure == nil)
+            // Done, another row, and Details all keep the row open rather than lose the text.
+            await store.send(.doneButtonTapped)?.value
+            editing = try #require(await store.state.editing)
             #expect(editing.failure?.contains("title locked") == true)
             #expect(await store.state.failure?.contains("title locked") == true)
             #expect(try await stored(groceries.id) == groceries)
-            // Done, another row, and Details all keep the row open rather than lose the text.
-            await store.send(.doneButtonTapped)?.value
             await store.send(.reminderTapped(sample.reminders[1].id))?.value
             await store.send(.reminderDetailsButtonTapped(groceries.id))?.value
             editing = try #require(await store.state.editing)
@@ -246,22 +241,23 @@ struct `Reminder feature` {
         }
     }
 
-    @Test func `typing keeps an external change to another field and never brings a deleted row back`() async throws {
+    @Test func `a commit keeps an external change to another field and never brings a deleted row back`() async throws {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceries, session: UUID(0)) }?.value
-        // Another writer flags the reminder meanwhile; the edit keeps the flag and changes the title.
+        // Another writer flags the reminder meanwhile; the commit keeps the flag and changes the title.
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).update { $0.flagged = true }.execute(db) }
-        await store.modify { $0[draft: groceries.id].title = "Groceries and more" } changes: {
-            $0.editing?.draft.title = "Groceries and more"
-            $0.editing?.saved.title = "Groceries and more"
-        }?.value
+        await store.modify { $0[draft: groceries.id].title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
+        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
         let saved = try await stored(groceries.id)
         #expect(saved?.title == "Groceries and more")
         #expect(saved?.flagged == true)
-        // Deleted while its row is being edited: the next keystroke ends the session and recreates nothing.
+        // Deleted while its row is being edited: Done ends the session and recreates nothing.
+        let reopened = try #require(saved)
+        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(reopened, session: UUID(1)) }?.value
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
-        await store.modify { $0[draft: groceries.id].title = "Back" } changes: { $0.editing = nil }?.value
+        await store.modify { $0[draft: groceries.id].title = "Back" } changes: { $0.editing?.draft.title = "Back" }?.value
+        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
         #expect(try await stored(groceries.id) == nil)
         // A binding write after editing ended is dropped.
         await store.modify { $0[draft: groceries.id].title = "Late" }?.value
@@ -269,33 +265,31 @@ struct `Reminder feature` {
         await store.dismount()
     }
 
-    @Test func `the inline chips run the domain rules on the feature's clock and are written at once`() async throws {
+    @Test func `the inline chips run the domain rules on the feature's clock and are written when editing ends`() async throws {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
         await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(Reminder(id: row, list: personal, position: 11, created: now), session: UUID(1)) }?.value
         await store.send(.datePresetSelected(row, .tomorrow)) { [now, calendar] in
             $0.editing?.draft.set(datePreset: .tomorrow, at: now, calendar: calendar)
-            let draft = $0.editing!.draft
-            $0.editing?.saved = draft
         }?.value
         await store.send(.timePresetSelected(row, .evening)) { [now, calendar] in
             $0.editing?.draft.set(timePreset: .evening, at: now, calendar: calendar)
-            let draft = $0.editing!.draft
-            $0.editing?.saved = draft
         }?.value
         let draft = try #require(await store.state.editing?.draft)
         let due = try #require(draft.due)
         #expect(due.hasTime)
         #expect(calendar.isDate(due.date, inSameDayAs: now.addingTimeInterval(.day)))
         #expect(calendar.component(.hour, from: due.date) == 18)
-        #expect(try await stored(row) == draft)
+        #expect(try await stored(row)?.due == nil)
         await store.send(.timePresetSelected(row, nil)) { [now, calendar] in
             $0.editing?.draft.set(timePreset: nil, at: now, calendar: calendar)
-            let draft = $0.editing!.draft
-            $0.editing?.saved = draft
         }?.value
         #expect(await store.state.editing?.draft.due?.hasTime == false)
+        await store.modify { $0[draft: row].title = "Call" } changes: { $0.editing?.draft.title = "Call" }?.value
+        let dated = try #require(await store.state.editing?.draft)
+        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
+        #expect(try await stored(row) == dated)
         await store.dismount()
     }
 
@@ -432,18 +426,12 @@ struct `Reminder feature` {
         let row = Reminder.ID(UUID(0))
         let blank = Reminder(id: row, list: personal, position: 11, created: now)
         await store.send(.backgroundTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
-        await store.modify { $0[draft: row].title = "Bread" } changes: {
-            $0.editing?.draft.title = "Bread"
-            $0.editing?.saved.title = "Bread"
-        }?.value
+        await store.modify { $0[draft: row].title = "Bread" } changes: { $0.editing?.draft.title = "Bread" }?.value
         await store.send(.backgroundTapped) { $0.editing = nil }?.value
         // The row reopens on the stored reminder, and leaving the detail ends the session.
         let bread = try #require(await stored(row))
         await store.send(.reminderTapped(row)) { $0.editing = Reminder.Editing(bread, session: UUID(2)) }?.value
-        await store.modify { $0[draft: row].notes = "Rye" } changes: {
-            $0.editing?.draft.notes = "Rye"
-            $0.editing?.saved.notes = "Rye"
-        }?.value
+        await store.modify { $0[draft: row].notes = "Rye" } changes: { $0.editing?.draft.notes = "Rye" }?.value
         await store.send(.filterTapped(.today)) {
             $0.filter = .today
             $0.editing = nil
@@ -460,10 +448,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceries, session: UUID(0)) }?.value
-        await store.modify { $0[draft: groceries.id].title = "Groceries and more" } changes: {
-            $0.editing?.draft.title = "Groceries and more"
-            $0.editing?.saved.title = "Groceries and more"
-        }?.value
+        await store.modify { $0[draft: groceries.id].title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
         var committed = groceries
         committed.title = "Groceries and more"
         await store.send(.reminderDetailsButtonTapped(groceries.id)) {
