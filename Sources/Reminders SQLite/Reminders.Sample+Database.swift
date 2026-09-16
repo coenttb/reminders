@@ -20,15 +20,15 @@ extension Reminders.Sample {
         try Reminder.Record.delete().execute(db)
         try List<Reminder>.Record.delete().execute(db)
         try Tag<Reminder>.Record.delete().execute(db)
-        try Reminders.Filter.Preference.delete().execute(db)
-        for lists in sample.lists.chunks(of: 200) as [ArraySlice<List<Reminder>>] {
-            try List<Reminder>.Record.insert { lists.map(List<Reminder>.Record.init) }.execute(db)
+        try Reminders.Filter.Preference.Record.delete().execute(db)
+        for lists in Array(sample.lists.enumerated()).chunks(of: 200) as [ArraySlice<(offset: Int, element: List<Reminder>)>] {
+            try List<Reminder>.Record.insert { lists.map { List<Reminder>.Record($0.element, position: $0.offset) } }.execute(db)
         }
         for tags in sample.tags.sorted(by: { $0.title < $1.title }).chunks(of: 500) as [ArraySlice<Tag<Reminder>>] {
             try Tag<Reminder>.Record.insert { tags.map(Tag<Reminder>.Record.init) }.execute(db)
         }
-        for reminders in sample.reminders.chunks(of: 200) as [ArraySlice<Reminder>] {
-            try Reminder.Record.insert { reminders.map(Reminder.Record.Draft.init) }.execute(db)
+        for reminders in Array(sample.reminders.enumerated()).chunks(of: 200) as [ArraySlice<(offset: Int, element: Reminder)>] {
+            try Reminder.Record.insert { reminders.map { Reminder.Record.Draft($0.element, position: $0.offset) } }.execute(db)
         }
         let taggings = sample.reminders.flatMap { reminder in reminder.tags.sorted().map { Reminders.Tagging(reminderID: reminder.id, tagID: $0) } }
         for chunk in taggings.chunks(of: 500) as [ArraySlice<Reminders.Tagging>] {

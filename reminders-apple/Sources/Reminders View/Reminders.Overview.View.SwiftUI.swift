@@ -1,8 +1,6 @@
 import Models
 import Reminder
 public import Reminders
-public import Reminders_Interface
-public import Reminders_SQL
 public import SwiftUI
 import Tagged
 

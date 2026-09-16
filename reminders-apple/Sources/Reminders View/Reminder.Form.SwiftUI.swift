@@ -1,7 +1,6 @@
 public import Models
 public import Reminder
-import Reminders
-public import Reminders_Interface
+public import Reminders
 public import Reminders_SQL
 import Standard_Library_Extensions
 public import SwiftUI
@@ -11,8 +10,8 @@ extension Reminder.Form {
     public struct SwiftUI {
         @Binding private var draft: Reminder.Record.Draft
         @Binding private var tags: Set<Tag<Reminder>.ID>
-        private var lists: [Models.List<Reminder>.Record]
-        private var available: [Tag<Reminder>.Record]
+        private var lists: [Models.List<Reminder>]
+        private var available: [Tag<Reminder>]
         private var form: Reminder.Form
         @State private var tagsPresented = false
         @State private var discardPresented = false
@@ -23,8 +22,8 @@ extension Reminder.Form {
         public init(
             draft: Binding<Reminder.Record.Draft>,
             tags: Binding<Set<Tag<Reminder>.ID>>,
-            lists: [Models.List<Reminder>.Record],
-            available: [Tag<Reminder>.Record],
+            lists: [Models.List<Reminder>],
+            available: [Tag<Reminder>],
             form: Reminder.Form
         ) {
             self._draft = draft
@@ -75,8 +74,10 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             }
             if draft.dueDate != nil {
                 Section {
-                    Picker(selection: $draft.repeats) {
-                        ForEach(Reminder.Repeat.allCases, id: \.self) { Text($0.title).tag($0) }
+                    Picker(selection: $draft.repeatFrequency(in: calendar)) {
+                        Text("Never").tag(Calendar.RecurrenceRule.Frequency?.none)
+                        Divider()
+                        ForEach(Reminder.repeatOptions, id: \.self) { Text($0.title).tag(Optional($0)) }
                     } label: {
                         Label("Repeat", systemImage: "repeat").foregroundStyle(.primary, .secondary)
                     }
@@ -103,7 +104,6 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                     tagsRow
                     flagToggle
                 }
-                Section("Places & People") { locationPicker }
             }
         }
         .scrollDismissesKeyboard(.interactively)
@@ -153,15 +153,6 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                 Label("Date & Time", systemImage: "calendar.badge.clock")
             }
             Spacer()
-            Menu {
-                Button("None") { draft.location = nil }
-                ForEach(Reminder.Location.allCases, id: \.self) { location in
-                    Button(location.title) { draft.location = location }
-                }
-            } label: {
-                Label("Location", systemImage: "location")
-            }
-            Spacer()
             Button("Flag", systemImage: draft.flagged ? "flag.fill" : "flag") { draft.flagged.toggle() }
                 .disabled(draft.isBlank)
             Spacer()
@@ -203,7 +194,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             SwiftUI::List(lists) { list in
                 Button { draft.listID = list.id } label: {
                     HStack(spacing: 16) {
-                        Models.List<Reminder>.Badge(color: SwiftUI::Color(Models.Color(list.color)))
+                        Models.List<Reminder>.Badge(color: SwiftUI::Color(list.color))
                         Text(list.title).foregroundStyle(.primary)
                         Spacer()
                         if list.id == draft.listID {
@@ -221,7 +212,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                 Label {
                     Text("List")
                 } icon: {
-                    Models.List<Reminder>.Badge(color: lists.first(id: draft.listID).map { SwiftUI::Color(Models.Color($0.color)) } ?? .blue, size: 28)
+                    Models.List<Reminder>.Badge(color: lists.first(id: draft.listID).map { SwiftUI::Color($0.color) } ?? .blue, size: 28)
                 }
             }
         }
@@ -231,7 +222,6 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
         priorityPicker
         tagsRow
         flagToggle
-        locationPicker
     }
 
     private var priorityPicker: some SwiftUI::View {
@@ -268,16 +258,6 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     private var flagToggle: some SwiftUI::View {
         Toggle(isOn: $draft.flagged) {
             Label("Flag", systemImage: "flag").foregroundStyle(.primary, .secondary)
-        }
-    }
-
-    private var locationPicker: some SwiftUI::View {
-        Picker(selection: $draft.location) {
-            Text("None").tag(Reminder.Location?.none)
-            Divider()
-            ForEach(Reminder.Location.allCases, id: \.self) { Text($0.title).tag(Optional($0)) }
-        } label: {
-            Label("Location", systemImage: "location").foregroundStyle(.primary, .secondary)
         }
     }
 }

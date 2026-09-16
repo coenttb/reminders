@@ -2,7 +2,6 @@ import Foundation
 import Models
 import Reminder
 import Reminders
-import Reminders_Interface
 import Reminders_SQL
 import Testing
 import Tagged
@@ -18,16 +17,14 @@ import Tagged
             title: "Groceries",
             notes: "Milk",
             due: .moment(now),
-            flagged: true,
+            repeats: Calendar.RecurrenceRule(calendar: Calendar(identifier: .gregorian), frequency: .weekly),
             priority: .high,
-            completion: .completed,
+            flagged: true,
+            completed: true,
             tags: ["kids", "car"],
-            position: 4,
-            location: .gettingInCar,
-            repeats: .weekly,
             created: now.addingTimeInterval(-86_400)
         )
-        let draft = Reminder.Record.Draft(reminder)
+        let draft = Reminder.Record.Draft(reminder, position: 4)
         #expect(draft.id == reminder.id && draft.dueDate == now && draft.hasTime && draft.status == .completed)
         let record = Reminder.Record(
             id: reminder.id,
@@ -40,42 +37,43 @@ import Tagged
             priority: .high,
             status: .completed,
             position: 4,
-            location: .gettingInCar,
-            repeats: .weekly,
+            repeats: reminder.repeats,
             created: reminder.created
         )
         #expect(Reminder.Record.Draft(record) == draft)
         #expect(Reminder(Reminder.Record.Row(reminder: record, tags: ["car", "kids"])) == reminder)
         var pending = record
         pending.status = .pending
-        #expect(pending.completed && Reminder(Reminder.Record.Row(reminder: pending, tags: [])).completion == .completed)
-        #expect(Reminder.Record.Counts(all: 3, flagged: 1)[.all] == 3 && Reminder.Record.Counts()[.completed] == nil)
+        #expect(pending.completed && Reminder(Reminder.Record.Row(reminder: pending, tags: [])).completed)
+        #expect(Reminders.Overview.Counts(Reminder.Record.Counts(all: 3, flagged: 1))[.all] == 3 && Reminders.Overview.Counts()[.completed] == nil)
     }
 
     @Test func `filters default to hiding completed reminders except Completed`() {
         #expect(Reminders.Filter.Preference.default(for: .completed).showCompleted)
-        #expect(Reminders.Filter.Preference.default(for: .all) == Reminders.Filter.Preference(key: Reminders.Filter.Key(.all), ordering: .dueDate, showCompleted: false))
-        #expect(Reminders.Filter.Preference.default(for: .list(list)).id == Reminders.Filter.Key(.list(list)))
+        #expect(Reminders.Filter.Preference.Record.default(for: .all) == Reminders.Filter.Preference.Record(key: Reminders.Filter.Key(.all), ordering: .dueDate, showCompleted: false))
+        #expect(Reminders.Filter.Preference.Record.default(for: .list(list)).id == Reminders.Filter.Key(.list(list)))
+        #expect(Reminders.Filter.Preference(Reminders.Filter.Preference.Record.default(for: .completed)) == Reminders.Filter.Preference(showCompleted: true))
     }
 
     @Test func `an overview finds its lists and ranks its tags, and a detail knows its ids`() {
-        let personal = List<Reminder>.Record(List(id: list, title: "Personal"))
+        let personal = List<Reminder>(id: list, title: "Personal")
         let overview = Reminders.Overview.Contents(
-            lists: [List<Reminder>.Record.Entry(list: personal, count: 2)],
-            counts: Reminder.Record.Counts(all: 2),
+            lists: [List<Reminder>.Entry(List<Reminder>.Record.Entry(list: List<Reminder>.Record(personal), count: 2))],
+            counts: Reminders.Overview.Counts(Reminder.Record.Counts(all: 2)),
             tags: [
-                Tag<Reminder>.Record.Entry(tag: Tag<Reminder>.Record(Tag(title: "social")), count: 3),
-                Tag<Reminder>.Record.Entry(tag: Tag<Reminder>.Record(Tag(title: "Adulting")), count: 1),
-                Tag<Reminder>.Record.Entry(tag: Tag<Reminder>.Record(Tag(title: "car")), count: 0),
+                Tag<Reminder>.Entry(Tag<Reminder>.Record.Entry(tag: Tag<Reminder>.Record(Tag(title: "social")), count: 3)),
+                Tag<Reminder>.Entry(tag: Tag(title: "Adulting"), count: 1),
+                Tag<Reminder>.Entry(tag: Tag(title: "car"), count: 0),
             ]
         )
         #expect(overview.list(list) == personal && overview.list(List<Reminder>.ID(UUID())) == nil)
         #expect(overview.rankedTags.map(\.title) == ["social", "Adulting", "car"])
         #expect(overview.usedTags.map(\.title) == ["Adulting", "social"])
         let record = Reminder.Record(id: Reminder.ID(UUID()), listID: list, title: "Call", created: now)
-        let detail = Reminders.Filter.Detail.Contents(filter: .list(list), preference: .default(for: .list(list)), rows: [Reminder.Record.Row(reminder: record, tags: [])])
+        let call = Reminder(Reminder.Record.Row(reminder: record, tags: []))
+        let detail = Reminders.Filter.Detail.Contents(filter: .list(list), preference: .default(for: .list(list)), rows: [call])
         #expect(detail.ids == [record.id] && detail.total == 0)
-        let results = Reminders.Search.Contents(sections: [Reminders.Search.Contents.Section(list: personal, rows: [Reminder.Record.Row(reminder: record, tags: ["a"])])])
+        let results = Reminders.Search.Contents(sections: [Reminders.Search.Contents.Section(list: personal, rows: [Reminder(Reminder.Record.Row(reminder: record, tags: ["a"]))])])
         #expect(results.shown == 1 && results.sections.first?.id == list)
         #expect(Reminders.Restoration().filter == nil && Reminders.Restoration(filter: Reminders.Filter.Key(.today), editing: record.id).editing == record.id)
     }

@@ -1,13 +1,12 @@
 import Reminder
 public import Reminders
-public import Reminders_Interface
-public import Reminders_SQL
+import Reminders_SQL
 public import SQLiteData
 
 extension Reminders.Filter.Detail.Request: FetchKeyRequest {
     public func fetch(_ db: Database) throws -> Reminders.Filter.Detail.Contents? {
         guard let filter else { return nil }
-        let preference = try Reminders.Filter.Preference.preference(for: filter).fetchOne(db) ?? .default(for: filter)
+        let preference = try Reminders.Filter.Preference.Record.preference(for: filter).fetchOne(db).map(Reminders.Filter.Preference.init) ?? .default(for: filter)
         let shown = Reminder.Record
             .where { $0.belongs(to: filter, today: today) }
             .where { if !preference.showCompleted { !$0.isDone } }
@@ -18,6 +17,7 @@ extension Reminders.Filter.Detail.Request: FetchKeyRequest {
             .limit(limit ?? total)
             .rows()
             .fetchAll(db)
+            .map(Reminder.init)
         return Reminders.Filter.Detail.Contents(
             filter: filter,
             preference: preference,

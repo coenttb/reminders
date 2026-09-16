@@ -5,18 +5,15 @@ public struct List<Element>: Identifiable, Hashable, Sendable {
     public var id: Tagged<List, UUID>
     public var title: String
     public var color: Color
-    public var position: Int
 
     public init(
         id: ID,
         title: String = "",
-        color: Color = .default,
-        position: Int = 0
+        color: Color = .default
     ) {
         self.id = id
         self.title = title
         self.color = color
-        self.position = position
     }
 }
 

@@ -1,17 +1,15 @@
 public import Models
 public import Reminder
-import Reminders
-public import Reminders_Interface
-public import Reminders_SQL
+public import Reminders
 public import SwiftUI
 
 extension Models.List<Reminder>.Row {
     public struct SwiftUI {
-        private var list: Models.List<Reminder>.Record
+        private var list: Models.List<Reminder>
         private var row: Models.List<Reminder>.Row
         @Environment(\.editMode) private var editMode
 
-        public init(list: Models.List<Reminder>.Record, row: Models.List<Reminder>.Row) {
+        public init(list: Models.List<Reminder>, row: Models.List<Reminder>.Row) {
             self.list = list
             self.row = row
         }
@@ -21,7 +19,7 @@ extension Models.List<Reminder>.Row {
 extension Models.List<Reminder>.Row.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         HStack(spacing: 16) {
-            Models.List<Reminder>.Badge(color: SwiftUI::Color(Models.Color(list.color)))
+            Models.List<Reminder>.Badge(color: SwiftUI::Color(list.color))
             Text(list.title)
             Spacer()
             HStack(spacing: 10) {

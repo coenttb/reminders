@@ -20,7 +20,6 @@ import Tagged
         let doctor = try #require(sample.reminder(Reminder.ID(UUID(uuidString: "00000000-0000-0000-000A-00000000000C")!)))
         #expect(doctor.title == "Doctor appointment" && doctor.due == .moment(now))
         #expect(Set(sample.reminders.map(\.list)) == Set(sample.lists.map(\.id)))
-        #expect(sample.reminders.map(\.position) == Array(0..<11))
     }
 
     @Test func `a generated sample is a function of its seed and fills its scale`() {
@@ -36,7 +35,6 @@ import Tagged
         let listIDs = Set(a.lists.map(\.id)), tagIDs = Set(a.tags.map(\.id))
         #expect(a.reminders.allSatisfy { listIDs.contains($0.list) && $0.tags.isSubset(of: tagIDs) })
         #expect(Set(a.reminders.map(\.id)).count == 200)
-        #expect(a.reminders.map(\.position) == Array(0..<200))
         #expect(a.reminders.allSatisfy { $0.created <= now && $0.created > now.addingTimeInterval(-366 * 86_400) })
         #expect(!a.reminders.filter(\.completed).isEmpty && !a.reminders.filter { $0.due != nil }.isEmpty)
         #expect(Reminders.Sample.Scale.extreme.reminders == 100_000)

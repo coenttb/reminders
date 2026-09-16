@@ -1,6 +1,5 @@
 public import Reminder
 public import Reminders
-public import Reminders_Interface
 public import Reminders_SQL
 public import SwiftUI
 
@@ -54,7 +53,6 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
                             timeChip
                             repeatChip
                         }
-                        locationChip
                     }
                     .padding(.vertical, 2)
                 }
@@ -130,35 +128,21 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
 
     private var repeatChip: some SwiftUI::View {
         Menu {
-            ForEach(Reminder.Repeat.allCases, id: \.self) { option in
-                Button { draft.repeats = option } label: { checked(option.title, draft.repeats == option) }
-            }
-        } label: {
-            chip(tinted: draft.repeats != .never) {
-                if draft.repeats == .never {
-                    Label("Repeat", systemImage: "repeat").labelStyle(.iconOnly)
-                } else {
-                    Label(draft.repeats.title, systemImage: "repeat")
+            Button { draft.repeats = nil } label: { checked("Never", draft.repeats == nil) }
+            Divider()
+            ForEach(Reminder.repeatOptions, id: \.self) { frequency in
+                Button {
+                    draft.repeats = Calendar.RecurrenceRule(calendar: view.calendar, frequency: frequency)
+                } label: {
+                    checked(frequency.title, draft.repeats?.frequency == frequency)
                 }
             }
-        }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-    }
-
-    private var locationChip: some SwiftUI::View {
-        Menu {
-            Button { draft.location = nil } label: { checked("None", draft.location == nil) }
-            Divider()
-            ForEach(Reminder.Location.allCases, id: \.self) { location in
-                Button { draft.location = location } label: { checked(location.title, draft.location == location) }
-            }
         } label: {
-            chip(tinted: draft.location != nil) {
-                if let location = draft.location {
-                    Label(location.title, systemImage: "location")
+            chip(tinted: draft.repeats != nil) {
+                if let repeats = draft.repeats {
+                    Label(repeats.title, systemImage: "repeat")
                 } else {
-                    Label("Location", systemImage: "location").labelStyle(.iconOnly)
+                    Label("Repeat", systemImage: "repeat").labelStyle(.iconOnly)
                 }
             }
         }

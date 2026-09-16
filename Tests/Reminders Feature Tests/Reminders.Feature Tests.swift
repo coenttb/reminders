@@ -10,7 +10,6 @@ import Observation
 import Models
 import Reminder
 import Reminders
-import Reminders_Interface
 import Reminders_Sample
 import Reminders_Feature
 import Reminders_SQL
@@ -93,7 +92,7 @@ struct `Reminder feature` {
         #expect(try await stored(groceries.id)?.completed == true)
         await clock.advance(by: .seconds(5))
         try await until($pending) { $0.isEmpty }
-        #expect(try await stored(groceries.id)?.completion == .completed)
+        #expect(try await stored(groceries.id)?.completed == true)
         await store.send(.newReminderButtonTapped) { [personal, now] in
             $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: .start(in: personal, created: now), tags: [], original: nil)))
         }?.value
@@ -113,14 +112,14 @@ struct `Reminder feature` {
         await store.send(.orderingSelected(.title))?.value
         await store.send(.showCompletedButtonTapped)?.value
         await store.dismount()
-        let saved = try await database.read { db in try Reminder.Record.where { $0.title.eq("Water plants") }.rows().fetchOne(db).map(Reminder.init) }
-        #expect(saved?.title == "Water plants" && saved?.position == 11)
-        #expect(saved?.tags == ["garden", "adulting"])
+        let saved = try await database.read { db in try Reminder.Record.where { $0.title.eq("Water plants") }.rows().fetchOne(db) }
+        #expect(saved?.reminder.title == "Water plants" && saved?.reminder.position == 11)
+        #expect(saved.map { Reminder($0).tags } == ["garden", "adulting"])
         let adulting = try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).count { $0.title.lowercased() == "adulting" } }
         #expect(adulting == 1)
         let restored = try await database.read { db in try Reminders.Restoration.current.fetchOne(db) }
         #expect(restored?.filter == Reminders.Filter.Key(.list(personal)))
-        let preference = try await database.read { [personal] db in try Reminders.Filter.Preference.preference(for: .list(personal)).fetchOne(db) }
+        let preference = try await database.read { [personal] db in try Reminders.Filter.Preference.Record.preference(for: .list(personal)).fetchOne(db) }
         #expect(preference?.ordering == .title && preference?.showCompleted == true)
     }
 
@@ -128,9 +127,9 @@ struct `Reminder feature` {
         let store = try await makeStore()
         try await store.state.$overview.load()
         #expect(await store.state.overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
-        #expect(await store.state.overview.counts == Reminder.Record.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
+        #expect(await store.state.overview.counts == Reminders.Overview.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-        #expect(await store.state.detail?.rows.map(\.reminder.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
+        #expect(await store.state.detail?.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
         try await until(store.state.$overview) { $0.counts.all == 7 }
         try await until(store.state.$detail) { $0?.rows.count == 3 }
@@ -156,7 +155,7 @@ struct `Reminder feature` {
             let next = try #require(await store.state.editing)
             let second = next.id
             #expect(second != first && next.session == UUID(1) && next.draft.isBlank && next.isSaved)
-            #expect(next.place.title == "Milk" && next.place.id == second && next.place.position == 12)
+            #expect(next.place.reminder.title == "Milk" && next.place.reminder.id == second && next.place.position == 12)
             try await until(store.state.$detail) { $0?.ids.suffix(2) == [first, second] }
             #expect(try await stored(first)?.title == "Milk")
             await store.send(.doneButtonTapped) { $0.editing = nil }?.value
@@ -351,22 +350,22 @@ struct `Reminder feature` {
         #expect(try await stored(haircut)?.completed == true)
         await clock.advance(by: .seconds(1))
         try await until($pending) { $0.isEmpty }
-        #expect(try await stored(groceries.id)?.completion == .completed)
-        #expect(try await stored(haircut)?.completion == .completed)
+        #expect(try await stored(groceries.id)?.completed == true)
+        #expect(try await stored(haircut)?.completed == true)
         await store.send(.reminderCompleteButtonTapped(doctor))?.value
         try await until($pending) { $0 == [doctor] }
         await clock.advance(by: .seconds(2))
         await store.send(.reminderCompleteButtonTapped(doctor))?.value
         try await until($pending) { $0.isEmpty }
         await clock.advance(by: .seconds(5))
-        #expect(try await stored(doctor)?.completion == .incomplete)
+        #expect(try await stored(doctor)?.completed == false)
         await store.dismount()
         try await database.write { db in try Reminder.Record.toggle(doctor).execute(db) }
         try await until($pending) { $0 == [doctor] }
         let revived = try await makeStore(clock: clock)
         await clock.advance(by: .seconds(5))
         try await until($pending) { $0.isEmpty }
-        #expect(try await stored(doctor)?.completion == .completed)
+        #expect(try await stored(doctor)?.completed == true)
         await revived.dismount()
     }
 
@@ -382,7 +381,7 @@ struct `Reminder feature` {
             #expect(await store.state.pending == [])
             try await unblock()
             await clock.advance(by: .seconds(5))
-            #expect(try await stored(groceries.id)?.completion == .incomplete)
+            #expect(try await stored(groceries.id)?.completed == false)
             await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
             await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
             await store.send(.reminderCompleteButtonTapped(groceries.id))?.value
@@ -396,7 +395,7 @@ struct `Reminder feature` {
             try await until($pending) { $0 == [haircut] }
             await clock.advance(by: .seconds(5))
             try await until($pending) { $0.isEmpty }
-            #expect(try await stored(haircut)?.completion == .completed)
+            #expect(try await stored(haircut)?.completed == true)
             await store.dismount()
         }
     }
@@ -418,7 +417,7 @@ struct `Reminder feature` {
         await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow, session: UUID(1)) }?.value
         await clock.advance(by: .seconds(5))
         try await until($pending) { $0.isEmpty }
-        #expect(try await stored(groceries.id)?.completion == .completed)
+        #expect(try await stored(groceries.id)?.completed == true)
         let editing = try #require(await store.state.editing)
         #expect(editing.id == haircut.id && editing.session == UUID(1) && editing.draft == Reminder.Record.Draft(haircutRow.reminder))
         await store.send(.doneButtonTapped) { $0.editing = nil }?.value
@@ -499,7 +498,7 @@ struct `Reminder feature` {
     @Test func `an editing session starts saved and knows when the draft differs`() {
         let record = Reminder.Record(id: groceries.id, listID: personal, title: "Groceries", created: now)
         var editing = Reminder.Editing(Reminder.Record.Row(reminder: record, tags: ["car"]), session: UUID())
-        #expect(editing.isSaved && editing.id == record.id && editing.place.tags == ["car"] && editing.place.title == "Groceries")
+        #expect(editing.isSaved && editing.id == record.id && editing.place.reminder.tags == ["car"] && editing.place.reminder.title == "Groceries")
         editing.draft.title = "Call back"
         #expect(!editing.isSaved && editing.original == record)
     }
@@ -658,7 +657,7 @@ struct `Reminder feature` {
         let store = try await makeStore(clock: clock)
         #expect(await store.state.today == day)
         await store.send(.filterTapped(.today)) { $0.filter = .today }?.value
-        try await until(store.state.$detail) { $0?.rows.map(\.reminder.title) == ["Doctor appointment", "Buy concert tickets"] }
+        try await until(store.state.$detail) { $0?.rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"] }
         let untilMidnight = day.upperBound.timeIntervalSince(start)
         let next = try #require(tokyo.day(containing: day.upperBound))
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
@@ -693,5 +692,5 @@ struct `Reminder feature` {
 }
 
 extension Reminders.Search.Contents {
-    var titles: [String] { sections.flatMap(\.rows).map(\.reminder.title) }
+    var titles: [String] { sections.flatMap(\.rows).map(\.title) }
 }

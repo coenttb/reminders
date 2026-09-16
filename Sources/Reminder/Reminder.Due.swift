@@ -21,4 +21,8 @@ extension Reminder.Due {
     public var hasTime: Bool {
         if case .moment = self { true } else { false }
     }
+
+    public func isPast(at now: Date, calendar: Calendar) -> Bool {
+        calendar.compare(date, to: now, toGranularity: .day) == .orderedAscending
+    }
 }

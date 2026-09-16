@@ -1,7 +1,6 @@
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_Interface
 public import Reminders_SQL
 public import SwiftUI
 public import Tagged
@@ -72,17 +71,17 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
                 .listRowSeparator(.hidden)
             }
             let (shown, total) = (contents.rows.count, contents.total)
-            ForEach(Array(contents.rows.enumerated()), id: \.element.reminder.id) { index, record in
-                let id = record.reminder.id
+            ForEach(Array(contents.rows.enumerated()), id: \.element.id) { index, reminder in
+                let id = reminder.id
                 if id == editing, let draft = draft(id) {
                     Reminder.Editor.SwiftUI(
                         draft: draft,
-                        color: color(record.reminder.listID),
+                        color: color(reminder.list),
                         focus: $focus,
                         view: Reminder.Editor(id: id, now: view.now, calendar: view.calendar, actions: actions.editor)
                     )
                 } else {
-                    Reminder.Row.SwiftUI(row: record, color: color(record.reminder.listID), view: row)
+                    Reminder.Row.SwiftUI(reminder: reminder, color: color(reminder.list), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if view.window.nearsEnd(index, of: shown, total: total) { actions.endReached() } }

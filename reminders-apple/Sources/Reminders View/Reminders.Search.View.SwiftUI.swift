@@ -1,8 +1,6 @@
 import Models
 import Reminder
 public import Reminders
-public import Reminders_Interface
-public import Reminders_SQL
 public import SwiftUI
 import Tagged
 
@@ -68,8 +66,8 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
         let row = Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
         ForEach(Array(contents.sections.enumerated()), id: \.element.id) { position, section in
             Section {
-                ForEach(Array(section.rows.enumerated()), id: \.element.reminder.id) { offset, record in
-                    Reminder.Row.SwiftUI(row: record, color: SwiftUI::Color(Models.Color(section.list.color)), view: row)
+                ForEach(Array(section.rows.enumerated()), id: \.element.id) { offset, reminder in
+                    Reminder.Row.SwiftUI(reminder: reminder, color: SwiftUI::Color(section.list.color), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if view.window.nearsEnd(starts[position] + offset, of: shown, total: total) { actions.endReached() } }
@@ -77,7 +75,7 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
             } header: {
                 Text(section.list.title)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(SwiftUI::Color(Models.Color(section.list.color)))
+                    .foregroundStyle(SwiftUI::Color(section.list.color))
                     .textCase(nil)
             }
             .listRowBackground(SwiftUI::Color.clear)

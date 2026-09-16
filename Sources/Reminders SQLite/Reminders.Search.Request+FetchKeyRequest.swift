@@ -1,8 +1,7 @@
 import Models
 import Reminder
 public import Reminders
-public import Reminders_Interface
-public import Reminders_SQL
+import Reminders_SQL
 public import SQLiteData
 import Tagged
 
@@ -16,6 +15,7 @@ extension Reminders.Search.Request: FetchKeyRequest {
                 .where { Reminders.Schema.$hasCaseInsensitivePrefix($0.title, prefix) && !$0.title.in(taken) }
                 .order { $0.title.collate(Reminders.Schema.$localizedCaseInsensitive) }
                 .fetchAll(db)
+                .map(Tag<Reminder>.init)
         }
         let (matched, completed) = try Reminder.Record
             .where { $0.matches(query) }
@@ -34,11 +34,11 @@ extension Reminders.Search.Request: FetchKeyRequest {
             .select { Reminder.Record.Match.Columns(reminder: $0, tags: $0.tagTitles, list: $1) }
             .fetchAll(db)
         for match in matches {
-            let row = Reminder.Record.Row(reminder: match.reminder, tags: match.tags)
+            let row = Reminder(Reminder.Record.Row(reminder: match.reminder, tags: match.tags))
             if contents.sections.last?.list.id == match.list.id {
                 contents.sections[contents.sections.count - 1].rows.append(row)
             } else {
-                contents.sections.append(Reminders.Search.Contents.Section(list: match.list, rows: [row]))
+                contents.sections.append(Reminders.Search.Contents.Section(list: List<Reminder>(match.list), rows: [row]))
             }
         }
         return contents

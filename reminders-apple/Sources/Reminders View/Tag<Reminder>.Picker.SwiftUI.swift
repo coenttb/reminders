@@ -1,7 +1,6 @@
+public import Reminders
 public import Models
 public import Reminder
-public import Reminders_Interface
-public import Reminders_SQL
 import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
@@ -9,14 +8,14 @@ public import Tagged
 extension Tag<Reminder>.Picker {
     public struct SwiftUI {
         @Binding private var selection: Set<Tag<Reminder>.ID>
-        private var tags: [Tag<Reminder>.Record]
+        private var tags: [Tag<Reminder>]
         private var picker: Tag<Reminder>.Picker
         @State private var editing: Tag<Reminder>.ID?
         @State private var adding = false
         @State private var title = ""
         @Environment(\.dismiss) private var dismiss
 
-        public init(selection: Binding<Set<Tag<Reminder>.ID>>, tags: [Tag<Reminder>.Record], picker: Tag<Reminder>.Picker) {
+        public init(selection: Binding<Set<Tag<Reminder>.ID>>, tags: [Tag<Reminder>], picker: Tag<Reminder>.Picker) {
             self._selection = selection
             self.tags = tags
             self.picker = picker

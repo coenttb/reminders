@@ -1,6 +1,5 @@
 public import Models
 public import Reminder
-public import Reminders
 public import StructuredQueries
 public import Tagged
 
@@ -24,8 +23,20 @@ extension List<Reminder> {
 extension List<Reminder>.Record.Draft: Hashable, Sendable {}
 
 extension List<Reminder>.Record {
-    public init(_ list: List<Reminder>) {
-        self.init(id: list.id, title: list.title, color: Color.Hex(list.color), position: list.position)
+    public init(_ list: List<Reminder>, position: Int = 0) {
+        self.init(id: list.id, title: list.title, color: Color.Hex(list.color), position: position)
+    }
+}
+
+extension List<Reminder> {
+    public init(_ record: List<Reminder>.Record) {
+        self.init(id: record.id, title: record.title, color: Color(record.color))
+    }
+}
+
+extension List<Reminder>.Entry {
+    public init(_ entry: List<Reminder>.Record.Entry) {
+        self.init(list: List<Reminder>(entry.list), count: entry.count)
     }
 }
 

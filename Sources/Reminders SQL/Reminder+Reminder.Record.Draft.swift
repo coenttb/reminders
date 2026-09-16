@@ -1,7 +1,7 @@
 public import Reminder
 
 extension Reminder.Record.Draft {
-    public init(_ reminder: Reminder) {
+    public init(_ reminder: Reminder, position: Int = 0) {
         self.init(
             id: reminder.id,
             listID: reminder.list,
@@ -12,8 +12,7 @@ extension Reminder.Record.Draft {
             flagged: reminder.flagged,
             priority: reminder.priority,
             status: reminder.completed ? .completed : .incomplete,
-            position: reminder.position,
-            location: reminder.location,
+            position: position,
             repeats: reminder.repeats,
             created: reminder.created
         )

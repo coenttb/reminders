@@ -197,10 +197,68 @@ extension Reminders.Schema {
                 END
                 """#).execute(db)
         }
+        migrator.registerMigration("Store a repeat as a recurrence rule and drop the location") { db in
+            try #sql("""
+                CREATE TABLE "reminders_new" (
+                  "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+                  "listID" TEXT NOT NULL REFERENCES "lists"("id") ON DELETE CASCADE,
+                  "title" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "notes" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "due" TEXT CHECK ("due" IS NULL OR "due" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]'),
+                  "hasTime" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "flagged" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "priority" INTEGER CHECK ("priority" IS NULL OR "priority" IN (1, 2, 3)),
+                  "status" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0 CHECK ("status" IN (0, 1, 2)),
+                  "position" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0,
+                  "repeats" TEXT CHECK ("repeats" IS NULL OR json_valid("repeats")),
+                  "created" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '1970-01-01 00:00:00.000' CHECK ("created" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]'),
+                  "searchText" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT ''
+                ) STRICT
+                """).execute(db)
+            try #sql("""
+                INSERT INTO "reminders_new"
+                SELECT "id", "listID", "title", "notes", "due", "hasTime", "flagged", "priority", "status", "position", NULL, "created", "searchText"
+                FROM "reminders" ORDER BY "rowid"
+                """).execute(db)
+            let encoder = JSONEncoder()
+            for frequency in [Calendar.RecurrenceRule.Frequency.daily, .weekly, .monthly, .yearly] {
+                let rule = String(decoding: try encoder.encode(Calendar.RecurrenceRule(calendar: .current, frequency: frequency)), as: UTF8.self)
+                try #sql("""
+                    UPDATE "reminders_new" SET "repeats" = \(bind: rule)
+                    WHERE "id" IN (SELECT "id" FROM "reminders" WHERE "repeats" = \(bind: Self.legacyRepeatName(frequency)))
+                    """).execute(db)
+            }
+            try #sql(#"DROP TABLE "reminders""#).execute(db)
+            try #sql(#"ALTER TABLE "reminders_new" RENAME TO "reminders""#).execute(db)
+            try #sql(#"CREATE INDEX "idx_reminders_listID" ON "reminders"("listID")"#).execute(db)
+            try #sql(#"CREATE INDEX "idx_reminders_due" ON "reminders"("due") WHERE "due" IS NOT NULL"#).execute(db)
+            try #sql(#"CREATE INDEX "idx_reminders_status" ON "reminders"("status")"#).execute(db)
+            try #sql(#"""
+                CREATE TRIGGER "reminders_searchText_insert" AFTER INSERT ON "reminders" BEGIN
+                  UPDATE "reminders" SET "searchText" = searchFolded(NEW."title" || char(10) || NEW."notes") WHERE "id" = NEW."id";
+                END
+                """#).execute(db)
+            try #sql(#"""
+                CREATE TRIGGER "reminders_searchText_update" AFTER UPDATE OF "title", "notes" ON "reminders" BEGIN
+                  UPDATE "reminders" SET "searchText" = searchFolded(NEW."title" || char(10) || NEW."notes") WHERE "id" = NEW."id";
+                END
+                """#).execute(db)
+        }
         if let target {
             try migrator.migrate(database, upTo: target)
         } else {
             try migrator.migrate(database)
+        }
+    }
+
+    private static func legacyRepeatName(_ frequency: Calendar.RecurrenceRule.Frequency) -> String {
+        switch frequency {
+        case .daily: "daily"
+        case .weekly: "weekly"
+        case .monthly: "monthly"
+        case .yearly: "yearly"
+        case .minutely, .hourly: ""
+        @unknown default: ""
         }
     }
 

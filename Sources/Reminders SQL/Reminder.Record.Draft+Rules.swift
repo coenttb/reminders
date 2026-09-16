@@ -1,5 +1,6 @@
 public import Foundation
 public import Reminder
+import Reminders
 
 extension Reminder.Record.Draft {
     public var completed: Bool { status != .incomplete }

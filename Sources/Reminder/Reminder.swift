@@ -8,13 +8,11 @@ public struct Reminder: Identifiable, Hashable, Sendable {
     public var title: String
     public var notes: String
     public var due: Due?
-    public var flagged: Bool
+    public var repeats: Calendar.RecurrenceRule?
     public var priority: Priority?
-    public var completion: Completion
+    public var flagged: Bool
+    public var completed: Bool
     public var tags: Set<Tag<Reminder>.ID>
-    public var position: Int
-    public var location: Location?
-    public var repeats: Repeat
     public var created: Date
 
     public init(
@@ -23,13 +21,11 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         title: String = "",
         notes: String = "",
         due: Due? = nil,
-        flagged: Bool = false,
+        repeats: Calendar.RecurrenceRule? = nil,
         priority: Priority? = nil,
-        completion: Completion = .incomplete,
+        flagged: Bool = false,
+        completed: Bool = false,
         tags: Set<Tag<Reminder>.ID> = [],
-        position: Int = 0,
-        location: Location? = nil,
-        repeats: Repeat = .never,
         created: Date
     ) {
         self.id = id
@@ -37,13 +33,11 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         self.title = title
         self.notes = notes
         self.due = due
-        self.flagged = flagged
-        self.priority = priority
-        self.completion = completion
-        self.tags = tags
-        self.position = position
-        self.location = location
         self.repeats = repeats
+        self.priority = priority
+        self.flagged = flagged
+        self.completed = completed
+        self.tags = tags
         self.created = created
     }
 }

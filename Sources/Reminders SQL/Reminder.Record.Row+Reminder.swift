@@ -9,14 +9,12 @@ extension Reminder {
             list: row.reminder.listID,
             title: row.reminder.title,
             notes: row.reminder.notes,
-            due: row.reminder.dueDate.map { Reminder.Due($0, hasTime: row.reminder.hasTime) },
-            flagged: row.reminder.flagged,
-            priority: row.reminder.priority,
-            completion: row.reminder.status == .incomplete ? .incomplete : .completed,
-            tags: Set(row.tags.map { Tag<Reminder>.ID($0) }),
-            position: row.reminder.position,
-            location: row.reminder.location,
+            due: row.reminder.due,
             repeats: row.reminder.repeats,
+            priority: row.reminder.priority,
+            flagged: row.reminder.flagged,
+            completed: row.reminder.completed,
+            tags: Set(row.tags.map { Tag<Reminder>.ID($0) }),
             created: row.reminder.created
         )
     }

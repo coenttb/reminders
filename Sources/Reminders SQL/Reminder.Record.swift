@@ -19,8 +19,8 @@ extension Reminder {
         public var priority: Reminder.Priority?
         public var status: Status = .incomplete
         public var position: Int = 0
-        public var location: Reminder.Location?
-        public var repeats: Reminder.Repeat = .never
+        @Column(as: Calendar.RecurrenceRule.JSONRepresentation?.self)
+        public var repeats: Calendar.RecurrenceRule?
         public var created: Date
 
         public init(
@@ -34,8 +34,7 @@ extension Reminder {
             priority: Reminder.Priority? = nil,
             status: Status = .incomplete,
             position: Int = 0,
-            location: Reminder.Location? = nil,
-            repeats: Reminder.Repeat = .never,
+            repeats: Calendar.RecurrenceRule? = nil,
             created: Date
         ) {
             self.id = id
@@ -48,7 +47,6 @@ extension Reminder {
             self.priority = priority
             self.status = status
             self.position = position
-            self.location = location
             self.repeats = repeats
             self.created = created
         }
@@ -89,7 +87,6 @@ extension Reminder.Record {
             row.flagged = excluded.flagged
             row.priority = excluded.priority
             row.listID = excluded.listID
-            row.location = excluded.location
             row.repeats = excluded.repeats
         }
     }

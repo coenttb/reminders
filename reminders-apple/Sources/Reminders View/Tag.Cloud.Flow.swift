@@ -1,6 +1,6 @@
+import Reminders
 import Models
 import Reminder
-import Reminders_Interface
 public import SwiftUI
 
 extension Tag<Reminder>.Cloud {

@@ -1,16 +1,15 @@
+public import Reminders
 public import Reminder
-public import Reminders_Interface
-public import Reminders_SQL
 public import SwiftUI
 
 extension Reminder.Row {
     public struct SwiftUI {
-        private var row: Reminder.Record.Row
+        private var reminder: Reminder
         private var color: SwiftUI::Color
         private var view: Reminder.Row
 
-        public init(row: Reminder.Record.Row, color: SwiftUI::Color, view: Reminder.Row) {
-            self.row = row
+        public init(reminder: Reminder, color: SwiftUI::Color, view: Reminder.Row) {
+            self.reminder = reminder
             self.color = color
             self.view = view
         }
@@ -19,7 +18,6 @@ extension Reminder.Row {
 
 extension Reminder.Row.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
-        let reminder = row.reminder
         let actions = view.actions
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
@@ -66,17 +64,16 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
     }
 
     private var subtitle: Text? {
-        let reminder = row.reminder
         let (now, calendar) = (view.now, view.calendar)
         let due = reminder.due.map { due in
             Text(due.description(at: now, calendar: calendar))
                 .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI::Color.red : SwiftUI::Color.secondary)
         }
-        switch (due, row.tagLine.isEmpty) {
+        switch (due, reminder.tagLine.isEmpty) {
         case (nil, true): return nil
         case let (due?, true): return due
-        case (nil, false): return Text(row.tagLine)
-        case let (due?, false): return Text("\(due)  \(row.tagLine)")
+        case (nil, false): return Text(reminder.tagLine)
+        case let (due?, false): return Text("\(due)  \(reminder.tagLine)")
         }
     }
 }

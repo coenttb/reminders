@@ -15,7 +15,7 @@ private struct Message {}
     @Test func `the default list is named and takes the default color`() {
         let id = List<Reminder>.ID(UUID())
         let list = List<Reminder>.default(id: id)
-        #expect(list.id == id && list.title == "Personal" && list.color == .default && list.position == 0)
+        #expect(list.id == id && list.title == "Personal" && list.color == .default)
     }
 
     @Test func `lists and tags of different elements have distinct identifiers`() {

@@ -1,16 +1,15 @@
+public import Reminders
 public import Models
 public import Reminder
-public import Reminders_Interface
-public import Reminders_SQL
 public import SwiftUI
 import Tagged
 
 extension Tag<Reminder>.Cloud {
     public struct SwiftUI {
-        private var tags: [Tag<Reminder>.Record]
+        private var tags: [Tag<Reminder>]
         private var cloud: Tag<Reminder>.Cloud
 
-        public init(tags: [Tag<Reminder>.Record], cloud: Tag<Reminder>.Cloud) {
+        public init(tags: [Tag<Reminder>], cloud: Tag<Reminder>.Cloud) {
             self.tags = tags
             self.cloud = cloud
         }

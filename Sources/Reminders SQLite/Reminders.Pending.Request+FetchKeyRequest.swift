@@ -1,6 +1,5 @@
 public import Reminder
 public import Reminders
-public import Reminders_Interface
 import Reminders_SQL
 public import SQLiteData
 public import Tagged

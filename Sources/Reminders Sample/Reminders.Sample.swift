@@ -30,22 +30,22 @@ extension Reminders {
         let personal = List<Reminder>.ID(id(0)), family = List<Reminder>.ID(id(1)), business = List<Reminder>.ID(id(2))
         return Sample(
             lists: [
-                List(id: personal, title: "Personal", color: .default, position: 0),
-                List(id: family, title: "Family", color: Color(red: 237 / 255, green: 137 / 255, blue: 53 / 255), position: 1),
-                List(id: business, title: "Business", color: Color(red: 178 / 255, green: 93 / 255, blue: 211 / 255), position: 2),
+                List(id: personal, title: "Personal", color: .default),
+                List(id: family, title: "Family", color: Color(red: 237 / 255, green: 137 / 255, blue: 53 / 255)),
+                List(id: business, title: "Business", color: Color(red: 178 / 255, green: 93 / 255, blue: 211 / 255)),
             ],
             reminders: [
-                Reminder(id: Reminder.ID(id(10)), list: personal, title: "Groceries", notes: "Milk\nEggs\nApples\nOatmeal\nSpinach", tags: ["someday", "optional", "adulting"], position: 0, created: day(-30)),
-                Reminder(id: Reminder.ID(id(11)), list: personal, title: "Haircut", due: .day(day(-2)), flagged: true, tags: ["someday", "optional"], position: 1, created: day(-9)),
-                Reminder(id: Reminder.ID(id(12)), list: personal, title: "Doctor appointment", notes: "Ask about diet", due: .moment(now), priority: .high, tags: ["adulting"], position: 2, created: day(-3)),
-                Reminder(id: Reminder.ID(id(13)), list: personal, title: "Take a walk", due: .day(day(-190)), completion: .completed, tags: ["car", "kids", "social"], position: 3, created: day(-200)),
-                Reminder(id: Reminder.ID(id(14)), list: personal, title: "Buy concert tickets", due: .day(now), tags: ["social", "night"], position: 4, created: day(-1)),
-                Reminder(id: Reminder.ID(id(15)), list: family, title: "Pick up kids from school", due: .moment(day(2)), flagged: true, priority: .high, position: 5, created: day(-5)),
-                Reminder(id: Reminder.ID(id(16)), list: family, title: "Get laundry", due: .day(day(-2)), priority: .low, completion: .completed, position: 6, created: day(-12)),
-                Reminder(id: Reminder.ID(id(17)), list: family, title: "Take out trash", due: .day(day(4)), priority: .high, position: 7, created: day(-2)),
-                Reminder(id: Reminder.ID(id(18)), list: business, title: "Call accountant", notes: "Status of tax return\nExpenses for next year\nChanging payroll company", due: .day(day(2)), position: 8, created: day(-7)),
-                Reminder(id: Reminder.ID(id(19)), list: business, title: "Send weekly emails", due: .day(day(-2)), priority: .medium, completion: .completed, position: 9, created: day(-14)),
-                Reminder(id: Reminder.ID(id(20)), list: business, title: "Prepare for WWDC", due: .day(day(2)), tags: ["social"], position: 10, created: day(-4)),
+                Reminder(id: Reminder.ID(id(10)), list: personal, title: "Groceries", notes: "Milk\nEggs\nApples\nOatmeal\nSpinach", tags: ["someday", "optional", "adulting"], created: day(-30)),
+                Reminder(id: Reminder.ID(id(11)), list: personal, title: "Haircut", due: .day(day(-2)), flagged: true, tags: ["someday", "optional"], created: day(-9)),
+                Reminder(id: Reminder.ID(id(12)), list: personal, title: "Doctor appointment", notes: "Ask about diet", due: .moment(now), priority: .high, tags: ["adulting"], created: day(-3)),
+                Reminder(id: Reminder.ID(id(13)), list: personal, title: "Take a walk", due: .day(day(-190)), completed: true, tags: ["car", "kids", "social"], created: day(-200)),
+                Reminder(id: Reminder.ID(id(14)), list: personal, title: "Buy concert tickets", due: .day(now), tags: ["social", "night"], created: day(-1)),
+                Reminder(id: Reminder.ID(id(15)), list: family, title: "Pick up kids from school", due: .moment(day(2)), priority: .high, flagged: true, created: day(-5)),
+                Reminder(id: Reminder.ID(id(16)), list: family, title: "Get laundry", due: .day(day(-2)), priority: .low, completed: true, created: day(-12)),
+                Reminder(id: Reminder.ID(id(17)), list: family, title: "Take out trash", due: .day(day(4)), priority: .high, created: day(-2)),
+                Reminder(id: Reminder.ID(id(18)), list: business, title: "Call accountant", notes: "Status of tax return\nExpenses for next year\nChanging payroll company", due: .day(day(2)), created: day(-7)),
+                Reminder(id: Reminder.ID(id(19)), list: business, title: "Send weekly emails", due: .day(day(-2)), priority: .medium, completed: true, created: day(-14)),
+                Reminder(id: Reminder.ID(id(20)), list: business, title: "Prepare for WWDC", due: .day(day(2)), tags: ["social"], created: day(-4)),
             ],
             tags: Set(["car", "kids", "someday", "optional", "social", "night", "adulting"].map(Tag<Reminder>.init(title:)))
         )
@@ -63,11 +63,10 @@ extension Reminders.Sample {
         }
         let tagTitles = (0..<scale.tags).map { Words.tag($0) }
         let lists = (0..<scale.lists).map { index in
-            List<Reminder>(id: List<Reminder>.ID(uuid()), title: Words.list(index), color: Words.colors[index % Words.colors.count], position: index)
+            List<Reminder>(id: List<Reminder>.ID(uuid()), title: Words.list(index), color: Words.colors[index % Words.colors.count])
         }
         var reminders: [Reminder] = []
         reminders.reserveCapacity(scale.reminders)
-        var position = 0
         for list in lists {
             for _ in 0..<scale.remindersPerList {
                 let created = now.addingTimeInterval(-Double(random.next(in: 0..<365 * 24 * 60 * 60)))
@@ -87,15 +86,13 @@ extension Reminders.Sample {
                         title: Words.title(&random),
                         notes: random.chance(1, in: 6) ? Words.note(&random) : "",
                         due: due,
-                        flagged: random.chance(1, in: 10),
                         priority: random.chance(1, in: 4) ? Reminder.Priority.allCases[random.next(in: 0..<3)] : nil,
-                        completion: random.chance(1, in: 5) ? .completed : .incomplete,
+                        flagged: random.chance(1, in: 10),
+                        completed: random.chance(1, in: 5),
                         tags: tags,
-                        position: position,
                         created: created
                     )
                 )
-                position += 1
             }
         }
         return Reminders.Sample(lists: lists, reminders: reminders, tags: Set(tagTitles.map(Tag<Reminder>.init(title:))))

@@ -19,14 +19,8 @@ extension Reminder.Record {
     }
 }
 
-extension Reminder.Record.Counts {
-    public subscript(_ filter: Reminders.Filter) -> Int? {
-        switch filter {
-        case .all: all
-        case .flagged: flagged
-        case .scheduled: scheduled
-        case .today: today
-        case .completed, .list, .tags: nil
-        }
+extension Reminders.Overview.Counts {
+    public init(_ counts: Reminder.Record.Counts) {
+        self.init(all: counts.all, flagged: counts.flagged, scheduled: counts.scheduled, today: counts.today)
     }
 }

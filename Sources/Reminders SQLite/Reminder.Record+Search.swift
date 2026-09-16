@@ -1,7 +1,6 @@
 public import Foundation
 public import Reminder
 public import Reminders
-public import Reminders_Interface
 public import Reminders_SQL
 public import SQLiteData
 

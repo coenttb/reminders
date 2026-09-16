@@ -56,9 +56,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders Interface"
-               BuildableName = "Reminders Interface"
-               BlueprintName = "Reminders Interface"
+               BlueprintIdentifier = "Reminders Dependency"
+               BuildableName = "Reminders Dependency"
+               BlueprintName = "Reminders Dependency"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -171,20 +171,6 @@
                BlueprintIdentifier = "Reminders Tests"
                BuildableName = "Reminders Tests"
                BlueprintName = "Reminders Tests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "NO"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders Interface Tests"
-               BuildableName = "Reminders Interface Tests"
-               BlueprintName = "Reminders Interface Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -335,16 +321,6 @@
                BlueprintIdentifier = "Reminders Tests"
                BuildableName = "Reminders Tests"
                BlueprintName = "Reminders Tests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders Interface Tests"
-               BuildableName = "Reminders Interface Tests"
-               BlueprintName = "Reminders Interface Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

@@ -1,5 +1,4 @@
 public import Reminders
-public import Reminders_Interface
 public import SwiftUI
 
 extension Reminders.Filter.Tile {

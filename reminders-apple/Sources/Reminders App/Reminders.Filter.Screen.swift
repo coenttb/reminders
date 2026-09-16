@@ -3,7 +3,6 @@ import Dependencies
 import Models
 import Reminder
 import Reminders
-import Reminders_Interface
 import Reminders_SQL
 import Reminders_Feature
 import Reminders_View
@@ -33,7 +32,7 @@ extension Reminders.Filter.Screen: SwiftUI::View {
         Reminders.Filter.Detail.View.SwiftUI(
             contents: contents,
             style: style,
-            color: { store.overview.list($0).map { SwiftUI.Color(Models.Color($0.color)) } ?? .blue },
+            color: { store.overview.list($0).map { SwiftUI.Color($0.color) } ?? .blue },
             draft: { Binding($store[dynamicMember: \.[draft: $0]]) },
             view: Reminders.Filter.Detail.View(
                 filter: filter,
@@ -55,7 +54,7 @@ extension Reminders.Filter.Screen {
         if case let .list(id) = filter { id } else { nil }
     }
 
-    private var list: Models.List<Reminder>.Record? { listID.flatMap(store.overview.list) }
+    private var list: Models.List<Reminder>? { listID.flatMap(store.overview.list) }
 
     private var actions: Reminders.Filter.Detail.View.Actions {
         Reminders.Filter.Detail.View.Actions(

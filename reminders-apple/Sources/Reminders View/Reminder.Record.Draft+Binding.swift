@@ -14,6 +14,11 @@ extension Reminder.Record.Draft {
         set { set(hasTime: newValue, at: now, calendar: calendar) }
     }
 
+    subscript(repeatFrequency calendar: Calendar) -> Calendar.RecurrenceRule.Frequency? {
+        get { repeats?.frequency }
+        set { repeats = newValue.map { Calendar.RecurrenceRule(calendar: calendar, frequency: $0) } }
+    }
+
     subscript(date fallback: Date) -> Date {
         get { due?.date ?? fallback }
         set { set(due: newValue) }

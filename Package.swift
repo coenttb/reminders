@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "Models", targets: ["Models"]),
         .library(name: "Reminder", targets: ["Reminder"]),
         .library(name: "Reminders", targets: ["Reminders"]),
-        .library(name: "Reminders Interface", targets: ["Reminders Interface"]),
+        .library(name: "Reminders Dependency", targets: ["Reminders Dependency"]),
         .library(name: "Reminders Sample", targets: ["Reminders Sample"]),
         .library(name: "Reminders SQL", targets: ["Reminders SQL"]),
         .library(name: "Reminders SQLite", targets: ["Reminders SQLite"]),
@@ -21,6 +21,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.39.1", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
+        .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "protocol-case-paths"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
         .package(url: "https://github.com/swift-molecules/swift-foundation-extensions.git", branch: "main"),
@@ -44,6 +45,7 @@ let package = Package(
         .target(
             name: "Reminders",
             dependencies: [
+                .product(name: "CasePaths", package: "swift-case-paths"),
                 "Reminder",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
@@ -53,14 +55,10 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Reminders Interface",
+            name: "Reminders Dependency",
             dependencies: [
-                "Reminder",
+                .product(name: "Dependencies", package: "swift-dependencies"),
                 "Reminders",
-                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                "Models",
-                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
-                .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
         .target(
@@ -79,7 +77,6 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                "Reminders Interface",
                 "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "StructuredQueries", package: "swift-structured-queries"),
@@ -91,7 +88,7 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                "Reminders Interface",
+                "Reminders Dependency",
                 "Reminders Sample",
                 "Reminders SQL",
                 .product(name: "Dependencies", package: "swift-dependencies"),
@@ -112,7 +109,7 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                "Reminders Interface",
+                "Reminders Dependency",
                 "Reminders SQL",
                 "Reminders SQLite",
                 "Models",
@@ -151,17 +148,6 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "Reminders Interface Tests",
-            dependencies: [
-                "Reminder",
-                "Reminders",
-                "Reminders Interface",
-                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                "Models",
-                .product(name: "Tagged", package: "swift-tagged"),
-            ]
-        ),
-        .testTarget(
             name: "Reminders Sample Tests",
             dependencies: [
                 "Reminder",
@@ -177,7 +163,6 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                "Reminders Interface",
                 "Reminders SQL",
                 "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -188,7 +173,6 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                "Reminders Interface",
                 "Reminders Sample",
                 "Reminders SQL",
                 "Reminders SQLite",

@@ -2,7 +2,7 @@ public import ComposableArchitecture2
 public import Dependencies
 public import Models
 public import Reminder
-public import Reminders_Interface
+public import Reminders
 public import Reminders_SQL
 public import SQLiteData
 import Foundation

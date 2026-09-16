@@ -6,5 +6,6 @@ import SwiftUI
 extension Binding<Reminder.Record.Draft> {
     func dueOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now, calendar: calendar]] }
     func timeOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now, calendar: calendar]] }
+    func repeatFrequency(in calendar: Calendar) -> Binding<Calendar.RecurrenceRule.Frequency?> { self[dynamicMember: \.[repeatFrequency: calendar]] }
     func date(or fallback: Date) -> Binding<Date> { self[dynamicMember: \.[date: fallback]] }
 }

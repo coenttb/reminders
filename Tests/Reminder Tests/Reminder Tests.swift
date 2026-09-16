@@ -17,19 +17,12 @@ import Tagged
     @Test func `only incomplete reminders before today are past due`() {
         var reminder = reminder("Call", due: .day(now.addingTimeInterval(-.day)))
         #expect(reminder.pastDue(at: now, calendar: calendar))
-        reminder.completion = .completed
+        reminder.completed = true
         #expect(!reminder.pastDue(at: now, calendar: calendar))
-        reminder.completion = .incomplete
+        reminder.completed = false
         reminder.due = .moment(now)
         #expect(!reminder.pastDue(at: now, calendar: calendar))
         #expect(!self.reminder().pastDue(at: now, calendar: calendar))
-    }
-
-    @Test func `a completion is incomplete or completed`() {
-        var reminder = reminder()
-        #expect(reminder.completion == .incomplete && !reminder.completed)
-        reminder.completion = .completed
-        #expect(reminder.completion == .completed && reminder.completed)
     }
 
     @Test func `a title of only whitespace is blank`() {
@@ -42,9 +35,14 @@ import Tagged
         #expect(Reminder.Due.day(date).date == date && !Reminder.Due.day(date).hasTime)
         #expect(Reminder.Due.moment(date).date == date && Reminder.Due.moment(date).hasTime)
         #expect(Reminder.Due(date, hasTime: true) == .moment(date) && Reminder.Due(date, hasTime: false) == .day(date))
-        var reminder = reminder(due: .moment(date))
-        #expect(reminder.due?.date == date && reminder.due?.hasTime == true)
-        reminder.set(due: nil)
-        #expect(reminder.due == nil)
+        #expect(Reminder.Due.day(date).isPast(at: date.addingTimeInterval(.day), calendar: calendar))
+        #expect(!Reminder.Due.moment(date).isPast(at: date.addingTimeInterval(3_600), calendar: calendar))
+    }
+
+    @Test func `a repeat is a Foundation recurrence rule or nothing`() {
+        var reminder = reminder()
+        #expect(reminder.repeats == nil)
+        reminder.repeats = Calendar.RecurrenceRule(calendar: calendar, frequency: .weekly)
+        #expect(reminder.repeats?.frequency == .weekly && reminder.repeats?.interval == 1)
     }
 }
