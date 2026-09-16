@@ -4,24 +4,6 @@ public import Organizing
 public import Reminders
 public import Tagged
 
-extension Reminders.Reminder {
-    public struct Draft: Hashable, Sendable {
-        public var reminder: Reminder
-        public let original: Reminder
-        public let isNew: Bool
-        public let session: UUID
-
-        public init(_ reminder: Reminder, isNew: Bool, session: UUID) {
-            self.reminder = reminder
-            self.original = reminder
-            self.isNew = isNew
-            self.session = session
-        }
-
-        public var isDirty: Bool { reminder != original }
-    }
-}
-
 extension Reminders.Reminder.Draft {
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Sendable {

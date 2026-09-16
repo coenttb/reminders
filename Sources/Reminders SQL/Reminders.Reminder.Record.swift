@@ -97,10 +97,6 @@ extension Reminders.Reminder.Record {
 }
 
 extension Reminders.Reminder.Record {
-    public static var rows: Select<Row, Reminder.Record, List<Reminder>.Record> {
-        Reminder.Record.all.rows()
-    }
-
     public static func toggle(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
         Reminder.Record.find(id).update {
             $0.status = Case($0.status)

@@ -23,11 +23,6 @@ extension Reminders.Filter.Preference.Record {
         self.init(key: key, ordering: preference.ordering.rawValue, showCompleted: preference.showCompleted)
     }
 }
-
-extension Reminders.Filter.Preference.Record: Identifiable {
-    public var id: Reminders.Filter.Key { key }
-}
-
 extension Reminders.Filter.Preference.Record {
     public static func preference(for filter: Reminders.Filter) -> Where<Reminders.Filter.Preference.Record> {
         Reminders.Filter.Preference.Record.find(Reminders.Filter.Key(filter))

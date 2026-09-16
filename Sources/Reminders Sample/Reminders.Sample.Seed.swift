@@ -12,6 +12,6 @@ extension Reminders.Sample {
     }
 }
 
-extension Reminders.Sample.Seed {
+extension Reminders.Sample.Seed: CustomStringConvertible {
     public var description: String { "0x" + String(value, radix: 16, uppercase: true) }
 }

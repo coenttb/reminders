@@ -24,18 +24,6 @@ extension Reminders.Filter {
 
         public var hasMore: Bool { rows.count < total }
 
-        public struct Row: Identifiable, Hashable, Sendable {
-            public var reminder: Reminder
-            public var color: Color
-
-            public var id: Reminder.ID { reminder.id }
-
-            public init(reminder: Reminder, color: Color) {
-                self.reminder = reminder
-                self.color = color
-            }
-        }
-
         public var reminders: [Reminder] { rows.map(\.reminder) }
     }
 }

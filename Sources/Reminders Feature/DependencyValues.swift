@@ -35,5 +35,5 @@ extension DependencyValues {
 }
 
 #if canImport(os)
-private let logger = Logger(subsystem: "com.coenttb.apple-apps.reminders", category: "Database")
+private let logger = Logger(subsystem: "com.coenttb.reminders", category: "Database")
 #endif

@@ -20,18 +20,6 @@ extension Reminders.Search {
 
         public var hasMore: Bool { shown < total }
 
-        public struct Section: Identifiable, Hashable, Sendable {
-            public var list: List<Reminder>
-            public var reminders: [Reminder]
-
-            public var id: List<Reminder>.ID { list.id }
-
-            public init(list: List<Reminder>, reminders: [Reminder]) {
-                self.list = list
-                self.reminders = reminders
-            }
-        }
-
         public var reminders: [Reminder] { sections.flatMap(\.reminders) }
     }
 }

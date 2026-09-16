@@ -30,9 +30,3 @@ extension Reminders.Pending {
 
     public mutating func elapse() { self = Self.elapsing(self) }
 }
-
-extension Reminders.Pending: ExpressibleByArrayLiteral {
-    public init(arrayLiteral ids: Reminder.ID...) {
-        self.init(Set(ids))
-    }
-}

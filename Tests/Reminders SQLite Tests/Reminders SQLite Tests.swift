@@ -471,7 +471,7 @@ import Tagged
 
     @Test func `a row's tag list is read through the tags index, not a scan of the tags per row`() throws {
         let (database, sample) = try makeDatabase()
-        let steps = try plan(Reminder.Record.rows, database)
+        let steps = try plan(Reminder.Record.all.rows(), database)
         #expect(!steps.contains { $0.hasPrefix("SCAN tags") }, "\(steps)")
         #expect(steps.contains { $0.hasPrefix("SEARCH tags USING COVERING INDEX") }, "\(steps)")
         try database.write { db in _ = try Tag<Reminder>.Record.rename("someday", to: "Someday", in: db) }

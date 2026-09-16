@@ -8,7 +8,3 @@ extension Reminders.Search {
         case tag(Tag<Reminder>.ID)
     }
 }
-
-extension Reminders.Search.Token: Identifiable {
-    public var id: Self { self }
-}
