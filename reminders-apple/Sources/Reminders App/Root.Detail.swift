@@ -42,7 +42,10 @@ extension Root {
                 move: { store.send(.remindersMoved($0, $1)) },
                 order: { store.send(.orderingSelected($0)) },
                 toggleCompleted: { store.send(.showCompletedButtonTapped) },
-                newReminder: { store.send(.newReminderButtonTapped) }
+                newReminder: { store.send(.newReminderButtonTapped) },
+                info: list.map { list in { store.send(.listDetailsButtonTapped(list.id)) } },
+                delete: list.map { list in { store.send(.listDeleted(list.id)) } },
+                clearCompleted: { store.send(.clearCompletedButtonTapped) }
             )
             // Leaving the app commits the row being edited, as the stock app does.
             .onChange(of: scenePhase) { _, phase in

@@ -12,7 +12,7 @@ import Testing
     let list = List<Reminder>.ID(UUID())
 
     @Test func `the sort menu and the chips name the domain's values as the stock app does`() {
-        #expect(Reminder.Ordering.allCases.map(\.title) == ["Manual", "Due Date", "Priority", "Title"])
+        #expect(Reminder.Ordering.allCases.map(\.title) == ["Manual", "Deadline", "Priority", "Title"])
         #expect(Reminder.Priority.allCases.map(\.title) == ["Low", "Medium", "High"])
         #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
         #expect(Reminder.Repeat.allCases.map(\.title) == ["Never", "Daily", "Weekly", "Monthly", "Yearly"])

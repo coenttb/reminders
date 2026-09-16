@@ -44,8 +44,8 @@ extension Organizing.List.Form {
         SwiftUI.Form {
             Section {
                 VStack(spacing: 20) {
-                    Organizing.List<Element>.Badge(color: list.color.swiftUI, size: 96)
-                        .shadow(color: list.color.swiftUI.opacity(0.4), radius: 12, y: 6)
+                    Organizing.List<Element>.Badge(color: list.color.swiftUI, size: 100)
+                        .shadow(color: list.color.swiftUI.opacity(0.45), radius: 14, y: 6)
                     TextField("List Name", text: $list.title)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(list.color.swiftUI)
@@ -58,21 +58,23 @@ extension Organizing.List.Form {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
             }
+            .listSectionMargins(.top, 6)
+            // Stock (Evidence/Parity/list-info): seven flat 40 pt circles, six to a row, the
+            // current one ringed in gray with a gap; no custom color row.
             Section {
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(48), spacing: 4), count: 6), spacing: 12) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 14) {
                     ForEach(Self.palette, id: \.color) { name, color in
                         Button {
                             list.color = color
                         } label: {
                             Circle()
-                                .fill(color.swiftUI.gradient)
-                                .padding(4)
+                                .fill(color.swiftUI)
+                                .frame(width: 40, height: 40)
                                 .overlay {
                                     if color == list.color {
-                                        Circle().strokeBorder(SwiftUI.Color(.systemGray3), lineWidth: 3)
+                                        Circle().strokeBorder(SwiftUI.Color(.systemGray3), lineWidth: 3).padding(-6)
                                     }
                                 }
-                                .frame(width: 48, height: 48)
                                 .contentShape(.circle)
                         }
                         .buttonStyle(.borderless)
@@ -81,8 +83,7 @@ extension Organizing.List.Form {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
-                ColorPicker("Custom", selection: $list.color.swiftUI)
+                .padding(.vertical, 6)
             }
             if let failure {
                 Section { Text(failure).foregroundStyle(.red) } header: { Text("Not saved") }

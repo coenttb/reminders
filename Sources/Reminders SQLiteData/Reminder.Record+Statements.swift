@@ -86,6 +86,11 @@ extension Reminder.Record {
 
     /// Deletes the completed reminders a search matches, optionally only those due before a
     /// cutoff. One still in its grace period is kept, so the tap can be undone.
+    /// Clear, in a filter that shows its completed reminders: every done reminder it contains.
+    public static func deleteCompleted(in filter: Reminder.Filter, today: Range<Date>) -> DeleteOf<Reminder.Record> {
+        Reminder.Record.where { $0.isDone && $0.belongs(to: filter, today: today) }.delete()
+    }
+
     public static func deleteCompleted(matching search: Reminder.Search, dueBefore cutoff: Date?) -> DeleteOf<Reminder.Record> {
         Reminder.Record
             .where { $0.isDone && $0.matches(search) }

@@ -130,6 +130,17 @@ import Tagged
         #expect(try database.read { db in try Reminder.Completion.Pending.Request().fetch(db) } == [groceries])
         #expect(try overview(database).counts.all == 7)
         #expect(try detail(personal, database).reminders.last?.id == groceries)
+        // With completed shown, the row moves among the completed at once, as the stock row does.
+        try database.write { db in try Reminder.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
+        let haircut = sample.reminders[1].id
+        let place = try detail(personal, database).reminders.map(\.id).firstIndex(of: haircut)
+        try database.write { db in try Reminder.Record.toggle(haircut).execute(db) }
+        let moved = try detail(personal, database).reminders.map(\.id)
+        #expect(moved.firstIndex(of: haircut).map { $0 > (place ?? 0) } == true, "\(moved)")
+        try database.write { db in
+            try Reminder.Record.toggle(haircut).execute(db)
+            try Reminder.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db)
+        }
         try database.write { db in try Reminder.Record.toggle(groceries).execute(db) }
         #expect(try stored(groceries, database)?.completion == .incomplete)
         #expect(try database.read { db in try Reminder.Record.where { $0.isPending }.fetchCount(db) } == 0)
@@ -256,6 +267,10 @@ import Tagged
         // A search that names no reminders deletes nothing.
         try database.write { db in try Reminder.Record.deleteCompleted(matching: Reminder.Search(text: "#so"), dueBefore: nil).execute(db) }
         #expect(try count(database) == 10)
+        // Clear in a filter takes the done reminders it shows and leaves the one in its grace period.
+        try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .completed, today: today).execute(db) }
+        #expect(try count(database) == 8)
+        #expect(try detail(.completed, database).reminders.map(\.title) == ["Take out trash"])
     }
 
     @Test func `a draft updates only edited fields and leaves completion to the timer`() throws {

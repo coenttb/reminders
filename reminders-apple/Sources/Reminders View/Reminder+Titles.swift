@@ -41,19 +41,10 @@ extension Reminder.Ordering {
     /// The name the sort menu shows, in the stock menu's order.
     public var title: String {
         switch self {
-        case .dueDate: "Due Date"
+        case .dueDate: "Deadline"
         case .manual: "Manual"
         case .priority: "Priority"
         case .title: "Title"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .dueDate: "calendar"
-        case .manual: "hand.draw"
-        case .priority: "chart.bar.fill"
-        case .title: "textformat.characters"
         }
     }
 }

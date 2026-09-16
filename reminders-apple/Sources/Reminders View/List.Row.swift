@@ -28,8 +28,14 @@ extension Organizing.List.Row {
             Text(list.title)
             Spacer()
             HStack(spacing: 10) {
-                Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
-                if editMode?.wrappedValue.isEditing != true {
+                if editMode?.wrappedValue.isEditing == true {
+                    // Edit mode swaps the count for the stock (i) button.
+                    Button("Info", systemImage: "info.circle", action: details)
+                        .labelStyle(.iconOnly)
+                        .font(.title3)
+                        .buttonStyle(.borderless)
+                } else {
+                    Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
                     Image(systemName: "chevron.forward").foregroundStyle(.tertiary).font(.body.weight(.semibold))
                 }
             }

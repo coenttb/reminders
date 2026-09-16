@@ -62,6 +62,8 @@ extension Reminder.Search.View {
             .listRowBackground(SwiftUI.Color.clear)
             .listRowInsets(EdgeInsets())
         }
+        // Stock (Evidence/Parity/search): a plain white page, the header at x 16, list names as
+        // title2 headers in their color, 40 pt rows without separators.
         Section {
             HStack {
                 Text("\(completed) Completed").monospacedDigit().contentTransition(.numericText()).foregroundStyle(.secondary)
@@ -80,20 +82,26 @@ extension Reminder.Search.View {
             .buttonStyle(.borderless)
         }
         .listRowBackground(SwiftUI.Color.clear)
-        .listRowInsets(EdgeInsets())
+        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+        .listRowSeparator(.hidden)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+        .listRowSeparator(.visible, edges: .bottom)
+        .listSectionMargins(.horizontal, 0)
         ForEach(results.sections) { section in
             Section {
                 ForEach(section.reminders) { reminder in
                     Reminder.Row(reminder, color: section.list.color.swiftUI, now: now, calendar: calendar, actions: rows)
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                        .listRowSeparator(.hidden)
                 }
             } header: {
                 Text(section.list.title)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(section.list.color.swiftUI)
                     .textCase(nil)
-                    .padding(.leading, -4)
             }
             .listRowBackground(SwiftUI.Color.clear)
+            .listSectionMargins(.horizontal, 0)
         }
     }
 }

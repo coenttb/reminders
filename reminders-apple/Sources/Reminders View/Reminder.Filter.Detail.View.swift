@@ -23,7 +23,11 @@ extension Reminder.Filter.Detail {
         private var order: (Reminder.Ordering) -> Void
         private var toggleCompleted: () -> Void
         private var newReminder: () -> Void
+        private var info: (() -> Void)?
+        private var delete: (() -> Void)?
+        private var clearCompleted: (() -> Void)?
         @State private var titleVisible = false
+        @State private var editMode: EditMode = .inactive
         @State private var titleHeight: CGFloat = 36
         @FocusState private var focus: Reminder.Focus?
 
@@ -41,7 +45,10 @@ extension Reminder.Filter.Detail {
             move: @escaping (IndexSet, Int) -> Void,
             order: @escaping (Reminder.Ordering) -> Void,
             toggleCompleted: @escaping () -> Void,
-            newReminder: @escaping () -> Void
+            newReminder: @escaping () -> Void,
+            info: (() -> Void)? = nil,
+            delete: (() -> Void)? = nil,
+            clearCompleted: (() -> Void)? = nil
         ) {
             self.detail = detail
             self.title = title
@@ -57,6 +64,9 @@ extension Reminder.Filter.Detail {
             self.order = order
             self.toggleCompleted = toggleCompleted
             self.newReminder = newReminder
+            self.info = info
+            self.delete = delete
+            self.clearCompleted = clearCompleted
         }
     }
 }
@@ -69,7 +79,8 @@ extension Reminder.Filter.Detail.View {
         ScrollViewReader { proxy in
         SwiftUI.List {
             GeometryReader { proxy in
-                Text(title)
+                // Select mode renames the screen, as stock does (Evidence/Parity/edit-mode).
+                Text(editMode.isEditing ? "Select Reminders" : title)
                     .font(.largeTitle.weight(.bold))
                     .foregroundStyle(color)
                     .onAppear { titleHeight = proxy.size.height }
@@ -78,6 +89,27 @@ extension Reminder.Filter.Detail.View {
             .frame(height: 48)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+            // With completed shown, stock heads the list with "N Completed • Clear" over a rule.
+            if preference.showCompleted, let clearCompleted {
+                let count = detail.rows.count { $0.reminder.completed }
+                VStack(spacing: 0) {
+                    HStack(spacing: 6) {
+                        Text("\(count) Completed")
+                        Text("•").font(.caption2)
+                        Button("Clear", action: clearCompleted)
+                            .disabled(count == 0)
+                            .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
+                    }
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 14)
+                    Divider()
+                }
+                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
+                .listRowSeparator(.hidden)
+            }
             // Stock rows: no separators, 10 pt above and below the text, 42 pt for a title alone.
             ForEach(detail.rows) { row in
                 if row.id == editing {
@@ -126,7 +158,7 @@ extension Reminder.Filter.Detail.View {
                     .opacity(titleVisible ? 1 : 0)
                     .animation(.default.speed(2), value: titleVisible)
             }
-            if filter.isList, editing == nil {
+            if filter.isList, editing == nil, !editMode.isEditing {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
                     Button("New Reminder", systemImage: "plus", action: newReminder)
@@ -135,22 +167,32 @@ extension Reminder.Filter.Detail.View {
                 }
                 .visibilityPriority(.high)
             }
-            if editing != nil {
+            if editing != nil || editMode.isEditing {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", systemImage: "checkmark", action: done)
-                        .buttonStyle(.glassProminent)
-                        .tint(color)
+                    Button("Done", systemImage: "checkmark") {
+                        if editMode.isEditing { withAnimation { editMode = .inactive } } else { done() }
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(color)
                 }
             }
+            // The stock More menu (Evidence/Parity/list-menu): Show List Info, Select Reminders,
+            // Sort By with the current ordering as its subtitle and no item glyphs, Show/Hide
+            // Completed, Delete List. Print is out of scope.
+            if !editMode.isEditing {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
+                    if let info {
+                        Button("Show List Info", systemImage: "info.circle", action: info)
+                    }
+                    Button("Select Reminders", systemImage: "checkmark.circle") { withAnimation { editMode = .active } }
                     Menu {
-                        ForEach(Reminder.Ordering.allCases, id: \.self) { ordering in
-                            Button { order(ordering) } label: {
-                                Text(ordering.title)
-                                Image(systemName: ordering.systemImage)
+                        Picker("Sort By", selection: Binding(get: { preference.ordering }, set: order)) {
+                            ForEach(Reminder.Ordering.allCases, id: \.self) { ordering in
+                                Text(ordering.title).tag(ordering)
                             }
                         }
+                        .pickerStyle(.inline)
                     } label: {
                         Text("Sort By")
                         Text(preference.ordering.title)
@@ -158,11 +200,22 @@ extension Reminder.Filter.Detail.View {
                     }
                     Button(action: toggleCompleted) {
                         Text(preference.showCompleted ? "Hide Completed" : "Show Completed")
-                        Image(systemName: preference.showCompleted ? "eye.slash.fill" : "eye")
+                        Image(systemName: preference.showCompleted ? "eye.slash" : "eye")
+                    }
+                    if let delete {
+                        Button("Delete List", systemImage: "trash", role: .destructive, action: delete)
                     }
                 } label: {
                     Label("More", systemImage: "ellipsis")
                 }
+            }
+            }
+        }
+        .environment(\.editMode, $editMode)
+        // Stock centres "No Reminders" in an empty list (Evidence/Parity/empty).
+        .overlay {
+            if detail.rows.isEmpty, editing == nil {
+                Text("No Reminders").font(.title3).foregroundStyle(.tertiary)
             }
         }
         .toolbarTitleDisplayMode(.inline)

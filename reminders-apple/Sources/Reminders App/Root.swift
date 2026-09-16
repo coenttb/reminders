@@ -19,6 +19,7 @@ public struct Root: View {
     @Dependency(\.date.now) private var now
     @Dependency(\.calendar) private var calendar
     @Environment(\.scenePhase) private var scenePhase
+    @State private var editMode: EditMode = .inactive
 
     public init(store: StoreOf<Reminder.Feature>) {
         self.store = store
@@ -58,6 +59,10 @@ extension Root {
                 }
             }
             .listStyle(.insetGrouped)
+            // Search results sit on a plain white page, as stock draws them.
+            .scrollContentBackground(store.search.isActive ? .hidden : .visible)
+            .background(SwiftUI.Color(.systemBackground))
+            .environment(\.editMode, $editMode)
             .contentMargins(.bottom, 72, for: .scrollContent)
             .animation(.default, value: store.overview)
             .onSubmit(of: .search) { store.send(.searchSubmitted) }
@@ -72,7 +77,15 @@ extension Root {
                         .accessibilityLabel("Add List")
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) { EditButton() }
+                // Stock: "Edit" as text, Done as the prominent checkmark (Evidence/Parity/edit-mode).
+                ToolbarItem(placement: .topBarTrailing) {
+                    if editMode.isEditing {
+                        Button("Done", systemImage: "checkmark") { withAnimation { editMode = .inactive } }
+                            .buttonStyle(.glassProminent)
+                    } else {
+                        Button("Edit") { withAnimation { editMode = .active } }
+                    }
+                }
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {

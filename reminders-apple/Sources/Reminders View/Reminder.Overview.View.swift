@@ -17,6 +17,7 @@ extension Reminder.Overview {
         private var delete: (Organizing.List<Reminder>.ID) -> Void
         private var move: (IndexSet, Int) -> Void
         private var deleteTag: (Tag<Reminder>.ID) -> Void
+        @Environment(\.editMode) private var editMode
 
         public init(
             _ overview: Reminder.Overview,
@@ -44,19 +45,31 @@ extension Reminder.Overview.View {
     @ViewBuilder public var body: some SwiftUI.View {
         let counts = overview.counts
         Section {
-            // Flagged appears only while something is flagged, as in iOS 27.
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                Reminder.Filter.Tile(.today, glyph: .today(day: calendar.component(.day, from: now)), fill: .today, count: counts.today, open: open)
-                Reminder.Filter.Tile(.scheduled, glyph: .symbol("calendar"), fill: .scheduled, count: counts.scheduled, open: open)
-                Reminder.Filter.Tile(.all, glyph: .symbol("tray.fill"), fill: .all, count: counts.all, open: open)
-                if counts.flagged > 0 {
-                    Reminder.Filter.Tile(.flagged, glyph: .symbol("flag.fill"), fill: .flagged, count: counts.flagged, open: open)
+            if editMode?.wrappedValue.isEditing == true {
+                // Edit mode lists the smart groups as rows with grips, as stock does
+                // (Evidence/Parity/edit-mode); stock's visibility toggles are not modelled.
+                ForEach(Reminder.Filter.smart(flagged: counts.flagged > 0), id: \.self) { filter in
+                    HStack(spacing: 16) {
+                        Reminder.Filter.Tile.badge(for: filter, day: calendar.component(.day, from: now))
+                        Text(filter.title ?? "")
+                    }
                 }
-                Reminder.Filter.Tile(.completed, glyph: .symbol("checkmark"), fill: .completed, count: nil, open: open)
+                .onMove { _, _ in }
+            } else {
+                // Flagged appears only while something is flagged, as in iOS 27.
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    Reminder.Filter.Tile(.today, glyph: .today(day: calendar.component(.day, from: now)), fill: .today, count: counts.today, open: open)
+                    Reminder.Filter.Tile(.scheduled, glyph: .symbol("calendar"), fill: .scheduled, count: counts.scheduled, open: open)
+                    Reminder.Filter.Tile(.all, glyph: .symbol("tray.fill"), fill: .all, count: counts.all, open: open)
+                    if counts.flagged > 0 {
+                        Reminder.Filter.Tile(.flagged, glyph: .symbol("flag.fill"), fill: .flagged, count: counts.flagged, open: open)
+                    }
+                    Reminder.Filter.Tile(.completed, glyph: .symbol("checkmark"), fill: .completed, count: nil, open: open)
+                }
+                .buttonStyle(.plain)
+                .listRowBackground(SwiftUI.Color.clear)
+                .listRowInsets(EdgeInsets())
             }
-            .buttonStyle(.plain)
-            .listRowBackground(SwiftUI.Color.clear)
-            .listRowInsets(EdgeInsets())
         }
         // The grid sits 16 pt under the bar, where the stock app puts it, not at the
         // inset-grouped default.
@@ -78,12 +91,7 @@ extension Reminder.Overview.View {
         }
         if !overview.usedTags.isEmpty {
             Section {
-                ForEach(overview.usedTags) { tag in
-                    Button { open(.tags([tag.id])) } label: { Tag<Reminder>.Row(tag) }.foregroundStyle(.primary)
-                }
-                .onDelete { offsets in
-                    for offset in offsets { deleteTag(overview.usedTags[offset].id) }
-                }
+                Tag<Reminder>.Cloud(overview.usedTags, open: { open(.tags($0)) }, delete: deleteTag)
             } header: {
                 header("Tags")
             }

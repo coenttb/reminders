@@ -101,8 +101,9 @@ extension Reminder.Record.TableColumns {
     }
 
     /// The ordering a preference asks for, ties broken by position as the manual order has it.
-    /// Completed reminders sort last only when the filter shows them; one in its grace period
-    /// keeps its place, so the tap can be undone.
+    /// Completed reminders sort last only when the filter shows them, and one in its grace
+    /// period moves down with them at once, as the stock row does (Evidence/Parity/completion);
+    /// hidden, it keeps its place until the period ends so the tap can be undone.
     public func ordered(by ordering: Reminder.Ordering, showCompleted: Bool, placing place: Reminder? = nil) -> SQLQueryExpression<Bool> {
         let due = placed(due, place?.due?.date, of: place)
         let position = placed(position, place?.position ?? 0, of: place)

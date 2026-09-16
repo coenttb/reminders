@@ -77,6 +77,7 @@ extension Reminder {
             /// The app came to the foreground: the day may have changed while it was away.
             case appActivated
             case backgroundTapped
+            case clearCompletedButtonTapped
             case datePresetSelected(Reminder.ID, Reminder.Due.Preset?)
             case deleteCompletedButtonTapped(olderThanMonths: Int?)
             case destination(Destination.Action)
@@ -128,6 +129,9 @@ extension Reminder {
                     }
                 case let .datePresetSelected(id, preset):
                     if state.editing?.id == id { state.editing?.draft.set(datePreset: preset, at: now, calendar: calendar) }
+                case .clearCompletedButtonTapped:
+                    guard let filter = state.filter, let today = state.today else { break }
+                    perform { db in try Reminder.Record.deleteCompleted(in: filter, today: today).execute(db) }
                 case let .deleteCompletedButtonTapped(months):
                     let search = state.search
                     let cutoff = months.map { now.subtracting($0.months, in: calendar) ?? now }

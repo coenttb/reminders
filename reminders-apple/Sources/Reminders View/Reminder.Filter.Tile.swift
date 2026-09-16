@@ -85,3 +85,29 @@ extension Reminder.Filter.Tile {
         }
     }
 }
+
+extension Reminder.Filter {
+    /// The smart groups in the home's order; Flagged only while something is flagged.
+    public static func smart(flagged: Bool) -> [Reminder.Filter] {
+        flagged ? [.today, .scheduled, .all, .flagged, .completed] : [.today, .scheduled, .all, .completed]
+    }
+}
+
+extension Reminder.Filter.Tile {
+    /// The 32 pt circle the home's edit mode shows for a smart group: its glyph on its color.
+    @ViewBuilder public static func badge(for filter: Reminder.Filter, day: Int) -> some SwiftUI.View {
+        let (name, fill): (String, Fill) = switch filter {
+        case .today: ("\(day).calendar", .today)
+        case .scheduled: ("calendar", .scheduled)
+        case .all: ("tray.fill", .all)
+        case .flagged: ("flag.fill", .flagged)
+        case .completed: ("checkmark", .completed)
+        case .list, .tags: ("list.bullet", .all)
+        }
+        Image(systemName: name)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 32, height: 32)
+            .background(fill.bottom, in: .circle)
+    }
+}
