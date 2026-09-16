@@ -11,7 +11,7 @@ import Standard_Library_Extensions
 public import SwiftUI
 import Tagged
 
-public struct Root: View {
+public struct Root {
     @Bindable private var store: StoreOf<Reminder.Feature>
     @Dependency(\.date.now) private var now
     @Dependency(\.calendar) private var calendar
@@ -23,8 +23,8 @@ public struct Root: View {
     }
 }
 
-extension Root {
-    public var body: some View {
+extension Root: SwiftUI::View {
+    public var body: some SwiftUI::View {
         NavigationStack {
             SwiftUI.List {
                 if store.search.isActive {

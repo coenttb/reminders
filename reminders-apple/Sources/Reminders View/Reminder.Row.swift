@@ -5,7 +5,7 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder {
-    public struct Row: SwiftUI.View {
+    public struct Row {
         private var reminder: Reminder
         private var color: SwiftUI.Color
         private var now: Date
@@ -43,8 +43,8 @@ extension Reminder.Row {
     }
 }
 
-extension Reminder.Row {
-    public var body: some SwiftUI.View {
+extension Reminder.Row: SwiftUI::View {
+    public var body: some SwiftUI::View {
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")

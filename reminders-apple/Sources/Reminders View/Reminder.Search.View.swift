@@ -6,7 +6,7 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder.Search {
-    public struct View: SwiftUI.View {
+    public struct View {
         private var search: Reminder.Search
         private var results: Reminder.Search.Results
         private var now: Date
@@ -41,8 +41,8 @@ extension Reminder.Search {
     }
 }
 
-extension Reminder.Search.View {
-    @ViewBuilder public var body: some SwiftUI.View {
+extension Reminder.Search.View: SwiftUI::View {
+    @ViewBuilder public var body: some SwiftUI::View {
         let suggestions = results.suggestions
         let completed = results.completedCount
         if !suggestions.isEmpty {

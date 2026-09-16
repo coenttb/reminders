@@ -4,7 +4,7 @@ public import Reminders_Application
 public import SwiftUI
 
 extension Reminder.Filter.Detail {
-    public struct View: SwiftUI.View {
+    public struct View {
         private var title: String
         private var detail: Reminder.Filter.Detail
         private var editing: Reminder.ID?
@@ -70,8 +70,8 @@ extension Reminder.Filter.Detail {
     }
 }
 
-extension Reminder.Filter.Detail.View {
-    @ViewBuilder public var body: some SwiftUI.View {
+extension Reminder.Filter.Detail.View: SwiftUI::View {
+    @ViewBuilder public var body: some SwiftUI::View {
         let filter = detail.filter
         let color = filter.color(list: detail.color)
         let preference = detail.preference

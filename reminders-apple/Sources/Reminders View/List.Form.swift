@@ -2,7 +2,7 @@ public import Organizing
 public import SwiftUI
 
 extension Organizing.List {
-    public struct Form: SwiftUI.View {
+    public struct Form {
         @Binding private var list: Organizing.List<Element>
         private var isNew: Bool
         private var isDirty: Bool
@@ -23,7 +23,7 @@ extension Organizing.List {
     }
 }
 
-extension Organizing.List.Form {
+extension Organizing.List.Form: SwiftUI::View {
     public static var palette: [(name: String, color: Organizing.Color)] {
         [
             ("Red", rgb(255, 59, 48)), ("Orange", rgb(255, 149, 0)), ("Yellow", rgb(255, 204, 0)),
@@ -36,7 +36,7 @@ extension Organizing.List.Form {
         Organizing.Color(red: Double(red) / 255, green: Double(green) / 255, blue: Double(blue) / 255)
     }
 
-    public var body: some SwiftUI.View {
+    public var body: some SwiftUI::View {
         SwiftUI.Form {
             Section {
                 VStack(spacing: 20) {

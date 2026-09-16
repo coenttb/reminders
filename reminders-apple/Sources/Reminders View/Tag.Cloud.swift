@@ -2,7 +2,7 @@ public import Organizing
 public import SwiftUI
 
 extension Tag {
-    public struct Cloud: SwiftUI.View {
+    public struct Cloud {
         private var tags: [Tag]
         private var open: ([Tag.ID]) -> Void
         private var delete: (Tag.ID) -> Void
@@ -15,8 +15,8 @@ extension Tag {
     }
 }
 
-extension Tag.Cloud {
-    public var body: some SwiftUI.View {
+extension Tag.Cloud: SwiftUI::View {
+    public var body: some SwiftUI::View {
         Flow(spacing: 8) {
             Button { open(tags.map(\.id)) } label: { Tag.Pill(title: "All Tags") }
             ForEach(tags) { tag in

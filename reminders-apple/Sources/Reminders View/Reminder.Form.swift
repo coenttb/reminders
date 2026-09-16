@@ -7,7 +7,7 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder {
-    public struct Form: SwiftUI.View {
+    public struct Form {
         @Binding private var reminder: Reminder
         private var isNew: Bool
         private var isDirty: Bool
@@ -61,8 +61,8 @@ extension Reminder {
     }
 }
 
-extension Reminder.Form {
-    public var body: some SwiftUI.View {
+extension Reminder.Form: SwiftUI::View {
+    public var body: some SwiftUI::View {
         SwiftUI.Form {
             Section {
                 TextField("Title", text: $reminder.title, axis: .vertical)

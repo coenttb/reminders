@@ -2,7 +2,7 @@ public import Reminders
 public import SwiftUI
 
 extension Reminder.Filter {
-    public struct Tile: SwiftUI.View {
+    public struct Tile {
         private var filter: Reminder.Filter
         private var glyph: Glyph
         private var fill: Fill
@@ -19,8 +19,8 @@ extension Reminder.Filter {
     }
 }
 
-extension Reminder.Filter.Tile {
-    @ViewBuilder public var body: some SwiftUI.View {
+extension Reminder.Filter.Tile: SwiftUI::View {
+    @ViewBuilder public var body: some SwiftUI::View {
         let title = filter.title ?? ""
         Button { open(filter) } label: {
             VStack(alignment: .leading, spacing: 0) {

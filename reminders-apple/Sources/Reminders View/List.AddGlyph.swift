@@ -2,13 +2,13 @@ public import Organizing
 public import SwiftUI
 
 extension Organizing.List {
-    public struct AddGlyph: SwiftUI.View {
+    public struct AddGlyph {
         public init() {}
     }
 }
 
-extension Organizing.List.AddGlyph {
-    public var body: some SwiftUI.View {
+extension Organizing.List.AddGlyph: SwiftUI::View {
+    public var body: some SwiftUI::View {
         Image(systemName: "list.bullet.rectangle.portrait")
             .overlay(alignment: .bottomTrailing) {
                 Image(systemName: "plus.circle.fill")

@@ -2,7 +2,7 @@ public import Organizing
 public import SwiftUI
 
 extension Organizing.List {
-    public struct Row: SwiftUI.View {
+    public struct Row {
         private var list: Organizing.List<Element>
         private var count: Int
         private var details: () -> Void
@@ -18,8 +18,8 @@ extension Organizing.List {
     }
 }
 
-extension Organizing.List.Row {
-    public var body: some SwiftUI.View {
+extension Organizing.List.Row: SwiftUI::View {
+    public var body: some SwiftUI::View {
         HStack(spacing: 16) {
             Organizing.List<Element>.Badge(color: SwiftUI.Color(list.color))
             Text(list.title)

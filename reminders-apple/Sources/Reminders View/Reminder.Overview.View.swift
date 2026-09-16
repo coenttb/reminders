@@ -6,7 +6,7 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder.Overview {
-    public struct View: SwiftUI.View {
+    public struct View {
         private var overview: Reminder.Overview
         private var now: Date
         private var calendar: Calendar
@@ -39,8 +39,8 @@ extension Reminder.Overview {
     }
 }
 
-extension Reminder.Overview.View {
-    @ViewBuilder public var body: some SwiftUI.View {
+extension Reminder.Overview.View: SwiftUI::View {
+    @ViewBuilder public var body: some SwiftUI::View {
         let counts = overview.counts
         Section {
             if editMode?.wrappedValue.isEditing == true {

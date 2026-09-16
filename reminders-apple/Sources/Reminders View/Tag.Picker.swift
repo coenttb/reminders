@@ -4,7 +4,7 @@ public import SwiftUI
 public import Tagged
 
 extension Tag {
-    public struct Picker: SwiftUI.View {
+    public struct Picker {
         @Binding private var selection: Set<Tag.ID>
         private var tags: [Tag]
         private var add: (String) -> Void
@@ -31,8 +31,8 @@ extension Tag {
     }
 }
 
-extension Tag.Picker {
-    public var body: some SwiftUI.View {
+extension Tag.Picker: SwiftUI::View {
+    public var body: some SwiftUI::View {
         SwiftUI.Form {
             Section {
                 Button("New tag") {

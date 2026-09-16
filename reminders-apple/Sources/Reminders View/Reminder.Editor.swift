@@ -4,7 +4,7 @@ public import Reminders_Application
 public import SwiftUI
 
 extension Reminder {
-    public struct Editor: SwiftUI.View {
+    public struct Editor {
         @Binding private var reminder: Reminder
         private var color: SwiftUI.Color
         private var now: Date
@@ -54,8 +54,8 @@ extension Reminder.Editor {
     }
 }
 
-extension Reminder.Editor {
-    public var body: some SwiftUI.View {
+extension Reminder.Editor: SwiftUI::View {
+    public var body: some SwiftUI::View {
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")

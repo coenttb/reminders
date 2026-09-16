@@ -2,12 +2,12 @@ import Organizing
 public import SwiftUI
 
 extension Tag.Cloud {
-    struct Flow: Layout {
+    nonisolated struct Flow {
         var spacing: CGFloat
     }
 }
 
-extension Tag.Cloud.Flow {
+nonisolated extension Tag.Cloud.Flow: SwiftUI::Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.replacingUnspecifiedDimensions().width
         return CGSize(width: width, height: place(in: width, subviews: subviews).size.height)

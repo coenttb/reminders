@@ -2,7 +2,7 @@ public import Organizing
 public import SwiftUI
 
 extension Tag {
-    public struct Pill: SwiftUI.View {
+    public struct Pill {
         private var title: String
 
         public init(title: String) {
@@ -11,8 +11,8 @@ extension Tag {
     }
 }
 
-extension Tag.Pill {
-    public var body: some SwiftUI.View {
+extension Tag.Pill: SwiftUI::View {
+    public var body: some SwiftUI::View {
         Text(title)
             .font(.body)
             .foregroundStyle(.primary)
