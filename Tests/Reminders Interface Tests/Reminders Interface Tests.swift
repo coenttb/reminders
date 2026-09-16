@@ -36,23 +36,8 @@ import Tagged
         #expect(reminder.due == nil)
     }
 
-    @Test func `pending is the grace period between the tap and completed`() {
-        let (a, b) = (Reminder.ID(UUID()), Reminder.ID(UUID()))
-        var pending = Reminders.Pending()
-        #expect(pending.isEmpty && Reminders.Pending.grace == .seconds(5))
-        pending.toggle(a)
-        pending.toggle(b)
-        #expect(pending == [a, b] && pending.contains(a))
-        pending.toggle(a)
-        #expect(pending == [b])
-        pending.elapse()
-        #expect(pending.isEmpty && Reminders.Pending.toggling(pending, a) == [a])
-    }
-
-    @Test func `filters default to hiding completed reminders except Completed`() {
-        #expect(Reminders.Filter.completed.defaultPreference == Reminders.Filter.Preference(showCompleted: true))
-        #expect(Reminders.Filter.all.defaultPreference == Reminders.Filter.Preference(ordering: .dueDate, showCompleted: false))
-        #expect(Reminders.Filter.Preference.default(for: .list(list)) == Reminders.Filter.Preference())
+    @Test func `the grace period between the tap and completed is five seconds`() {
+        #expect(Reminders.Pending.grace == .seconds(5))
     }
 
     @Test func `the search commits trimmed text as a token and leaves a tag prefix for the suggestions`() {
@@ -67,30 +52,11 @@ import Tagged
         search.add(tag: "car")
         #expect(search.text.isEmpty && search.tags == ["car"] && search.isActive)
         #expect(!Reminders.Search().isActive)
-        #expect(Reminders.Search.Results(sections: [Reminders.Search.Results.Section(list: List(id: list), reminders: [reminder()])]).reminders.count == 1)
-    }
-
-    @Test func `an editing session starts saved and knows when the draft differs`() {
-        let stored = reminder("Call")
-        var editing = Reminders.Reminder.Editing(stored, session: UUID())
-        #expect(editing.isSaved && editing.id == stored.id && editing.place == stored)
-        editing.draft.title = "Call back"
-        #expect(!editing.isSaved && editing.saved == stored)
-    }
-
-    @Test func `an overview finds its lists and a detail its reminders`() {
-        let personal = List<Reminder>(id: list, title: "Personal")
-        let overview = Reminders.Overview(lists: [List<Reminder>.Entry(list: personal, count: 2)], counts: Reminders.Filter.Counts(all: 2))
-        #expect(overview.list(list) == personal && overview.list(List<Reminder>.ID(UUID())) == nil)
-        let row = Reminders.Filter.Detail.Row(reminder: reminder(), color: .default)
-        let detail = Reminders.Filter.Detail(filter: .list(list), color: personal.color, preference: Reminders.Filter.Preference(), rows: [row])
-        #expect(detail.reminders == [row.reminder] && row.id == row.reminder.id)
-        #expect(Reminders.Session().filter == nil && Reminders.Session(filter: .today, editing: row.id).editing == row.id)
     }
 
     @Test func `a window starts at one step, widens while there is more, and starts over for another key`() {
-        var window = Reminders.Window<Reminders.Filter>()
-        let step = Reminders.Window<Reminders.Filter>.step
+        var window = Window<Reminders.Filter>()
+        let step = Window<Reminders.Filter>.step
         #expect(window.limit(for: .all) == step && window.limit(for: .today) == step)
         window.widen(for: .all, shown: step, total: step)
         #expect(window.limit(for: .all) == step)
@@ -103,9 +69,9 @@ import Tagged
         window.widen(for: .today, shown: 10, total: 20)
         window.extend(for: .today, by: 1)
         #expect(window.limit(for: .today) == nil)
-        let margin = Reminders.Window<Reminders.Filter>.margin
-        #expect(Reminders.Window<Reminders.Filter>.nearsEnd(step - margin, of: step, total: step + 1))
-        #expect(!Reminders.Window<Reminders.Filter>.nearsEnd(step - margin - 1, of: step, total: step + 1))
-        #expect(!Reminders.Window<Reminders.Filter>.nearsEnd(step - 1, of: step, total: step))
+        let margin = Window<Reminders.Filter>.margin
+        #expect(Window<Reminders.Filter>.nearsEnd(step - margin, of: step, total: step + 1))
+        #expect(!Window<Reminders.Filter>.nearsEnd(step - margin - 1, of: step, total: step + 1))
+        #expect(!Window<Reminders.Filter>.nearsEnd(step - 1, of: step, total: step))
     }
 }

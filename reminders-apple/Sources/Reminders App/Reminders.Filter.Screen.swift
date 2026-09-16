@@ -3,6 +3,7 @@ import Dependencies
 import Organizing
 import Reminders
 import Reminders_Interface
+import Reminders_SQL
 import Reminders_Feature
 import Reminders_View
 import SwiftUI
@@ -26,10 +27,12 @@ extension Reminders.Filter {
 extension Reminders.Filter.Screen: SwiftUI::View {
     @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
-        let detail = store.detail ?? Reminders.Filter.Detail(filter: filter, preference: filter.defaultPreference)
+        let detail = store.detail ?? Reminders.Filter.Detail.Contents(filter: filter, preference: .default(for: filter))
         Reminders.Filter.Detail.View(
             detail,
             title: filter.title ?? list?.title ?? "",
+            tint: filter.color(list: list.map { Organizing.Color($0.color) }),
+            color: { store.overview.list($0).map { SwiftUI.Color(Organizing.Color($0.color)) } ?? .blue },
             editing: store.editing?.id,
             now: now,
             calendar: calendar,
@@ -54,7 +57,7 @@ extension Reminders.Filter.Screen: SwiftUI::View {
 }
 
 extension Reminders.Filter.Screen {
-    private var list: Organizing.List<Reminder>? {
+    private var list: Organizing.List<Reminder>.Record? {
         if case let .list(id) = filter { store.overview.list(id) } else { nil }
     }
 

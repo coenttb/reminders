@@ -2,12 +2,13 @@ public import Foundation
 public import Organizing
 public import Reminders
 public import Reminders_Interface
+public import Reminders_SQL
 public import SwiftUI
 public import Tagged
 
 extension Reminders.Overview {
     public struct View {
-        private var overview: Reminders.Overview
+        private var overview: Reminders.Overview.Contents
         private var now: Date
         private var calendar: Calendar
         private var open: (Reminders.Filter) -> Void
@@ -18,7 +19,7 @@ extension Reminders.Overview {
         @Environment(\.editMode) private var editMode
 
         public init(
-            _ overview: Reminders.Overview,
+            _ overview: Reminders.Overview.Contents,
             now: Date,
             calendar: Calendar,
             open: @escaping (Reminders.Filter) -> Void,

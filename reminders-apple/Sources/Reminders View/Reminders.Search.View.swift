@@ -2,13 +2,14 @@ public import Foundation
 public import Organizing
 public import Reminders
 public import Reminders_Interface
+public import Reminders_SQL
 public import SwiftUI
 public import Tagged
 
 extension Reminders.Search {
     public struct View {
         private var search: Reminders.Search
-        private var results: Reminders.Search.Results
+        private var results: Reminders.Search.Contents
         private var now: Date
         private var calendar: Calendar
         private var rows: Reminder.Row.Actions
@@ -19,7 +20,7 @@ extension Reminders.Search {
 
         public init(
             _ search: Reminders.Search,
-            results: Reminders.Search.Results,
+            results: Reminders.Search.Contents,
             now: Date,
             calendar: Calendar,
             rows: Reminder.Row.Actions,
@@ -50,7 +51,7 @@ extension Reminders.Search.View: SwiftUI::View {
                 ScrollView(.horizontal) {
                     HStack {
                         ForEach(suggestions) { tag in
-                            Button(tag.hashtag) { addTag(tag.id) }.buttonStyle(.glass)
+                            Button(Tag<Reminder>.hashtag(tag.id)) { addTag(tag.id) }.buttonStyle(.glass)
                         }
                     }
                 }
@@ -86,19 +87,19 @@ extension Reminders.Search.View: SwiftUI::View {
         .listRowSeparator(.visible, edges: .bottom)
         .listSectionMargins(.horizontal, 0)
         let (shown, total) = (results.shown, results.total)
-        let starts = results.sections.reduce(into: [0]) { $0.append($0[$0.count - 1] + $1.reminders.count) }
+        let starts = results.sections.reduce(into: [0]) { $0.append($0[$0.count - 1] + $1.rows.count) }
         ForEach(Array(results.sections.enumerated()), id: \.element.id) { position, section in
             Section {
-                ForEach(Array(section.reminders.enumerated()), id: \.element.id) { offset, reminder in
-                    Reminder.Row(reminder, color: SwiftUI.Color(section.list.color), now: now, calendar: calendar, actions: rows)
+                ForEach(Array(section.rows.enumerated()), id: \.element.reminder.id) { offset, row in
+                    Reminder.Row(row, color: SwiftUI.Color(Organizing.Color(section.list.color)), now: now, calendar: calendar, actions: rows)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if Reminders.Window<Reminders.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { endReached() } }
+                        .onAppear { if Reminders_Interface.Window<Reminders.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { endReached() } }
                 }
             } header: {
                 Text(section.list.title)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(SwiftUI.Color(section.list.color))
+                    .foregroundStyle(SwiftUI.Color(Organizing.Color(section.list.color)))
                     .textCase(nil)
             }
             .listRowBackground(SwiftUI.Color.clear)

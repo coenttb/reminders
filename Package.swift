@@ -135,6 +135,7 @@ let package = Package(
             name: "Reminders SQL Tests",
             dependencies: [
                 "Reminders",
+                "Reminders Interface",
                 "Reminders SQL",
                 .product(name: "Organizing", package: "organizing"),
                 .product(name: "Tagged", package: "swift-tagged"),

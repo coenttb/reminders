@@ -1,15 +1,17 @@
 public import Organizing
+public import Reminders
+public import Reminders_SQL
 public import SwiftUI
 
-extension Organizing.List {
+extension Organizing.List<Reminder> {
     public struct Row {
-        private var list: Organizing.List<Element>
+        private var list: Organizing.List<Reminder>.Record
         private var count: Int
         private var details: () -> Void
         private var delete: () -> Void
         @Environment(\.editMode) private var editMode
 
-        public init(_ list: Organizing.List<Element>, count: Int, details: @escaping () -> Void, delete: @escaping () -> Void) {
+        public init(_ list: Organizing.List<Reminder>.Record, count: Int, details: @escaping () -> Void, delete: @escaping () -> Void) {
             self.list = list
             self.count = count
             self.details = details
@@ -18,10 +20,10 @@ extension Organizing.List {
     }
 }
 
-extension Organizing.List.Row: SwiftUI::View {
+extension Organizing.List<Reminder>.Row: SwiftUI::View {
     public var body: some SwiftUI::View {
         HStack(spacing: 16) {
-            Organizing.List<Element>.Badge(color: SwiftUI.Color(list.color))
+            Organizing.List<Reminder>.Badge(color: SwiftUI.Color(Organizing.Color(list.color)))
             Text(list.title)
             Spacer()
             HStack(spacing: 10) {

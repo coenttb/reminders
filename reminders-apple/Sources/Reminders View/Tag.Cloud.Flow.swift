@@ -1,13 +1,14 @@
 import Organizing
+import Reminders
 public import SwiftUI
 
-extension Tag.Cloud {
+extension Tag<Reminder>.Cloud {
     nonisolated struct Flow {
         var spacing: CGFloat
     }
 }
 
-nonisolated extension Tag.Cloud.Flow: SwiftUI::Layout {
+nonisolated extension Tag<Reminder>.Cloud.Flow: SwiftUI::Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.replacingUnspecifiedDimensions().width
         return CGSize(width: width, height: place(in: width, subviews: subviews).size.height)

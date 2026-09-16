@@ -1,26 +1,28 @@
 public import Organizing
+public import Reminders
+public import Reminders_SQL
 import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
 
-extension Tag {
+extension Tag<Reminder> {
     public struct Picker {
-        @Binding private var selection: Set<Tag.ID>
-        private var tags: [Tag]
+        @Binding private var selection: Set<Tag<Reminder>.ID>
+        private var tags: [Tag<Reminder>.Record]
         private var add: (String) -> Void
-        private var rename: (Tag.ID, String) -> Void
-        private var delete: (Tag.ID) -> Void
-        @State private var editing: Tag.ID?
+        private var rename: (Tag<Reminder>.ID, String) -> Void
+        private var delete: (Tag<Reminder>.ID) -> Void
+        @State private var editing: Tag<Reminder>.ID?
         @State private var adding = false
         @State private var title = ""
         @Environment(\.dismiss) private var dismiss
 
         public init(
-            selection: Binding<Set<Tag.ID>>,
-            tags: [Tag],
+            selection: Binding<Set<Tag<Reminder>.ID>>,
+            tags: [Tag<Reminder>.Record],
             add: @escaping (String) -> Void,
-            rename: @escaping (Tag.ID, String) -> Void,
-            delete: @escaping (Tag.ID) -> Void
+            rename: @escaping (Tag<Reminder>.ID, String) -> Void,
+            delete: @escaping (Tag<Reminder>.ID) -> Void
         ) {
             self._selection = selection
             self.tags = tags
@@ -31,7 +33,7 @@ extension Tag {
     }
 }
 
-extension Tag.Picker: SwiftUI::View {
+extension Tag<Reminder>.Picker: SwiftUI::View {
     public var body: some SwiftUI::View {
         SwiftUI.Form {
             Section {
@@ -47,7 +49,7 @@ extension Tag.Picker: SwiftUI::View {
                     } label: {
                         HStack {
                             Image(systemName: selection.contains(tag.id) ? "checkmark.circle.fill" : "circle").foregroundStyle(.blue)
-                            Text(tag.hashtag).foregroundStyle(.primary)
+                            Text(Tag<Reminder>.hashtag(tag.id)).foregroundStyle(.primary)
                         }
                     }
                     .swipeActions {

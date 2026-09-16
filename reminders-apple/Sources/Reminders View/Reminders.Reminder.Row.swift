@@ -1,19 +1,20 @@
 public import Foundation
 public import Reminders
 import Reminders_Interface
+public import Reminders_SQL
 public import SwiftUI
 public import Tagged
 
 extension Reminders.Reminder {
     public struct Row {
-        private var reminder: Reminder
+        private var row: Reminder.Record.Row
         private var color: SwiftUI.Color
         private var now: Date
         private var calendar: Calendar
         private var actions: Actions
 
-        public init(_ reminder: Reminder, color: SwiftUI.Color, now: Date, calendar: Calendar, actions: Actions) {
-            self.reminder = reminder
+        public init(_ row: Reminder.Record.Row, color: SwiftUI.Color, now: Date, calendar: Calendar, actions: Actions) {
+            self.row = row
             self.color = color
             self.now = now
             self.calendar = calendar
@@ -23,6 +24,7 @@ extension Reminders.Reminder {
 }
 extension Reminders.Reminder.Row: SwiftUI::View {
     public var body: some SwiftUI::View {
+        let reminder = row.reminder
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
@@ -68,15 +70,16 @@ extension Reminders.Reminder.Row: SwiftUI::View {
     }
 
     private var subtitle: Text? {
+        let reminder = row.reminder
         let due = reminder.due.map { due in
             Text(due.description(at: now, calendar: calendar))
                 .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI.Color.red : SwiftUI.Color.secondary)
         }
-        switch (due, reminder.tagLine.isEmpty) {
+        switch (due, row.tagLine.isEmpty) {
         case (nil, true): return nil
         case let (due?, true): return due
-        case (nil, false): return Text(reminder.tagLine)
-        case let (due?, false): return Text("\(due)  \(reminder.tagLine)")
+        case (nil, false): return Text(row.tagLine)
+        case let (due?, false): return Text("\(due)  \(row.tagLine)")
         }
     }
 }

@@ -1,12 +1,17 @@
 public import Foundation
+public import Organizing
 public import Reminders
 public import Reminders_Interface
+public import Reminders_SQL
 public import SwiftUI
+public import Tagged
 
 extension Reminders.Filter.Detail {
     public struct View {
         private var title: String
-        private var detail: Reminders.Filter.Detail
+        private var detail: Reminders.Filter.Detail.Contents
+        private var tint: SwiftUI.Color
+        private var color: (Organizing.List<Reminder>.ID) -> SwiftUI.Color
         private var editing: Reminder.ID?
         private var now: Date
         private var calendar: Calendar
@@ -29,8 +34,10 @@ extension Reminders.Filter.Detail {
         @FocusState private var focus: Reminder.Focus?
 
         public init(
-            _ detail: Reminders.Filter.Detail,
+            _ detail: Reminders.Filter.Detail.Contents,
             title: String,
+            tint: SwiftUI.Color,
+            color: @escaping (Organizing.List<Reminder>.ID) -> SwiftUI.Color,
             editing: Reminder.ID?,
             now: Date,
             calendar: Calendar,
@@ -50,6 +57,8 @@ extension Reminders.Filter.Detail {
         ) {
             self.detail = detail
             self.title = title
+            self.tint = tint
+            self.color = color
             self.editing = editing
             self.now = now
             self.calendar = calendar
@@ -73,7 +82,7 @@ extension Reminders.Filter.Detail {
 extension Reminders.Filter.Detail.View: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let filter = detail.filter
-        let color = filter.color(list: detail.color)
+        let color = tint
         let preference = detail.preference
         ScrollViewReader { proxy in
         SwiftUI.List {
@@ -107,14 +116,15 @@ extension Reminders.Filter.Detail.View: SwiftUI::View {
                 .listRowSeparator(.hidden)
             }
             let (shown, total) = (detail.rows.count, detail.total)
-            ForEach(Array(detail.rows.enumerated()), id: \.element.id) { index, row in
-                if row.id == editing {
-                    Reminder.Editor(reminder: draft(row.id), color: SwiftUI.Color(row.color), now: now, calendar: calendar, focus: $focus, actions: editor)
+            ForEach(Array(detail.rows.enumerated()), id: \.element.reminder.id) { index, row in
+                let id = row.reminder.id
+                if id == editing {
+                    Reminder.Editor(reminder: draft(id), color: self.color(row.reminder.listID), now: now, calendar: calendar, focus: $focus, actions: editor)
                 } else {
-                    Reminder.Row(row.reminder, color: SwiftUI.Color(row.color), now: now, calendar: calendar, actions: rowActions)
+                    Reminder.Row(row, color: self.color(row.reminder.listID), now: now, calendar: calendar, actions: rowActions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if Reminders.Window<Reminders.Filter>.nearsEnd(index, of: shown, total: total) { endReached() } }
+                        .onAppear { if Reminders_Interface.Window<Reminders.Filter>.nearsEnd(index, of: shown, total: total) { endReached() } }
                 }
             }
             .onMove(perform: move)
@@ -212,7 +222,7 @@ extension Reminders.Filter.Detail.View: SwiftUI::View {
 
 extension Reminders.Filter.Detail.View {
     private func focusEditing(_ proxy: ScrollViewProxy) {
-        guard let editing, focus != .title(editing), focus != .notes(editing), detail.rows.contains(where: { $0.id == editing }) else { return }
+        guard let editing, focus != .title(editing), focus != .notes(editing), detail.ids.contains(editing) else { return }
         Task { @MainActor in
             withAnimation { proxy.scrollTo(editing, anchor: .center) }
             for _ in 0..<3 {

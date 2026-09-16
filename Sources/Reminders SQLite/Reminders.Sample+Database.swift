@@ -1,6 +1,5 @@
 import Organizing
 public import Reminders
-import Reminders_Interface
 public import Reminders_Sample
 public import Reminders_SQL
 public import SQLiteData
@@ -9,7 +8,7 @@ import Tagged
 
 extension Reminders.Sample {
     public static func initialize(with sample: Self, in db: Database) throws {
-        guard try Reminders.Session.Record.state.fetchCount(db) == 0 else { return }
+        guard try Reminders.Restoration.current.fetchCount(db) == 0 else { return }
         try replace(with: sample, in: db)
     }
 
@@ -20,7 +19,7 @@ extension Reminders.Sample {
         try Reminder.Record.delete().execute(db)
         try List<Reminder>.Record.delete().execute(db)
         try Tag<Reminder>.Record.delete().execute(db)
-        try Reminders.Filter.Preference.Record.delete().execute(db)
+        try Reminders.Filter.Preference.delete().execute(db)
         for lists in sample.lists.chunks(of: 200) as [ArraySlice<List<Reminder>>] {
             try List<Reminder>.Record.insert { lists.map(List<Reminder>.Record.init) }.execute(db)
         }
@@ -34,7 +33,7 @@ extension Reminders.Sample {
         for chunk in taggings.chunks(of: 500) as [ArraySlice<Reminders.Tagging>] {
             try Reminders.Tagging.insert { Array(chunk) }.execute(db)
         }
-        try Reminders.Session.Record.upsert { Reminders.Session.Record(Reminders.Session()) }.execute(db)
+        try Reminders.Restoration.upsert { Reminders.Restoration() }.execute(db)
     }
 
     public func replace(in db: Database) throws { try Self.replace(with: self, in: db) }

@@ -6,7 +6,7 @@ public import Organizing
 public import Reminders
 public import Reminders_Interface
 public import Reminders_Sample
-import Reminders_SQL
+public import Reminders_SQL
 import Reminders_SQLite
 public import SQLiteData
 import Standard_Library_Extensions
@@ -25,13 +25,13 @@ extension Reminders {
             public var today: Range<Date>?
             public var lastSeed: Reminders.Sample.Seed?
             public var isSeeding = false
-            public var detailWindow = Reminders.Window<Reminders.Filter>()
-            public var resultsWindow = Reminders.Window<Reminders.Search>()
+            public var detailWindow = Window<Reminders.Filter>()
+            public var resultsWindow = Window<Reminders.Search>()
 
-            @DebugSnapshotIgnored @Fetch public var detail: Reminders.Filter.Detail? = nil
-            @DebugSnapshotIgnored @Fetch public var overview = Reminders.Overview()
-            @DebugSnapshotIgnored @Fetch public var results = Reminders.Search.Results()
-            @DebugSnapshotIgnored @Fetch(Reminders.Pending.Request()) public var pending = Reminders.Pending()
+            @DebugSnapshotIgnored @Fetch public var detail: Reminders.Filter.Detail.Contents? = nil
+            @DebugSnapshotIgnored @Fetch public var overview = Reminders.Overview.Contents()
+            @DebugSnapshotIgnored @Fetch public var results = Reminders.Search.Contents()
+            @DebugSnapshotIgnored @Fetch(Reminders.Pending.Request()) public var pending: Set<Reminder.ID> = []
 
             public init() {}
 
@@ -184,7 +184,9 @@ extension Reminders {
                         }
                     }
                 case let .listDetailsButtonTapped(id):
-                    if let list = state.overview.list(id) { state.destination = .list(List<Reminder>.Draft.Feature.State(list: list, isNew: false, session: uuid())) }
+                    if let list = state.overview.list(id) {
+                        state.destination = .list(List<Reminder>.Draft.Feature.State(list: List(id: list.id, title: list.title, color: Color(list.color), position: list.position), isNew: false, session: uuid()))
+                    }
                 case let .listTapped(id):
                     state.filter = .list(id)
                 case let .listsMoved(source, destination):
@@ -199,7 +201,7 @@ extension Reminders {
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
-                    perform { db in try Reminders.Filter.Preference.Record.set(ordering: ordering, for: filter).execute(db) }
+                    perform { db in try Reminders.Filter.Preference.set(ordering: ordering, for: filter).execute(db) }
                 case let .reminderCompleteButtonTapped(id):
                     store.addTask {
                         try await attempt {
@@ -221,7 +223,7 @@ extension Reminders {
                         try await attempt {
                             try write { db in
                                 try Reminder.Record.find(id).delete().execute(db)
-                                if session != nil { try Reminders.Session.Record.set(editing: nil).execute(db) }
+                                if session != nil { try Reminders.Restoration.set(editing: nil).execute(db) }
                             }
                             try store.modify { $0.endEditing(session) }
                         }
@@ -232,7 +234,7 @@ extension Reminders {
                         try await attempt(editing: editing?.session) {
                             let reminder = try write { db in
                                 try commit(editing, in: db)
-                                try Reminders.Session.Record.set(editing: nil).execute(db)
+                                try Reminders.Restoration.set(editing: nil).execute(db)
                                 return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)
                             }
                             try store.modify {
@@ -249,10 +251,10 @@ extension Reminders {
                             let reminder = try write { db in
                                 try commit(editing, in: db)
                                 guard let reminder = try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init) else {
-                                    try Reminders.Session.Record.set(editing: nil).execute(db)
+                                    try Reminders.Restoration.set(editing: nil).execute(db)
                                     return Reminder?.none
                                 }
-                                try Reminders.Session.Record.set(editing: id).execute(db)
+                                try Reminders.Restoration.set(editing: id).execute(db)
                                 return reminder
                             }
                             try store.modify {
@@ -263,11 +265,11 @@ extension Reminders {
                     }
                 case let .remindersMoved(source, destination):
                     guard let filter = state.filter else { break }
-                    var ids = state.detail?.rows.map(\.id) ?? []
+                    var ids = state.detail?.ids ?? []
                     ids.move(offsets: source, to: destination)
                     perform { db in
                         try Reminder.Record.reorder(ids, in: db)
-                        try Reminders.Filter.Preference.Record.set(ordering: .manual, for: filter).execute(db)
+                        try Reminders.Filter.Preference.set(ordering: .manual, for: filter).execute(db)
                     }
                 case .resultsEndReached:
                     state.resultsWindow.widen(for: state.search, shown: state.results.shown, total: state.results.total)
@@ -316,7 +318,7 @@ extension Reminders {
                     }
                 case .showCompletedButtonTapped:
                     guard let filter = state.filter else { break }
-                    perform { db in try Reminders.Filter.Preference.Record.toggleShowCompleted(for: filter).execute(db) }
+                    perform { db in try Reminders.Filter.Preference.toggleShowCompleted(for: filter).execute(db) }
                 case let .tagDeleted(id):
                     store.addTask {
                         try await attempt {
@@ -341,11 +343,11 @@ extension Reminders {
                 do {
                     let (stored, reminder) = try write { db in
                         try sample.initialize(in: db)
-                        let stored = try Reminders.Session.Record.state.fetchOne(db).map(Reminders.Session.init)
+                        let stored = try Reminders.Restoration.current.fetchOne(db)
                         let reminder = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db).map(Reminder.init) }
                         return (stored, reminder)
                     }
-                    if let filter = stored?.filter { state.filter = filter }
+                    if let filter = stored?.filter.flatMap(Reminders.Filter.init(key:)) { state.filter = filter }
                     if let reminder { state.editing = Reminders.Reminder.Editing(reminder, session: uuid()) }
                 } catch {
                     state.failure = error.localizedDescription
@@ -362,7 +364,7 @@ extension Reminders {
             }
             .onChange(of: store.filter) { previous, filter, state in
                 if previous != nil { endEditing(&state) }
-                perform { db in try Reminders.Session.Record.set(filter: filter).execute(db) }
+                perform { db in try Reminders.Restoration.set(filter: filter).execute(db) }
             }
             .onChange(of: DetailQuery(filter: store.filter, place: store.editing?.place, today: store.today, limit: store.filter.flatMap { store.detailWindow.limit(for: $0) }), initial: true) { _, query, state in
                 guard let today = query.today else { return }
@@ -448,7 +450,7 @@ extension Reminders.Feature {
                     try commit(previous, in: db)
                     try Reminder.Record.insert { Reminder.Record.Draft(Reminder(id: id, list: list, created: now)) }.execute(db)
                     try Reminder.Record.placeLast(id).execute(db)
-                    try Reminders.Session.Record.set(editing: id).execute(db)
+                    try Reminders.Restoration.set(editing: id).execute(db)
                     return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)
                 }
                 try store.modify {
@@ -465,7 +467,7 @@ extension Reminders.Feature {
             try await attempt(editing: editing.session) {
                 try write { db in
                     try commit(editing, in: db)
-                    try Reminders.Session.Record.set(editing: nil).execute(db)
+                    try Reminders.Restoration.set(editing: nil).execute(db)
                 }
                 try store.modify { $0.endEditing(editing.session) }
             }
@@ -481,13 +483,13 @@ extension Reminders.Feature {
                 let next = try write { db in
                     try commit(editing, in: db)
                     guard let anchor = try Reminder.Record.find(editing.id).rows().fetchOne(db).map(Reminder.init) else {
-                        try Reminders.Session.Record.set(editing: nil).execute(db)
+                        try Reminders.Restoration.set(editing: nil).execute(db)
                         return Reminders.Reminder.Editing?.none
                     }
                     let next = Reminder(id: id, list: anchor.list, position: anchor.position + 1, created: now)
                     try Reminder.Record.makeRoom(after: anchor.position).execute(db)
                     try Reminder.Record.insert { Reminder.Record.Draft(next) }.execute(db)
-                    try Reminders.Session.Record.set(editing: id).execute(db)
+                    try Reminders.Restoration.set(editing: id).execute(db)
                     var place = anchor
                     place.id = id
                     place.position = next.position

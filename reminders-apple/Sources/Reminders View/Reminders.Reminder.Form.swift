@@ -2,6 +2,7 @@ import Foundation
 public import Organizing
 public import Reminders
 import Reminders_Interface
+public import Reminders_SQL
 import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
@@ -12,8 +13,8 @@ extension Reminders.Reminder {
         private var isNew: Bool
         private var isDirty: Bool
         private var failure: String?
-        private var lists: [Organizing.List<Reminder>]
-        private var tags: [Tag<Reminder>]
+        private var lists: [Organizing.List<Reminder>.Record]
+        private var tags: [Tag<Reminder>.Record]
         private var now: Date
         private var calendar: Calendar
         private var addTag: (String) -> Void
@@ -32,8 +33,8 @@ extension Reminders.Reminder {
             isNew: Bool = true,
             isDirty: Bool = false,
             failure: String? = nil,
-            lists: [Organizing.List<Reminder>],
-            tags: [Tag<Reminder>],
+            lists: [Organizing.List<Reminder>.Record],
+            tags: [Tag<Reminder>.Record],
             now: Date,
             calendar: Calendar,
             addTag: @escaping (String) -> Void,
@@ -224,7 +225,7 @@ extension Reminders.Reminder.Form: SwiftUI::View {
             SwiftUI.List(lists) { list in
                 Button { reminder.list = list.id } label: {
                     HStack(spacing: 16) {
-                        Organizing.List<Reminder>.Badge(color: SwiftUI.Color(list.color))
+                        Organizing.List<Reminder>.Badge(color: SwiftUI.Color(Organizing.Color(list.color)))
                         Text(list.title).foregroundStyle(.primary)
                         Spacer()
                         if list.id == reminder.list {
@@ -242,7 +243,7 @@ extension Reminders.Reminder.Form: SwiftUI::View {
                 Label {
                     Text("List")
                 } icon: {
-                    Organizing.List<Reminder>.Badge(color: lists.first(id: reminder.list).map { SwiftUI.Color($0.color) } ?? .blue, size: 28)
+                    Organizing.List<Reminder>.Badge(color: lists.first(id: reminder.list).map { SwiftUI.Color(Organizing.Color($0.color)) } ?? .blue, size: 28)
                 }
             }
         }

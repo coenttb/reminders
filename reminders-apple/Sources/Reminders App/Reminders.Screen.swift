@@ -5,6 +5,7 @@ import Organizing
 public import Reminders
 import Reminders_Interface
 import Reminders_Sample
+import Reminders_SQL
 public import Reminders_Feature
 import Reminders_View
 import Standard_Library_Extensions
