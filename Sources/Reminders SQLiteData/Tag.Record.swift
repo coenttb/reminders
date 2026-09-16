@@ -5,11 +5,9 @@ public import Tagged
 
 extension Tag where Element == Reminder {
     @Table("tags")
-    public struct Record: Identifiable, Sendable {
+    public struct Record: Sendable {
         @Column(primaryKey: true)
         public var title: String
-
-        public var id: Tag<Reminder>.ID { Tag<Reminder>.ID(title) }
 
         init(title: String) {
             self.title = title
@@ -23,8 +21,6 @@ extension Tag<Reminder>.Record {
     }
 }
 
-extension Tag<Reminder> {
-    public init(_ record: Tag<Reminder>.Record) {
-        self.init(title: record.title)
-    }
+extension Tag<Reminder>.Record: Identifiable {
+    public var id: Tag<Reminder>.ID { Tag<Reminder>.ID(title) }
 }

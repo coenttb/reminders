@@ -25,9 +25,3 @@ extension List<Reminder>.Record {
         self.init(id: list.id, title: list.title, color: Color.Hex(list.color), position: list.position)
     }
 }
-
-extension List<Reminder> {
-    public init(_ record: List<Reminder>.Record) {
-        self.init(id: record.id, title: record.title, color: Color(record.color), position: record.position)
-    }
-}

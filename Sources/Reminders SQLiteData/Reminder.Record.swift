@@ -51,17 +51,6 @@ extension Reminder {
             self.created = created
         }
     }
-
-    @Table("remindersTags")
-    public struct Tagging: Sendable {
-        public var reminderID: Reminder.ID
-        public var tagID: Tag<Reminder>.ID
-
-        public init(reminderID: Reminder.ID, tagID: Tag<Reminder>.ID) {
-            self.reminderID = reminderID
-            self.tagID = tagID
-        }
-    }
 }
 
 extension Reminder.Record {
@@ -95,25 +84,5 @@ extension Reminder.Record {
 
     static func completion(_ status: Int) -> Reminder.Completion {
         status == incomplete ? .incomplete : .completed
-    }
-}
-
-extension Reminder {
-    public init(_ record: Reminder.Record, tags: Set<Tag<Reminder>.ID>) {
-        self.init(
-            id: record.id,
-            list: record.listID,
-            title: record.title,
-            notes: record.notes,
-            due: record.due.map { Reminder.Due($0, hasTime: record.hasTime) },
-            flagged: record.flagged,
-            priority: record.priority.flatMap(Reminder.Priority.init(rawValue:)),
-            completion: Reminder.Record.completion(record.status),
-            tags: tags,
-            position: record.position,
-            location: record.location.flatMap(Reminder.Location.init(rawValue:)),
-            repeats: Reminder.Repeat(rawValue: record.repeats) ?? .never,
-            created: record.created
-        )
     }
 }

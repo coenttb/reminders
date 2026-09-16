@@ -6,21 +6,6 @@ public import SQLiteData
 public import Tagged
 
 extension Reminder.Record {
-    @Selection
-    public struct Row: Sendable {
-        public let reminder: Reminder.Record
-        public let tags: String?
-        public let color: Color.Hex
-    }
-}
-
-extension Reminder {
-    public init(_ row: Reminder.Record.Row) {
-        self.init(row.reminder, tags: Reminder.Record.tags(from: row.tags))
-    }
-}
-
-extension Reminder.Record {
     public static var rows: Select<Row, Reminder.Record, List<Reminder>.Record> {
         Reminder.Record.all.rows()
     }
@@ -84,35 +69,5 @@ extension Reminder.Record {
             .where { $0.isDone && $0.matches(search) }
             .where { if let cutoff { $0.due.lt(Date?.some(cutoff)) } }
             .delete()
-    }
-}
-
-extension Where<Reminder.Record> {
-    public func rows() -> Select<Reminder.Record.Row, Reminder.Record, List<Reminder>.Record> {
-        join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
-            .select { Reminder.Record.Row.Columns(reminder: $0, tags: $0.tagList, color: $1.color) }
-    }
-}
-
-extension Select<(), Reminder.Record, ()> {
-    public func rows() -> Select<Reminder.Record.Row, Reminder.Record, List<Reminder>.Record> {
-        join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
-            .select { Reminder.Record.Row.Columns(reminder: $0, tags: $0.tagList, color: $1.color) }
-    }
-}
-
-extension Reminder.Tagging {
-    public static func attach(_ tags: Set<Tag<Reminder>.ID>, to id: Reminder.ID, in db: Database) throws {
-        for tag in tags.sorted() {
-            guard let canonical = try Tag<Reminder>.Record.add(tag.rawValue, in: db) else { continue }
-            let linked = try Reminder.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(canonical) }.fetchCount(db) > 0
-            if !linked {
-                try Reminder.Tagging.insert { Reminder.Tagging(reminderID: id, tagID: canonical) }.execute(db)
-            }
-        }
-    }
-
-    public static func detach(_ tags: Set<Tag<Reminder>.ID>, from id: Reminder.ID) -> DeleteOf<Reminder.Tagging> {
-        Reminder.Tagging.where { $0.reminderID.eq(id) && $0.tagID.in(tags) }.delete()
     }
 }

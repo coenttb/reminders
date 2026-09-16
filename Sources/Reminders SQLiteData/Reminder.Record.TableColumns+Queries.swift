@@ -71,14 +71,6 @@ extension Reminder.Record.TableColumns {
     }
 }
 
-extension Reminder.Record {
-    static let tagSeparator = String(Character.unitSeparator)
-
-    static func tags(from list: String?) -> Set<Tag<Reminder>.ID> {
-        Set((list ?? "").split(separator: tagSeparator).map { Tag<Reminder>.ID(String($0)) })
-    }
-}
-
 extension Reminder.Record.TableColumns {
     fileprivate func placed<Value: _OptionalPromotable>(
         _ column: some QueryExpression<Value>,
@@ -107,8 +99,4 @@ extension Reminder.Record.TableColumns {
         }
         return SQLQueryExpression(fragment)
     }
-}
-
-extension QueryExpression where QueryValue == Tag<Reminder>.ID {
-    var text: SQLQueryExpression<String> { SQLQueryExpression("\(self)") }
 }
