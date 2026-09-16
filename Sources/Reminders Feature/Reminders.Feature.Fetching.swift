@@ -5,13 +5,13 @@ public import SQLiteData
 extension Reminders.Feature {
     // A listing is fetched only while there is a selection; `nil` clears the page.
     public struct Fetching: FetchKeyRequest, Hashable, Sendable {
-        public var request: Reminders.Listing.Request?
+        public var request: Reminders.Listing.Client.Fetch.Request?
 
-        public init(_ request: Reminders.Listing.Request?) {
+        public init(_ request: Reminders.Listing.Client.Fetch.Request?) {
             self.request = request
         }
 
-        public func fetch(_ db: Database) throws -> Reminders.Listing.Page? {
+        public func fetch(_ db: Database) throws -> Reminders.Listing.Client.Fetch.Result? {
             try request?.fetch(db)
         }
     }

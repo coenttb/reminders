@@ -7,7 +7,7 @@ public import Tagged
 
 extension Reminders.Listing.View {
     public struct SwiftUI {
-        private var contents: Reminders.Listing.Page
+        private var contents: Reminders.Listing.Client.Fetch.Result
         private var style: Reminders.Filter.Style
         private var color: (Models.List<Reminder>.ID) -> SwiftUI::Color
         private var draft: (Reminder.ID) -> Binding<Reminder>?
@@ -18,7 +18,7 @@ extension Reminders.Listing.View {
         @FocusState private var focus: Reminder.Focus?
 
         public init(
-            contents: Reminders.Listing.Page,
+            contents: Reminders.Listing.Client.Fetch.Result,
             style: Reminders.Filter.Style,
             color: @escaping (Models.List<Reminder>.ID) -> SwiftUI::Color,
             draft: @escaping (Reminder.ID) -> Binding<Reminder>?,

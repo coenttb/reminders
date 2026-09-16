@@ -5,9 +5,9 @@ import Reminders_SQL
 public import SQLiteData
 import Tagged
 
-extension Reminders.Overview.Request: FetchKeyRequest {
-    public func fetch(_ db: Database) throws -> Reminders.Overview.Contents {
-        Reminders.Overview.Contents(
+extension Reminders.Overview.Client.Fetch.Request: FetchKeyRequest {
+    public func fetch(_ db: Database) throws -> Reminders.Overview.Client.Fetch.Result {
+        Reminders.Overview.Client.Fetch.Result(
             lists: try List<Reminder>.Record
                 .group(by: \.id)
                 .order(by: \.position)

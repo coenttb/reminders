@@ -1,29 +1,25 @@
-public import Foundation
-public import Models
-public import Reminder
-
 extension Reminders.Editor {
     public struct Client: Sendable {
-        public var reminder: @Sendable (Reminder.ID) throws -> Reminders.Placement?
-        public var start: @Sendable (_ list: List<Reminder>.ID, _ below: Reminders.Placement?, _ created: Date) throws -> Reminders.Placement?
-        public var add: @Sendable (Reminder) throws -> Bool
-        public var update: @Sendable (Reminder) throws -> Bool
-        public var toggle: @Sendable (Reminder.ID) throws -> Bool?
-        public var delete: @Sendable (Reminder.ID) throws -> Void
-        public var move: @Sendable ([Reminder.ID], _ filter: Reminders.Filter) throws -> Void
-        public var deleteCompleted: @Sendable (Reminders.Selection, _ today: Range<Date>, _ dueBefore: Date?) throws -> Void
+        public var find: Find
+        public var start: Start
+        public var add: Add
+        public var update: Update
+        public var toggle: Toggle
+        public var delete: Delete
+        public var move: Move
+        public var deleteCompleted: DeleteCompleted
 
         public init(
-            reminder: @escaping @Sendable (Reminder.ID) throws -> Reminders.Placement?,
-            start: @escaping @Sendable (_ list: List<Reminder>.ID, _ below: Reminders.Placement?, _ created: Date) throws -> Reminders.Placement?,
-            add: @escaping @Sendable (Reminder) throws -> Bool,
-            update: @escaping @Sendable (Reminder) throws -> Bool,
-            toggle: @escaping @Sendable (Reminder.ID) throws -> Bool?,
-            delete: @escaping @Sendable (Reminder.ID) throws -> Void,
-            move: @escaping @Sendable ([Reminder.ID], _ filter: Reminders.Filter) throws -> Void,
-            deleteCompleted: @escaping @Sendable (Reminders.Selection, _ today: Range<Date>, _ dueBefore: Date?) throws -> Void
+            find: Find,
+            start: Start,
+            add: Add,
+            update: Update,
+            toggle: Toggle,
+            delete: Delete,
+            move: Move,
+            deleteCompleted: DeleteCompleted
         ) {
-            self.reminder = reminder
+            self.find = find
             self.start = start
             self.add = add
             self.update = update

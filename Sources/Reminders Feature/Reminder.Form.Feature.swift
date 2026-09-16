@@ -87,7 +87,7 @@ extension Reminder.Form {
                 case let .tagRenamed(id, title):
                     store.addTask {
                         try await attempt {
-                            guard let renamed = try reminders.tags.client.rename(id, title) else { return }
+                            guard let renamed = try reminders.tags.client.rename(.init(tag: id, title: title)) else { return }
                             try store.modify {
                                 $0.draft.tags.replace(id, with: renamed)
                                 $0.failure = nil

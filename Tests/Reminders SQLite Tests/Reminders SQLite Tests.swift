@@ -22,20 +22,20 @@ import Tagged
         return (database, sample)
     }
 
-    func overview(_ database: some DatabaseWriter) throws -> Reminders.Overview.Contents {
-        try database.read { db in try Reminders.Overview.Request(today: today).fetch(db) }
+    func overview(_ database: some DatabaseWriter) throws -> Reminders.Overview.Client.Fetch.Result {
+        try database.read { db in try Reminders.Overview.Client.Fetch.Request(today: today).fetch(db) }
     }
 
-    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil, limit: Int? = nil) throws -> Reminders.Listing.Page {
-        try database.read { db in try Reminders.Listing.Request(selection: .filter(filter), today: today, place: place, limit: limit).fetch(db) }
+    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil, limit: Int? = nil) throws -> Reminders.Listing.Client.Fetch.Result {
+        try database.read { db in try Reminders.Listing.Client.Fetch.Request(selection: .filter(filter), today: today, place: place, limit: limit).fetch(db) }
     }
 
-    func results(_ query: Reminders.Search.Query, _ database: some DatabaseWriter, limit: Int? = nil) throws -> Reminders.Listing.Page {
-        try database.read { db in try Reminders.Listing.Request(selection: .search(query), today: today, limit: limit).fetch(db) }
+    func results(_ query: Reminders.Search.Query, _ database: some DatabaseWriter, limit: Int? = nil) throws -> Reminders.Listing.Client.Fetch.Result {
+        try database.read { db in try Reminders.Listing.Client.Fetch.Request(selection: .search(query), today: today, limit: limit).fetch(db) }
     }
 
     func suggestions(_ prefix: String, excluding: Set<Models.Tag<Reminder>> = [], _ database: some DatabaseWriter) throws -> [Models.Tag<Reminder>] {
-        try database.read { db in try Reminders.Tags.Suggestions(prefix: prefix, excluding: excluding).fetch(db) }
+        try database.read { db in try Reminders.Tags.Client.Suggest.Request(prefix: prefix, excluding: excluding).fetch(db) }
     }
 
     func stored(_ id: Reminder.ID, _ database: some DatabaseWriter) throws -> Reminder? {
@@ -447,16 +447,16 @@ import Tagged
         }
         func today(_ calendar: Calendar) throws -> [String] {
             try database.read { db in
-                try Reminders.Listing.Request(selection: .filter(.today), today: calendar.day(containing: now)!).fetch(db).reminders.map(\.title)
+                try Reminders.Listing.Client.Fetch.Request(selection: .filter(.today), today: calendar.day(containing: now)!).fetch(db).reminders.map(\.title)
             }
         }
         func count(_ calendar: Calendar) throws -> Int {
-            try database.read { db in try Reminders.Overview.Request(today: calendar.day(containing: now)!).fetch(db).counts.today }
+            try database.read { db in try Reminders.Overview.Client.Fetch.Request(today: calendar.day(containing: now)!).fetch(db).counts.today }
         }
         #expect(try today(utc) == [] && count(utc) == 0)
         #expect(try today(tokyo) == ["Late"] && count(tokyo) == 1)
         let tomorrow = utc.day(containing: now.addingTimeInterval(.hour))!
-        #expect(try database.read { db in try Reminders.Overview.Request(today: tomorrow).fetch(db).counts.today } == 1)
+        #expect(try database.read { db in try Reminders.Overview.Client.Fetch.Request(today: tomorrow).fetch(db).counts.today } == 1)
     }
 
     @Test func `a row that could not be read is refused by the schema, and one stored before the rule is brought back inside it`() throws {
@@ -538,6 +538,6 @@ import Tagged
     }
 }
 
-extension Reminders.Listing.Page {
+extension Reminders.Listing.Client.Fetch.Result {
     var reminders: [Reminder] { rows }
 }

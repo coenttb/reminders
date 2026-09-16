@@ -103,7 +103,7 @@ struct `Reminder feature` {
         #expect(try await stored(groceries.id)?.completed == false)
         await clock.advance(by: .seconds(5))
         await grace?.value
-        try await store.expect { $0.grace = [:] }
+        await store.expect { $0.grace = [:] }
         #expect(try await stored(groceries.id)?.completed == true)
         await store.send(.newReminderButtonTapped) { [personal, now] in
             $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder(id: Reminder.ID(UUID(1)), list: personal, created: now), original: nil)))
@@ -388,7 +388,7 @@ struct `Reminder feature` {
         await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow, session: UUID(2)) }?.value
         await clock.advance(by: .seconds(5))
         await grace?.value
-        try await store.expect { $0.grace = [:] }
+        await store.expect { $0.grace = [:] }
         #expect(try await stored(groceries.id)?.completed == true)
         let editing = try #require(await store.state.editing)
         #expect(editing.id == haircut.id && editing.session == UUID(2) && editing.draft == haircutRow.reminder)
@@ -634,7 +634,7 @@ struct `Reminder feature` {
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
         await clock.advance(by: .seconds(untilMidnight))
         await store.expect { $0.today = next }
-        @Fetch(Reminders.Overview.Request(today: next)) var overview = Reminders.Overview.Contents()
+        @Fetch(Reminders.Overview.Client.Fetch.Request(today: next)) var overview = Reminders.Overview.Client.Fetch.Result()
         try await until($overview) { $0.counts.today == 0 }
         try await until(store.state.$detail) { $0?.rows.isEmpty == true }
         let later = start.addingTimeInterval(2.days)

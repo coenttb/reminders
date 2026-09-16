@@ -1,8 +1,10 @@
 extension Reminders.Overview {
     public struct Client: Sendable {
-        public var fetch: @Sendable (Request) throws -> Contents
+        public var fetch: Fetch
 
-        public init(fetch: @escaping @Sendable (Request) throws -> Contents) {
+        public init(
+            fetch: Fetch
+        ) {
             self.fetch = fetch
         }
     }

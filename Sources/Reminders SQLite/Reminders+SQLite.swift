@@ -13,18 +13,18 @@ extension Reminders {
         @Sendable func read<T>(_ body: (Database) throws -> T) throws -> T { try database.read(body) }
         @Sendable func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
         return Reminders(
-            overview: Overview(client: Overview.Client { request in try read(request.fetch) }),
-            listing: Listing(client: Listing.Client { request in try read(request.fetch) }),
+            overview: Overview(client: Overview.Client(fetch: .init { request in try read(request.fetch) })),
+            listing: Listing(client: Listing.Client(fetch: .init { request in try read(request.fetch) })),
             editor: Editor(
                 client: Editor.Client(
-                    reminder: { id in
+                    find: .init { id in
                         try read { db in try Reminder.Record.find(id).rows().fetchOne(db).map(Placement.init) }
                     },
-                    start: { list, anchor, created in
+                    start: .init { request in
                         try write { db in
-                            var draft = Reminder.Record.Draft.start(in: list, created: created)
+                            var draft = Reminder.Record.Draft.start(in: request.list, created: request.created)
                             let id: Reminder.ID
-                            if let anchor {
+                            if let anchor = request.below {
                                 try Reminder.Record.makeRoom(after: anchor.position).execute(db)
                                 draft.position = anchor.position + 1
                                 id = try Reminder.Record.add(draft, in: db)
@@ -34,67 +34,67 @@ extension Reminders {
                             return try Reminder.Record.find(id).rows().fetchOne(db).map(Placement.init)
                         }
                     },
-                    add: { reminder in
+                    add: .init { reminder in
                         try write { db in try Reminder.Record.save(Reminder.Record.Draft(reminder), tags: reminder.tags, isNew: true, in: db) != nil }
                     },
-                    update: { reminder in
+                    update: .init { reminder in
                         try write { db in try Reminder.Record.save(Reminder.Record.Draft(reminder), tags: reminder.tags, isNew: false, in: db) != nil }
                     },
-                    toggle: { id in
+                    toggle: .init { id in
                         try write { db in
                             try Reminder.Record.toggle(id).execute(db)
                             return try Reminder.Record.find(id).select(\.completed).fetchOne(db)
                         }
                     },
-                    delete: { id in
+                    delete: .init { id in
                         try write { db in try Reminder.Record.find(id).delete().execute(db) }
                     },
-                    move: { ids, filter in
+                    move: .init { request in
                         try write { db in
-                            try Reminder.Record.reorder(ids, in: db)
-                            try Preference.Record.set(ordering: .manual, for: filter).execute(db)
+                            try Reminder.Record.reorder(request.ids, in: db)
+                            try Preference.Record.set(ordering: .manual, for: request.filter).execute(db)
                         }
                     },
-                    deleteCompleted: { selection, today, cutoff in
-                        try write { db in try Reminder.Record.deleteCompleted(in: selection, today: today, dueBefore: cutoff).execute(db) }
+                    deleteCompleted: .init { request in
+                        try write { db in try Reminder.Record.deleteCompleted(in: request.selection, today: request.today, dueBefore: request.dueBefore).execute(db) }
                     }
                 )
             ),
             lists: Lists(
                 client: Lists.Client(
-                    add: { list in
+                    add: .init { list in
                         try write { db in
                             try List<Reminder>.Record.insert { List<Reminder>.Record(list) }.execute(db)
                             try List<Reminder>.Record.placeLast(list.id).execute(db)
                         }
                     },
-                    update: { list in
+                    update: .init { list in
                         try write { db in
                             guard try List<Reminder>.Record.find(list.id).fetchCount(db) > 0 else { return false }
                             try List<Reminder>.Record.save(List<Reminder>.Record.Draft(List<Reminder>.Record(list))).execute(db)
                             return true
                         }
                     },
-                    delete: { id, replacement in
-                        try write { db in try List<Reminder>.Record.delete(id, replacement: replacement, in: db) }
+                    delete: .init { request in
+                        try write { db in try List<Reminder>.Record.delete(request.id, replacement: request.replacement, in: db) }
                     },
-                    reorder: { ids in
+                    reorder: .init { ids in
                         try write { db in try List<Reminder>.Record.reorder(ids).execute(db) }
                     }
                 )
             ),
             tags: Tags(
                 client: Tags.Client(
-                    add: { title in try write { db in try Tag<Reminder>.Record.add(title, in: db) } },
-                    rename: { id, title in try write { db in try Tag<Reminder>.Record.rename(id, to: title, in: db) } },
-                    delete: { id in try write { db in try Tag<Reminder>.Record.delete(id).execute(db) } },
-                    suggest: { request in try read(request.fetch) }
+                    add: .init { title in try write { db in try Tag<Reminder>.Record.add(title, in: db) } },
+                    rename: .init { request in try write { db in try Tag<Reminder>.Record.rename(request.tag, to: request.title, in: db) } },
+                    delete: .init { id in try write { db in try Tag<Reminder>.Record.delete(id).execute(db) } },
+                    suggest: .init { request in try read(request.fetch) }
                 )
             ),
             preferences: Preferences(
                 client: Preferences.Client(
-                    ordering: { ordering, filter in try write { db in try Preference.Record.set(ordering: ordering, for: filter).execute(db) } },
-                    toggleShowCompleted: { filter in try write { db in try Preference.Record.toggleShowCompleted(for: filter).execute(db) } }
+                    ordering: .init { request in try write { db in try Preference.Record.set(ordering: request.ordering, for: request.filter).execute(db) } },
+                    toggleShowCompleted: .init { filter in try write { db in try Preference.Record.toggleShowCompleted(for: filter).execute(db) } }
                 )
             )
         )

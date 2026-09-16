@@ -13,46 +13,46 @@ extension Reminders: TestDependencyKey {
         Reminders(
             overview: .init(
                 client: .init(
-                    fetch: unimplemented("\\.reminders.overview.client.fetch", placeholder: Overview.Contents())
+                    fetch: .init(unimplemented("\\.reminders.overview.client.fetch", placeholder: Overview.Client.Fetch.Result()))
                 )
             ),
             listing: .init(
                 client: .init(
-                    fetch: unimplemented("\\.reminders.listing.client.fetch", placeholder: Listing.Page(selection: .filter(.all), preference: Preference()))
+                    fetch: .init(unimplemented("\\.reminders.listing.client.fetch", placeholder: Listing.Client.Fetch.Result(selection: .filter(.all), preference: Preference())))
                 )
             ),
             editor: .init(
                 client: .init(
-                    reminder: unimplemented("\\.reminders.editor.client.reminder", placeholder: nil),
-                    start: unimplemented("\\.reminders.editor.client.start", placeholder: nil),
-                    add: unimplemented("\\.reminders.editor.client.add", placeholder: false),
-                    update: unimplemented("\\.reminders.editor.client.update", placeholder: false),
-                    toggle: unimplemented("\\.reminders.editor.client.toggle", placeholder: nil),
-                    delete: unimplemented("\\.reminders.editor.client.delete"),
-                    move: unimplemented("\\.reminders.editor.client.move"),
-                    deleteCompleted: unimplemented("\\.reminders.editor.client.deleteCompleted")
+                    find: .init(unimplemented("\\.reminders.editor.client.find", placeholder: nil)),
+                    start: .init(unimplemented("\\.reminders.editor.client.start", placeholder: nil)),
+                    add: .init(unimplemented("\\.reminders.editor.client.add", placeholder: false)),
+                    update: .init(unimplemented("\\.reminders.editor.client.update", placeholder: false)),
+                    toggle: .init(unimplemented("\\.reminders.editor.client.toggle", placeholder: nil)),
+                    delete: .init(unimplemented("\\.reminders.editor.client.delete")),
+                    move: .init(unimplemented("\\.reminders.editor.client.move")),
+                    deleteCompleted: .init(unimplemented("\\.reminders.editor.client.deleteCompleted"))
                 )
             ),
             lists: .init(
                 client: .init(
-                    add: unimplemented("\\.reminders.lists.client.add"),
-                    update: unimplemented("\\.reminders.lists.client.update", placeholder: false),
-                    delete: unimplemented("\\.reminders.lists.client.delete"),
-                    reorder: unimplemented("\\.reminders.lists.client.reorder")
+                    add: .init(unimplemented("\\.reminders.lists.client.add")),
+                    update: .init(unimplemented("\\.reminders.lists.client.update", placeholder: false)),
+                    delete: .init(unimplemented("\\.reminders.lists.client.delete")),
+                    reorder: .init(unimplemented("\\.reminders.lists.client.reorder"))
                 )
             ),
             tags: .init(
                 client: .init(
-                    add: unimplemented("\\.reminders.tags.client.add", placeholder: nil),
-                    rename: unimplemented("\\.reminders.tags.client.rename", placeholder: nil),
-                    delete: unimplemented("\\.reminders.tags.client.delete"),
-                    suggest: unimplemented("\\.reminders.tags.client.suggest", placeholder: [])
+                    add: .init(unimplemented("\\.reminders.tags.client.add", placeholder: nil)),
+                    rename: .init(unimplemented("\\.reminders.tags.client.rename", placeholder: nil)),
+                    delete: .init(unimplemented("\\.reminders.tags.client.delete")),
+                    suggest: .init(unimplemented("\\.reminders.tags.client.suggest", placeholder: []))
                 )
             ),
             preferences: .init(
                 client: .init(
-                    ordering: unimplemented("\\.reminders.preferences.client.ordering"),
-                    toggleShowCompleted: unimplemented("\\.reminders.preferences.client.toggleShowCompleted")
+                    ordering: .init(unimplemented("\\.reminders.preferences.client.ordering")),
+                    toggleShowCompleted: .init(unimplemented("\\.reminders.preferences.client.toggleShowCompleted"))
                 )
             )
         )

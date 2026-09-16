@@ -53,7 +53,7 @@ import Tagged
 
     @Test func `an overview finds its lists and ranks its tags, and a detail knows its ids`() {
         let personal = List<Reminder>(id: list, title: "Personal")
-        let overview = Reminders.Overview.Contents(
+        let overview = Reminders.Overview.Client.Fetch.Result(
             lists: [List<Reminder>.Entry(List<Reminder>.Record.Entry(list: List<Reminder>.Record(personal), count: 2))],
             counts: Reminders.Overview.Counts(Reminder.Record.Counts(all: 2)),
             tags: [
@@ -65,7 +65,7 @@ import Tagged
         #expect(overview.lists.map(\.list) == [personal] && overview.tags.map(\.tag.rawValue) == ["social", "Adulting", "car"])
         let record = Reminder.Record(id: Reminder.ID(UUID()), listID: list, title: "Call", created: now)
         let call = Reminder(Reminder.Record.Row(reminder: record, tags: []))
-        let page = Reminders.Listing.Page(selection: .filter(.list(list)), preference: .default(for: .list(list)), rows: [call])
+        let page = Reminders.Listing.Client.Fetch.Result(selection: .filter(.list(list)), preference: .default(for: .list(list)), rows: [call])
         #expect(page.rows.map(\.id) == [record.id] && page.total == 0)
         let stored = Reminders.Preference.Record(Reminders.Preference(ordering: .title, showCompleted: true), for: .today)
         #expect(stored.key == Reminders.Filter.Key(.today) && Reminders.Preference(stored) == Reminders.Preference(ordering: .title, showCompleted: true))
