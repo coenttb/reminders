@@ -1,4 +1,5 @@
 public import Foundation
+public import Reminder
 
 extension Reminder.Due {
     public static func applying(_ time: Preset.Time?, to due: Self?, at now: Date, calendar: Calendar) -> Self? {

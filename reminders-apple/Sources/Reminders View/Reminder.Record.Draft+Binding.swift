@@ -1,5 +1,6 @@
 import Foundation
 import Reminder
+import Reminders
 import Reminders_SQL
 
 extension Reminder.Record.Draft {

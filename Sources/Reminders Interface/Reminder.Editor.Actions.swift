@@ -1,4 +1,5 @@
 public import Reminder
+public import Reminders
 public import Tagged
 
 extension Reminder.Editor {

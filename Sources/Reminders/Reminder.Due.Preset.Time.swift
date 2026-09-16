@@ -1,4 +1,5 @@
 import Foundation
+public import Reminder
 
 extension Reminder.Due.Preset {
     public enum Time: Int, CaseIterable, Hashable, Sendable {

@@ -1,6 +1,7 @@
 public import Foundation
 import FoundationEssentials_Extensions
 public import Reminder
+public import Reminders
 
 extension Reminder.Due.Preset.Time {
     public var title: String {

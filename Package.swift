@@ -37,7 +37,6 @@ let package = Package(
             name: "Reminder",
             dependencies: [
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
