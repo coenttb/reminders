@@ -6,8 +6,6 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder.Overview {
-    /// The home sections inside the app's list: the smart-group tiles, the user's
-    /// lists, and the tags in use. Every tap is a callback; the value is read-only.
     public struct View: SwiftUI.View {
         private var overview: Reminder.Overview
         private var now: Date
@@ -46,8 +44,6 @@ extension Reminder.Overview.View {
         let counts = overview.counts
         Section {
             if editMode?.wrappedValue.isEditing == true {
-                // Edit mode lists the smart groups as rows with grips, as stock does
-                // (Evidence/Parity/edit-mode); stock's visibility toggles are not modelled.
                 ForEach(Reminder.Filter.smart(flagged: counts.flagged > 0), id: \.self) { filter in
                     HStack(spacing: 16) {
                         Reminder.Filter.Tile.badge(for: filter, day: calendar.component(.day, from: now))
@@ -56,7 +52,6 @@ extension Reminder.Overview.View {
                 }
                 .onMove { _, _ in }
             } else {
-                // Flagged appears only while something is flagged, as in iOS 27.
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                     Reminder.Filter.Tile(.today, glyph: .today(day: calendar.component(.day, from: now)), fill: .today, count: counts.today, open: open)
                     Reminder.Filter.Tile(.scheduled, glyph: .symbol("calendar"), fill: .scheduled, count: counts.scheduled, open: open)
@@ -71,8 +66,6 @@ extension Reminder.Overview.View {
                 .listRowInsets(EdgeInsets())
             }
         }
-        // The grid sits 16 pt under the bar, where the stock app puts it, not at the
-        // inset-grouped default.
         .listSectionMargins(.top, 0)
         Section {
             ForEach(overview.lists) { entry in
@@ -99,8 +92,6 @@ extension Reminder.Overview.View {
     }
 
     private func header(_ title: String) -> some SwiftUI.View {
-        // `.primary` inside a header resolves against the header's secondary style;
-        // the color itself keeps the stock black.
         Text(title)
             .font(.title2.weight(.bold))
             .foregroundStyle(SwiftUI.Color.primary)

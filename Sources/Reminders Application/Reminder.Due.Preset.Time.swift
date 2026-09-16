@@ -2,7 +2,6 @@ public import Foundation
 public import Reminders
 
 extension Reminder.Due.Preset {
-    /// The times of day the inline Time chip offers; the raw value is the hour.
     public enum Time: Int, CaseIterable, Hashable, Sendable {
         case morning = 9, midday = 12, afternoon = 15, evening = 18, night = 21
 
@@ -11,8 +10,6 @@ extension Reminder.Due.Preset {
 }
 
 extension Reminder {
-    /// A preset time turns the time on, on the due day or today; none turns the time off and
-    /// keeps the day.
     public static func setting(_ reminder: Self, timePreset preset: Due.Preset.Time?, at now: Date, calendar: Calendar) -> Self {
         var set = reminder
         let day = reminder.due?.date ?? now

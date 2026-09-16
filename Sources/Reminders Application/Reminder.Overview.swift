@@ -4,9 +4,6 @@ import Standard_Library_Extensions
 public import Tagged
 
 extension Reminder {
-    /// The home screen as read from the database: the user's lists in their order with
-    /// their open counts, the smart-group counts, the tags at least one reminder carries,
-    /// and every tag ranked by use for the picker.
     public struct Overview: Hashable, Sendable {
         public var lists: [List<Reminder>.Entry]
         public var counts: Filter.Counts

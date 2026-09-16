@@ -2,10 +2,6 @@ public import Reminders
 public import SwiftUI
 
 extension Reminder.Filter {
-    /// One tile of the home grid, as iOS 27 draws it: 80 pt tall, a vertical gradient
-    /// in the filter's color, the white glyph top-leading, the count top-trailing in
-    /// rounded bold, the filter's name bottom-leading. Measured on the stock app
-    /// (Evidence/Parity/home): tiles 181×80 with 8 pt gaps, radius 18.
     public struct Tile: SwiftUI.View {
         private var filter: Reminder.Filter
         private var glyph: Glyph
@@ -24,7 +20,6 @@ extension Reminder.Filter {
 }
 
 extension Reminder.Filter.Tile {
-    /// The stock tile gradients, sampled top and bottom (sRGB 0–255) on the iOS 27 simulator.
     public struct Fill: Hashable, Sendable {
         public var top: SwiftUI.Color
         public var bottom: SwiftUI.Color
@@ -41,7 +36,6 @@ extension Reminder.Filter.Tile {
         public static let completed = Fill(top: .init(red: 166 / 255, green: 174 / 255, blue: 179 / 255), bottom: .init(red: 155 / 255, green: 163 / 255, blue: 169 / 255))
     }
 
-    /// A tile's glyph: a symbol, or the calendar page showing today's day as the stock Today tile does.
     public enum Glyph: Hashable, Sendable {
         case symbol(String)
         case today(day: Int)
@@ -80,21 +74,18 @@ extension Reminder.Filter.Tile {
         case let .symbol(name):
             Image(systemName: name).font(.system(size: 24, weight: .medium))
         case let .today(day):
-            // SF Symbols 7 ships the stock glyph: a calendar page with the day inside.
             Image(systemName: "\(day).calendar").font(.system(size: 24, weight: .medium))
         }
     }
 }
 
 extension Reminder.Filter {
-    /// The smart groups in the home's order; Flagged only while something is flagged.
     public static func smart(flagged: Bool) -> [Reminder.Filter] {
         flagged ? [.today, .scheduled, .all, .flagged, .completed] : [.today, .scheduled, .all, .completed]
     }
 }
 
 extension Reminder.Filter.Tile {
-    /// The 32 pt circle the home's edit mode shows for a smart group: its glyph on its color.
     @ViewBuilder public static func badge(for filter: Reminder.Filter, day: Int) -> some SwiftUI.View {
         let (name, fill): (String, Fill) = switch filter {
         case .today: ("\(day).calendar", .today)

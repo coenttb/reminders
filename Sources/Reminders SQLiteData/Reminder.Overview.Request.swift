@@ -6,9 +6,7 @@ public import SQLiteData
 import Tagged
 
 extension Reminder.Overview {
-    /// Reads the overview in one transaction, and again whenever a table it reads changes.
     public struct Request: FetchKeyRequest {
-        /// The day the Today count is taken over.
         public var today: Range<Date>
 
         public init(today: Range<Date>) {

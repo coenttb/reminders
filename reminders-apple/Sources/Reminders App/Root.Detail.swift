@@ -9,9 +9,6 @@ import SwiftUI
 import Tagged
 
 extension Root {
-    /// The pushed detail. It reads the store in its own body so Observation re-renders it on
-    /// every change; a value view built inside the `navigationDestination` closure is not
-    /// re-evaluated for later changes (the sort menu worked once, then the screen went stale).
     struct Detail: View {
         private var filter: Reminder.Filter
         private var store: StoreOf<Reminder.Feature>
@@ -26,7 +23,6 @@ extension Root {
 
         var body: some View {
             @Bindable var store = store
-            // The detail is read a moment after the filter opens; until then the screen is empty.
             let detail = store.detail ?? Reminder.Filter.Detail(filter: filter, preference: filter.defaultPreference)
             Reminder.Filter.Detail.View(
                 detail,
@@ -48,7 +44,6 @@ extension Root {
                 delete: list.map { list in { store.send(.listDeleted(list.id)) } },
                 clearCompleted: { store.send(.clearCompletedButtonTapped) }
             )
-            // Leaving the app commits the row being edited, as the stock app does.
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background, store.editing != nil { store.send(.doneButtonTapped) }
             }
@@ -57,12 +52,10 @@ extension Root {
 }
 
 extension Root.Detail {
-    /// The list a list filter shows, named by the overview.
     private var list: Organizing.List<Reminder>? {
         if case let .list(id) = filter { store.overview.list(id) } else { nil }
     }
 
-    /// A detail's rows edit in place on a tap.
     private var rows: Reminder.Row.Actions {
         Reminder.Row.Actions(
             complete: { store.send(.reminderCompleteButtonTapped($0)) },
@@ -72,7 +65,6 @@ extension Root.Detail {
         )
     }
 
-    /// The card's intents, each one action; the chips run on the feature's clock.
     private var editor: Reminder.Editor.Actions {
         Reminder.Editor.Actions(
             complete: { store.send(.reminderCompleteButtonTapped($0)) },

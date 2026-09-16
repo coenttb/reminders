@@ -6,10 +6,6 @@ import Standard_Library_Extensions
 import Tagged
 
 extension Reminder.Filter {
-    /// The stored form of a filter, also the key preferences are stored under: a smart group's
-    /// name, `list_` and the list's identifier, or `tags_` and the tag titles. Tag titles are
-    /// free text, so they are joined by the unit separator, and sorted so the same set of tags
-    /// shares one key whatever order it was opened in.
     public struct Key: RawRepresentable, Hashable, Sendable, QueryBindable {
         public var rawValue: String
 
@@ -34,7 +30,6 @@ extension Reminder.Filter.Key {
         }
     }
 
-    /// The filter the key names, if it names one.
     public var filter: Reminder.Filter? { Reminder.Filter(key: self) }
 }
 

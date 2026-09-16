@@ -2,8 +2,6 @@ public import Organizing
 public import SwiftUI
 
 extension Tag {
-    /// The home's Tags card as iOS 27 draws it: one card of capsules that wrap, "All Tags"
-    /// first, then each tag as its hashtag. A tap opens the tag; a long press offers Delete.
     public struct Cloud: SwiftUI.View {
         private var tags: [Tag]
         private var open: ([Tag.ID]) -> Void
@@ -34,7 +32,6 @@ extension Tag.Cloud {
 }
 
 extension Tag {
-    /// One capsule of the cloud: body text on a gray fill.
     public struct Pill: SwiftUI.View {
         private var title: String
 
@@ -54,7 +51,6 @@ extension Tag {
 }
 
 extension Tag.Cloud {
-    /// Lays subviews out left to right, wrapping to a new line when the width runs out.
     struct Flow: Layout {
         var spacing: CGFloat
 

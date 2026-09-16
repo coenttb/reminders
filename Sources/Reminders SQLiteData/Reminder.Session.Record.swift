@@ -4,7 +4,6 @@ public import SQLiteData
 public import Tagged
 
 extension Reminder.Session {
-    /// One row holding which filter is open and which reminder is being edited in place.
     @Table("session")
     public struct Record: Identifiable, Sendable {
         public let id: Int
@@ -24,7 +23,6 @@ extension Reminder.Session.Record {
         Reminder.Session(filter: filter?.filter, editing: editing)
     }
 
-    /// The one row holding the open filter and the row being edited.
     public static var state: Where<Reminder.Session.Record> { Reminder.Session.Record.find(1) }
 
     public static func set(filter: Reminder.Filter?) -> UpdateOf<Reminder.Session.Record> {

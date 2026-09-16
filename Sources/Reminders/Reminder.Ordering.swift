@@ -1,16 +1,12 @@
 import Foundation
 
 extension Reminder {
-    /// The raw value is the stored key; the cases are in the stock menu's order.
     public enum Ordering: String, CaseIterable, Hashable, Sendable {
         case manual, dueDate, creationDate, priority, title
     }
 }
 
 extension Reminder.Ordering {
-    /// The order a detail shows under the ordering, ties broken by position as the manual
-    /// order has it: due dates ascending with none last, creation dates ascending, priorities
-    /// descending then flagged first, titles as the locale compares them ignoring case.
     public static func areInIncreasingOrder(_ lhs: Reminder, _ rhs: Reminder, for ordering: Self) -> Bool {
         switch ordering {
         case .manual:

@@ -7,7 +7,6 @@ import Standard_Library_Extensions
 import Tagged
 
 extension Reminder.Record.TableColumns {
-    /// Pending counts as completed everywhere but the grace timer.
     public var isCompleted: some QueryExpression<Bool> {
         status.neq(Reminder.Record.incomplete)
     }
@@ -16,7 +15,6 @@ extension Reminder.Record.TableColumns {
         status.eq(Reminder.Record.pending)
     }
 
-    /// Fully completed: the grace period is over.
     public var isDone: some QueryExpression<Bool> {
         status.eq(Reminder.Record.completed)
     }
@@ -25,14 +23,10 @@ extension Reminder.Record.TableColumns {
         !isCompleted && due.isNot(nil)
     }
 
-    /// Incomplete and due within a day's bounds; the bounds come from the app's calendar, so
-    /// the database has no say in where a day starts. Written as a plain range so the index on
-    /// the due date serves it; a `coalesce` around the comparison would defeat it.
     public func isDue(during day: Range<Date>) -> some QueryExpression<Bool> {
         !isCompleted && due.isNot(nil) && #sql("\(due) >= \(day.lowerBound) AND \(due) < \(day.upperBound)")
     }
 
-    /// Whether the reminder belongs to a filter; `today` is the day the filter of that name shows.
     public func belongs(to filter: Reminder.Filter, today: Range<Date>) -> SQLQueryExpression<Bool> {
         switch filter {
         case .all: SQLQueryExpression("1")
@@ -45,11 +39,6 @@ extension Reminder.Record.TableColumns {
         }
     }
 
-    /// Whether the title, notes, or a tag contains the text, case-insensitively as Swift compares.
-    /// The title and notes are compared folded, from the column the schema keeps for the search.
-    /// The tags that contain the text are found once, from the tags table, and the reminder's
-    /// links are then looked up in their index: a link-by-link comparison ran the Swift function
-    /// for every link of every reminder (RESEARCH.md, device measurement).
     fileprivate func matches(_ text: String) -> some QueryExpression<Bool> {
         let folded = searchFolded(text)
         return #sql("instr(\"reminders\".\"searchText\", \(folded)) > 0", as: Bool.self)
@@ -58,13 +47,10 @@ extension Reminder.Record.TableColumns {
                 .exists()
     }
 
-    /// Whether the reminder carries the tag.
     fileprivate func carries(_ tag: Tag<Reminder>.ID) -> some QueryExpression<Bool> {
         Reminder.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(tag) }.exists()
     }
 
-    /// Whether the reminder matches every term of a search; a search that names no reminders
-    /// (nothing typed, or a tag prefix alone) matches none.
     public func matches(_ search: Reminder.Search) -> SQLQueryExpression<Bool> {
         guard search.matchesReminders else { return SQLQueryExpression("0") }
         var predicate = SQLQueryExpression<Bool>(search.matchedText.isEmpty ? "1" : "(\(matches(search.matchedText)))")
@@ -77,11 +63,6 @@ extension Reminder.Record.TableColumns {
         return predicate
     }
 
-    /// The tags the reminder carries, joined by the unit separator, in tag order; the titles are
-    /// read from the tags table, so the case the tag is stored in is what a reminder shows.
-    /// The tags key is compared on the left: SQLite takes the left operand's collation, and only
-    /// under the key's own collation can its index serve the join. The other way round the
-    /// planner scans every tag for every row (RESEARCH.md, scale investigation).
     public var tagList: some QueryExpression<String?> {
         Reminder.Tagging
             .where { $0.reminderID.eq(id) }
@@ -99,8 +80,6 @@ extension Reminder.Record {
 }
 
 extension Reminder.Record.TableColumns {
-    /// The value a column sorts by: the reminder's own, or the place's for the row being edited,
-    /// so that row keeps the place it had when editing began.
     fileprivate func placed<Value>(
         _ column: some QueryExpression<Value>,
         _ value: some QueryExpression<Value>,
@@ -110,10 +89,6 @@ extension Reminder.Record.TableColumns {
         return #sql("CASE WHEN \(id) = \(place.id) THEN \(value) ELSE \(column) END")
     }
 
-    /// The ordering a preference asks for, ties broken by position as the manual order has it.
-    /// Completed reminders sort last only when the filter shows them, and one in its grace
-    /// period moves down with them at once, as the stock row does (Evidence/Parity/completion);
-    /// hidden, it keeps its place until the period ends so the tap can be undone.
     public func ordered(by ordering: Reminder.Ordering, showCompleted: Bool, placing place: Reminder? = nil) -> SQLQueryExpression<Bool> {
         let due = placed(due, place?.due?.date, of: place)
         let position = placed(position, place?.position ?? 0, of: place)
@@ -135,6 +110,5 @@ extension Reminder.Record.TableColumns {
 }
 
 extension QueryExpression where QueryValue == Tag<Reminder>.ID {
-    /// The tag's title as the text column it is stored in.
     var text: SQLQueryExpression<String> { SQLQueryExpression("\(self)") }
 }

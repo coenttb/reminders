@@ -1,7 +1,6 @@
 public import Reminders
 
 extension Reminder.Filter {
-    /// The counts on the overview grid: open reminders only.
     public struct Counts: Hashable, Sendable {
         public var all: Int
         public var flagged: Int

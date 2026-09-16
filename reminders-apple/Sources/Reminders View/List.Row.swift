@@ -2,8 +2,6 @@ public import Organizing
 public import SwiftUI
 
 extension Organizing.List {
-    /// One list on the home screen: its colored badge, title, and open count;
-    /// info and delete are swipe actions.
     public struct Row: SwiftUI.View {
         private var list: Organizing.List<Element>
         private var count: Int
@@ -22,14 +20,12 @@ extension Organizing.List {
 
 extension Organizing.List.Row {
     public var body: some SwiftUI.View {
-        // Stock geometry: 62 pt rows, the badge 16 pt from the title, the count 10 pt from a body-size chevron.
         HStack(spacing: 16) {
             Organizing.List<Element>.Badge(color: list.color.swiftUI)
             Text(list.title)
             Spacer()
             HStack(spacing: 10) {
                 if editMode?.wrappedValue.isEditing == true {
-                    // Edit mode swaps the count for the stock (i) button.
                     Button("Info", systemImage: "info.circle", action: details)
                         .labelStyle(.iconOnly)
                         .font(.title3)
@@ -48,7 +44,6 @@ extension Organizing.List.Row {
 }
 
 extension Organizing.List {
-    /// The circular list glyph in the list's color, sized for a row or a form preview.
     public struct Badge: SwiftUI.View {
         private var color: SwiftUI.Color
         private var size: CGFloat
@@ -69,8 +64,6 @@ extension Organizing.List {
 }
 
 extension Organizing.List {
-    /// The Add List bar glyph as iOS 27 draws it: a bulleted page with a plus badge
-    /// bottom-trailing. No SF Symbol carries that badge, so the page and the badge are composed.
     public struct AddGlyph: SwiftUI.View {
         public init() {}
 

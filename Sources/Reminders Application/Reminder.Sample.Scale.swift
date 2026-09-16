@@ -5,7 +5,6 @@ public import Reminders
 public import Tagged
 
 extension Reminder.Sample {
-    /// How much data a generated sample holds: the sizes the debug seed menu offers.
     public struct Scale: Hashable, Sendable {
         public var lists: Int
         public var remindersPerList: Int
@@ -17,17 +16,13 @@ extension Reminder.Sample {
             self.tags = tags
         }
 
-        /// About a thousand reminders.
         public static let medium = Scale(lists: 10, remindersPerList: 100, tags: 30)
-        /// Fifteen thousand: past what a person keeps, enough to see every list scroll.
         public static let large = Scale(lists: 30, remindersPerList: 500, tags: 100)
-        /// A hundred thousand: where the queries and the observation fan-out give way first.
         public static let extreme = Scale(lists: 100, remindersPerList: 1_000, tags: 200)
 
         public var reminders: Int { lists * remindersPerList }
     }
 
-    /// What the last generated seed was: the scale and the seed value, so it can be replayed.
     public struct Seed: Hashable, Sendable {
         public var scale: Scale
         public var value: UInt64
@@ -37,13 +32,9 @@ extension Reminder.Sample {
             self.value = value
         }
 
-        /// The seed as the menu shows it.
         public var description: String { "0x" + String(value, radix: 16, uppercase: true) }
     }
 
-    /// A deterministic generator: the same seed gives the same sample, so a regression measured
-    /// at a scale can be reproduced and screenshots compared. Dates spread over the year around
-    /// `now`; about a fifth of the reminders are completed, a tenth flagged, a third dated.
     public static func generated(_ scale: Scale, seed: UInt64, at now: Date, calendar: Calendar) -> Reminder.Sample {
         var random = Random(seed: seed)
         func uuid() -> UUID {
@@ -94,8 +85,6 @@ extension Reminder.Sample {
 }
 
 extension Reminder.Sample {
-    /// The word lists the generator draws from; small on purpose, so titles repeat and the
-    /// title ordering has ties to break.
     enum Words {
         static let verbs = ["Buy", "Call", "Email", "Fix", "Plan", "Book", "Review", "Renew", "Pay", "Return", "Clean", "Read", "Schedule", "Cancel", "Pick up", "Send", "Write", "Print", "Order", "Check"]
         static let objects = ["groceries", "the dentist", "the plumber", "flights", "the report", "insurance", "rent", "the library books", "the garage", "chapter four", "the invoice", "the subscription", "the kids", "the parcel", "the essay", "the photos", "new tyres", "the smoke alarm", "the passport", "the budget"]
@@ -131,7 +120,6 @@ extension Reminder.Sample {
 }
 
 extension Reminder.Sample {
-    /// A small seedable generator (SplitMix64), so a sample is a pure function of its seed.
     public struct Random: RandomNumberGenerator, Hashable, Sendable {
         private var state: UInt64
 
@@ -149,7 +137,6 @@ extension Reminder.Sample {
 
         mutating func next(in range: Range<Int>) -> Int { Int.random(in: range, using: &self) }
 
-        /// True `numerator` times in `denominator`.
         mutating func chance(_ numerator: Int, in denominator: Int) -> Bool { next(in: 0..<denominator) < numerator }
     }
 }

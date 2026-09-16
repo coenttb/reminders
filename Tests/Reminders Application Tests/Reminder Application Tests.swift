@@ -43,7 +43,6 @@ import Tagged
         pending.toggle(a)
         pending.toggle(b)
         #expect(pending == [a, b] && pending.contains(a))
-        // A second tap on a pending reminder reverts it; the period ending empties the set.
         pending.toggle(a)
         #expect(pending == [b])
         pending.elapse()
@@ -63,7 +62,6 @@ import Tagged
         search.text = "#so"
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text == "#so" && search.tagPrefix == "so")
-        // Typing a tag prefix alone names no reminders; with a token it does, on the tokens alone.
         #expect(!Reminder.Search(text: "#so").matchesReminders)
         #expect(search.matchesReminders && search.matchedText.isEmpty)
         search.add(tag: "car")
@@ -133,8 +131,6 @@ import Tagged
         #expect(a.lists.count == 4 && a.reminders.count == 200 && a.tags.count == 25)
         #expect(a.lists.map(\.title) == ["Personal", "Family", "Business", "Errands"])
         #expect(a.tags.contains(Tag(title: "adulting")) && a.tags.contains(Tag(title: "adulting2")))
-        // Every reminder belongs to one of the lists, every tag it carries is in the set, and
-        // identifiers are distinct; positions follow the manual order.
         let listIDs = Set(a.lists.map(\.id)), tagIDs = Set(a.tags.map(\.id))
         #expect(a.reminders.allSatisfy { listIDs.contains($0.list) && $0.tags.isSubset(of: tagIDs) })
         #expect(Set(a.reminders.map(\.id)).count == 200)

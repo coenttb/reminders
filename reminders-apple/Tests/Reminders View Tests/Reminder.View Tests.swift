@@ -32,7 +32,6 @@ import Testing
     @Test func `the day is the calendar's, not the process time zone's`() throws {
         let utc = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "UTC")!)
         let tokyo = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "Asia/Tokyo")!)
-        // 23:31 UTC on the 13th is 08:31 on the 14th in Tokyo; a reminder due 01:00 UTC on the 14th is today there, tomorrow in UTC.
         let now = Date(timeIntervalSince1970: 1_234_567_890)
         let due = Reminder.Due.day(try #require(utc.date(from: DateComponents(year: 2009, month: 2, day: 14, hour: 1))))
         #expect(due.description(at: now, calendar: tokyo) == "Today")
@@ -63,12 +62,10 @@ import Testing
         #expect(worded(.day(in3)) == in3.formatted(style.weekday(.wide)))
         #expect(worded(.day(in30)) == in30.formatted(short))
         #expect(worded(.moment(in30)).hasSuffix(in30.formatted(time)))
-        // The week runs to six days out; the seventh is a date, and only one day back is Yesterday.
         #expect(worded(.day(in6)) == in6.formatted(style.weekday(.wide)))
         #expect(worded(.day(in7)) == in7.formatted(short))
         #expect(worded(.day(ago1)) == "Yesterday")
         #expect(worded(.day(ago2)) == ago2.formatted(short))
-        // The row's subtitle follows the calendar it is given: the same instant is another day elsewhere.
         let tokyo = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "Asia/Tokyo")!)
         #expect(Reminder.Due.day(ago1).description(at: now, calendar: tokyo) == "Yesterday")
     }

@@ -6,15 +6,9 @@ public import SQLiteData
 import Tagged
 
 extension Reminder.Filter.Detail {
-    /// Reads one filter in one transaction: its preference decides the query, so a change to
-    /// the preference re-reads the rows along with it. The rows are the first `limit` in the
-    /// preference's order, with the count of all of them; no limit reads them all. No filter
-    /// reads nothing.
     public struct Request: FetchKeyRequest {
         public var filter: Reminder.Filter?
-        /// The day the Today filter shows.
         public var today: Range<Date>
-        /// The row being edited sorts by this value until editing ends.
         public var place: Reminder?
         public var limit: Int?
 

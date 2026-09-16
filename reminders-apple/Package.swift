@@ -2,9 +2,6 @@
 
 import PackageDescription
 
-// The Apple layer of one example: SwiftUI presentation and the application
-// layer that drives the core's TCA26 feature. Depends
-// on the example's core by URL; the workspace resolves it to the sibling checkout.
 let package = Package(
     name: "reminders-apple",
     platforms: [.iOS(.v27)],

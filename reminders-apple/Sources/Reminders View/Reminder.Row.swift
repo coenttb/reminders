@@ -5,10 +5,6 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder {
-    /// One reminder at rest in a detail or search: the completion circle, the title with
-    /// priority marks and flag, and one gray line of due date, notes, and tags.
-    /// Tapping the text edits the row in place where the caller offers it, otherwise
-    /// opens details; Details and Delete are the swipe actions, as in iOS 27.
     public struct Row: SwiftUI.View {
         private var reminder: Reminder
         private var color: SwiftUI.Color
@@ -27,7 +23,6 @@ extension Reminder {
 }
 
 extension Reminder.Row {
-    /// What a row asks of its owner, keyed by the reminder; `edit` only where rows edit in place.
     public struct Actions {
         public var complete: (Reminder.ID) -> Void
         public var delete: (Reminder.ID) -> Void
@@ -55,14 +50,11 @@ extension Reminder.Row {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
                     .foregroundStyle(reminder.completed ? color : SwiftUI.Color(.systemGray3))
                     .font(.title2)
-                    // The circle overhangs the text line, as the stock 44 pt button does; a
-                    // title-only row stays 42 pt.
                     .frame(width: 26, height: 20)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(reminder.completed ? "Completed" : "Complete")
             Button { (actions.edit ?? actions.details)(reminder.id) } label: {
-                // Stock: the gray line sits 24 pt under the title's top.
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         if let priority = reminder.priority {

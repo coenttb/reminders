@@ -7,9 +7,6 @@ import os
 #endif
 
 extension DependencyValues {
-    /// Opens the application's default database, creates the Reminders schema, and makes it
-    /// the feature's database. In Debug every statement is traced, to the log while live and
-    /// to the console in a preview, so the cost of a write can be measured rather than assumed.
     public mutating func bootstrapDatabase() throws {
         var configuration = Configuration()
         Reminder.Schema.prepare(&configuration)

@@ -6,7 +6,6 @@ import Standard_Library_Extensions
 public import Tagged
 
 extension Reminder {
-    /// What the user typed into search: free text plus committed tokens.
     public struct Search: Hashable, Sendable {
         public var text: String
         public var tokens: [Token]
@@ -21,7 +20,6 @@ extension Reminder {
 }
 
 extension Reminder.Search {
-    /// A committed search term: free text the reminder must contain, or a tag it must carry.
     public enum Token: Hashable, Identifiable, Sendable {
         case near(String)
         case tag(Tag<Reminder>.ID)
@@ -31,23 +29,16 @@ extension Reminder.Search {
 
     public var isActive: Bool { !text.isEmpty || !tokens.isEmpty }
 
-    /// Typed `#` starts tag completion.
     public var tagPrefix: String? {
         text.removing(prefix: "#").map(String.init)
     }
 
-    /// Whether the search names reminders at all: a tag prefix alone offers suggestions, not the
-    /// whole database.
     public var matchesReminders: Bool { isActive && (tagPrefix == nil || !tokens.isEmpty) }
 
-    /// The free text the reminders must contain; none while a tag prefix is being typed.
     public var matchedText: String { tagPrefix == nil ? text : "" }
 
-    /// The tags already committed as tokens.
     public var tags: [Tag<Reminder>.ID] { tokens.compactMap { if case let .tag(tag) = $0 { tag } else { nil } } }
 
-    /// Submitting the field commits the trimmed text as a near token; a tag prefix is
-    /// left for the suggestions.
     public static func committingText(_ search: Self) -> Self {
         guard search.tagPrefix == nil, !search.text.trimmed.isEmpty else { return search }
         var committed = search

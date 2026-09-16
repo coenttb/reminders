@@ -4,10 +4,6 @@ public import Reminders_Application
 public import SwiftUI
 
 extension Reminder.Filter.Detail {
-    /// The pushed screen for one filter: its colored title, the reminders it
-    /// shows with one of them possibly edited in place, the sort and
-    /// show-completed menu, and New Reminder for a list. While a row is edited
-    /// the menu gives way to Done and the plus hides, as in iOS 27.
     public struct View: SwiftUI.View {
         private var title: String
         private var detail: Reminder.Filter.Detail
@@ -82,17 +78,14 @@ extension Reminder.Filter.Detail.View {
         ScrollViewReader { proxy in
         SwiftUI.List {
             GeometryReader { proxy in
-                // Select mode renames the screen, as stock does (Evidence/Parity/edit-mode).
                 Text(editMode.isEditing ? "Select Reminders" : title)
                     .font(.largeTitle.weight(.bold))
                     .foregroundStyle(color)
                     .onAppear { titleHeight = proxy.size.height }
             }
-            // The first row starts 106 pt under the safe area, as the stock large title leaves it.
             .frame(height: 48)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-            // With completed shown, stock heads the list with "N Completed • Clear" over a rule.
             if preference.showCompleted, let clearCompleted {
                 let count = detail.completedCount
                 VStack(spacing: 0) {
@@ -113,9 +106,6 @@ extension Reminder.Filter.Detail.View {
                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
                 .listRowSeparator(.hidden)
             }
-            // Stock rows: no separators, 10 pt above and below the text, 42 pt for a title alone.
-            // The rows are the first of the filter's; one near the end coming on screen asks for
-            // the next, so the list scrolls on without a seam.
             let (shown, total) = (detail.rows.count, detail.total)
             ForEach(Array(detail.rows.enumerated()), id: \.element.id) { index, row in
                 if row.id == editing {
@@ -128,23 +118,17 @@ extension Reminder.Filter.Detail.View {
                 }
             }
             .onMove(perform: move)
-            // The empty part of a list: a tap there ends editing, or starts a new row.
             SwiftUI.Color.clear
                 .frame(height: 320)
                 .contentShape(.rect)
                 .onTapGesture(perform: backgroundTapped)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets())
-                // Transparent, so the shadow of a card in the last row is not covered.
                 .listRowBackground(SwiftUI.Color.clear)
         }
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 42)
-        // Rows animate when they appear, leave, or move; a keystroke in the edited row does not.
         .animation(.default, value: detail.ids)
-        // The row being edited takes the keyboard and comes up above it. A new row is read back
-        // from the database a moment after it starts — longer in a long list — so the focus is
-        // set once the row is among the rows, not after a fixed wait.
         .onChange(of: editing, initial: true) { _, editing in
             guard editing != nil else { return focus = nil }
             focusEditing(proxy)
@@ -181,9 +165,6 @@ extension Reminder.Filter.Detail.View {
                     .tint(color)
                 }
             }
-            // The stock More menu (Evidence/Parity/list-menu): Show List Info, Select Reminders,
-            // Sort By with the current ordering as its subtitle and no item glyphs, Show/Hide
-            // Completed, Delete List. Print is out of scope.
             if !editMode.isEditing {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -191,8 +172,6 @@ extension Reminder.Filter.Detail.View {
                         Button("Show List Info", systemImage: "info.circle", action: info)
                     }
                     Button("Select Reminders", systemImage: "checkmark.circle") { withAnimation { editMode = .active } }
-                    // Choosing an ordering is an intent the feature writes, not state the view owns,
-                    // so the items are buttons with the checkmark on the current one (as the chips do).
                     Menu {
                         ForEach(Reminder.Ordering.allCases, id: \.self) { ordering in
                             Button { order(ordering) } label: {
@@ -222,7 +201,6 @@ extension Reminder.Filter.Detail.View {
             }
         }
         .environment(\.editMode, $editMode)
-        // Stock centres "No Reminders" in an empty list (Evidence/Parity/empty).
         .overlay {
             if detail.rows.isEmpty, editing == nil {
                 Text("No Reminders").font(.title3).foregroundStyle(.tertiary)
@@ -233,9 +211,6 @@ extension Reminder.Filter.Detail.View {
 }
 
 extension Reminder.Filter.Detail.View {
-    /// Scrolls the edited row into view once it exists, then focuses its title. The row is
-    /// focused after the scroll: a List row far down a long list has no field to focus until
-    /// it has been brought on screen, and a focus set before that is dropped.
     private func focusEditing(_ proxy: ScrollViewProxy) {
         guard let editing, focus != .title(editing), focus != .notes(editing), detail.rows.contains(where: { $0.id == editing }) else { return }
         Task { @MainActor in
@@ -250,7 +225,6 @@ extension Reminder.Filter.Detail.View {
         }
     }
 
-    /// Rows edit in place only inside a list; elsewhere a tap opens details.
     private var rowActions: Reminder.Row.Actions {
         var actions = rows
         if !detail.filter.isList { actions.edit = nil }

@@ -4,8 +4,6 @@ public import SwiftUI
 public import Tagged
 
 extension Tag {
-    /// Chooses tags for a reminder: the known tags with the most used first,
-    /// and new, rename, and delete, which are the caller's to apply.
     public struct Picker: SwiftUI.View {
         @Binding private var selection: Set<Tag.ID>
         private var tags: [Tag]

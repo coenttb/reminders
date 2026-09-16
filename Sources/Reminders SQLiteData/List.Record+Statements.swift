@@ -4,12 +4,10 @@ public import SQLiteData
 public import Tagged
 
 extension List<Reminder>.Record {
-    /// Puts a list at the end of the user's order.
     public static func placeLast(_ id: List<Reminder>.ID) -> UpdateOf<List<Reminder>.Record> {
         List<Reminder>.Record.find(id).update { $0.position = List<Reminder>.Record.select { ($0.position.max() ?? -1) + 1 } }
     }
 
-    /// The columns an edit changed, and nothing else; nil when no column differs.
     public static func changes(from original: List<Reminder>, to draft: List<Reminder>) -> UpdateOf<List<Reminder>.Record>? {
         guard draft != original else { return nil }
         return List<Reminder>.Record.find(original.id).update { row in
@@ -19,8 +17,6 @@ extension List<Reminder>.Record {
         }
     }
 
-    /// Removes the list; its reminders go with it by the foreign key. When it was the last one,
-    /// the default list takes its place under the given identifier.
     public static func delete(_ id: List<Reminder>.ID, replacement: List<Reminder>.ID, in db: Database) throws {
         try List<Reminder>.Record.find(id).delete().execute(db)
         if try List<Reminder>.Record.all.fetchCount(db) == 0 {
@@ -28,7 +24,6 @@ extension List<Reminder>.Record {
         }
     }
 
-    /// Reorders the lists as the user dragged them: each takes the position of its place in the order.
     public static func reorder(_ ids: [List<Reminder>.ID]) -> UpdateOf<List<Reminder>.Record> {
         List<Reminder>.Record.where { $0.id.in(ids) }.update { row in
             let places = Array(ids.enumerated())

@@ -6,8 +6,6 @@ import Standard_Library_Extensions
 public import Tagged
 
 extension Reminder {
-    /// A set of records to fill the database with: what the first run starts from, and what
-    /// the seed button resets to.
     public struct Sample: Hashable, Sendable {
         public var lists: [List<Reminder>]
         public var reminders: [Reminder]
@@ -22,12 +20,9 @@ extension Reminder {
         public func reminder(_ id: Reminder.ID) -> Reminder? { reminders.first(id: id) }
     }
 
-    /// The reference fixture relative to a given now, so tests can fix the calendar: three
-    /// lists, eleven reminders around today, seven tags.
     public static func sample(at now: Date) -> Sample {
         func id(_ n: Int) -> UUID {
             let hex = String(n, radix: 16, uppercase: true)
-            // A fixture identifier sits in a segment the incrementing test generator never fills.
             return UUID(uuidString: "00000000-0000-0000-000A-" + String(repeating: "0", count: 12 - hex.count) + hex)!
         }
         func day(_ offset: Double) -> Date { now.addingTimeInterval(offset.days) }

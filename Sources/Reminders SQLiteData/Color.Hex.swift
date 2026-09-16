@@ -3,7 +3,6 @@ public import SQLiteData
 import Standard_Library_Extensions
 
 extension Color {
-    /// A color as the integer `0xRRGGBB` the lists table stores.
     public struct Hex: RawRepresentable, Hashable, Sendable, QueryBindable {
         public var rawValue: Int64
 

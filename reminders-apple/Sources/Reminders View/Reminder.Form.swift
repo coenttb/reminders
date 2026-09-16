@@ -7,11 +7,6 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder {
-    /// The sheet that creates or edits a reminder, as iOS 27's: title and notes in one
-    /// card, Date and Time as a coupled pair, then List and the pushed Details (or, when
-    /// editing, the organisation rows inline). The draft is edited through the binding;
-    /// save and cancel are the caller's. Done needs a title, and an edited draft asks
-    /// before it is discarded.
     public struct Form: SwiftUI.View {
         @Binding private var reminder: Reminder
         private var isNew: Bool
@@ -62,7 +57,6 @@ extension Reminder {
             self.cancel = cancel
         }
 
-        /// Which of the two pickers is open under its row; only one at a time.
         private enum Expansion { case date, time }
     }
 }
@@ -79,7 +73,6 @@ extension Reminder.Form {
                     .lineLimit(1...6)
                     .focused($notesFocused)
             }
-            // The stock card sits 22 pt under the bar, not at the form's default.
             .listSectionMargins(.top, 6)
             Section("Date & Time") {
                 Toggle(isOn: $reminder.dueOn(now, calendar: calendar).animation()) {
@@ -126,8 +119,6 @@ extension Reminder.Form {
                     }
                 }
             } else {
-                // Stock groups: Organisation holds List and Priority as separate cards, then
-                // Tags and Flag; Location is under Places & People (Evidence/Parity/details-sheet).
                 Section("Organisation") { listPicker }
                 Section { priorityPicker }
                 Section {
@@ -138,8 +129,6 @@ extension Reminder.Form {
             }
         }
         .scrollDismissesKeyboard(.interactively)
-        // A keyboard-placed toolbar never appears inside this sheet, so the quick bar is a
-        // bottom bar shown while a field has the keyboard.
         .safeAreaBar(edge: .bottom) {
             if titleFocused || notesFocused { quickBar }
         }
@@ -158,9 +147,6 @@ extension Reminder.Form {
             }
         }
         .onAppear { titleFocused = isNew }
-        // Turning a row on opens its picker and drops the keyboard; turning it off
-        // closes the picker. The toggles bind through key paths, so the view
-        // effects live here rather than in a binding's setter.
         .onChange(of: reminder.due != nil) { _, on in
             expanded = on ? .date : nil
             titleFocused = false
@@ -171,8 +157,6 @@ extension Reminder.Form {
         }
     }
 
-    /// The quick bar above the keyboard, as stock: Date & Time, Location, Flag, Photos
-    /// (Evidence/Parity/new-reminder-sheet). Photos is out of scope and stays disabled.
     private var quickBar: some SwiftUI.View {
         HStack {
             Menu {
@@ -215,13 +199,10 @@ extension Reminder.Form {
         .padding(.bottom, 4)
     }
 
-    /// The question the sheet asks before an edited draft is discarded.
     public var discardTitle: String {
         isNew ? "Are you sure you want to discard this new reminder?" : "Are you sure you want to discard your changes?"
     }
 
-    /// A toggle label with the gray outline glyph and, once set, the blue subtitle; tapping
-    /// the text opens the picker under the row.
     private func row(_ title: String, systemImage: String, subtitle: String?, tap: @escaping () -> Void) -> some SwiftUI.View {
         Button(action: tap) {
             Label {
@@ -238,8 +219,6 @@ extension Reminder.Form {
         .buttonStyle(.plain)
     }
 
-    /// The List row names the list after the badge, as the stock row does; the pushed
-    /// screen lists every list with its badge and a checkmark on the current one.
     private var listPicker: some SwiftUI.View {
         NavigationLink {
             SwiftUI.List(lists) { list in
@@ -325,19 +304,16 @@ extension Reminder.Form {
 }
 
 extension Reminder {
-    /// The Date row: on means due today, off clears the date and the time with it.
     fileprivate subscript(dueOn now: Date, calendar calendar: Calendar) -> Bool {
         get { due != nil }
         set { set(due: newValue ? calendar.startOfDay(for: now) : nil) }
     }
 
-    /// The Time row: on proposes the next full hour and turns the date on with it.
     fileprivate subscript(timeOn now: Date, calendar calendar: Calendar) -> Bool {
         get { due?.hasTime == true }
         set { set(hasTime: newValue, at: now, calendar: calendar) }
     }
 
-    /// The pickers edit the due date's moment, keeping whether the time matters.
     fileprivate subscript(date fallback: Date) -> Date {
         get { due?.date ?? fallback }
         set { set(due: newValue) }
@@ -345,7 +321,6 @@ extension Reminder {
 }
 
 extension Binding<Reminder> {
-    /// The toggles and pickers as key-path projections of the draft, so SwiftUI keeps their transaction.
     fileprivate func dueOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[dueOn: now, calendar: calendar]] }
     fileprivate func timeOn(_ now: Date, calendar: Calendar) -> Binding<Bool> { self[dynamicMember: \.[timeOn: now, calendar: calendar]] }
     fileprivate func date(or fallback: Date) -> Binding<Date> { self[dynamicMember: \.[date: fallback]] }

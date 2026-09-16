@@ -24,7 +24,6 @@ struct `Reminder root` {
         _ = Root(store: store)
         store.send(.filterTapped(.today))
         #expect(store.filter == .today)
-        // The first run seeded the sample, which the home reads back.
         try await store.state.$overview.load()
         #expect(store.overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
     }

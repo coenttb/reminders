@@ -2,9 +2,6 @@ public import Organizing
 public import SwiftUI
 
 extension Organizing.List {
-    /// The sheet that creates or edits a list: the badge preview, the name in the
-    /// list's color, and a palette of colors. Done is disabled until the name has
-    /// text; dismissing an edited draft asks first.
     public struct Form: SwiftUI.View {
         @Binding private var list: Organizing.List<Element>
         private var isNew: Bool
@@ -27,7 +24,6 @@ extension Organizing.List {
 }
 
 extension Organizing.List.Form {
-    /// The seven colors iOS 27 Reminders offers.
     public static var palette: [(name: String, color: Organizing.Color)] {
         [
             ("Red", rgb(255, 59, 48)), ("Orange", rgb(255, 149, 0)), ("Yellow", rgb(255, 204, 0)),
@@ -59,8 +55,6 @@ extension Organizing.List.Form {
                 .padding(.vertical, 8)
             }
             .listSectionMargins(.top, 6)
-            // Stock (Evidence/Parity/list-info): seven flat 40 pt circles, six to a row, the
-            // current one ringed in gray with a gap; no custom color row.
             Section {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 14) {
                     ForEach(Self.palette, id: \.color) { name, color in
@@ -107,7 +101,6 @@ extension Organizing.List.Form {
         .onAppear { nameFocused = isNew }
     }
 
-    /// The question the sheet asks before an edited draft is discarded.
     public var discardTitle: String {
         isNew ? "Are you sure you want to discard this new list?" : "Are you sure you want to discard your changes?"
     }

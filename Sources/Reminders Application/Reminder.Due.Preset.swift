@@ -4,15 +4,12 @@ import FoundationInternationalization_Extensions
 public import Reminders
 
 extension Reminder.Due {
-    /// The days the inline Date chip offers.
     public enum Preset: CaseIterable, Hashable, Sendable {
         case today, tomorrow, thisWeekend, nextWeek
     }
 }
 
 extension Reminder.Due.Preset {
-    /// The start of the preset's day: today, tomorrow, the coming Saturday, the coming Monday;
-    /// today when the calendar cannot say.
     public static func date(for preset: Self, at now: Date, calendar: Calendar) -> Date {
         let today = calendar.startOfDay(for: now)
         let day: Date? = switch preset {
@@ -28,7 +25,6 @@ extension Reminder.Due.Preset {
 }
 
 extension Reminder {
-    /// A preset day keeps the time of day if one was set; none clears the date and the time.
     public static func setting(_ reminder: Self, datePreset preset: Due.Preset?, at now: Date, calendar: Calendar) -> Self {
         guard let preset else { return setting(reminder, due: nil) }
         var set = reminder

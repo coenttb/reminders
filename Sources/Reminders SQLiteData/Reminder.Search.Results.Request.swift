@@ -6,9 +6,6 @@ public import SQLiteData
 import Tagged
 
 extension Reminder.Search.Results {
-    /// Reads the search in one transaction: the first `limit` matches under their lists with the
-    /// count of all of them, how many are completed whether or not they are shown, and the tags
-    /// completing a typed prefix. No limit reads every match.
     public struct Request: FetchKeyRequest {
         public var search: Reminder.Search
         public var limit: Int?
@@ -20,7 +17,6 @@ extension Reminder.Search.Results {
 
         public func fetch(_ db: Database) throws -> Reminder.Search.Results {
             var results = Reminder.Search.Results()
-            // Nothing typed reads nothing: an idle search is not re-read on every write.
             guard search.matchesReminders || search.tagPrefix != nil else { return results }
             if let prefix = search.tagPrefix {
                 let taken = search.tags.map(\.rawValue)
@@ -30,8 +26,6 @@ extension Reminder.Search.Results {
                     .fetchAll(db)
                     .map(\.tag)
             }
-            // One pass counts the matches and the completed among them; the text rule is a Swift
-            // function run for every row, so each pass over the table is what the search costs.
             let (matched, completed) = try Reminder.Record
                 .where { $0.matches(search) }
                 .select { ($0.id.count(), $0.isDone.cast(as: Int.self).sum() ?? 0) }

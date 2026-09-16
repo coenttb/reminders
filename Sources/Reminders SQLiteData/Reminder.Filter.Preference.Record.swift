@@ -3,7 +3,6 @@ public import Reminders_Application
 public import SQLiteData
 
 extension Reminder.Filter.Preference {
-    /// One row per filter the user adjusted, keyed by the filter's stored form.
     @Table("preferences")
     public struct Record: Identifiable, Sendable {
         @Column(primaryKey: true)
@@ -26,13 +25,10 @@ extension Reminder.Filter.Preference.Record {
         Reminder.Filter.Preference(ordering: Reminder.Ordering(rawValue: ordering) ?? .dueDate, showCompleted: showCompleted)
     }
 
-    /// The preference a filter has, or its default when none was stored.
     public static func preference(for filter: Reminder.Filter) -> Where<Reminder.Filter.Preference.Record> {
         Reminder.Filter.Preference.Record.find(filter.key)
     }
 
-    /// Sets a filter's ordering, leaving show-completed as it is (or at its default for a filter
-    /// never adjusted).
     public static func set(ordering: Reminder.Ordering, for filter: Reminder.Filter) -> InsertOf<Reminder.Filter.Preference.Record> {
         var preference = filter.defaultPreference
         preference.ordering = ordering
@@ -45,7 +41,6 @@ extension Reminder.Filter.Preference.Record {
         }
     }
 
-    /// Flips a filter's show-completed, leaving the ordering as it is.
     public static func toggleShowCompleted(for filter: Reminder.Filter) -> InsertOf<Reminder.Filter.Preference.Record> {
         var preference = filter.defaultPreference
         preference.showCompleted.toggle()

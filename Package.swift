@@ -2,10 +2,6 @@
 
 import PackageDescription
 
-// The platform-free core of one example: the domain, the application layer over it, its
-// SQLite stored form, and its TCA26 feature. Nothing here imports SwiftUI, SwiftData, UIKit, or
-// AppKit; the Apple, server, and web layers depend on this package, never the
-// reverse. Every target has one test target.
 let package = Package(
     name: "reminders",
     platforms: [.iOS(.v27), .macOS(.v27)],

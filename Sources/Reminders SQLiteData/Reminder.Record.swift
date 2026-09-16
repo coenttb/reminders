@@ -5,11 +5,6 @@ public import SQLiteData
 public import Tagged
 
 extension Reminder {
-    /// The stored form of a reminder; tags are rows of `Reminder.Tagging`. A due date is the
-    /// `due` and `hasTime` columns. The `status` column encodes the completion together with
-    /// the grace period: 0 incomplete, 1 completed, 2 completed but pending, so a database
-    /// from before the grace period left the domain reads unchanged; the pending members are
-    /// read through `Reminder.Completion.Pending.Request`.
     @Table("reminders")
     public struct Record: Identifiable, Sendable {
         public let id: Reminder.ID
@@ -43,8 +38,6 @@ extension Reminder {
         }
     }
 
-    /// One reminder-to-tag link; the many-to-many the domain expresses as `Reminder.tags`.
-    /// The pair is the key, so there is no surrogate to grow.
     @Table("remindersTags")
     public struct Tagging: Sendable {
         public var reminderID: Reminder.ID
@@ -66,7 +59,6 @@ extension Reminder.Record {
         completion == .completed ? completed : incomplete
     }
 
-    /// Pending counts as completed everywhere but the grace timer.
     static func completion(_ status: Int) -> Reminder.Completion {
         status == incomplete ? .incomplete : .completed
     }

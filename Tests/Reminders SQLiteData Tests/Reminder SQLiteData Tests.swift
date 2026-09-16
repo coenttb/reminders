@@ -13,7 +13,6 @@ import Tagged
     let calendar = Calendar(identifier: .gregorian)
     var today: Range<Date> { calendar.day(containing: now)! }
 
-    /// The sample in a fresh in-memory database.
     func makeDatabase() throws -> (database: DatabaseQueue, sample: Reminder.Sample) {
         let database = try Reminder.Schema.inMemoryDatabase()
         let sample = Reminder.sample(at: now)
@@ -51,14 +50,12 @@ import Tagged
         }
         #expect(try database.read { db in try Reminder.Session.Record.state.fetchCount(db) } == 1)
         #expect(try overview(database).counts == Reminder.Filter.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
-        // Initialising again leaves a changed database alone; a reset does not.
         try database.write { db in try Reminder.Record.find(sample.reminders[0].id).delete().execute(db) }
         try database.write { db in try sample.initialize(in: db) }
         #expect(try overview(database).counts.all == 7)
         try database.write { db in try sample.replace(in: db) }
         #expect(try overview(database).counts.all == 8)
         #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == sample.reminders.reduce(0) { $0 + $1.tags.count })
-        // An emptied but initialised database stays that way.
         try database.write { db in try List<Reminder>.Record.delete().execute(db) }
         try database.write { db in try sample.initialize(in: db) }
         #expect(try overview(database).lists.isEmpty)
@@ -85,7 +82,6 @@ import Tagged
         #expect(window.completedCount == 0)
         let whole = try detail(personal, database)
         #expect(whole.rows.count == 4 && whole.total == 4 && !whole.hasMore)
-        // The completed count is the whole filter's, not the window's, and is read only when they show.
         try database.write { db in try Reminder.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
         let shown = try #require(try database.read { db in try Reminder.Filter.Detail.Request(filter: personal, today: today, limit: 1).fetch(db) })
         #expect(shown.rows.count == 1 && shown.total == 5 && shown.completedCount == 1)
@@ -107,7 +103,6 @@ import Tagged
         #expect(detail.reminders.map(\.title) == ["Doctor appointment", "Haircut", "Groceries", "Buy concert tickets"])
         try database.write { db in try Reminder.Filter.Preference.Record.set(ordering: .title, for: personal).execute(db) }
         #expect(try self.detail(personal, database).reminders.map(\.title) == ["Buy concert tickets", "Doctor appointment", "Groceries", "Haircut"])
-        // Creation Date: oldest first (the sample dates Groceries 30 days back, Buy concert tickets 1).
         try database.write { db in try Reminder.Filter.Preference.Record.set(ordering: .creationDate, for: personal).execute(db) }
         #expect(try self.detail(personal, database).reminders.map(\.title) == ["Groceries", "Haircut", "Doctor appointment", "Buy concert tickets"])
         try database.write { db in try Reminder.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
@@ -119,7 +114,6 @@ import Tagged
         #expect(try self.detail(.flagged, database).reminders.map(\.title) == ["Haircut", "Pick up kids from school"])
         #expect(try self.detail(.tags(["social"]), database).reminders.map(\.title) == ["Buy concert tickets", "Prepare for WWDC"])
         #expect(try self.detail(.all, database).reminders.count == 8)
-        // Rows carry their own list's color, and a reminder reads back with its tags.
         #expect(try self.detail(.all, database).rows.map(\.color).contains(sample.lists[2].color))
         #expect(try self.detail(personal, database).reminders.first { $0.title == "Groceries" }?.tags == ["someday", "optional", "adulting"])
     }
@@ -133,7 +127,6 @@ import Tagged
             try Reminder.Filter.Preference.Record.set(ordering: .title, for: personal).execute(db)
         }
         #expect(try detail(personal, database).reminders.map(\.title) == ["apples", "Buy concert tickets", "Doctor appointment", "Haircut"])
-        // Under due-date ordering a row with a date sorts first; the row being edited sorts by its place instead.
         try database.write { db in try Reminder.Filter.Preference.Record.set(ordering: .dueDate, for: personal).execute(db) }
         var dated = groceries
         dated.title = "apples"
@@ -152,7 +145,6 @@ import Tagged
         #expect(try database.read { db in try Reminder.Completion.Pending.Request().fetch(db) } == [groceries])
         #expect(try overview(database).counts.all == 7)
         #expect(try detail(personal, database).reminders.last?.id == groceries)
-        // With completed shown, the row moves among the completed at once, as the stock row does.
         try database.write { db in try Reminder.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
         let haircut = sample.reminders[1].id
         let place = try detail(personal, database).reminders.map(\.id).firstIndex(of: haircut)
@@ -172,7 +164,6 @@ import Tagged
         }
         #expect(try stored(groceries, database)?.completion == .completed)
         #expect(try database.read { db in try Reminder.Completion.Pending.Request().fetch(db) }.isEmpty)
-        // Completed toggles back to incomplete; a reminder that is gone is untouched.
         try database.write { db in
             try Reminder.Record.toggle(groceries).execute(db)
             try Reminder.Record.toggle(Reminder.ID(UUID())).execute(db)
@@ -207,7 +198,6 @@ import Tagged
         let ids = [before[1], before[2], before[0], before[3]]
         try database.write { db in try List<Reminder>.Record.reorder(ids).execute(db) }
         #expect(try overview(database).lists.map(\.list.title) == ["Family", "Business", "Personal", "Chores"])
-        // An edit writes only what changed.
         var renamed = sample.lists[1]
         renamed.title = "Home"
         try database.write { db in try List<Reminder>.Record.changes(from: sample.lists[1], to: renamed)?.execute(db) }
@@ -222,7 +212,6 @@ import Tagged
         #expect(try stored(sample.reminders[3].id, database)?.tags == ["car", "kids", "friends"])
         try database.write { db in try Tag<Reminder>.Record.delete("friends").execute(db) }
         #expect(try database.read { db in try Reminder.Tagging.where { $0.tagID.eq(Tag<Reminder>.ID("friends")) }.fetchCount(db) } == 0)
-        // Adding a tag that exists in another case is a no-op; attaching one attaches the known tag.
         #expect(try database.write { db in try Tag<Reminder>.Record.add("Someday", in: db) } == "someday")
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
         let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["CAR"])
@@ -234,13 +223,11 @@ import Tagged
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
         #expect(try stored(wash.id, database)?.tags == ["car"])
         #expect(try stored(wash.id, database)?.position == 11)
-        // Renaming only in case keeps the tag and every link to it.
         #expect(try database.write { db in try Tag<Reminder>.Record.rename("car", to: "Car", in: db) } == "Car")
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("Car"))
         #expect(try stored(wash.id, database)?.tags == ["Car"])
         #expect(try detail(.tags(["Car"]), database).reminders.map(\.title) == ["Wash"])
         #expect(try overview(database).usedTags.map(\.title) == ["adulting", "Car", "kids", "night", "optional", "someday"])
-        // Merging: the links move to the target and the old tag goes.
         #expect(try database.write { db in try Tag<Reminder>.Record.rename("kids", to: "car", in: db) } == "Car")
         #expect(try stored(sample.reminders[3].id, database)?.tags == ["Car"])
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 5)
@@ -262,7 +249,6 @@ import Tagged
     @Test func `search matches text and tag tokens and can clear completed matches`() throws {
         let (database, sample) = try makeDatabase()
         #expect(try results(Reminder.Search(text: "Take", showCompleted: true), database).reminders.map(\.title) == ["Take a walk", "Take out trash"])
-        // Without completed ones shown they are counted, not listed; sections follow the lists' order.
         let hidden = try results(Reminder.Search(text: "Take"), database)
         #expect(hidden.reminders.map(\.title) == ["Take out trash"] && hidden.completedCount == 1)
         #expect(hidden.sections.map(\.list.title) == ["Family"])
@@ -273,7 +259,6 @@ import Tagged
         #expect(try results(Reminder.Search(text: "payroll"), database).reminders.map(\.title) == ["Call accountant"])
         #expect(try results(Reminder.Search(text: "#so"), database).reminders.isEmpty)
         #expect(try results(Reminder.Search(), database).reminders.isEmpty)
-        // Clear is scoped to the matches, keeps a reminder in its grace period, and honours the cutoff.
         try database.write { db in
             try Reminder.Record.toggle(sample.reminders[7].id).execute(db)
             try Reminder.Record.deleteCompleted(matching: Reminder.Search(text: "Take"), dueBefore: calendar.date(byAdding: .month, value: -12, to: now)).execute(db)
@@ -286,10 +271,8 @@ import Tagged
         #expect(try count(database) == 10)
         #expect(try database.read { db in try Reminder.Completion.Pending.Request().fetch(db) }.contains(sample.reminders[7].id))
         #expect(try detail(.completed, database).reminders.map(\.title) == ["Get laundry", "Send weekly emails", "Take out trash"])
-        // A search that names no reminders deletes nothing.
         try database.write { db in try Reminder.Record.deleteCompleted(matching: Reminder.Search(text: "#so"), dueBefore: nil).execute(db) }
         #expect(try count(database) == 10)
-        // Clear in a filter takes the done reminders it shows and leaves the one in its grace period.
         try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .completed, today: today).execute(db) }
         #expect(try count(database) == 8)
         #expect(try detail(.completed, database).reminders.map(\.title) == ["Take out trash"])
@@ -298,7 +281,6 @@ import Tagged
     @Test func `a draft updates only edited fields and leaves completion to the timer`() throws {
         let (database, sample) = try makeDatabase()
         let groceries = sample.reminders[0]
-        // Another writer flags the reminder while a title edit is under way.
         try database.write { db in try Reminder.Record.find(groceries.id).update { $0.flagged = true }.execute(db) }
         var draft = groceries
         draft.title = "Groceries and more"
@@ -312,7 +294,6 @@ import Tagged
         let stored = try stored(groceries.id, database)
         #expect(stored?.title == "Groceries and more" && stored?.flagged == true && stored?.tags == ["someday", "adulting", "fresh"])
         #expect(try self.stored(sample.reminders[1].id, database) == sample.reminders[1])
-        // An unchanged draft is no statement at all, and a status change is never a draft's to write.
         #expect(Reminder.Record.changes(from: stored!, to: stored!) == nil)
         var completed = stored!
         completed.completion = .completed
@@ -361,14 +342,12 @@ import Tagged
             try Reminder.Record.insert { Reminder.Record(wash) }.execute(db)
             try Reminder.Tagging.attach(wash.tags, to: wash.id, in: db)
         }
-        // Adding or attaching a case variant is the known tag, as SQLite's ASCII folding would not see.
         #expect(try database.write { db in try Tag<Reminder>.Record.add("CAFÉ", in: db) } == "Café")
         #expect(try database.write { db in try Tag<Reminder>.Record.add("café", in: db) } == "Café")
         try database.write { db in try Reminder.Tagging.attach(["CAFÉ"], to: sample.reminders[0].id, in: db) }
         #expect(try stored(sample.reminders[0].id, database)?.tags.contains("Café") == true)
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.filter { $0.lowercased() == "café" } == ["Café"])
         #expect(try detail(.tags(["Café"]), database).reminders.count == 2)
-        // A case-only rename keeps the tag and its links; a rename onto a variant of another tag merges.
         #expect(try database.write { db in try Tag<Reminder>.Record.rename("Café", to: "CAFÉ", in: db) } == "CAFÉ")
         #expect(try stored(wash.id, database)?.tags == ["CAFÉ"])
         #expect(try detail(.tags(["CAFÉ"]), database).reminders.count == 2)
@@ -388,7 +367,6 @@ import Tagged
             try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
             try #sql("INSERT INTO reminders (id, listID, title) VALUES (\(first), \(list), 'Bread')").execute(db)
             try #sql("INSERT INTO reminders (id, listID, title) VALUES (\(second), \(list), 'Milk')").execute(db)
-            // Under NOCASE these were three tags; "car" and "CAR" were already one.
             try #sql("INSERT INTO tags (title) VALUES ('Café'), ('CAFÉ'), ('car')").execute(db)
             try #sql("INSERT INTO remindersTags (reminderID, tagID) VALUES (\(first), 'Café'), (\(first), 'CAFÉ'), (\(second), 'CAFÉ'), (\(second), 'car')").execute(db)
         }
@@ -400,7 +378,6 @@ import Tagged
         #expect(try stored(first, database)?.title == "Bread")
         #expect(try stored(first, database)?.created == Date(timeIntervalSince1970: 0))
         #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == 3)
-        // The rebuilt tables keep their constraints: a tag deleted takes its links.
         try database.write { db in try Tag<Reminder>.Record.delete("café").execute(db) }
         #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == 1)
         try Reminder.Schema.migrate(database)
@@ -419,7 +396,6 @@ import Tagged
         #expect(try stored(first.id, database) == first)
         #expect(try overview(database).lists.count == 10)
         #expect(try overview(database).counts.all == sample.reminders.count { !$0.completed })
-        // Replacing again replaces, not appends.
         try database.write { db in try Reminder.sample(at: now).replace(in: db) }
         #expect(try database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
     }
@@ -428,8 +404,6 @@ import Tagged
         let (database, sample) = try makeDatabase()
         let utc = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "UTC")!)
         let tokyo = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "Asia/Tokyo")!)
-        // A reminder due at 01:00 on the 14th UTC is due today in Tokyo (10:00 on the 14th, the same
-        // Tokyo day as now) and tomorrow in UTC.
         let due = utc.date(from: DateComponents(year: 2009, month: 2, day: 14, hour: 1))!
         let late = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Late", due: .day(due))
         try database.write { db in
@@ -446,14 +420,12 @@ import Tagged
         }
         #expect(try today(utc) == [] && count(utc) == 0)
         #expect(try today(tokyo) == ["Late"] && count(tokyo) == 1)
-        // The day after, in UTC, it is today.
         let tomorrow = utc.day(containing: now.addingTimeInterval(.hour))!
         #expect(try database.read { db in try Reminder.Overview.Request(today: tomorrow).fetch(db).counts.today } == 1)
     }
 
     @Test func `a row that could not be read is refused by the schema, and one stored before the rule is brought back inside it`() throws {
         let (database, sample) = try makeDatabase()
-        // The rule is the table's: no writer can store a date the reader could not decode.
         #expect(throws: (any Error).self) {
             try database.write { db in try #sql("UPDATE reminders SET due = 'garbage' WHERE id = \(sample.reminders[0].id)").execute(db) }
         }
@@ -461,7 +433,6 @@ import Tagged
             try database.write { db in try #sql("UPDATE reminders SET status = 7 WHERE id = \(sample.reminders[0].id)").execute(db) }
         }
         #expect(try detail(.all, database).reminders.count == 8)
-        // A database from before the rule: its malformed values are coerced, its rows all kept.
         var configuration = Configuration()
         Reminder.Schema.prepare(&configuration)
         let old = try DatabaseQueue(configuration: configuration)
@@ -481,7 +452,6 @@ import Tagged
         let kept = try old.read { db in try Reminder.Record.find(good).rows().fetchOne(db)?.value }
         #expect(kept?.completed == true && kept?.priority == .high && kept?.due != nil)
         #expect(try old.read { db in try Reminder.Completion.Pending.Request().fetch(db) } == [good])
-        // The rebuilt table keeps its cascade: deleting the list takes the reminders and their links.
         try old.write { db in try List<Reminder>.Record.find(list).delete().execute(db) }
         #expect(try old.read { db in try Reminder.Tagging.all.fetchCount(db) } == 0)
     }
@@ -499,7 +469,6 @@ import Tagged
         #expect(Color.Hex(Color(red: 2, green: -1, blue: 0.5)).rawValue == 0xff0080)
     }
 
-    /// The steps of a statement's plan, as SQLite explains it.
     func plan(_ statement: some Statement, _ database: some DatabaseWriter) throws -> [String] {
         try database.read { db in try #sql("EXPLAIN QUERY PLAN \(statement.query)", as: PlanStep.self).fetchAll(db).map(\.detail) }
     }
@@ -511,14 +480,11 @@ import Tagged
         let detail: String
     }
 
-    // The tags key is collated as Swift compares; the join must compare it on the left, or the
-    // planner scans every tag for every row read (RESEARCH.md, scale investigation).
     @Test func `a row's tag list is read through the tags index, not a scan of the tags per row`() throws {
         let (database, sample) = try makeDatabase()
         let steps = try plan(Reminder.Record.rows, database)
         #expect(!steps.contains { $0.hasPrefix("SCAN tags") }, "\(steps)")
         #expect(steps.contains { $0.hasPrefix("SEARCH tags USING COVERING INDEX") }, "\(steps)")
-        // The titles still come from the tags table, in the case it stores them.
         try database.write { db in _ = try Tag<Reminder>.Record.rename("someday", to: "Someday", in: db) }
         #expect(try stored(sample.reminders[0].id, database)?.tags == ["Someday", "optional", "adulting"])
     }
@@ -526,16 +492,12 @@ import Tagged
     @Test func `a search matches the tags once and looks each reminder's links up in their index`() throws {
         let (database, _) = try makeDatabase()
         let steps = try plan(Reminder.Record.where { $0.matches(Reminder.Search(text: "day")) }.select(\.id), database)
-        // The tags that contain the text are one list (a LIST SUBQUERY), not a correlated scan per reminder.
         #expect(steps.contains { $0.contains("LIST SUBQUERY") }, "\(steps)")
         #expect(steps.contains { $0.hasPrefix("SCAN tags") }, "\(steps)")
         #expect(!steps.contains { $0.contains("CORRELATED") && $0.contains("tags") }, "\(steps)")
-        // Matching by tag still finds the reminders that carry a matching tag, in any case.
         #expect(try results(Reminder.Search(text: "SOMEDAY", showCompleted: true), database).reminders.map(\.title) == ["Haircut", "Groceries"])
-        // The title and notes are matched from the folded column, not through the Swift function per row.
         let sql = "\(Reminder.Record.where { $0.matches(Reminder.Search(text: "day")) }.select(\.id).query)"
         #expect(sql.contains("instr(\"reminders\".\"searchText\"") && !sql.contains("localizedCaseInsensitiveContains(\"reminders\""), "\(sql)")
-        // The column follows the text: an edited title is found under its new words and not its old.
         let groceries = try #require(try results(Reminder.Search(text: "oatmeal", showCompleted: true), database).reminders.first)
         try database.write { db in try Reminder.Record.find(groceries.id).update { $0.title = "Weekly Shopping" }.execute(db) }
         #expect(try results(Reminder.Search(text: "shopping", showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
@@ -549,7 +511,6 @@ import Tagged
         #expect(today.contains { $0.contains("idx_reminders_due") }, "\(today)")
         let pending = try plan(Reminder.Record.where { $0.isPending }.select(\.id), database)
         #expect(pending.contains { $0.contains("idx_reminders_status") }, "\(pending)")
-        // The range still means the same: undated reminders are not due, dated ones on the day are.
         #expect(try overview(database).counts.today == 2)
         #expect(try detail(.today, database).rows.map(\.reminder.title) == ["Doctor appointment", "Buy concert tickets"])
     }

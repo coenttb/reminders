@@ -3,9 +3,6 @@ public import Foundation
 public import Organizing
 
 extension List {
-    /// The sheet's draft of one list: what is being typed, what the form opened with, whether
-    /// the form creates the list or edits a stored one, and a session telling this
-    /// presentation from any other.
     public struct Draft: Hashable, Sendable {
         public var list: List
         public let original: List
@@ -24,16 +21,12 @@ extension List {
 }
 
 extension List.Draft {
-    /// The form over a draft, presented by `Reminder.Feature` as a destination: Save and
-    /// Cancel are decided by the parent, which reads the draft back.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Sendable {
             public typealias Feature = List.Draft.Feature
 
             public var draft: List.Draft
-            /// Why the last save did not happen; the draft stays, and Done tries again.
             public var failure: String?
-            /// Whether a save is under way; Done is ignored until it has succeeded or failed.
             public var isSaving = false
 
             public init(list: List, isNew: Bool, session: UUID) {
@@ -49,7 +42,6 @@ extension List.Draft {
             public var session: UUID { draft.session }
             public var isDirty: Bool { draft.isDirty }
 
-            /// The save did not happen: the reason is shown and Done is enabled again.
             public mutating func fail(_ reason: String) {
                 failure = reason
                 isSaving = false

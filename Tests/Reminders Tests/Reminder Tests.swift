@@ -58,7 +58,6 @@ import Tagged
         #expect(reminder.due == .day(day))
         reminder.set(hasTime: true, at: now, calendar: calendar)
         #expect(reminder.due == Date(year: 2026, month: 9, day: 20, hour: 10, in: calendar).map(Reminder.Due.moment))
-        // A new day keeps the time; turning the time off keeps the day.
         let later = try #require(Date(year: 2026, month: 9, day: 22, in: calendar))
         reminder.set(due: later)
         #expect(reminder.due == .moment(later))

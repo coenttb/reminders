@@ -6,8 +6,6 @@ public import SwiftUI
 public import Tagged
 
 extension Reminder.Search {
-    /// The sections shown while searching: tag completions, the completed
-    /// summary with its clear menu, and the matches grouped under their lists.
     public struct View: SwiftUI.View {
         private var search: Reminder.Search
         private var results: Reminder.Search.Results
@@ -46,7 +44,6 @@ extension Reminder.Search {
 extension Reminder.Search.View {
     @ViewBuilder public var body: some SwiftUI.View {
         let suggestions = results.suggestions
-        // A reminder in its grace period is neither counted nor hidden, so the tap can be undone.
         let completed = results.completedCount
         if !suggestions.isEmpty {
             Section {
@@ -65,8 +62,6 @@ extension Reminder.Search.View {
             .listRowBackground(SwiftUI.Color.clear)
             .listRowInsets(EdgeInsets())
         }
-        // Stock (Evidence/Parity/search): a plain white page, the header at x 16, list names as
-        // title2 headers in their color, 40 pt rows without separators.
         Section {
             HStack {
                 Text("\(completed) Completed").monospacedDigit().contentTransition(.numericText()).foregroundStyle(.secondary)
@@ -90,8 +85,6 @@ extension Reminder.Search.View {
         .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         .listRowSeparator(.visible, edges: .bottom)
         .listSectionMargins(.horizontal, 0)
-        // The matches are the first of the search's; one near the end coming on screen asks for
-        // the next. Sections count from the start so the index runs across them.
         let (shown, total) = (results.shown, results.total)
         let starts = results.sections.reduce(into: [0]) { $0.append($0[$0.count - 1] + $1.reminders.count) }
         ForEach(Array(results.sections.enumerated()), id: \.element.id) { position, section in
