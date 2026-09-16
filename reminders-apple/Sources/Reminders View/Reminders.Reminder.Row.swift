@@ -4,7 +4,7 @@ import Reminders_Interface
 public import SwiftUI
 public import Tagged
 
-extension Reminder {
+extension Reminders.Reminder {
     public struct Row {
         private var reminder: Reminder
         private var color: SwiftUI.Color
@@ -22,7 +22,7 @@ extension Reminder {
     }
 }
 
-extension Reminder.Row {
+extension Reminders.Reminder.Row {
     public struct Actions {
         public var complete: (Reminder.ID) -> Void
         public var delete: (Reminder.ID) -> Void
@@ -43,7 +43,7 @@ extension Reminder.Row {
     }
 }
 
-extension Reminder.Row: SwiftUI::View {
+extension Reminders.Reminder.Row: SwiftUI::View {
     public var body: some SwiftUI::View {
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {

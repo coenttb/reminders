@@ -8,6 +8,6 @@ import SwiftUI
     static let store: StoreOf<Reminders.Feature> = .live()
 
     var body: some Scene {
-        WindowGroup { Root(store: Self.store) }
+        WindowGroup { Reminders.Screen(store: Self.store) }
     }
 }

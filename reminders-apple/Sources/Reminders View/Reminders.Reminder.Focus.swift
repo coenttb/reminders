@@ -1,6 +1,6 @@
 public import Reminders
 
-extension Reminder {
+extension Reminders.Reminder {
     public enum Focus: Hashable, Sendable {
         case title(Reminder.ID)
         case notes(Reminder.ID)

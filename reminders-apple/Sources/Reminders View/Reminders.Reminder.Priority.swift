@@ -1,6 +1,6 @@
 public import Reminders
 
-extension Reminder.Priority {
+extension Reminders.Reminder.Priority {
     public var title: String {
         switch self {
         case .low: "Low"

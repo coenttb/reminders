@@ -3,11 +3,11 @@ import Organizing
 public import Reminders
 import Tagged
 
-extension Reminder {
+extension Reminders.Reminder {
     public var tagLine: String { tags.sorted().map(Tag<Reminder>.hashtag).joined(separator: " ") }
 }
 
-extension Reminder {
+extension Reminders.Reminder {
     subscript(dueOn now: Date, calendar calendar: Calendar) -> Bool {
         get { due != nil }
         set { set(due: newValue ? calendar.startOfDay(for: now) : nil) }

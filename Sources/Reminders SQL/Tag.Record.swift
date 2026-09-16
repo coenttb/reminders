@@ -3,7 +3,7 @@ public import Reminders
 public import StructuredQueries
 public import Tagged
 
-extension Tag where Element == Reminder {
+extension Tag<Reminder> {
     @Table("tags")
     public struct Record: Sendable {
         @Column(primaryKey: true)

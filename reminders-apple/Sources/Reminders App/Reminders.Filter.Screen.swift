@@ -8,8 +8,8 @@ import Reminders_View
 import SwiftUI
 import Tagged
 
-extension Root {
-    struct Detail {
+extension Reminders.Filter {
+    struct Screen {
         private var filter: Reminders.Filter
         private var store: StoreOf<Reminders.Feature>
         @Dependency(\.date.now) private var now
@@ -23,7 +23,7 @@ extension Root {
     }
 }
 
-extension Root.Detail: SwiftUI::View {
+extension Reminders.Filter.Screen: SwiftUI::View {
     @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
         let detail = store.detail ?? Reminders.Filter.Detail(filter: filter, preference: filter.defaultPreference)
@@ -53,7 +53,7 @@ extension Root.Detail: SwiftUI::View {
     }
 }
 
-extension Root.Detail {
+extension Reminders.Filter.Screen {
     private var list: Organizing.List<Reminder>? {
         if case let .list(id) = filter { store.overview.list(id) } else { nil }
     }

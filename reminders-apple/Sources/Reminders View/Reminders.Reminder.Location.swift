@@ -1,6 +1,6 @@
 public import Reminders
 
-extension Reminder.Location {
+extension Reminders.Reminder.Location {
     public var title: String {
         switch self {
         case .gettingInCar: "Getting in Car"

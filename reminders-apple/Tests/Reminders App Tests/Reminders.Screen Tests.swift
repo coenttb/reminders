@@ -21,7 +21,7 @@ import Testing
 struct `Reminder root` {
     @Test func `constructs from a store and reads the database through it`() async throws {
         let store = Store(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-        _ = Root(store: store)
+        _ = Reminders.Screen(store: store)
         store.send(.filterTapped(.today))
         #expect(store.filter == .today)
         try await store.state.$overview.load()

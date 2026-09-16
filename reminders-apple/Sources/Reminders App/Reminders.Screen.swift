@@ -11,19 +11,21 @@ import Standard_Library_Extensions
 public import SwiftUI
 import Tagged
 
-public struct Root {
-    @Bindable private var store: StoreOf<Reminders.Feature>
-    @Dependency(\.date.now) private var now
-    @Dependency(\.calendar) private var calendar
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var editMode: EditMode = .inactive
+extension Reminders {
+    public struct Screen {
+        @Bindable private var store: StoreOf<Reminders.Feature>
+        @Dependency(\.date.now) private var now
+        @Dependency(\.calendar) private var calendar
+        @Environment(\.scenePhase) private var scenePhase
+        @State private var editMode: EditMode = .inactive
 
-    public init(store: StoreOf<Reminders.Feature>) {
-        self.store = store
+        public init(store: StoreOf<Reminders.Feature>) {
+            self.store = store
+        }
     }
 }
 
-extension Root: SwiftUI::View {
+extension Reminders.Screen: SwiftUI::View {
     public var body: some SwiftUI::View {
         NavigationStack {
             SwiftUI.List {
@@ -117,7 +119,7 @@ extension Root: SwiftUI::View {
                 .visibilityPriority(.high)
             }
             .navigationDestination(item: $store.filter) { filter in
-                Detail(filter, store: store)
+                Reminders.Filter.Screen(filter, store: store)
             }
         }
         .searchable(text: $store.search.text, tokens: $store.search.tokens) { token in

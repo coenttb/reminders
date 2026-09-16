@@ -3,7 +3,7 @@ import FoundationEssentials_Extensions
 public import Reminders
 import Reminders_Interface
 
-extension Reminder.Due {
+extension Reminders.Reminder.Due {
     public static func description(of due: Self, at now: Date, calendar: Calendar) -> String {
         let day = dayDescription(of: due, at: now, calendar: calendar)
         return due.hasTime ? "\(day), \(due.date.formatted(Self.style(date: .omitted, time: .shortened, calendar: calendar)))" : day

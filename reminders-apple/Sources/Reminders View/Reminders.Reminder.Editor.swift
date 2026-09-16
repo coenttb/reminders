@@ -3,7 +3,7 @@ public import Reminders
 public import Reminders_Interface
 public import SwiftUI
 
-extension Reminder {
+extension Reminders.Reminder {
     public struct Editor {
         @Binding private var reminder: Reminder
         private var color: SwiftUI.Color
@@ -30,7 +30,7 @@ extension Reminder {
     }
 }
 
-extension Reminder.Editor {
+extension Reminders.Reminder.Editor {
     public struct Actions {
         public var complete: (Reminder.ID) -> Void
         public var details: (Reminder.ID) -> Void
@@ -54,7 +54,7 @@ extension Reminder.Editor {
     }
 }
 
-extension Reminder.Editor: SwiftUI::View {
+extension Reminders.Reminder.Editor: SwiftUI::View {
     public var body: some SwiftUI::View {
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
@@ -198,13 +198,13 @@ extension Reminder.Editor: SwiftUI::View {
     }
 }
 
-extension Reminder.Editor {
+extension Reminders.Reminder.Editor {
     @ViewBuilder private func checked(_ title: String, _ on: Bool) -> some SwiftUI.View {
         if on { Label(title, systemImage: "checkmark") } else { Text(title) }
     }
 }
 
-extension Reminder.Editor {
+extension Reminders.Reminder.Editor {
     private func chip(tinted: Bool, @ViewBuilder _ content: () -> some SwiftUI.View) -> some SwiftUI.View {
         content()
             .font(.subheadline.weight(.medium))

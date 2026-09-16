@@ -6,7 +6,7 @@ import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
 
-extension Reminder {
+extension Reminders.Reminder {
     public struct Form {
         @Binding private var reminder: Reminder
         private var isNew: Bool
@@ -61,7 +61,7 @@ extension Reminder {
     }
 }
 
-extension Reminder.Form: SwiftUI::View {
+extension Reminders.Reminder.Form: SwiftUI::View {
     public var body: some SwiftUI::View {
         SwiftUI.Form {
             Section {
