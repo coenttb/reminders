@@ -12,8 +12,8 @@ extension Reminders.Search.Request: FetchKeyRequest {
         if let prefix = search.tagPrefix {
             let taken = search.tags.map(\.rawValue)
             contents.suggestions = try Tag<Reminder>.Record
-                .where { $hasCaseInsensitivePrefix($0.title, prefix) && !$0.title.in(taken) }
-                .order { $0.title.collate($localizedCaseInsensitive) }
+                .where { Reminders.Schema.$hasCaseInsensitivePrefix($0.title, prefix) && !$0.title.in(taken) }
+                .order { $0.title.collate(Reminders.Schema.$localizedCaseInsensitive) }
                 .fetchAll(db)
         }
         let (matched, completed) = try Reminder.Record

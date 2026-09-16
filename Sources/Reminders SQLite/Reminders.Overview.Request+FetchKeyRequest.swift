@@ -26,7 +26,7 @@ extension Reminders.Overview.Request: FetchKeyRequest {
             tags: try Tag<Reminder>.Record
                 .group(by: \.title)
                 .leftJoin(Reminders.Tagging.all) { $0.title.eq($1.tagID.text) }
-                .order { ($1.reminderID.count().desc(), $0.title.collate($localizedCaseInsensitive)) }
+                .order { ($1.reminderID.count().desc(), $0.title.collate(Reminders.Schema.$localizedCaseInsensitive)) }
                 .select { Tag<Reminder>.Record.Entry.Columns(tag: $0, count: $1.reminderID.count()) }
                 .fetchAll(db)
         )

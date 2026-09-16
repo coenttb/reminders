@@ -27,7 +27,7 @@ extension Reminders.Reminder.Record.TableColumns {
         case .creationDate: fragment.append("\(created), \(position)")
         case .manual: fragment.append("\(position)")
         case .priority: fragment.append("\(priority.desc(nulls: .last)), \(flagged.desc()), \(position)")
-        case .title: fragment.append("\(title.collate($localizedCaseInsensitive)), \(position)")
+        case .title: fragment.append("\(title.collate(Reminders.Schema.$localizedCaseInsensitive)), \(position)")
         }
         return SQLQueryExpression(fragment)
     }

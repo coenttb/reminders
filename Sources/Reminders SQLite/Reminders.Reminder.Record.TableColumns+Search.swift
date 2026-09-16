@@ -7,10 +7,10 @@ import Tagged
 
 extension Reminders.Reminder.Record.TableColumns {
     func matches(_ text: String) -> some QueryExpression<Bool> {
-        let folded = searchFolded(text)
+        let folded = Reminders.Schema.searchFolded(text)
         return #sql("instr(\"reminders\".\"searchText\", \(bind: folded)) > 0", as: Bool.self)
             || Reminders.Tagging
-                .where { $0.reminderID.eq(id) && $0.tagID.text.in(Tag<Reminder>.Record.where { $localizedCaseInsensitiveContains($0.title, text) }.select(\.title)) }
+                .where { $0.reminderID.eq(id) && $0.tagID.text.in(Tag<Reminder>.Record.where { Reminders.Schema.$localizedCaseInsensitiveContains($0.title, text) }.select(\.title)) }
                 .exists()
     }
 

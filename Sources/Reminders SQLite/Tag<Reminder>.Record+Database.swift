@@ -13,14 +13,21 @@ extension Tag<Reminder>.Record {
         return Tag<Reminder>.ID(title)
     }
 
+    /// Renames a tag everywhere; a rename onto a tag that already exists merges the two in one
+    /// statement, keeping the links the target already had.
     public static func rename(_ id: Tag<Reminder>.ID, to title: String, in db: Database) throws -> Tag<Reminder>.ID? {
         guard !title.isEmpty, let stored = try canonical(id.rawValue).fetchAll(db).first else { return nil }
         let current: Tag<Reminder>.ID = Tag<Reminder>.ID(rawValue: stored)
         if let existing = try canonical(title).fetchAll(db).first, existing != stored {
             let target: Tag<Reminder>.ID = Tag<Reminder>.ID(rawValue: existing)
-            for reminderID in try Reminders.Tagging.where({ $0.tagID.eq(current) }).select(\.reminderID).fetchAll(db) {
-                try Reminders.Tagging.attach([target], to: reminderID, in: db)
+            let merge = Reminders.Tagging.insert {
+                ($0.reminderID, $0.tagID)
+            } select: {
+                Reminders.Tagging.where { $0.tagID.eq(current) }.select { ($0.reminderID, target) }
+            } onConflict: {
+                ($0.reminderID, $0.tagID)
             }
+            try merge.execute(db)
             try delete(current).execute(db)
             return target
         }

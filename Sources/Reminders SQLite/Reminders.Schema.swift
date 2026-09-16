@@ -207,10 +207,10 @@ extension Reminders.Schema {
     public static func prepare(_ configuration: inout Configuration) {
         configuration.foreignKeysEnabled = true
         configuration.prepareDatabase { db in
-            db.add(function: $localizedCaseInsensitiveContains)
-            db.add(function: $hasCaseInsensitivePrefix)
-            db.add(function: $searchFolded)
-            db.add(collation: $localizedCaseInsensitive)
+            db.add(function: Reminders.Schema.$localizedCaseInsensitiveContains)
+            db.add(function: Reminders.Schema.$hasCaseInsensitivePrefix)
+            db.add(function: Reminders.Schema.$searchFolded)
+            db.add(collation: Reminders.Schema.$localizedCaseInsensitive)
             db.add(collation: .canonical)
         }
     }
