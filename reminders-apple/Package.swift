@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "reminders-apple",
-    platforms: [.iOS(.v27)],
+    platforms: [.iOS(.v27), .macOS(.v27)],
     products: [
         .library(name: "Reminders View", targets: ["Reminders View"]),
         .library(name: "Reminders App", targets: ["Reminders App"]),
