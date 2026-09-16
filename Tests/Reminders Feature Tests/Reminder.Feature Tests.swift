@@ -301,7 +301,8 @@ struct `Reminder feature` {
 
     @Test func `submitting the search commits the text as a token and the results follow`() async throws {
         let store = try await makeStore()
-        await store.modify { $0.search.text = "Take" } changes: { $0.search.text = "Take" }?.value
+        // The typed text waits for a pause on the clock; the submit reads at once.
+        await store.modify { $0.search.text = "Take" } changes: { $0.search.text = "Take" }
         await store.send(.searchSubmitted) { $0.search.commitText() }?.value
         let state = await store.state
         #expect(state.search.tokens == [.near("Take")])
@@ -310,6 +311,21 @@ struct `Reminder feature` {
         #expect(state.results.completedCount == 1)
         await store.send(.searchCompletedButtonTapped) { $0.search.showCompleted = true }?.value
         #expect(await store.state.results.reminders.map(\.title) == ["Take a walk", "Take out trash"])
+        await store.dismount()
+    }
+
+    @Test func `typing in the search is read once after a pause, and a cleared field at once`() async throws {
+        let clock = TestClock()
+        let store = try await makeStore(clock: clock)
+        await store.modify { $0.search.text = "Tak" } changes: { $0.search.text = "Tak" }
+        let typed = await store.modify { $0.search.text = "Take" } changes: { $0.search.text = "Take" }
+        await clock.advance(by: Reminder.Feature.searchPause - .milliseconds(1))
+        #expect(await store.state.results.reminders.isEmpty)
+        await clock.advance(by: .milliseconds(1))
+        await typed?.value
+        #expect(await store.state.results.reminders.map(\.title) == ["Take out trash"])
+        await store.modify { $0.search.text = "" } changes: { $0.search.text = "" }?.value
+        #expect(await store.state.results.reminders.isEmpty)
         await store.dismount()
     }
 

@@ -454,9 +454,15 @@ extension Reminder {
                     }
                 }
             }
-            .onChange(of: store.search, initial: true) { _, search, state in
+            // Typing waits for a pause before it is read: each read is two passes over every
+            // reminder, and the earlier task is cancelled by the next character, so a word costs
+            // one read rather than one per character. A token, the completed toggle, or a
+            // cleared field is read at once.
+            .onChange(of: store.search, initial: true) { previous, search, state in
                 let results = state.$results
+                let typed = previous.text != search.text && previous.tokens == search.tokens && !search.text.isEmpty
                 store.addTask {
+                    if typed { try await clock.sleep(for: Self.searchPause) }
                     try await attempt { try await results.load(Reminder.Search.Results.Request(search: search)) }
                 }
             }
@@ -482,6 +488,9 @@ extension Reminder {
 }
 
 extension Reminder.Feature {
+    /// How long typing in the search field pauses before the reminders are read.
+    public static let searchPause: Duration = .milliseconds(250)
+
     /// The database access the tasks use. Synchronous, on the store's isolation: a write lands
     /// whole, in the order the actions came, before anything else runs. TCA26 cancels the
     /// earlier task of a repeated action, but a task that never suspends cannot observe that;

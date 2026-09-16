@@ -94,3 +94,92 @@ First run on the iPhone 17e (Debug build, `Evidence/Scale/`):
 - Starting a new row in a long list left the title unfocused (typed text was lost): the fixed 80 ms wait for the row's read-back was too short at 500 rows, and at 1,000 rows the focus was set before the List had brought the row on screen, so there was no field to focus. Fixed: focus is set once the row is among the rows and after the scroll, with two retries.
 
 Open for investigation: per-keystroke write → overview + detail re-read cost at 100k; memory of the seed path; the tag cloud with 200 tags; search with thousands of matches.
+
+## Scale investigation (2026-09-16)
+
+Scope: what the screens feel at Extreme (`Reminder.Sample.Scale.extreme`, 100 lists × 1,000 reminders, 200 tags; ~40% of reminders carry 1–3 tags, 20% completed, 8% flagged, a third dated). Seeding itself is out of scope except where it bears on the screens. Measured with a throwaway test in the SQLiteData test target (deleted again): a `DatabasePool` on disk in WAL mode, as the app opens it, seeded with `generated(.extreme, seed: 1)`, every statement profiled through `db.trace(options: .profile)`, plans through `EXPLAIN QUERY PLAN`, and GRDB `ValueObservation`s started on the four requests to see which ones a write re-runs. Numbers are the iPhone 17e simulator on this Mac, Debug; the device is slower by a constant factor, the shapes are the same.
+
+### What is slow or breaks
+
+**1. The `tagList` subquery scans the tags table once per row.** Every row the screens read (`Reminder.Record.rows()`, `Reminder.Record+Statements.swift:104-116`) carries `$0.tagList` (`Reminder.Record+Queries.swift:75-80`), a correlated subquery joining `remindersTags` to `tags` on `remindersTags.tagID = tags.title`. The tags key is declared `COLLATE "localizedCaseInsensitive"` (`Schema.swift:84`) while `remindersTags.tagID` is plain text; SQLite takes the collation of the left operand, BINARY, so the tags index cannot serve the lookup and the planner chooses `SCAN tags` (200 rows) then probes the links index once per tag:
+
+```
+CORRELATED SCALAR SUBQUERY 1
+  SCAN tags
+  SEARCH remindersTags USING COVERING INDEX sqlite_autoindex_remindersTags_1 (reminderID=? AND tagID=?)
+```
+
+That is 200 index probes per reminder row, for every query that reads rows. Measured, same query, three forms of the subquery:
+
+| rows read | as shipped | join reversed (`tags.title = remindersTags.tagID`) | no join (`group_concat(tagID)`) |
+|---|---|---|---|
+| one list, 803 rows | 33 ms | 5 ms | 3.5 ms |
+| All, 79,977 rows | 3.28 s | 0.48 s | 0.33 s |
+
+Reversing the join makes the comparison use the tags key's collation, so the plan becomes `SEARCH remindersTags (reminderID=?)` then `SEARCH tags USING COVERING INDEX (title=?)`: one probe per link. This one line is the largest single cost in the app; it is in the detail (every filter), search results, and every `find(id).rows()` read-back the feature does.
+
+**2. Smart lists at 100k read and materialise tens of thousands of rows.** `Reminder.Filter.Detail.Request` (`Reminder.Filter.Detail.Request.swift:31-36`) fetches every matching row and maps each to a `Reminder` (parsing the tag list into a `Set`), then the view puts them all in one `SwiftUI.List` (`Reminder.Filter.Detail.View.swift:114`). Measured request time, shipped code:
+
+| filter | rows | fetch |
+|---|---|---|
+| a list | 803 | 45 ms |
+| Today | 224 | 21 ms (full scan of 100k, `coalesce()` around the range defeats any index) |
+| Flagged | 8,055 | 0.42 s |
+| Completed | 20,023 | 1.0–1.4 s |
+| Scheduled | 26,814 | 1.4 s |
+| All | 79,977 | 4.2 s |
+
+Roughly 0.85 of the time is item 1; the remainder is the scan, the `ORDER BY` temp b-tree and the row materialisation. Opening All at Extreme is a four-second blank screen followed by an 80,000-row List. Nothing here is broken at Large (All = ~12k rows, ~0.6 s) but it is the ceiling.
+
+**3. Observations re-fetch synchronously inside the write, on the main thread.** sqlite-data's `@Fetch` builds `ValueObservation.tracking` (`sqlite-data/Sources/SQLiteData/Internal/FetchKey.swift:121`), which GRDB treats as a non-constant region: after a commit that touches the region, the fresh value is fetched **on the writer connection, inside `databaseDidCommit`** (`GRDB/ValueObservation/Observers/ValueConcurrentObserver.swift:739-775`), and delivered by sqlite-data's `ImmediateScheduler` on that same thread. The feature's `write` is the synchronous `database.write` on the store's isolation (`Reminder.Feature.swift:490`). So every write the feature makes blocks the main thread for the write **plus every observed query whose region it touched.** GRDB's regions are column-level, so the fan-out is narrower than feared — measured per write, with the observed regions:
+
+- `overview`: `lists(*), reminders(due,flagged,id,listID,status), remindersTags(tagID), tags(title)` — not re-run by title or notes typing.
+- `detail`: whole `reminders` table (all columns) + `remindersTags`, `tags`, `lists`, `preferences` — re-run by any reminder change anywhere, in any list (the primary key is TEXT, so GRDB cannot narrow the region to rows).
+- `pending`: `reminders(id,status)`.
+- `results`: empty while idle (`Reminder.Search.Results.Request.swift:21` returns early, so an idle search costs nothing); the same as `detail` while active.
+
+| write | re-fetched | main-thread time, shipped |
+|---|---|---|
+| one title keystroke, 1,000-row list open | detail | 60 ms |
+| the same with search "the" active (57k matches) | detail + results | 3.5 s |
+| completion toggle | detail, overview, pending, results | 3.6 s with search active; ~0.1 s without |
+| new row (insert + placeLast) | all four | as above |
+
+At 60 ms per keystroke the inline editor in a 1,000-row list drops frames on every character; after item 1 the detail read is ~6 ms and typing is fine. The search case is the one that breaks: with a broad search active, every completion tap on a result stalls the UI for seconds.
+
+**4. Search runs two full scans per keystroke, twice.** `Reminder.Search.Results.Request` does `completedCount` (one scan calling the Swift `localizedCaseInsensitiveContains` function on 100k titles and notes, 91 ms) and the rows query (a second scan plus item 1 per match: 576 ms for "the report", 4,018 matches; 3.7 s for "the", 57,752 matches). Every change of the text (`Reminder.Feature.swift:457-462`) calls `results.load`, which fetches once through `asyncRead` and then subscribes a new observation that fetches again — two reads per character, off the main thread but queued behind each other, so results arrive late and out of step with the field. Suggestions (`#w`) are instant: 200 tags.
+
+**5. The view layer at these row counts.** `Reminder.Filter.Detail.View.swift:137` and `:145` each build `detail.rows.map(\.id)` on every body evaluation — the body re-evaluates on every keystroke of the inline editor — which is two 80,000-element arrays per character in All. `Tag.Cloud.Flow` (`Tag.Row.swift:58-91`) measures all 201 pills in `sizeThatFits` and again in `placeSubviews` with no layout cache, on every home layout pass (the home body re-evaluates on every overview change). `Reminder.Row` formats its due date with `Date.FormatStyle` per row per render (`Reminder.Due+Description.swift`), which is what stock does too; no formatter is created per row. The Details sheet's list picker and the suggestion strip are 100- and 200-item views and are fine.
+
+**6. Indexes.** `reminders` has one index, `listID` (`Schema.swift:142`); `remindersTags` has its primary key plus `reminderID` and `tagID` indexes. `pending` is a full scan on `status` (5 ms, re-run on every status change); Today filters `due` through `coalesce(due >= ? AND due < ?, 0)` (`Reminder.Record+Queries.swift:31`), which no index can serve. Neither is large, both are cheap to fix. Ordering columns (`position`, `created`, `title COLLATE`) always sort within a list of ≤1,000 rows through a temp b-tree — not worth indexes.
+
+**7. Memory (for the record).** The 100k `Reminder` values are 18 MB, not the problem; the process footprint grows ~75 MB per `DatabasePool` after the 39 MB write and `pool.releaseMemory()` brings it back (103 → 29 MB). The app's Debug trace expands ~21 MB of SQL text during a seed and costs nothing measurable in time. Seeding time itself (4.9 s here) is flat for chunks ≥100 rows (50: 1.55 s per 20k; 100–2,000: 0.69–0.74 s), so the shipped 200 is right. None of this affects the screens; left alone.
+
+### Plan, ranked by what the user feels
+
+1. **Reverse the `tagList` join** (`Reminder.Record+Queries.swift:78`: `$1.title.eq($0.tagID.text)`). 7–10× on every row read: list detail 45 → ~6 ms, All 4.2 → ~0.6 s, search rows 3.7 → ~0.5 s, and the per-keystroke synchronous re-fetch (item 3) falls with it. Test: the plan of `Reminder.Record.rows` no longer contains `SCAN tags`.
+2. **Debounce the search read** (`Reminder.Feature.swift:457`): wait ~250 ms on the feature's clock after a text change before `results.load`; token changes, showCompleted, and an emptied text load at once. Removes the pile-up of two full scans per character. Test: text changes do not read until the clock advances; a submit reads at once.
+3. **Index `due` and `status`, and drop the `coalesce`** so Today uses the index: migration adding `idx_reminders_due` (partial, `WHERE due IS NOT NULL`) and `idx_reminders_status`; `isDue` becomes `due IS NOT NULL AND due >= ? AND due < ?`. Today 21 ms → <1 ms, pending 5 ms → <1 ms on every status change. Test: the migrated schema has the indexes and the Today plan uses one; the day boundary tests still pass.
+4. **Window the smart lists.** All/Scheduled/Completed at 100k should not fetch 80k rows into one List. Give `Reminder.Filter.Detail.Request` a `limit` (e.g. 500) and return `total`, with a "Show more" row that raises the window; the detail's `rows` stays what it is. This is a design change (the domain type gains `total`), so it is proposed here and not done in this pass.
+5. **Take the observed re-fetches off the main thread.** Two options: (a) `try await database.write` for the writes that do not need ordering with the next action (autosave, toggles), accepting GRDB's writer queue as the serializer; or (b) keep the synchronous writes and make the reads cheap (items 1 and 3 do most of this). Recommend (b) now and (a) only if a device trace still shows hitches after 1–3. The autosave could also debounce like the search (~300 ms), at the cost of losing the last 300 ms of typing on a relaunch mid-edit; the commit paths already write the whole difference, so nothing else changes. Not done in this pass.
+6. **Compute `detail.rows.map(\.id)` once per body** in `Reminder.Filter.Detail.View` (a `let ids` used by both `.animation` and `.onChange`), and give `Tag.Cloud.Flow` a layout cache of measured sizes so 200 pills are measured once per invalidation, not twice per pass. Small; view-only.
+7. **Fold `completedCount` into the rows scan** (one pass instead of two) and consider a results cap with a count for very broad searches. Follow-on to 2.
+
+Items 1–3 are implemented below, each with a test; 4–7 are proposed.
+
+### Done in this pass, re-measured
+
+Commit "Read tag lists through the tags index; index due and status" (items 1 and 3) and "Read the search after a pause in typing" (item 2). Same harness, before → after:
+
+| | before | after |
+|---|---|---|
+| list detail request (803 rows) | 45 ms | 15 ms (the query itself 5 ms; the rest is row materialisation) |
+| All (79,977 rows) | 4.2 s | 1.34 s |
+| Scheduled / Completed / Flagged | 1.4 / 1.0–1.4 / 0.42 s | 0.50 / 0.34 / 0.14 s |
+| Today | 21 ms | 5 ms |
+| pending set | 5 ms | 0.2 ms |
+| one keystroke in a 1,000-row list (write + synchronous detail re-fetch) | 60 ms | 20 ms |
+| search "the report" (4,018 matches) | 0.61 s | 0.44 s |
+| search "the" (57,752 matches) | 3.7 s | 1.36 s, and read once per pause in typing rather than twice per character |
+
+What remains large is the row count itself: All at Extreme is still 1.3 s and an 80,000-row List, and a broad search with an active field still re-reads its 57k matches inside every write. Those are items 4, 5 and 7 above. Scale tests: 73/73.
