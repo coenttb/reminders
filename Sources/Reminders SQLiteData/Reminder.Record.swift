@@ -63,21 +63,25 @@ extension Reminder.Record {
         status == incomplete ? .incomplete : .completed
     }
 
-    public func reminder(tags: Set<Tag<Reminder>.ID>) -> Reminder {
-        Reminder(
-            id: id,
-            list: listID,
-            title: title,
-            notes: notes,
-            due: due.map { Reminder.Due($0, hasTime: hasTime) },
-            flagged: flagged,
-            priority: priority.flatMap(Reminder.Priority.init(rawValue:)),
-            completion: Self.completion(status),
+    public func reminder(tags: Set<Tag<Reminder>.ID>) -> Reminder { Reminder(self, tags: tags) }
+}
+
+extension Reminder {
+    public init(_ record: Reminder.Record, tags: Set<Tag<Reminder>.ID>) {
+        self.init(
+            id: record.id,
+            list: record.listID,
+            title: record.title,
+            notes: record.notes,
+            due: record.due.map { Reminder.Due($0, hasTime: record.hasTime) },
+            flagged: record.flagged,
+            priority: record.priority.flatMap(Reminder.Priority.init(rawValue:)),
+            completion: Reminder.Record.completion(record.status),
             tags: tags,
-            position: position,
-            location: location.flatMap(Reminder.Location.init(rawValue:)),
-            repeats: Reminder.Repeat(rawValue: repeats) ?? .never,
-            created: created
+            position: record.position,
+            location: record.location.flatMap(Reminder.Location.init(rawValue:)),
+            repeats: Reminder.Repeat(rawValue: record.repeats) ?? .never,
+            created: record.created
         )
     }
 }

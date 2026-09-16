@@ -20,8 +20,12 @@ extension List where Element == Reminder {
     }
 }
 
-extension List<Reminder>.Record {
-    public var list: List<Reminder> {
-        List(id: id, title: title, color: color.color, position: position)
+extension List<Reminder> {
+    public init(_ record: List<Reminder>.Record) {
+        self.init(id: record.id, title: record.title, color: Color(record.color), position: record.position)
     }
+}
+
+extension List<Reminder>.Record {
+    public var list: List<Reminder> { List(self) }
 }

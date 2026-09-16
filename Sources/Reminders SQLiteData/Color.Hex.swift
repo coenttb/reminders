@@ -18,11 +18,15 @@ extension Color.Hex {
         self.init(rawValue: byte(color.red) << 16 | byte(color.green) << 8 | byte(color.blue))
     }
 
-    public var color: Color {
-        Color(
-            red: Double((rawValue >> 16) & 0xFF) / 0xFF,
-            green: Double((rawValue >> 8) & 0xFF) / 0xFF,
-            blue: Double(rawValue & 0xFF) / 0xFF
+    public var color: Color { Color(self) }
+}
+
+extension Color {
+    public init(_ hex: Color.Hex) {
+        self.init(
+            red: Double((hex.rawValue >> 16) & 0xFF) / 0xFF,
+            green: Double((hex.rawValue >> 8) & 0xFF) / 0xFF,
+            blue: Double(hex.rawValue & 0xFF) / 0xFF
         )
     }
 }

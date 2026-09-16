@@ -20,10 +20,14 @@ extension Reminder.Filter.Preference {
     }
 }
 
-extension Reminder.Filter.Preference.Record {
-    public var preference: Reminder.Filter.Preference {
-        Reminder.Filter.Preference(ordering: Reminder.Ordering(rawValue: ordering) ?? .dueDate, showCompleted: showCompleted)
+extension Reminder.Filter.Preference {
+    public init(_ record: Reminder.Filter.Preference.Record) {
+        self.init(ordering: Reminder.Ordering(rawValue: record.ordering) ?? .dueDate, showCompleted: record.showCompleted)
     }
+}
+
+extension Reminder.Filter.Preference.Record {
+    public var preference: Reminder.Filter.Preference { Reminder.Filter.Preference(self) }
 
     public static func preference(for filter: Reminder.Filter) -> Where<Reminder.Filter.Preference.Record> {
         Reminder.Filter.Preference.Record.find(filter.key)

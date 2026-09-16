@@ -18,10 +18,14 @@ extension Reminder.Session {
     }
 }
 
-extension Reminder.Session.Record {
-    public var session: Reminder.Session {
-        Reminder.Session(filter: filter?.filter, editing: editing)
+extension Reminder.Session {
+    public init(_ record: Reminder.Session.Record) {
+        self.init(filter: record.filter?.filter, editing: record.editing)
     }
+}
+
+extension Reminder.Session.Record {
+    public var session: Reminder.Session { Reminder.Session(self) }
 
     public static var state: Where<Reminder.Session.Record> { Reminder.Session.Record.find(1) }
 
