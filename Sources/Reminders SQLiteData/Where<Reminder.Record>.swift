@@ -2,7 +2,7 @@ public import Organizing
 public import Reminders
 public import SQLiteData
 
-extension Where where From == Reminder.Record {
+extension Where<Reminder.Record> {
     public func rows() -> Select<Reminder.Record.Row, Reminder.Record, List<Reminder>.Record> {
         join(List<Reminder>.Record.all) {
             $0.listID.eq($1.id)

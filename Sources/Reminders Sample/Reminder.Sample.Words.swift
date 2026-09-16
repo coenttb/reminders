@@ -31,9 +31,9 @@ extension Reminder.Sample.Words {
         return index < tagNames.count ? name : "\(name)\(index / tagNames.count + 1)"
     }
 
-    static func title(_ random: inout Random) -> String {
+    static func title(_ random: inout Reminder.Sample.Random) -> String {
         "\(verbs[random.next(in: 0..<verbs.count)]) \(objects[random.next(in: 0..<objects.count)])"
     }
 
-    static func note(_ random: inout Random) -> String { notes[random.next(in: 0..<notes.count)] }
+    static func note(_ random: inout Reminder.Sample.Random) -> String { notes[random.next(in: 0..<notes.count)] }
 }
