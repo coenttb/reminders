@@ -152,6 +152,23 @@ extension Reminder.Schema {
             try #sql(#"CREATE INDEX "idx_reminders_due" ON "reminders"("due") WHERE "due" IS NOT NULL"#).execute(db)
             try #sql(#"CREATE INDEX "idx_reminders_status" ON "reminders"("status")"#).execute(db)
         }
+        // The search compared every title and notes through a Swift function, twice per read at
+        // 100,000 rows (RESEARCH.md, device measurement). The folded text is kept in a column
+        // the triggers maintain, and matched with SQLite's `instr`.
+        migrator.registerMigration("Keep the folded text for the search") { db in
+            try #sql(#"ALTER TABLE "reminders" ADD COLUMN "searchText" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT ''"#).execute(db)
+            try #sql(#"UPDATE "reminders" SET "searchText" = searchFolded("title" || char(10) || "notes")"#).execute(db)
+            try #sql(#"""
+                CREATE TRIGGER "reminders_searchText_insert" AFTER INSERT ON "reminders" BEGIN
+                  UPDATE "reminders" SET "searchText" = searchFolded(NEW."title" || char(10) || NEW."notes") WHERE "id" = NEW."id";
+                END
+                """#).execute(db)
+            try #sql(#"""
+                CREATE TRIGGER "reminders_searchText_update" AFTER UPDATE OF "title", "notes" ON "reminders" BEGIN
+                  UPDATE "reminders" SET "searchText" = searchFolded(NEW."title" || char(10) || NEW."notes") WHERE "id" = NEW."id";
+                END
+                """#).execute(db)
+        }
         if let target {
             try migrator.migrate(database, upTo: target)
         } else {
@@ -168,6 +185,7 @@ extension Reminder.Schema {
         configuration.prepareDatabase { db in
             db.add(function: $localizedCaseInsensitiveContains)
             db.add(function: $hasCaseInsensitivePrefix)
+            db.add(function: $searchFolded)
             db.add(collation: $localizedCaseInsensitive)
             db.add(collation: .canonical)
         }

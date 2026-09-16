@@ -8,6 +8,14 @@ nonisolated func localizedCaseInsensitiveContains(_ text: String, _ query: Strin
     text.localizedCaseInsensitiveContains(query)
 }
 
+/// The text as the search stores and compares it: lowercased as Swift's `lowercased()` does.
+/// A reminder's title and notes are kept folded in a column, so a search compares them with
+/// SQLite's own `instr` rather than calling a Swift function for every row.
+@DatabaseFunction(isDeterministic: true)
+nonisolated func searchFolded(_ text: String) -> String {
+    text.lowercased()
+}
+
 /// Whether the text starts with the prefix, ignoring case as Swift's `lowercased()` does.
 @DatabaseFunction(isDeterministic: true)
 nonisolated func hasCaseInsensitivePrefix(_ text: String, _ prefix: String) -> Bool {

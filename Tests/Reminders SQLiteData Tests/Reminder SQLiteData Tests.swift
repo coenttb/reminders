@@ -532,6 +532,15 @@ import Tagged
         #expect(!steps.contains { $0.contains("CORRELATED") && $0.contains("tags") }, "\(steps)")
         // Matching by tag still finds the reminders that carry a matching tag, in any case.
         #expect(try results(Reminder.Search(text: "SOMEDAY", showCompleted: true), database).reminders.map(\.title) == ["Haircut", "Groceries"])
+        // The title and notes are matched from the folded column, not through the Swift function per row.
+        let sql = "\(Reminder.Record.where { $0.matches(Reminder.Search(text: "day")) }.select(\.id).query)"
+        #expect(sql.contains("instr(\"reminders\".\"searchText\"") && !sql.contains("localizedCaseInsensitiveContains(\"reminders\""), "\(sql)")
+        // The column follows the text: an edited title is found under its new words and not its old.
+        let groceries = try #require(try results(Reminder.Search(text: "oatmeal", showCompleted: true), database).reminders.first)
+        try database.write { db in try Reminder.Record.find(groceries.id).update { $0.title = "Weekly Shopping" }.execute(db) }
+        #expect(try results(Reminder.Search(text: "shopping", showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
+        #expect(try results(Reminder.Search(text: "grocer", showCompleted: true), database).reminders.isEmpty)
+        #expect(try results(Reminder.Search(text: "OATMEAL", showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
     }
 
     @Test func `Today and the pending set are read through indexes, not a scan of every reminder`() throws {
