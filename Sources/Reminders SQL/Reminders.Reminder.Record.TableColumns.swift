@@ -6,23 +6,23 @@ public import Tagged
 
 extension Reminders.Reminder.Record.TableColumns {
     public var isCompleted: some QueryExpression<Bool> {
-        status.neq(Reminder.Record.incomplete)
+        status.neq(.incomplete)
     }
 
     public var isPending: some QueryExpression<Bool> {
-        status.eq(Reminder.Record.pending)
+        status.eq(.pending)
     }
 
     public var isDone: some QueryExpression<Bool> {
-        status.eq(Reminder.Record.completed)
+        status.eq(.completed)
     }
 
     public var isScheduled: some QueryExpression<Bool> {
-        !isCompleted && due.isNot(nil)
+        !isCompleted && dueDate.isNot(nil)
     }
 
     public func isDue(during day: Range<Date>) -> some QueryExpression<Bool> {
-        !isCompleted && due.isNot(nil) && due.gte(Date?.some(day.lowerBound)) && due.lt(Date?.some(day.upperBound))
+        !isCompleted && dueDate.isNot(nil) && dueDate.gte(Date?.some(day.lowerBound)) && dueDate.lt(Date?.some(day.upperBound))
     }
 
     public func belongs(to filter: Reminders.Filter, today: Range<Date>) -> SQLQueryExpression<Bool> {
@@ -39,12 +39,5 @@ extension Reminders.Reminder.Record.TableColumns {
 
     package func carries(_ tag: Tag<Reminder>.ID) -> some QueryExpression<Bool> {
         Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(tag) }.exists()
-    }
-
-    public var tagList: some QueryExpression<String?> {
-        Reminders.Tagging
-            .where { $0.reminderID.eq(id) }
-            .join(Tag<Reminder>.Record.all) { $1.title.eq($0.tagID.text) }
-            .select { $1.title.groupConcat(Reminder.Record.tagSeparator, order: $1.title) }
     }
 }

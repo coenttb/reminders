@@ -28,7 +28,7 @@ extension Reminders.Sample {
             try Tag<Reminder>.Record.insert { tags.map(Tag<Reminder>.Record.init) }.execute(db)
         }
         for reminders in sample.reminders.chunks(of: 200) as [ArraySlice<Reminder>] {
-            try Reminder.Record.insert { reminders.map(Reminder.Record.init) }.execute(db)
+            try Reminder.Record.insert { reminders.map(Reminder.Record.Draft.init) }.execute(db)
         }
         let taggings = sample.reminders.flatMap { reminder in reminder.tags.sorted().map { Reminders.Tagging(reminderID: reminder.id, tagID: $0) } }
         for chunk in taggings.chunks(of: 500) as [ArraySlice<Reminders.Tagging>] {

@@ -24,7 +24,7 @@ extension Reminders.Search.Request: FetchKeyRequest {
             .fetchOne(db) ?? (0, 0)
         results.completedCount = completed
         results.total = search.showCompleted ? matched : matched - completed
-        let rows = try Reminder.Record
+        let matches = try Reminder.Record
             .where { $0.matches(search) }
             .where { if !search.showCompleted { !$0.isDone } }
             .join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
@@ -32,13 +32,14 @@ extension Reminders.Search.Request: FetchKeyRequest {
                 (lists.position, reminders.isDone, reminders.ordered(by: .dueDate, showCompleted: false))
             }
             .limit(limit ?? results.total)
-            .select { Match.Columns(reminder: $0, tags: $0.tagList, list: $1) }
+            .select { Reminder.Record.Match.Columns(reminder: $0, tags: $0.tags, list: $1) }
             .fetchAll(db)
-        for row in rows {
-            if results.sections.last?.list.id == row.list.id {
-                results.sections[results.sections.count - 1].reminders.append(Reminder(row))
+        for match in matches {
+            let reminder = Reminder(Reminder.Record.Row(reminder: match.reminder, tags: match.tags))
+            if results.sections.last?.list.id == match.list.id {
+                results.sections[results.sections.count - 1].reminders.append(reminder)
             } else {
-                results.sections.append(Reminders.Search.Results.Section(list: List(row.list), reminders: [Reminder(row)]))
+                results.sections.append(Reminders.Search.Results.Section(list: List(match.list), reminders: [reminder]))
             }
         }
         return results

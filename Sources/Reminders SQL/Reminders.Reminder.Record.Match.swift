@@ -1,12 +1,14 @@
+public import Organizing
 public import Reminders
 public import StructuredQueries
 
 extension Reminders.Reminder.Record {
-    /// A reminder with the titles of its tags, the shape a screen reads.
+    /// A search hit: the reminder, its tags, and the list it sits in.
     @Selection
-    public struct Row: Hashable, Sendable {
+    public struct Match: Hashable, Sendable {
         public let reminder: Reminder.Record
         @Column(as: [String].JSONRepresentation.self)
         public let tags: [String]
+        public let list: List<Reminder>.Record
     }
 }

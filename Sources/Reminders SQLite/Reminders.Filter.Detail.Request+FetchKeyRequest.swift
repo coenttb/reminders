@@ -10,6 +10,7 @@ extension Reminders.Filter.Detail.Request: FetchKeyRequest {
     public func fetch(_ db: Database) throws -> Reminders.Filter.Detail? {
         guard let filter else { return nil }
         let preference = try Reminders.Filter.Preference.Record.preference(for: filter).fetchOne(db).map(Reminders.Filter.Preference.init) ?? filter.defaultPreference
+        let colors = Dictionary(uniqueKeysWithValues: try List<Reminder>.Record.all.fetchAll(db).map { ($0.id, Color($0.color)) })
         var list: List<Reminder>?
         if case let .list(id) = filter {
             list = try List<Reminder>.Record.find(id).fetchOne(db).map(List<Reminder>.init)
@@ -28,7 +29,7 @@ extension Reminders.Filter.Detail.Request: FetchKeyRequest {
             filter: filter,
             color: list?.color,
             preference: preference,
-            rows: rows.map { Reminders.Filter.Detail.Row(reminder: Reminder($0), color: Color($0.color)) },
+            rows: rows.map { Reminders.Filter.Detail.Row(reminder: Reminder($0), color: colors[$0.reminder.listID] ?? .default) },
             total: total,
             completedCount: completedCount
         )

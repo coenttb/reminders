@@ -5,7 +5,7 @@ public import Tagged
 
 extension List<Reminder> {
     @Table("lists")
-    public struct Record: Identifiable, Sendable {
+    public struct Record: Identifiable, Hashable, Sendable {
         public let id: List<Reminder>.ID
         public var title: String
         public var color: Color.Hex

@@ -446,7 +446,7 @@ extension Reminders.Feature {
             try await attempt(editing: previous?.session) {
                 let reminder = try write { db in
                     try commit(previous, in: db)
-                    try Reminder.Record.insert { Reminder.Record(Reminder(id: id, list: list, created: now)) }.execute(db)
+                    try Reminder.Record.insert { Reminder.Record.Draft(Reminder(id: id, list: list, created: now)) }.execute(db)
                     try Reminder.Record.placeLast(id).execute(db)
                     try Reminders.Session.Record.set(editing: id).execute(db)
                     return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)
@@ -486,7 +486,7 @@ extension Reminders.Feature {
                     }
                     let next = Reminder(id: id, list: anchor.list, position: anchor.position + 1, created: now)
                     try Reminder.Record.makeRoom(after: anchor.position).execute(db)
-                    try Reminder.Record.insert { Reminder.Record(next) }.execute(db)
+                    try Reminder.Record.insert { Reminder.Record.Draft(next) }.execute(db)
                     try Reminders.Session.Record.set(editing: id).execute(db)
                     var place = anchor
                     place.id = id
@@ -525,7 +525,7 @@ extension Reminders.Feature {
             do {
                 let saved = try write { db in
                     if form.isNew {
-                        try Reminder.Record.insert { Reminder.Record(form.reminder) }.execute(db)
+                        try Reminder.Record.insert { Reminder.Record.Draft(form.reminder) }.execute(db)
                         try Reminder.Record.placeLast(form.reminder.id).execute(db)
                         try Reminders.Tagging.attach(form.reminder.tags, to: form.reminder.id, in: db)
                         return true

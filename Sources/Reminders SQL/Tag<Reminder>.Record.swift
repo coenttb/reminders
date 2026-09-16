@@ -5,7 +5,7 @@ public import Tagged
 
 extension Tag<Reminder> {
     @Table("tags")
-    public struct Record: Sendable {
+    public struct Record: Hashable, Sendable {
         @Column(primaryKey: true)
         public var title: String
 

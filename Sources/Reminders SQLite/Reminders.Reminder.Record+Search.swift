@@ -8,7 +8,7 @@ extension Reminders.Reminder.Record {
     public static func deleteCompleted(matching search: Reminders.Search, dueBefore cutoff: Date?) -> DeleteOf<Reminder.Record> {
         Reminder.Record
             .where { $0.isDone && $0.matches(search) }
-            .where { if let cutoff { $0.due.lt(Date?.some(cutoff)) } }
+            .where { if let cutoff { $0.dueDate.lt(Date?.some(cutoff)) } }
             .delete()
     }
 }

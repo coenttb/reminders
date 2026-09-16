@@ -218,7 +218,7 @@ import Tagged
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
         let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["CAR"], created: now)
         try database.write { db in
-            try Reminder.Record.insert { Reminder.Record(wash) }.execute(db)
+            try Reminder.Record.insert { Reminder.Record.Draft(wash) }.execute(db)
             try Reminder.Record.placeLast(wash.id).execute(db)
             try Reminders.Tagging.attach(wash.tags, to: wash.id, in: db)
         }
@@ -309,7 +309,7 @@ import Tagged
         let next = Reminder(id: Reminder.ID(UUID()), list: haircut.list, position: haircut.position + 1, created: now)
         try database.write { db in
             try Reminder.Record.makeRoom(after: haircut.position).execute(db)
-            try Reminder.Record.insert { Reminder.Record(next) }.execute(db)
+            try Reminder.Record.insert { Reminder.Record.Draft(next) }.execute(db)
         }
         #expect(try stored(sample.reminders[2].id, database)?.position == 3)
         let personal = Reminders.Filter.list(sample.lists[0].id)
@@ -341,7 +341,7 @@ import Tagged
         let (database, sample) = try makeDatabase()
         let wash = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Wash", tags: ["Café"], created: now)
         try database.write { db in
-            try Reminder.Record.insert { Reminder.Record(wash) }.execute(db)
+            try Reminder.Record.insert { Reminder.Record.Draft(wash) }.execute(db)
             try Reminders.Tagging.attach(wash.tags, to: wash.id, in: db)
         }
         #expect(try database.write { db in try Tag<Reminder>.Record.add("CAFÉ", in: db) } == "Café")
@@ -410,7 +410,7 @@ import Tagged
         let late = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Late", due: .day(due), created: now)
         try database.write { db in
             try Reminder.Record.delete().execute(db)
-            try Reminder.Record.insert { Reminder.Record(late) }.execute(db)
+            try Reminder.Record.insert { Reminder.Record.Draft(late) }.execute(db)
         }
         func today(_ calendar: Calendar) throws -> [String] {
             try database.read { db in

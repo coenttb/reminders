@@ -1,11 +1,11 @@
 public import Organizing
 public import Reminders
-public import Reminders_Interface
 public import StructuredQueries
 
-extension Reminders.Overview.Request {
+extension List<Reminder>.Record {
+    /// A list on the overview with the number of its open reminders.
     @Selection
-    public struct Entry {
+    public struct Entry: Hashable, Sendable {
         public let list: List<Reminder>.Record
         public let count: Int
     }
