@@ -6,9 +6,10 @@ import Models
 import Reminder
 public import Reminders
 public import Reminders_Sample
-import Reminders_Session
+import Reminders_Feature
 import Reminders_SQL
 import Reminders_SQLite
+import Sharing
 import SQLiteData
 import Tagged
 
@@ -36,6 +37,8 @@ extension Reminders.Sample {
         @Dependency(\.defaultDatabase) var database
         @Dependency(\.uuid) var uuid
         @Dependency(\.withRandomNumberGenerator) var withRandomNumberGenerator
+        // A replaced database has no row to restore.
+        @Shared(.appStorage(Reminders.Feature.editingKey)) var editingID: String?
 
         let replaced: () -> Void
 
@@ -53,8 +56,8 @@ extension Reminders.Sample {
                         try await attempt {
                             try write { db in
                                 try sample.replace(in: db)
-                                try Reminders.Session.Record.set(editing: nil).execute(db)
                             }
+                            $editingID.withLock { $0 = nil }
                             replaced()
                         }
                     }
@@ -67,8 +70,8 @@ extension Reminders.Sample {
                             let sample = Reminders.Sample.generated(scale, seed: value, at: now, calendar: calendar)
                             try await database.write { db in
                                 try sample.replace(in: db)
-                                try Reminders.Session.Record.set(editing: nil).execute(db)
                             }
+                            $editingID.withLock { $0 = nil }
                             replaced()
                         }
                     }
@@ -80,8 +83,8 @@ extension Reminders.Sample {
                             try write { db in
                                 try Reminders.Sample(lists: []).replace(in: db)
                                 try List<Reminder>.Record.installDefault(replacement, in: db)
-                                try Reminders.Session.Record.set(editing: nil).execute(db)
                             }
+                            $editingID.withLock { $0 = nil }
                             replaced()
                         }
                     }

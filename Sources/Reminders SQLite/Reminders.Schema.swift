@@ -285,6 +285,9 @@ extension Reminders.Schema {
                 END
                 """#).execute(db)
         }
+        migrator.registerMigration("Drop the session table") { db in
+            try #sql(#"DROP TABLE IF EXISTS "session""#).execute(db)
+        }
         if let target {
             try migrator.migrate(database, upTo: target)
         } else {

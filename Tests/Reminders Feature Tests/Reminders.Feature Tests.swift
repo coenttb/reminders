@@ -12,10 +12,10 @@ import Reminder
 import Reminders
 import Reminders_Sample
 import Reminders_Dependency
-import Reminders_Session
 import Reminders_Feature
 import Reminders_SQL
 import Reminders_SQLite
+import Sharing
 import SQLiteData
 import Synchronization
 import Testing
@@ -49,6 +49,17 @@ struct `Reminder feature` {
                 restoring(&$0)
             }
         }
+    }
+
+    // The restoration state the feature keeps in app storage; read here as the next launch would.
+    var restoredEditing: Reminder.ID? {
+        @Shared(.appStorage(Reminders.Feature.editingKey)) var editing: String?
+        return editing.flatMap(UUID.init(uuidString:)).map { Reminder.ID($0) }
+    }
+
+    var restoredFilter: Reminders.Filter? {
+        @Shared(.appStorage(Reminders.Feature.filterKey)) var filter: Reminders.Filter.Key?
+        return filter.flatMap(Reminders.Filter.init(key:))
     }
 
     func stored(_ id: Reminder.ID) async throws -> Reminder? {
@@ -118,8 +129,7 @@ struct `Reminder feature` {
         #expect(saved.map { Reminder($0).tags } == ["garden", "adulting"])
         let adulting = try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).count { $0.title.lowercased() == "adulting" } }
         #expect(adulting == 1)
-        let restored = try await database.read { db in try Reminders.Session.Record.current.fetchOne(db) }
-        #expect(restored?.filter == Reminders.Filter.Key(.list(personal)))
+        #expect(restoredFilter == .list(personal))
         let preference = try await database.read { [personal] db in try Reminders.Preference.Record.preference(for: .list(personal)).fetchOne(db) }
         #expect(preference?.ordering == .title && preference?.showCompleted == true)
     }
@@ -161,7 +171,7 @@ struct `Reminder feature` {
             #expect(try await stored(first)?.title == "Milk")
             await store.send(.doneButtonTapped) { $0.editing = nil }?.value
             #expect(try await stored(second) == nil)
-            #expect(try await database.read { db in try Reminders.Session.Record.current.fetchOne(db)?.editing } == nil)
+            #expect(restoredEditing == nil)
             await store.dismount()
         }
     }
@@ -173,7 +183,7 @@ struct `Reminder feature` {
             await store.send(.newReminderButtonTapped)?.value
             let row = try #require(await store.state.editing?.id)
             await store.dismount()
-            #expect(try await database.read { db in try Reminders.Session.Record.current.fetchOne(db)?.editing } == row)
+            #expect(restoredEditing == row)
             let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
             let editing = try #require(await revived.state.editing)
             #expect(editing.id == row && editing.draft.isBlank && editing.isSaved && editing.session == UUID(1))
@@ -181,7 +191,7 @@ struct `Reminder feature` {
                 $0.filter = .today
                 $0.editing = nil
             }?.value
-            #expect(try await database.read { db in try Reminders.Session.Record.current.fetchOne(db)?.editing } == nil)
+            #expect(restoredEditing == nil)
             await revived.dismount()
         }
     }
@@ -408,7 +418,7 @@ struct `Reminder feature` {
                 $0.editing = nil
             }?.value
             #expect(try await stored(row)?.notes == "Rye")
-            #expect(try await database.read { db in try Reminders.Session.Record.current.fetchOne(db)?.editing } == nil)
+            #expect(restoredEditing == nil)
             await store.modify { $0[draft: row]?.title = "Late" }?.value
             #expect(try await stored(row)?.title == "Bread")
             await store.dismount()
@@ -434,7 +444,7 @@ struct `Reminder feature` {
         let doctorRow2 = try await row(doctor.id)
         await store.send(.reminderTapped(doctor.id)) { $0.editing = Reminder.Editing(doctorRow2, session: UUID(2)) }?.value
         await store.send(.reminderTapped(doctor.id))?.value
-        #expect(try await database.read { db in try Reminders.Session.Record.current.fetchOne(db)?.editing } == doctor.id)
+        #expect(restoredEditing == doctor.id)
         await store.dismount()
     }
 
@@ -636,7 +646,9 @@ struct `Reminder feature` {
     @Test(.dependency(\.defaultDatabase, try DatabaseQueue()))
     func `a database that cannot be read is a failure, not a first run`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await withDependencies { $0.reminders = .sqlite($0.defaultDatabase); $0.remindersSession = .sqlite($0.defaultDatabase) } operation: { try await makeStore() }
+            let store = try await withDependencies { $0.reminders = .sqlite($0.defaultDatabase) } operation: { try await makeStore() }
+            // The failure surfaces from the overview read that mounting starts.
+            for _ in 0..<100 where await store.state.failure == nil { try await Task.sleep(for: .milliseconds(20)) }
             #expect(await store.state.failure?.contains("no such table") == true)
             await store.dismount()
         }
@@ -644,11 +656,29 @@ struct `Reminder feature` {
     }
 
     @Test(.dependencies { try $0.bootstrapDatabase() })
-    func `the first run installs the default list and the restoration row`() async throws {
+    func `the first run installs the default list`() async throws {
         let store = try await makeStore()
         try await until(store.state.$overview) { $0.lists.map(\.list.title) == ["Personal"] && $0.counts.all == 0 }
-        #expect(try await database.read { db in try Reminders.Session.Record.current.fetchCount(db) } == 1)
         await store.dismount()
+    }
+
+    @Test func `a launch restores the open filter and the row being edited from app storage, and forgets a row that is gone`() async throws {
+        @Shared(.appStorage(Reminders.Feature.filterKey)) var filter: Reminders.Filter.Key?
+        @Shared(.appStorage(Reminders.Feature.editingKey)) var editing: String?
+        $filter.withLock { $0 = Reminders.Filter.Key(.list(personal)) }
+        $editing.withLock { $0 = groceries.id.rawValue.uuidString }
+        let groceriesRow = try await row(groceries.id)
+        let store = try await makeStore { [personal] in
+            $0.filter = .list(personal)
+            $0.editing = Reminder.Editing(groceriesRow, session: UUID(0))
+        }
+        await store.dismount()
+        try await database.write { [id = groceries.id] db in try Reminder.Record.find(id).delete().execute(db) }
+        let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
+        #expect(await revived.state.editing == nil)
+        #expect(await revived.state.failure == nil)
+        #expect(restoredEditing == nil && restoredFilter == .list(personal))
+        await revived.dismount()
     }
 }
 

@@ -9,7 +9,6 @@ let package = Package(
         .library(name: "Models", targets: ["Models"]),
         .library(name: "Reminder", targets: ["Reminder"]),
         .library(name: "Reminders", targets: ["Reminders"]),
-        .library(name: "Reminders Session", targets: ["Reminders Session"]),
         .library(name: "Reminders Dependency", targets: ["Reminders Dependency"]),
         .library(name: "Reminders Sample", targets: ["Reminders Sample"]),
         .library(name: "Reminders SQL", targets: ["Reminders SQL"]),
@@ -22,6 +21,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.39.1", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
+        .package(url: "https://github.com/pointfreeco/swift-sharing", from: "2.8.1"),
         .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "protocol-case-paths"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
@@ -55,18 +55,10 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Reminders Session",
-            dependencies: [
-                "Reminder",
-                "Reminders",
-            ]
-        ),
-        .target(
             name: "Reminders Dependency",
             dependencies: [
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 "Reminders",
-                "Reminders Session",
             ]
         ),
         .target(
@@ -85,7 +77,6 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                "Reminders Session",
                 "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "StructuredQueries", package: "swift-structured-queries"),
@@ -98,7 +89,6 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
-                "Reminders Session",
                 "Reminders Sample",
                 "Reminders SQL",
                 .product(name: "Dependencies", package: "swift-dependencies"),
@@ -120,7 +110,7 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
-                "Reminders Session",
+                "Reminders SQL",
                 "Reminders SQLite",
                 "Models",
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
@@ -128,6 +118,7 @@ let package = Package(
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
+                .product(name: "Sharing", package: "swift-sharing"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -173,7 +164,6 @@ let package = Package(
             dependencies: [
                 "Reminder",
                 "Reminders",
-                "Reminders Session",
                 "Reminders SQL",
                 "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -185,7 +175,6 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Sample",
-                "Reminders Session",
                 "Reminders SQL",
                 "Reminders SQLite",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
@@ -196,10 +185,11 @@ let package = Package(
         .testTarget(
             name: "Reminders Feature Tests",
             dependencies: [
+                .product(name: "Sharing", package: "swift-sharing"),
+                "Reminders SQL",
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
-                "Reminders Session",
                 "Reminders Feature",
                 "Reminders Sample",
                 "Models",

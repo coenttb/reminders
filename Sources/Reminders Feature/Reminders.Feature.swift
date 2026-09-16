@@ -8,8 +8,9 @@ public import Models
 public import Reminder
 public import Reminders
 import Reminders_Dependency
-public import Reminders_Session
+public import Reminders_SQL
 import Reminders_SQLite
+public import Sharing
 public import SQLiteData
 public import Tagged
 
@@ -32,6 +33,10 @@ extension Reminders {
             @DebugSnapshotIgnored @Fetch public var matches: Reminders.Listing.Page? = nil
             @DebugSnapshotIgnored @Fetch public var suggestions: [Tag<Reminder>] = []
             public var grace: [Reminder.ID: UUID] = [:]
+
+            // The app's restoration state: the open filter and the row being edited survive a relaunch.
+            @DebugSnapshotIgnored @Shared(.appStorage(Feature.filterKey)) public var filterKey: Reminders.Filter.Key? = nil
+            @DebugSnapshotIgnored @Shared(.appStorage(Feature.editingKey)) public var editingID: String? = nil
 
             public init() {}
 
@@ -87,7 +92,6 @@ extension Reminders {
         @Dependency(\.continuousClock) var clock
         @Dependency(\.date.now) var now
         @Dependency(\.reminders) var reminders
-        @Dependency(\.remindersSession) var session
         @Dependency(\.uuid) var uuid
 
         // Mirrors `State.grace` for the dismount flush, which runs after the state is gone.
@@ -184,7 +188,6 @@ extension Reminders {
                     store.addTask {
                         try await attempt {
                             try reminders.editor.client.delete(id)
-                            if token != nil { try session.setEditing(nil) }
                             try store.modify { $0.endEditing(token) }
                         }
                     }
@@ -193,7 +196,6 @@ extension Reminders {
                     store.addTask {
                         try await attempt(editing: editing?.session) {
                             try commit(editing)
-                            try session.setEditing(nil)
                             let stored = try reminders.editor.client.reminder(id)?.reminder
                             try store.modify {
                                 $0.endEditing(editing?.session)
@@ -210,7 +212,6 @@ extension Reminders {
                         try await attempt(editing: editing?.session) {
                             try commit(editing)
                             let placement = try reminders.editor.client.reminder(id)
-                            try session.setEditing(placement == nil ? nil : id)
                             try store.modify {
                                 $0.endEditing(editing?.session)
                                 if let placement { $0.editing = Reminder.Editing(placement, session: uuid()) }
@@ -262,13 +263,16 @@ extension Reminders {
             }
             .onMount { state in
                 state.today = calendar.day(containing: now)
+                state.filter = state.filterKey.flatMap(Reminders.Filter.init(key:))
                 do {
-                    let restored = try session.current()
-                    if let filter = restored.filter { state.filter = filter }
-                    if let editing = restored.editing { state.editing = Reminder.Editing(editing, session: uuid()) }
+                    if let stored = state.editingID.flatMap(UUID.init(uuidString:)),
+                       let placement = try reminders.editor.client.reminder(Reminder.ID(stored)) {
+                        state.editing = Reminder.Editing(placement, session: uuid())
+                    }
                 } catch {
                     state.failure = error.localizedDescription
                 }
+                state.$editingID.withLock { $0 = state.editing?.id.rawValue.uuidString }
             }
             .onChange(of: store.today, initial: true) { _, today, state in
                 guard let today else { return }
@@ -281,7 +285,10 @@ extension Reminders {
             }
             .onChange(of: store.filter) { previous, filter, state in
                 if previous != nil { endEditing(&state) }
-                perform { try session.setFilter(filter) }
+                state.$filterKey.withLock { $0 = filter.map(Reminders.Filter.Key.init) }
+            }
+            .onChange(of: store.editing?.id) { _, id, state in
+                state.$editingID.withLock { $0 = id?.rawValue.uuidString }
             }
             .onChange(
                 of: store.today.map { today in
@@ -345,6 +352,8 @@ extension Reminders {
 
 extension Reminders.Feature {
     public static let searchPause: Duration = .milliseconds(250)
+    public static let filterKey = "remindersFilter"
+    public static let editingKey = "remindersEditing"
     public static let grace: Duration = .seconds(5)
     public static let paging: (step: Int, margin: Int) = (300, 60)
 
@@ -402,7 +411,6 @@ extension Reminders.Feature {
             try await attempt(editing: previous?.session) {
                 try commit(previous)
                 let placement = try reminders.editor.client.start(list, nil, now)
-                try session.setEditing(placement?.reminder.id)
                 try store.modify {
                     $0.endEditing(previous?.session)
                     if let placement { $0.editing = Reminder.Editing(placement, session: uuid()) }
@@ -416,7 +424,6 @@ extension Reminders.Feature {
         store.addTask {
             try await attempt(editing: editing.session) {
                 try commit(editing)
-                try session.setEditing(nil)
                 try store.modify { $0.endEditing(editing.session) }
             }
         }
@@ -429,12 +436,10 @@ extension Reminders.Feature {
             try await attempt(editing: editing.session) {
                 try commit(editing)
                 guard let anchor = try reminders.editor.client.reminder(editing.id) else {
-                    try session.setEditing(nil)
                     try store.modify { $0.endEditing(editing.session) }
                     return
                 }
                 let started = try reminders.editor.client.start(anchor.reminder.list, anchor, now)
-                try session.setEditing(started?.reminder.id)
                 let next = started.map { started in
                     var place = anchor.reminder
                     place.id = started.reminder.id

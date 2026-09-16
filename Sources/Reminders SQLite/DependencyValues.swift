@@ -39,7 +39,6 @@ extension DependencyValues {
         }
         defaultDatabase = database
         reminders = .sqlite(database)
-        remindersSession = .sqlite(database)
     }
 }
 

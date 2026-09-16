@@ -2,7 +2,6 @@ import Foundation
 import Models
 import Reminder
 import Reminders
-import Reminders_Session
 import Reminders_SQL
 import Testing
 import Tagged
@@ -70,7 +69,6 @@ import Tagged
         #expect(page.rows.map(\.id) == [record.id] && page.total == 0)
         let stored = Reminders.Preference.Record(Reminders.Preference(ordering: .title, showCompleted: true), for: .today)
         #expect(stored.key == Reminders.Filter.Key(.today) && Reminders.Preference(stored) == Reminders.Preference(ordering: .title, showCompleted: true))
-        #expect(Reminders.Session.Record().filter == nil && Reminders.Session.Record(filter: Reminders.Filter.Key(.today), editing: record.id).editing == record.id)
     }
 
     @Test func `filters round-trip through their keys`() {
