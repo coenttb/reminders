@@ -30,12 +30,17 @@ extension Reminder.Search.Results {
                     .fetchAll(db)
                     .map(\.tag)
             }
-            results.completedCount = try Reminder.Record.where { $0.isDone && $0.matches(search) }.fetchCount(db)
-            let shown = Reminder.Record
+            // One pass counts the matches and the completed among them; the text rule is a Swift
+            // function run for every row, so each pass over the table is what the search costs.
+            let (matched, completed) = try Reminder.Record
+                .where { $0.matches(search) }
+                .select { ($0.id.count(), $0.isDone.cast(as: Int.self).sum() ?? 0) }
+                .fetchOne(db) ?? (0, 0)
+            results.completedCount = completed
+            results.total = search.showCompleted ? matched : matched - completed
+            let rows = try Reminder.Record
                 .where { $0.matches(search) }
                 .where { if !search.showCompleted { !$0.isDone } }
-            results.total = try shown.fetchCount(db)
-            let rows = try shown
                 .join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
                 .order { reminders, lists in
                     (lists.position, reminders.isDone, reminders.ordered(by: .dueDate, showCompleted: false))

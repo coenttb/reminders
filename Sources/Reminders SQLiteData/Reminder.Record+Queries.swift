@@ -46,10 +46,15 @@ extension Reminder.Record.TableColumns {
     }
 
     /// Whether the title, notes, or a tag contains the text, case-insensitively as Swift compares.
+    /// The tags that contain the text are found once, from the tags table, and the reminder's
+    /// links are then looked up in their index: a link-by-link comparison ran the Swift function
+    /// for every link of every reminder (RESEARCH.md, device measurement).
     fileprivate func matches(_ text: String) -> some QueryExpression<Bool> {
         $localizedCaseInsensitiveContains(title, text)
             || $localizedCaseInsensitiveContains(notes, text)
-            || Reminder.Tagging.where { $0.reminderID.eq(id) && $localizedCaseInsensitiveContains($0.tagID.text, text) }.exists()
+            || Reminder.Tagging
+                .where { $0.reminderID.eq(id) && $0.tagID.text.in(Tag<Reminder>.Record.where { $localizedCaseInsensitiveContains($0.title, text) }.select(\.title)) }
+                .exists()
     }
 
     /// Whether the reminder carries the tag.

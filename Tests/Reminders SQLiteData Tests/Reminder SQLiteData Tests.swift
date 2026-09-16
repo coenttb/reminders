@@ -523,6 +523,17 @@ import Tagged
         #expect(try stored(sample.reminders[0].id, database)?.tags == ["Someday", "optional", "adulting"])
     }
 
+    @Test func `a search matches the tags once and looks each reminder's links up in their index`() throws {
+        let (database, _) = try makeDatabase()
+        let steps = try plan(Reminder.Record.where { $0.matches(Reminder.Search(text: "day")) }.select(\.id), database)
+        // The tags that contain the text are one list (a LIST SUBQUERY), not a correlated scan per reminder.
+        #expect(steps.contains { $0.contains("LIST SUBQUERY") }, "\(steps)")
+        #expect(steps.contains { $0.hasPrefix("SCAN tags") }, "\(steps)")
+        #expect(!steps.contains { $0.contains("CORRELATED") && $0.contains("tags") }, "\(steps)")
+        // Matching by tag still finds the reminders that carry a matching tag, in any case.
+        #expect(try results(Reminder.Search(text: "SOMEDAY", showCompleted: true), database).reminders.map(\.title) == ["Haircut", "Groceries"])
+    }
+
     @Test func `Today and the pending set are read through indexes, not a scan of every reminder`() throws {
         let (database, _) = try makeDatabase()
         let today = try plan(Reminder.Record.where { $0.isDue(during: self.today) }.rows(), database)
