@@ -11,9 +11,15 @@ extension Tag where Element == Reminder {
 
         public var id: Tag<Reminder>.ID { Tag<Reminder>.ID(title) }
 
-        public init(_ tag: Tag<Reminder>) {
-            title = tag.title
+        init(title: String) {
+            self.title = title
         }
+    }
+}
+
+extension Tag<Reminder>.Record {
+    public init(_ tag: Tag<Reminder>) {
+        self.init(title: tag.title)
     }
 }
 
@@ -21,8 +27,4 @@ extension Tag<Reminder> {
     public init(_ record: Tag<Reminder>.Record) {
         self.init(title: record.title)
     }
-}
-
-extension Tag<Reminder>.Record {
-    public var tag: Tag<Reminder> { Tag(self) }
 }

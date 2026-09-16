@@ -11,11 +11,16 @@ extension Reminder.Record {
         public let reminder: Reminder.Record
         public let tags: String?
         public let color: Color.Hex
-
-        public var value: Reminder { reminder.reminder(tags: Reminder.Record.tags(from: tags)) }
-        public var listColor: Color { color.color }
     }
+}
 
+extension Reminder {
+    public init(_ row: Reminder.Record.Row) {
+        self.init(row.reminder, tags: Reminder.Record.tags(from: row.tags))
+    }
+}
+
+extension Reminder.Record {
     public static var rows: Select<Row, Reminder.Record, List<Reminder>.Record> {
         Reminder.Record.all.rows()
     }

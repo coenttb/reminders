@@ -10,27 +10,31 @@ extension Reminder.Session {
         public var filter: Reminder.Filter.Key?
         public var editing: Reminder.ID?
 
-        public init(id: Int = 1, _ session: Reminder.Session) {
+        init(id: Int = 1, filter: Reminder.Filter.Key? = nil, editing: Reminder.ID? = nil) {
             self.id = id
-            filter = session.filter?.key
-            editing = session.editing
+            self.filter = filter
+            self.editing = editing
         }
+    }
+}
+
+extension Reminder.Session.Record {
+    public init(id: Int = 1, _ session: Reminder.Session) {
+        self.init(id: id, filter: session.filter.map(Reminder.Filter.Key.init), editing: session.editing)
     }
 }
 
 extension Reminder.Session {
     public init(_ record: Reminder.Session.Record) {
-        self.init(filter: record.filter?.filter, editing: record.editing)
+        self.init(filter: record.filter.flatMap(Reminder.Filter.init(key:)), editing: record.editing)
     }
 }
 
 extension Reminder.Session.Record {
-    public var session: Reminder.Session { Reminder.Session(self) }
-
     public static var state: Where<Reminder.Session.Record> { Reminder.Session.Record.find(1) }
 
     public static func set(filter: Reminder.Filter?) -> UpdateOf<Reminder.Session.Record> {
-        Reminder.Session.Record.find(1).update { $0.filter = filter?.key }
+        Reminder.Session.Record.find(1).update { $0.filter = filter.map(Reminder.Filter.Key.init) }
     }
 
     public static func set(editing: Reminder.ID?) -> UpdateOf<Reminder.Session.Record> {

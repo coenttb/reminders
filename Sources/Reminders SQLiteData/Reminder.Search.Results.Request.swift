@@ -24,7 +24,7 @@ extension Reminder.Search.Results {
                     .where { $hasCaseInsensitivePrefix($0.title, prefix) && !$0.title.in(taken) }
                     .order { $0.title.collate($localizedCaseInsensitive) }
                     .fetchAll(db)
-                    .map(\.tag)
+                    .map(Tag<Reminder>.init)
             }
             let (matched, completed) = try Reminder.Record
                 .where { $0.matches(search) }
@@ -44,9 +44,9 @@ extension Reminder.Search.Results {
                 .fetchAll(db)
             for row in rows {
                 if results.sections.last?.list.id == row.list.id {
-                    results.sections[results.sections.count - 1].reminders.append(row.value)
+                    results.sections[results.sections.count - 1].reminders.append(Reminder(row))
                 } else {
-                    results.sections.append(Reminder.Search.Results.Section(list: row.list.list, reminders: [row.value]))
+                    results.sections.append(Reminder.Search.Results.Section(list: List(row.list), reminders: [Reminder(row)]))
                 }
             }
             return results
@@ -57,8 +57,12 @@ extension Reminder.Search.Results {
             let reminder: Reminder.Record
             let tags: String?
             let list: List<Reminder>.Record
-
-            var value: Reminder { reminder.reminder(tags: Reminder.Record.tags(from: tags)) }
         }
+    }
+}
+
+extension Reminder {
+    fileprivate init(_ match: Reminder.Search.Results.Request.Match) {
+        self.init(match.reminder, tags: Reminder.Record.tags(from: match.tags))
     }
 }

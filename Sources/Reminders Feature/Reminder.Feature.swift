@@ -204,7 +204,7 @@ extension Reminder {
                         try await attempt {
                             let completion = try write { db in
                                 try Reminder.Record.toggle(id).execute(db)
-                                return try Reminder.Record.find(id).rows().fetchOne(db)?.value.completion
+                                return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)?.completion
                             }
                             try store.modify {
                                 if let completion, $0.editing?.id == id {
@@ -232,7 +232,7 @@ extension Reminder {
                             let reminder = try write { db in
                                 try commit(editing, in: db)
                                 try Reminder.Session.Record.set(editing: nil).execute(db)
-                                return try Reminder.Record.find(id).rows().fetchOne(db)?.value
+                                return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)
                             }
                             try store.modify {
                                 $0.endEditing(editing?.session)
@@ -247,7 +247,7 @@ extension Reminder {
                         try await attempt(editing: editing?.session) {
                             let reminder = try write { db in
                                 try commit(editing, in: db)
-                                guard let reminder = try Reminder.Record.find(id).rows().fetchOne(db)?.value else {
+                                guard let reminder = try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init) else {
                                     try Reminder.Session.Record.set(editing: nil).execute(db)
                                     return Reminder?.none
                                 }
@@ -340,8 +340,8 @@ extension Reminder {
                 do {
                     let (stored, reminder) = try write { db in
                         try sample.initialize(in: db)
-                        let stored = try Reminder.Session.Record.state.fetchOne(db)?.session
-                        let reminder = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db)?.value }
+                        let stored = try Reminder.Session.Record.state.fetchOne(db).map(Reminder.Session.init)
+                        let reminder = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db).map(Reminder.init) }
                         return (stored, reminder)
                     }
                     if let filter = stored?.filter { state.filter = filter }
@@ -448,7 +448,7 @@ extension Reminder.Feature {
                     try Reminder.Record.insert { Reminder.Record(Reminder(id: id, list: list, created: now)) }.execute(db)
                     try Reminder.Record.placeLast(id).execute(db)
                     try Reminder.Session.Record.set(editing: id).execute(db)
-                    return try Reminder.Record.find(id).rows().fetchOne(db)?.value
+                    return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)
                 }
                 try store.modify {
                     $0.endEditing(previous?.session)
@@ -479,7 +479,7 @@ extension Reminder.Feature {
             try await attempt(editing: editing.session) {
                 let next = try write { db in
                     try commit(editing, in: db)
-                    guard let anchor = try Reminder.Record.find(editing.id).rows().fetchOne(db)?.value else {
+                    guard let anchor = try Reminder.Record.find(editing.id).rows().fetchOne(db).map(Reminder.init) else {
                         try Reminder.Session.Record.set(editing: nil).execute(db)
                         return Reminder.Editing?.none
                     }

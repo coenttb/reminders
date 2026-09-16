@@ -30,13 +30,13 @@ extension Reminder.Overview {
                     .leftJoin(Reminder.Record.all) { $0.id.eq($1.listID) }
                     .select { Entry.Columns(list: $0, count: $1.id.count(filter: $1.status.eq(Reminder.Record.incomplete))) }
                     .fetchAll(db)
-                    .map { List<Reminder>.Entry(list: $0.list.list, count: $0.count) },
+                    .map { List<Reminder>.Entry(list: List($0.list), count: $0.count) },
                 counts: Reminder.Filter.Counts(all: counts?.all ?? 0, flagged: counts?.flagged ?? 0, scheduled: counts?.scheduled ?? 0, today: counts?.today ?? 0),
                 usedTags: try Tag<Reminder>.Record
                     .where { $0.title.in(Reminder.Tagging.select { $0.tagID.text }) }
                     .order { $0.title.collate($localizedCaseInsensitive) }
                     .fetchAll(db)
-                    .map(\.tag),
+                    .map(Tag<Reminder>.init),
                 rankedTags: try Tag<Reminder>.Record
                     .order { tag in
                         (
@@ -45,7 +45,7 @@ extension Reminder.Overview {
                         )
                     }
                     .fetchAll(db)
-                    .map(\.tag)
+                    .map(Tag<Reminder>.init)
             )
         }
 

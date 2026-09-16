@@ -34,7 +34,7 @@ import Tagged
     }
 
     func stored(_ id: Reminder.ID, _ database: some DatabaseWriter) throws -> Reminder? {
-        try database.read { db in try Reminder.Record.find(id).rows().fetchOne(db)?.value }
+        try database.read { db in try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init) }
     }
 
     func count(_ database: some DatabaseWriter) throws -> Int {
@@ -448,9 +448,9 @@ import Tagged
             try #sql("INSERT INTO remindersTags (reminderID, tagID) VALUES (\(bad), 'car')").execute(db)
         }
         try Reminder.Schema.migrate(old)
-        let repaired = try old.read { db in try Reminder.Record.find(bad).rows().fetchOne(db)?.value }
+        let repaired = try old.read { db in try Reminder.Record.find(bad).rows().fetchOne(db).map(Reminder.init) }
         #expect(repaired?.due == nil && repaired?.completion == .incomplete && repaired?.priority == nil && repaired?.tags == ["car"])
-        let kept = try old.read { db in try Reminder.Record.find(good).rows().fetchOne(db)?.value }
+        let kept = try old.read { db in try Reminder.Record.find(good).rows().fetchOne(db).map(Reminder.init) }
         #expect(kept?.completed == true && kept?.priority == .high && kept?.due != nil)
         #expect(try old.read { db in try Reminder.Completion.Pending.Request().fetch(db) } == [good])
         try old.write { db in try List<Reminder>.Record.find(list).delete().execute(db) }
@@ -460,13 +460,12 @@ import Tagged
     @Test func `filters round-trip through their keys and colors through their hex`() {
         let id = List<Reminder>.ID(UUID())
         for filter in [Reminder.Filter.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b, c"]), .today] {
-            #expect(Reminder.Filter(key: filter.key) == filter)
-            #expect(filter.key.filter == filter)
+            #expect(Reminder.Filter(key: Reminder.Filter.Key(filter)) == filter)
         }
-        #expect(Reminder.Filter.tags(["b", "a"]).key == Reminder.Filter.tags(["a", "b"]).key)
-        #expect(Reminder.Filter.list(id).key.rawValue == "list_\(id.rawValue.uuidString)")
+        #expect(Reminder.Filter.Key(.tags(["b", "a"])) == Reminder.Filter.Key(.tags(["a", "b"])))
+        #expect(Reminder.Filter.Key(.list(id)).rawValue == "list_\(id.rawValue.uuidString)")
         #expect(Reminder.Filter(key: Reminder.Filter.Key(rawValue: "list_not-a-uuid")) == nil)
-        #expect(Color.Hex(rawValue: 0x4a99ef).color == .default && Color.Hex(.default).rawValue == 0x4a99ef)
+        #expect(Color(Color.Hex(rawValue: 0x4a99ef)) == .default && Color.Hex(.default).rawValue == 0x4a99ef)
         #expect(Color.Hex(Color(red: 2, green: -1, blue: 0.5)).rawValue == 0xff0080)
     }
 

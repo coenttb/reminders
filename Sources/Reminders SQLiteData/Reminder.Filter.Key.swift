@@ -29,13 +29,9 @@ extension Reminder.Filter.Key {
         case let .tags(tags): "tags_" + tags.sorted().map(\.rawValue).joined(separator: Self.separator)
         }
     }
-
-    public var filter: Reminder.Filter? { Reminder.Filter(key: self) }
 }
 
 extension Reminder.Filter {
-    public var key: Key { Key(self) }
-
     public init?(key: Key) {
         switch key.rawValue {
         case "all": self = .all

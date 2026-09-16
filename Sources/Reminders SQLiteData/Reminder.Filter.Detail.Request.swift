@@ -21,10 +21,10 @@ extension Reminder.Filter.Detail {
 
         public func fetch(_ db: Database) throws -> Reminder.Filter.Detail? {
             guard let filter else { return nil }
-            let preference = try Reminder.Filter.Preference.Record.preference(for: filter).fetchOne(db)?.preference ?? filter.defaultPreference
+            let preference = try Reminder.Filter.Preference.Record.preference(for: filter).fetchOne(db).map(Reminder.Filter.Preference.init) ?? filter.defaultPreference
             var list: List<Reminder>?
             if case let .list(id) = filter {
-                list = try List<Reminder>.Record.find(id).fetchOne(db)?.list
+                list = try List<Reminder>.Record.find(id).fetchOne(db).map(List<Reminder>.init)
             }
             let shown = Reminder.Record
                 .where { $0.belongs(to: filter, today: today) }
@@ -40,7 +40,7 @@ extension Reminder.Filter.Detail {
                 filter: filter,
                 color: list?.color,
                 preference: preference,
-                rows: rows.map { Reminder.Filter.Detail.Row(reminder: $0.value, color: $0.listColor) },
+                rows: rows.map { Reminder.Filter.Detail.Row(reminder: Reminder($0), color: Color($0.color)) },
                 total: total,
                 completedCount: completedCount
             )

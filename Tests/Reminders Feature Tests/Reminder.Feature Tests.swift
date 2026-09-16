@@ -50,7 +50,7 @@ struct `Reminder feature` {
     }
 
     func stored(_ id: Reminder.ID) async throws -> Reminder? {
-        try await database.read { db in try Reminder.Record.find(id).rows().fetchOne(db)?.value }
+        try await database.read { db in try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init) }
     }
 
     func block(_ event: String, on table: String, reason: String) async throws {
@@ -114,9 +114,9 @@ struct `Reminder feature` {
         #expect(saved?.tags == ["garden", "adulting"])
         let adulting = try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).count { $0.title.lowercased() == "adulting" } }
         #expect(adulting == 1)
-        let restored = try await database.read { db in try Reminder.Session.Record.state.fetchOne(db)?.session }
+        let restored = try await database.read { db in try Reminder.Session.Record.state.fetchOne(db).map(Reminder.Session.init) }
         #expect(restored?.filter == .list(personal))
-        let preference = try await database.read { [personal] db in try Reminder.Filter.Preference.Record.preference(for: .list(personal)).fetchOne(db)?.preference }
+        let preference = try await database.read { [personal] db in try Reminder.Filter.Preference.Record.preference(for: .list(personal)).fetchOne(db).map(Reminder.Filter.Preference.init) }
         #expect(preference == Reminder.Filter.Preference(ordering: .title, showCompleted: true))
     }
 

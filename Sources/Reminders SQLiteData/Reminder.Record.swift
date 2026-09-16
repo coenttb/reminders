@@ -21,20 +21,34 @@ extension Reminder {
         public var repeats = "never"
         public var created: Date
 
-        public init(_ reminder: Reminder) {
-            id = reminder.id
-            listID = reminder.list
-            title = reminder.title
-            notes = reminder.notes
-            due = reminder.due?.date
-            hasTime = reminder.due?.hasTime ?? false
-            flagged = reminder.flagged
-            priority = reminder.priority?.rawValue
-            status = Self.status(reminder.completion)
-            position = reminder.position
-            location = reminder.location?.rawValue
-            repeats = reminder.repeats.rawValue
-            created = reminder.created
+        init(
+            id: Reminder.ID,
+            listID: List<Reminder>.ID,
+            title: String = "",
+            notes: String = "",
+            due: Date? = nil,
+            hasTime: Bool = false,
+            flagged: Bool = false,
+            priority: Int? = nil,
+            status: Int = 0,
+            position: Int = 0,
+            location: String? = nil,
+            repeats: String = "never",
+            created: Date
+        ) {
+            self.id = id
+            self.listID = listID
+            self.title = title
+            self.notes = notes
+            self.due = due
+            self.hasTime = hasTime
+            self.flagged = flagged
+            self.priority = priority
+            self.status = status
+            self.position = position
+            self.location = location
+            self.repeats = repeats
+            self.created = created
         }
     }
 
@@ -51,6 +65,26 @@ extension Reminder {
 }
 
 extension Reminder.Record {
+    public init(_ reminder: Reminder) {
+        self.init(
+            id: reminder.id,
+            listID: reminder.list,
+            title: reminder.title,
+            notes: reminder.notes,
+            due: reminder.due?.date,
+            hasTime: reminder.due?.hasTime ?? false,
+            flagged: reminder.flagged,
+            priority: reminder.priority?.rawValue,
+            status: Self.status(reminder.completion),
+            position: reminder.position,
+            location: reminder.location?.rawValue,
+            repeats: reminder.repeats.rawValue,
+            created: reminder.created
+        )
+    }
+}
+
+extension Reminder.Record {
     static let incomplete = 0
     static let completed = 1
     static let pending = 2
@@ -62,8 +96,6 @@ extension Reminder.Record {
     static func completion(_ status: Int) -> Reminder.Completion {
         status == incomplete ? .incomplete : .completed
     }
-
-    public func reminder(tags: Set<Tag<Reminder>.ID>) -> Reminder { Reminder(self, tags: tags) }
 }
 
 extension Reminder {
