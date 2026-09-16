@@ -1,6 +1,6 @@
 public import Dependencies
 import Organizing
-import Reminders
+public import Reminders
 public import Reminders_Sample
 import Reminders_SQL
 import SQLiteData

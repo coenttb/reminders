@@ -9,15 +9,15 @@ extension Reminders.Reminder {
     public struct Record: Identifiable, Hashable, Sendable {
         public let id: Reminder.ID
         public var listID: List<Reminder>.ID
-        public var title = ""
-        public var notes = ""
+        public var title: String = ""
+        public var notes: String = ""
         @Column("due")
         public var dueDate: Date?
-        public var hasTime = false
-        public var flagged = false
+        public var hasTime: Bool = false
+        public var flagged: Bool = false
         public var priority: Reminder.Priority?
         public var status: Status = .incomplete
-        public var position = 0
+        public var position: Int = 0
         public var location: Reminder.Location?
         public var repeats: Reminder.Repeat = .never
         public var created: Date
@@ -60,12 +60,12 @@ extension Reminders.Reminder.Record.Draft: Hashable, Sendable {}
 extension Reminders.Reminder.Record {
     public static func toggle(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
         Reminder.Record.find(id).update {
-            $0.status = Case($0.status).when(.incomplete, then: .pending).else(.incomplete)
+            $0.status = Case($0.status).when(Status.incomplete, then: Status.pending).else(Status.incomplete)
         }
     }
 
     public static var completePending: UpdateOf<Reminder.Record> {
-        Reminder.Record.where { $0.isPending }.update { $0.status = .completed }
+        Reminder.Record.where { $0.isPending }.update { $0.status = #bind(Status.completed) }
     }
 
     public static func placeLast(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {

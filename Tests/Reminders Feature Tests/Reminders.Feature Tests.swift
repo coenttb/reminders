@@ -463,7 +463,7 @@ struct `Reminder feature` {
         committed.reminder.title = "Groceries and more"
         await store.send(.reminderDetailsButtonTapped(groceries.id)) {
             $0.editing = nil
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(committed.reminder), tags: Set(committed.tags.map(Tag<Reminder>.ID.init)), original: committed)))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(committed.reminder), tags: Set(committed.tags.map { Tag<Reminder>.ID($0) }), original: committed)))
         }?.value
         await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
         let (haircut, doctor) = (sample.reminders[1], sample.reminders[2])
@@ -526,7 +526,7 @@ struct `Reminder feature` {
         #expect(try await database.read { db in try List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Home")
         let groceriesRow = try await row(groceries.id)
         await store.send(.reminderDetailsButtonTapped(groceries.id)) {
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(groceriesRow.reminder), tags: Set(groceriesRow.tags.map(Tag<Reminder>.ID.init)), original: groceriesRow)))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(groceriesRow.reminder), tags: Set(groceriesRow.tags.map { Tag<Reminder>.ID($0) }), original: groceriesRow)))
         }?.value
         await store.send(.destination(.reminder(.tagRenamed("someday", "later")))) {
             if case var .reminder(form) = $0.destination {
@@ -636,7 +636,7 @@ struct `Reminder feature` {
         let trash = sample.reminders[7]
         let trashRow = try await row(trash.id)
         await store.send(.reminderDetailsButtonTapped(trash.id)) {
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(trashRow.reminder), tags: Set(trashRow.tags.map(Tag<Reminder>.ID.init)), original: trashRow)))
+            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(trashRow.reminder), tags: Set(trashRow.tags.map { Tag<Reminder>.ID($0) }), original: trashRow)))
         }?.value
         try await database.write { db in try Reminder.Record.find(trash.id).delete().execute(db) }
         await store.send(.destination(.reminder(.saveButtonTapped))) {

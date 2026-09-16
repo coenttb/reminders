@@ -1,4 +1,4 @@
 public import Reminders
 public import StructuredQueries
 
-extension Reminders.Filter.Key: @retroactive QueryBindable {}
+extension Reminders.Filter.Key: QueryBindable {}

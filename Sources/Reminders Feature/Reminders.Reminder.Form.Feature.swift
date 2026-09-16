@@ -8,6 +8,7 @@ import Reminders_SQLite
 public import SQLiteData
 import Standard_Library_Extensions
 public import Tagged
+public import Foundation
 
 extension Reminders.Reminder.Form {
     @ComposableArchitecture2.Feature public struct Feature {
@@ -29,7 +30,7 @@ extension Reminders.Reminder.Form {
             public var isNew: Bool { original == nil }
 
             public var isDirty: Bool {
-                original.map { draft != Reminder.Record.Draft($0.reminder) || tags != Set($0.tags.map(Tag<Reminder>.ID.init)) } ?? true
+                original.map { draft != Reminder.Record.Draft($0.reminder) || tags != Set($0.tags.map { Tag<Reminder>.ID($0) }) } ?? true
             }
 
             public mutating func fail(_ reason: String) {

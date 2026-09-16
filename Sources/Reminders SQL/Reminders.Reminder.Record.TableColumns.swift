@@ -6,15 +6,15 @@ public import Tagged
 
 extension Reminders.Reminder.Record.TableColumns {
     public var isCompleted: some QueryExpression<Bool> {
-        status.neq(.incomplete)
+        status.neq(Reminder.Record.Status.incomplete)
     }
 
     public var isPending: some QueryExpression<Bool> {
-        status.eq(.pending)
+        status.eq(Reminder.Record.Status.pending)
     }
 
     public var isDone: some QueryExpression<Bool> {
-        status.eq(.completed)
+        status.eq(Reminder.Record.Status.completed)
     }
 
     public var isScheduled: some QueryExpression<Bool> {

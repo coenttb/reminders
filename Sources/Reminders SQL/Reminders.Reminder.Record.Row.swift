@@ -8,5 +8,10 @@ extension Reminders.Reminder.Record {
         public let reminder: Reminder.Record
         @Column(as: [String].JSONRepresentation.self)
         public let tags: [String]
+
+        public init(reminder: Reminder.Record, tags: [String]) {
+            self.reminder = reminder
+            self.tags = tags
+        }
     }
 }

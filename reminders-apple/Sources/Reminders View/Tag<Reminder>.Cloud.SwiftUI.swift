@@ -19,7 +19,7 @@ extension Tag<Reminder>.Cloud {
 
 extension Tag<Reminder>.Cloud.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
-        Flow(spacing: 8) {
+        Tag<Reminder>.Cloud.Flow(spacing: 8) {
             Button { cloud.actions.open(tags.map(\.id)) } label: { Tag<Reminder>.Pill(title: "All Tags") }
             ForEach(tags) { tag in
                 Button { cloud.actions.open([tag.id]) } label: { Tag<Reminder>.Pill(title: Tag<Reminder>.hashtag(tag.id)) }

@@ -5,10 +5,17 @@ extension Reminders.Reminder.Record {
     /// How many open reminders each smart filter holds.
     @Selection
     public struct Counts: Hashable, Sendable {
-        public var all = 0
-        public var flagged = 0
-        public var scheduled = 0
-        public var today = 0
+        public var all: Int
+        public var flagged: Int
+        public var scheduled: Int
+        public var today: Int
+
+        public init(all: Int = 0, flagged: Int = 0, scheduled: Int = 0, today: Int = 0) {
+            self.all = all
+            self.flagged = flagged
+            self.scheduled = scheduled
+            self.today = today
+        }
     }
 }
 

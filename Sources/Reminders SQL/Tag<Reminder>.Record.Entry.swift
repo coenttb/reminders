@@ -8,5 +8,10 @@ extension Tag<Reminder>.Record {
     public struct Entry: Hashable, Sendable {
         public let tag: Tag<Reminder>.Record
         public let count: Int
+
+        public init(tag: Tag<Reminder>.Record, count: Int) {
+            self.tag = tag
+            self.count = count
+        }
     }
 }

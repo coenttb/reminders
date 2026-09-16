@@ -53,23 +53,8 @@ extension Organizing.List<Reminder>.Form.SwiftUI: SwiftUI::View {
             .listSectionMargins(.top, 6)
             Section {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 14) {
-                    ForEach(Self.palette, id: \.color) { name, hex in
-                        Button {
-                            draft.color = hex
-                        } label: {
-                            Circle()
-                                .fill(SwiftUI::Color(Organizing.Color(hex)))
-                                .frame(width: 40, height: 40)
-                                .overlay {
-                                    if hex == draft.color {
-                                        Circle().strokeBorder(SwiftUI::Color(.systemGray3), lineWidth: 3).padding(-6)
-                                    }
-                                }
-                                .contentShape(.circle)
-                        }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel(name)
-                        .accessibilityAddTraits(hex == draft.color ? .isSelected : [])
+                    ForEach(Self.palette, id: \.color) { entry in
+                        swatch(entry.name, entry.color, selected: entry.color == draft.color)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -99,5 +84,24 @@ extension Organizing.List<Reminder>.Form.SwiftUI: SwiftUI::View {
 
     public var discardTitle: String {
         form.isNew ? "Are you sure you want to discard this new list?" : "Are you sure you want to discard your changes?"
+    }
+
+    private func swatch(_ name: String, _ hex: Organizing.Color.Hex, selected: Bool) -> some SwiftUI::View {
+        Button {
+            draft.color = hex
+        } label: {
+            Circle()
+                .fill(SwiftUI::Color(Organizing.Color(hex)))
+                .frame(width: 40, height: 40)
+                .overlay {
+                    if selected {
+                        Circle().strokeBorder(SwiftUI::Color(.systemGray3), lineWidth: 3).padding(-6)
+                    }
+                }
+                .contentShape(.circle)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

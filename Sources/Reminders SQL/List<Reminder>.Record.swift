@@ -7,9 +7,9 @@ extension List<Reminder> {
     @Table("lists")
     public struct Record: Identifiable, Hashable, Sendable {
         public let id: List<Reminder>.ID
-        public var title = ""
-        public var color = Color.Hex(Color.default)
-        public var position = 0
+        public var title: String = ""
+        public var color: Color.Hex = Color.Hex(Color.default)
+        public var position: Int = 0
 
         public init(id: List<Reminder>.ID, title: String = "", color: Color.Hex = Color.Hex(Color.default), position: Int = 0) {
             self.id = id

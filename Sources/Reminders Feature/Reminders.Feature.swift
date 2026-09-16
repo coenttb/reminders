@@ -2,6 +2,7 @@ public import ComposableArchitecture2
 public import Dependencies
 public import Foundation
 import FoundationEssentials_Extensions
+import Standard_Library_Extensions
 public import Organizing
 public import Reminders
 public import Reminders_Interface
@@ -194,7 +195,7 @@ extension Reminders {
                             try store.modify {
                                 $0.endEditing(editing?.session)
                                 if let row {
-                                    $0.destination = .reminder(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(row.reminder), tags: Set(row.tags.map(Tag<Reminder>.ID.init)), original: row))
+                                    $0.destination = .reminder(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(row.reminder), tags: Set(row.tags.map { Tag<Reminder>.ID($0) }), original: row))
                                 }
                             }
                         }
@@ -379,6 +380,31 @@ extension Reminders.Feature {
     public static let searchPause: Duration = .milliseconds(250)
 
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
+
+    /// Runs a task and lands its failure on the screen.
+    private func attempt(_ body: () async throws -> Void) async throws {
+        do {
+            try await body()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+//            try store.modify { $0.failure = error.localizedDescription }
+        }
+    }
+
+    /// Runs a task and lands its failure on the screen and on the row being edited in `session`.
+    private func attempt(editing session: UUID?, _ body: () async throws -> Void) async throws {
+        do {
+            try await body()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            try store.modify {
+                $0.failure = error.localizedDescription
+                if let session, $0.editing?.session == session { $0.editing?.failure = error.localizedDescription }
+            }
+        }
+    }
 
     private func perform(_ body: @escaping (Database) throws -> Void) {
         store.addTask {
