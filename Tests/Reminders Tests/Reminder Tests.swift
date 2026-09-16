@@ -109,6 +109,8 @@ import Tagged
         #expect(sorted(.dueDate) == ["Apple", "cherry", "banana"])
         #expect(sorted(.priority) == ["Apple", "cherry", "banana"])
         #expect(sorted(.title) == ["Apple", "banana", "cherry"])
+        (a.created, b.created, c.created) = (now, now.addingTimeInterval(-.day), now)
+        #expect(sorted(.creationDate) == ["Apple", "banana", "cherry"])
         var d = a
         d.title = "Banana"
         d.position = -1

@@ -88,6 +88,9 @@ import Tagged
         #expect(detail.reminders.map(\.title) == ["Doctor appointment", "Haircut", "Groceries", "Buy concert tickets"])
         try database.write { db in try Reminder.Filter.Preference.Record.set(ordering: .title, for: personal).execute(db) }
         #expect(try self.detail(personal, database).reminders.map(\.title) == ["Buy concert tickets", "Doctor appointment", "Groceries", "Haircut"])
+        // Creation Date: oldest first (the sample dates Groceries 30 days back, Buy concert tickets 1).
+        try database.write { db in try Reminder.Filter.Preference.Record.set(ordering: .creationDate, for: personal).execute(db) }
+        #expect(try self.detail(personal, database).reminders.map(\.title) == ["Groceries", "Haircut", "Doctor appointment", "Buy concert tickets"])
         try database.write { db in try Reminder.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
         detail = try self.detail(personal, database)
         #expect(detail.preference.showCompleted && detail.reminders.map(\.title).last == "Take a walk")
@@ -376,6 +379,7 @@ import Tagged
         #expect(try stored(first, database)?.tags == ["Café"])
         #expect(try stored(second, database)?.tags == ["Café", "car"])
         #expect(try stored(first, database)?.title == "Bread")
+        #expect(try stored(first, database)?.created == Date(timeIntervalSince1970: 0))
         #expect(try database.read { db in try Reminder.Tagging.all.fetchCount(db) } == 3)
         // The rebuilt tables keep their constraints: a tag deleted takes its links.
         try database.write { db in try Tag<Reminder>.Record.delete("café").execute(db) }

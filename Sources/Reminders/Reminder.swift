@@ -18,6 +18,9 @@ public struct Reminder: Identifiable, Hashable, Sendable {
     public var position: Int
     public var location: Location?
     public var repeats: Repeat
+    /// When the reminder came to be; the Creation Date ordering. A value made without a clock
+    /// dates from before any record.
+    public var created: Date
 
     public init(
         id: ID,
@@ -31,7 +34,8 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         tags: Set<Tag<Reminder>.ID> = [],
         position: Int = 0,
         location: Location? = nil,
-        repeats: Repeat = .never
+        repeats: Repeat = .never,
+        created: Date = .distantPast
     ) {
         self.id = id
         self.list = list
@@ -45,6 +49,7 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         self.position = position
         self.location = location
         self.repeats = repeats
+        self.created = created
     }
 }
 

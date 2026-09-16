@@ -141,6 +141,11 @@ extension Reminder.Schema {
             try #sql(#"ALTER TABLE "reminders_new" RENAME TO "reminders""#).execute(db)
             try #sql(#"CREATE INDEX "idx_reminders_listID" ON "reminders"("listID")"#).execute(db)
         }
+        // The Creation Date ordering needs a timestamp. Rows from before the column are dated
+        // at the epoch, so among themselves they keep the manual order.
+        migrator.registerMigration("Record when a reminder was created") { db in
+            try #sql(#"ALTER TABLE "reminders" ADD COLUMN "created" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '1970-01-01 00:00:00.000' CHECK ("created" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]')"#).execute(db)
+        }
         if let target {
             try migrator.migrate(database, upTo: target)
         } else {

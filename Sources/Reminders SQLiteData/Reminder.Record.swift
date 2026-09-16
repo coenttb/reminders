@@ -24,6 +24,7 @@ extension Reminder {
         public var position = 0
         public var location: String?
         public var repeats = "never"
+        public var created: Date
 
         public init(_ reminder: Reminder) {
             id = reminder.id
@@ -38,6 +39,7 @@ extension Reminder {
             position = reminder.position
             location = reminder.location?.rawValue
             repeats = reminder.repeats.rawValue
+            created = reminder.created
         }
     }
 
@@ -82,7 +84,8 @@ extension Reminder.Record {
             tags: tags,
             position: position,
             location: location.flatMap(Reminder.Location.init(rawValue:)),
-            repeats: Reminder.Repeat(rawValue: repeats) ?? .never
+            repeats: Reminder.Repeat(rawValue: repeats) ?? .never,
+            created: created
         )
     }
 }

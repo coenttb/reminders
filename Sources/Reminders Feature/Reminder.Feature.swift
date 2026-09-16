@@ -219,7 +219,7 @@ extension Reminder {
                     if case let .list(list) = state.filter {
                         startNewReminder(in: list, &state)
                     } else if let list = state.overview.lists.first?.id {
-                        state.destination = .reminder(Reminder.Draft.Feature.State(reminder: Reminder(id: Reminder.ID(uuid()), list: list), isNew: true, session: uuid()))
+                        state.destination = .reminder(Reminder.Draft.Feature.State(reminder: Reminder(id: Reminder.ID(uuid()), list: list, created: now), isNew: true, session: uuid()))
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
@@ -495,7 +495,7 @@ extension Reminder.Feature {
             try await attempt {
                 let reminder = try write { db in
                     try commit(previous, in: db)
-                    try Reminder.Record.insert { Reminder.Record(Reminder(id: id, list: list)) }.execute(db)
+                    try Reminder.Record.insert { Reminder.Record(Reminder(id: id, list: list, created: now)) }.execute(db)
                     try Reminder.Record.placeLast(id).execute(db)
                     try Reminder.Session.Record.set(editing: id).execute(db)
                     return try Reminder.Record.find(id).rows().fetchOne(db)?.value
@@ -537,7 +537,7 @@ extension Reminder.Feature {
                         try Reminder.Session.Record.set(editing: nil).execute(db)
                         return Reminder.Editing?.none
                     }
-                    let next = Reminder(id: id, list: anchor.list, position: anchor.position + 1)
+                    let next = Reminder(id: id, list: anchor.list, position: anchor.position + 1, created: now)
                     try Reminder.Record.makeRoom(after: anchor.position).execute(db)
                     try Reminder.Record.insert { Reminder.Record(next) }.execute(db)
                     try Reminder.Session.Record.set(editing: id).execute(db)

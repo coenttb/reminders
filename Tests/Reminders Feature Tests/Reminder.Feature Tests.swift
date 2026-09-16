@@ -100,7 +100,7 @@ struct `Reminder feature` {
         try await until($pending) { $0.isEmpty }
         #expect(try await stored(groceries.id)?.completion == .completed)
         // From the home the plus opens the sheet (inside a list it edits a row in place).
-        let draft = Reminder(id: Reminder.ID(UUID(0)), list: personal)
+        let draft = Reminder(id: Reminder.ID(UUID(0)), list: personal, created: now)
         await store.send(.newReminderButtonTapped) {
             $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: draft, isNew: true, session: UUID(1))))
         }?.value
@@ -152,7 +152,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let first = Reminder.ID(UUID(0))
-        let blank = Reminder(id: first, list: personal, position: 11)
+        let blank = Reminder(id: first, list: personal, position: 11, created: now)
         await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
         // The new row is in the database at once, blank, and shown in the detail.
         #expect(try await stored(first)?.isBlank == true)
@@ -169,7 +169,7 @@ struct `Reminder feature` {
         place.title = "Milk"
         place.id = second
         place.position = blank.position + 1
-        let next = Reminder(id: second, list: personal, position: place.position)
+        let next = Reminder(id: second, list: personal, position: place.position, created: now)
         await store.send(.titleSubmitted) { $0.editing = Reminder.Editing(draft: next, saved: next, place: place, session: UUID(3)) }?.value
         try await until(store.state.$detail) { $0?.reminders.map(\.id).suffix(2) == [first, second] }
         await store.send(.doneButtonTapped) { $0.editing = nil }?.value
@@ -182,7 +182,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
-        let blank = Reminder(id: row, list: personal, position: 11)
+        let blank = Reminder(id: row, list: personal, position: 11, created: now)
         await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
         await store.modify { $0[draft: row].title = "Bread" } changes: {
             $0.editing?.draft.title = "Bread"
@@ -273,7 +273,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
-        await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(Reminder(id: row, list: personal, position: 11), session: UUID(1)) }?.value
+        await store.send(.newReminderButtonTapped) { $0.editing = Reminder.Editing(Reminder(id: row, list: personal, position: 11, created: now), session: UUID(1)) }?.value
         await store.send(.datePresetSelected(row, .tomorrow)) { [now, calendar] in
             $0.editing?.draft.set(datePreset: .tomorrow, at: now, calendar: calendar)
             let draft = $0.editing!.draft
@@ -414,7 +414,7 @@ struct `Reminder feature` {
         await store.send(.backgroundTapped)?.value
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         let row = Reminder.ID(UUID(0))
-        let blank = Reminder(id: row, list: personal, position: 11)
+        let blank = Reminder(id: row, list: personal, position: 11, created: now)
         await store.send(.backgroundTapped) { $0.editing = Reminder.Editing(blank, session: UUID(1)) }?.value
         await store.modify { $0[draft: row].title = "Bread" } changes: {
             $0.editing?.draft.title = "Bread"
@@ -591,9 +591,9 @@ struct `Reminder feature` {
         #expect(try await database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 3)
         await store.send(.destination(.list(.cancelButtonTapped))) { $0.destination = nil }?.value
         // A reminder whose list is deleted while its sheet is open cannot be saved: the draft stays.
-        let draft = Reminder(id: Reminder.ID(UUID(2)), list: personal, title: "Orphan")
+        let draft = Reminder(id: Reminder.ID(UUID(2)), list: personal, title: "Orphan", created: now)
         await store.send(.newReminderButtonTapped) {
-            $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: Reminder(id: draft.id, list: personal), isNew: true, session: UUID(3))))
+            $0.destination = .reminder(snap(Reminder.Draft.Feature.State(reminder: Reminder(id: draft.id, list: personal, created: now), isNew: true, session: UUID(3))))
         }?.value
         await store.modify {
             if case var .reminder(form) = $0.destination { form.reminder.title = "Orphan"; $0.destination = .reminder(form) }
