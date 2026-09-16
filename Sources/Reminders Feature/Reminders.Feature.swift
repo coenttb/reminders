@@ -6,9 +6,7 @@ import Standard_Library_Extensions
 public import Organizing
 public import Reminders
 public import Reminders_Interface
-#if DEBUG
 public import Reminders_Sample
-#endif
 public import Reminders_SQL
 import Reminders_SQLite
 public import SQLiteData
@@ -25,10 +23,9 @@ extension Reminders {
             public var failure: String?
             public var search = Reminders.Search()
             public var today: Range<Date>?
-            #if DEBUG
+            // The snapshot macro cannot see members under `#if DEBUG`, so these stay declared in every build.
             public var lastSeed: Reminders.Sample.Seed?
             public var isSeeding = false
-            #endif
             public var detailWindow = Window<Reminders.Filter>()
             public var resultsWindow = Window<Reminders.Search>()
 
@@ -388,7 +385,7 @@ extension Reminders.Feature {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-//            try store.modify { $0.failure = error.localizedDescription }
+            try store.modify { $0.failure = error.localizedDescription }
         }
     }
 

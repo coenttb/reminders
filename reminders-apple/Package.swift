@@ -74,6 +74,7 @@ let package = Package(
                 .product(name: "Reminders", package: "reminders"),
                 .product(name: "Reminders Interface", package: "reminders"),
                 .product(name: "Reminders Sample", package: "reminders"),
+                .product(name: "Reminders SQL", package: "reminders"),
                 .product(name: "Reminders SQLite", package: "reminders"),
                 .product(name: "Reminders Feature", package: "reminders"),
                 .product(name: "Organizing", package: "organizing"),

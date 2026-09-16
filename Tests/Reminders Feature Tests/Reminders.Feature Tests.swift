@@ -459,8 +459,9 @@ struct `Reminder feature` {
         let groceriesRow0 = try await row(groceries.id)
         await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminders.Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
         await store.modify { $0[draft: groceries.id]?.title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
-        var committed = groceriesRow0
-        committed.reminder.title = "Groceries and more"
+        var record = groceriesRow0.reminder
+        record.title = "Groceries and more"
+        let committed = Reminder.Record.Row(reminder: record, tags: groceriesRow0.tags)
         await store.send(.reminderDetailsButtonTapped(groceries.id)) {
             $0.editing = nil
             $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder.Record.Draft(committed.reminder), tags: Set(committed.tags.map { Tag<Reminder>.ID($0) }), original: committed)))

@@ -6,9 +6,9 @@ public import Tagged
 
 extension List<Reminder>.Record {
     /// Puts the default list in place when there is no list at all.
-    public static func installDefault(_ id: List<Reminder>.ID, in db: Database) throws {
+    public static func installDefault(_ id: @autoclosure () -> List<Reminder>.ID, in db: Database) throws {
         guard try List<Reminder>.Record.all.fetchCount(db) == 0 else { return }
-        try List<Reminder>.Record.insert { List<Reminder>.Record(.default(id: id)) }.execute(db)
+        try List<Reminder>.Record.insert { List<Reminder>.Record(.default(id: id())) }.execute(db)
     }
 
     public static func delete(_ id: List<Reminder>.ID, replacement: List<Reminder>.ID, in db: Database) throws {
