@@ -76,24 +76,23 @@ extension Reminders.Reminder.Record {
         Reminder.Record.where { $0.position.gt(position) }.update { $0.position += 1 }
     }
 
-    public static func changes(from original: Reminder, to draft: Reminder) -> UpdateOf<Reminder.Record>? {
-        var same = original
-        same.completion = draft.completion
-        same.tags = draft.tags
-        guard same != draft else { return nil }
-        return Reminder.Record.find(original.id).update { row in
-            if draft.list != original.list { row.listID = draft.list }
-            if draft.title != original.title { row.title = draft.title }
-            if draft.notes != original.notes { row.notes = draft.notes }
-            if draft.due != original.due {
-                row.dueDate = draft.due?.date
-                row.hasTime = draft.due?.hasTime ?? false
-            }
-            if draft.flagged != original.flagged { row.flagged = draft.flagged }
-            if draft.priority != original.priority { row.priority = draft.priority }
-            if draft.position != original.position { row.position = draft.position }
-            if draft.location != original.location { row.location = draft.location }
-            if draft.repeats != original.repeats { row.repeats = draft.repeats }
+    /// Writes the columns a form edits and never `status`, `position`, or `created`: a new draft
+    /// is inserted, an existing one's form columns are replaced.
+    public static func save(_ draft: Draft) -> InsertOf<Reminder.Record> {
+        Reminder.Record.insert {
+            draft
+        } onConflict: {
+            $0.id
+        } doUpdate: { row, excluded in
+            row.title = excluded.title
+            row.notes = excluded.notes
+            row.dueDate = excluded.dueDate
+            row.hasTime = excluded.hasTime
+            row.flagged = excluded.flagged
+            row.priority = excluded.priority
+            row.listID = excluded.listID
+            row.location = excluded.location
+            row.repeats = excluded.repeats
         }
     }
 

@@ -35,18 +35,13 @@ extension Reminders {
 
             public init() {}
 
-            public subscript(draft id: Reminder.ID) -> Reminder {
-                get {
-                    if let editing, editing.id == id { return editing.draft }
-                    return Reminder(id: id, list: overview.lists.first?.id ?? List<Reminder>.ID(Self.noList), created: .distantPast)
-                }
+            public subscript(draft id: Reminder.ID) -> Reminder.Record.Draft? {
+                get { editing?.id == id ? editing?.draft : nil }
                 set {
-                    guard editing?.id == id else { return }
+                    guard editing?.id == id, let newValue else { return }
                     editing?.draft = newValue
                 }
             }
-
-            private static let noList = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         }
 
         public enum Action {
@@ -205,14 +200,14 @@ extension Reminders {
                 case let .reminderCompleteButtonTapped(id):
                     store.addTask {
                         try await attempt {
-                            let completion = try write { db in
+                            let status = try write { db in
                                 try Reminder.Record.toggle(id).execute(db)
-                                return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)?.completion
+                                return try Reminder.Record.find(id).select(\.status).fetchOne(db)
                             }
                             try store.modify {
-                                if let completion, $0.editing?.id == id {
-                                    $0.editing?.draft.completion = completion
-                                    $0.editing?.saved.completion = completion
+                                if let status, $0.editing?.id == id {
+                                    $0.editing?.draft.status = status
+                                    $0.editing?.original.status = status
                                 }
                             }
                         }
@@ -232,14 +227,14 @@ extension Reminders {
                     let editing = state.editing
                     store.addTask {
                         try await attempt(editing: editing?.session) {
-                            let reminder = try write { db in
+                            let row = try write { db in
                                 try commit(editing, in: db)
                                 try Reminders.Restoration.set(editing: nil).execute(db)
-                                return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)
+                                return try Reminder.Record.find(id).rows().fetchOne(db)
                             }
                             try store.modify {
                                 $0.endEditing(editing?.session)
-                                if let reminder { $0.destination = .reminder(Reminder.Draft.Feature.State(reminder: reminder, isNew: false, session: uuid())) }
+                                if let row { $0.destination = .reminder(Reminder.Draft.Feature.State(reminder: Reminder(row), isNew: false, session: uuid())) }
                             }
                         }
                     }
@@ -248,18 +243,18 @@ extension Reminders {
                     let editing = state.editing
                     store.addTask {
                         try await attempt(editing: editing?.session) {
-                            let reminder = try write { db in
+                            let row = try write { db in
                                 try commit(editing, in: db)
-                                guard let reminder = try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init) else {
+                                guard let row = try Reminder.Record.find(id).rows().fetchOne(db) else {
                                     try Reminders.Restoration.set(editing: nil).execute(db)
-                                    return Reminder?.none
+                                    return Reminder.Record.Row?.none
                                 }
                                 try Reminders.Restoration.set(editing: id).execute(db)
-                                return reminder
+                                return row
                             }
                             try store.modify {
                                 $0.endEditing(editing?.session)
-                                if let reminder { $0.editing = Reminders.Reminder.Editing(reminder, session: uuid()) }
+                                if let row { $0.editing = Reminders.Reminder.Editing(row, session: uuid()) }
                             }
                         }
                     }
@@ -341,14 +336,14 @@ extension Reminders {
                 state.today = calendar.day(containing: now)
                 let sample = Reminders.sample(at: now)
                 do {
-                    let (stored, reminder) = try write { db in
+                    let (stored, row) = try write { db in
                         try sample.initialize(in: db)
                         let stored = try Reminders.Restoration.current.fetchOne(db)
-                        let reminder = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db).map(Reminder.init) }
-                        return (stored, reminder)
+                        let row = try stored?.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db) }
+                        return (stored, row)
                     }
                     if let filter = stored?.filter.flatMap(Reminders.Filter.init(key:)) { state.filter = filter }
-                    if let reminder { state.editing = Reminders.Reminder.Editing(reminder, session: uuid()) }
+                    if let row { state.editing = Reminders.Reminder.Editing(row, session: uuid()) }
                 } catch {
                     state.failure = error.localizedDescription
                 }
@@ -366,20 +361,30 @@ extension Reminders {
                 if previous != nil { endEditing(&state) }
                 perform { db in try Reminders.Restoration.set(filter: filter).execute(db) }
             }
-            .onChange(of: DetailQuery(filter: store.filter, place: store.editing?.place, today: store.today, limit: store.filter.flatMap { store.detailWindow.limit(for: $0) }), initial: true) { _, query, state in
-                guard let today = query.today else { return }
+            .onChange(
+                of: store.today.map {
+                    Reminders.Filter.Detail.Request(
+                        filter: store.filter,
+                        today: $0,
+                        place: store.editing?.place,
+                        limit: store.filter.flatMap { store.detailWindow.limit(for: $0) }
+                    )
+                },
+                initial: true
+            ) { _, request, state in
+                guard let request else { return }
                 let detail = state.$detail
                 store.addTask {
-                    try await attempt { try await detail.load(Reminders.Filter.Detail.Request(filter: query.filter, today: today, place: query.place, limit: query.limit)) }
+                    try await attempt { try await detail.load(request) }
                 }
             }
-            .onChange(of: ResultsQuery(search: store.search, limit: store.resultsWindow.limit(for: store.search)), initial: true) { previous, query, state in
+            .onChange(of: Reminders.Search.Request(search: store.search, limit: store.resultsWindow.limit(for: store.search)), initial: true) { previous, request, state in
                 let results = state.$results
-                let (previous, search) = (previous.search, query.search)
+                let (previous, search) = (previous.search, request.search)
                 let typed = previous.text != search.text && previous.tokens == search.tokens && !search.text.isEmpty
                 store.addTask {
                     if typed { try await clock.sleep(for: Self.searchPause) }
-                    try await attempt { try await results.load(Reminders.Search.Request(search: search, limit: query.limit)) }
+                    try await attempt { try await results.load(request) }
                 }
             }
             .onChange(of: store.search.isActive) { _, active, state in
@@ -401,29 +406,6 @@ extension Reminders.Feature {
 
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
 
-    private func attempt(_ body: () async throws -> Void) async throws {
-        do {
-            try await body()
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            try store.modify { $0.failure = error.localizedDescription }
-        }
-    }
-
-    private func attempt(editing session: UUID?, _ body: () async throws -> Void) async throws {
-        do {
-            try await body()
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            try store.modify {
-                $0.failure = error.localizedDescription
-                if let session, $0.editing?.session == session { $0.editing?.failure = error.localizedDescription }
-            }
-        }
-    }
-
     private func attempt(form session: UUID, _ body: () async throws -> Void) async throws {
         do {
             try await body()
@@ -442,20 +424,18 @@ extension Reminders.Feature {
 
     private func startNewReminder(in list: List<Reminder>.ID, _ state: inout State) {
         let previous = state.editing
-        let id = Reminder.ID(uuid())
         if let filter = state.filter { state.detailWindow.open(for: filter) }
         store.addTask {
             try await attempt(editing: previous?.session) {
-                let reminder = try write { db in
+                let row = try write { db in
                     try commit(previous, in: db)
-                    try Reminder.Record.insert { Reminder.Record.Draft(Reminder(id: id, list: list, created: now)) }.execute(db)
-                    try Reminder.Record.placeLast(id).execute(db)
+                    let id = try Reminder.Record.append(Reminder.Record.Draft.create(listID: list, created: now), in: db)
                     try Reminders.Restoration.set(editing: id).execute(db)
-                    return try Reminder.Record.find(id).rows().fetchOne(db).map(Reminder.init)
+                    return try Reminder.Record.find(id).rows().fetchOne(db)
                 }
                 try store.modify {
                     $0.endEditing(previous?.session)
-                    if let reminder { $0.editing = Reminders.Reminder.Editing(reminder, session: uuid()) }
+                    if let row { $0.editing = Reminders.Reminder.Editing(row, session: uuid()) }
                 }
             }
         }
@@ -476,24 +456,23 @@ extension Reminders.Feature {
 
     private func continueEditing(_ state: inout State) {
         guard let editing = state.editing, !editing.draft.isBlank else { return endEditing(&state) }
-        let id = Reminder.ID(uuid())
         if let filter = state.filter { state.detailWindow.extend(for: filter, by: 1) }
         store.addTask {
             try await attempt(editing: editing.session) {
                 let next = try write { db in
                     try commit(editing, in: db)
-                    guard let anchor = try Reminder.Record.find(editing.id).rows().fetchOne(db).map(Reminder.init) else {
+                    guard let anchor = try Reminder.Record.find(editing.id).rows().fetchOne(db) else {
                         try Reminders.Restoration.set(editing: nil).execute(db)
                         return Reminders.Reminder.Editing?.none
                     }
-                    let next = Reminder(id: id, list: anchor.list, position: anchor.position + 1, created: now)
-                    try Reminder.Record.makeRoom(after: anchor.position).execute(db)
-                    try Reminder.Record.insert { Reminder.Record.Draft(next) }.execute(db)
+                    try Reminder.Record.makeRoom(after: anchor.reminder.position).execute(db)
+                    let id = try Reminder.Record.add(Reminder.Record.Draft.create(listID: anchor.reminder.listID, position: anchor.reminder.position + 1, created: now), in: db)
                     try Reminders.Restoration.set(editing: id).execute(db)
-                    var place = anchor
+                    guard let row = try Reminder.Record.find(id).rows().fetchOne(db) else { return nil }
+                    var place = Reminder(anchor)
                     place.id = id
-                    place.position = next.position
-                    return Reminders.Reminder.Editing(draft: next, saved: next, place: place, session: uuid())
+                    place.position = row.reminder.position
+                    return Reminders.Reminder.Editing(draft: Reminder.Record.Draft(row.reminder), original: row.reminder, place: place, session: uuid())
                 }
                 try store.modify {
                     $0.endEditing(editing.session)
@@ -503,40 +482,27 @@ extension Reminders.Feature {
         }
     }
 
+    /// Writes the row being edited: a blank one is deleted, a changed one has its form columns
+    /// replaced, and one that was deleted meanwhile is left gone.
     private func commit(_ editing: Reminders.Reminder.Editing?, in db: Database) throws {
         guard let editing else { return }
         if editing.draft.isBlank {
             try Reminder.Record.find(editing.id).delete().execute(db)
         } else if !editing.isSaved {
-            try update(from: editing.saved, to: editing.draft, in: db)
+            guard try Reminder.Record.find(editing.id).fetchCount(db) > 0 else { return }
+            try Reminder.Record.save(editing.draft).execute(db)
         }
-    }
-
-    @discardableResult
-    private func update(from saved: Reminder, to draft: Reminder, in db: Database) throws -> Bool {
-        guard try Reminder.Record.find(saved.id).fetchCount(db) > 0 else { return false }
-        try Reminder.Record.changes(from: saved, to: draft)?.execute(db)
-        let removed = saved.tags.subtracting(draft.tags)
-        if !removed.isEmpty { try Reminders.Tagging.detach(removed, from: saved.id).execute(db) }
-        try Reminders.Tagging.attach(draft.tags.subtracting(saved.tags), to: saved.id, in: db)
-        return true
     }
 
     private func save(_ form: Reminder.Draft.Feature.State) {
         store.addTask {
             do {
                 let saved = try write { db in
-                    if form.isNew {
-                        try Reminder.Record.insert { Reminder.Record.Draft(form.reminder) }.execute(db)
-                        try Reminder.Record.placeLast(form.reminder.id).execute(db)
-                        try Reminders.Tagging.attach(form.reminder.tags, to: form.reminder.id, in: db)
-                        return true
-                    }
-                    return try update(from: form.original, to: form.reminder, in: db)
+                    try Reminder.Record.save(Reminder.Record.Draft(form.reminder), tags: form.reminder.tags, isNew: form.isNew, in: db)
                 }
                 try store.modify {
                     guard case let .reminder(current) = $0.destination, current.session == form.session else { return }
-                    if saved {
+                    if saved != nil {
                         $0.destination = nil
                     } else {
                         $0.modifyReminderForm(form.session) { $0.fail("This reminder was deleted.") }
@@ -560,7 +526,7 @@ extension Reminders.Feature {
                         return true
                     }
                     guard try List<Reminder>.Record.find(form.original.id).fetchCount(db) > 0 else { return false }
-                    try List<Reminder>.Record.changes(from: form.original, to: form.list)?.execute(db)
+                    try List<Reminder>.Record.save(List<Reminder>.Record.Draft(List<Reminder>.Record(form.list))).execute(db)
                     return true
                 }
                 try store.modify {

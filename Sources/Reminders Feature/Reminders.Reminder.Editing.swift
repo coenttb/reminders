@@ -1,27 +1,32 @@
 public import Foundation
 public import Reminders
+public import Reminders_SQL
 
 extension Reminders.Reminder {
+    /// A row being edited in place: the draft the row shows, the record it was read from, and the
+    /// reminder whose place in the order it keeps while it is edited.
     public struct Editing: Hashable, Sendable {
-        public var draft: Reminder
-        public var saved: Reminder
+        public var draft: Reminder.Record.Draft
+        public var original: Reminder.Record
         public let place: Reminder
         public let session: UUID
         public var failure: String?
 
-        public var id: Reminder.ID { saved.id }
-
-        public var isSaved: Bool { draft == saved }
-
-        public init(draft: Reminder, saved: Reminder, place: Reminder, session: UUID) {
+        public init(draft: Reminder.Record.Draft, original: Reminder.Record, place: Reminder, session: UUID) {
             self.draft = draft
-            self.saved = saved
+            self.original = original
             self.place = place
             self.session = session
         }
 
-        public init(_ reminder: Reminder, session: UUID) {
-            self.init(draft: reminder, saved: reminder, place: reminder, session: session)
+        public init(_ row: Reminder.Record.Row, session: UUID) {
+            self.init(draft: Reminder.Record.Draft(row.reminder), original: row.reminder, place: Reminder(row), session: session)
         }
     }
+}
+
+extension Reminders.Reminder.Editing {
+    public var id: Reminder.ID { original.id }
+
+    public var isSaved: Bool { draft == Reminder.Record.Draft(original) }
 }

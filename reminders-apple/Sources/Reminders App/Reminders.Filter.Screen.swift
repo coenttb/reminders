@@ -36,7 +36,7 @@ extension Reminders.Filter.Screen: SwiftUI::View {
             editing: store.editing?.id,
             now: now,
             calendar: calendar,
-            draft: { $store[dynamicMember: \.[draft: $0]] },
+            draft: { Binding($store[dynamicMember: \.[draft: $0]]) },
             rows: rows,
             editor: editor,
             done: { store.send(.doneButtonTapped) },

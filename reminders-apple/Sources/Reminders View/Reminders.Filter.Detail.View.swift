@@ -15,7 +15,7 @@ extension Reminders.Filter.Detail {
         private var editing: Reminder.ID?
         private var now: Date
         private var calendar: Calendar
-        private var draft: (Reminder.ID) -> Binding<Reminder>
+        private var draft: (Reminder.ID) -> Binding<Reminder.Record.Draft>?
         private var rows: Reminder.Row.Actions
         private var editor: Reminder.Editor.Actions
         private var done: () -> Void
@@ -41,7 +41,7 @@ extension Reminders.Filter.Detail {
             editing: Reminder.ID?,
             now: Date,
             calendar: Calendar,
-            draft: @escaping (Reminder.ID) -> Binding<Reminder>,
+            draft: @escaping (Reminder.ID) -> Binding<Reminder.Record.Draft>?,
             rows: Reminder.Row.Actions,
             editor: Reminder.Editor.Actions,
             done: @escaping () -> Void,
@@ -118,8 +118,8 @@ extension Reminders.Filter.Detail.View: SwiftUI::View {
             let (shown, total) = (detail.rows.count, detail.total)
             ForEach(Array(detail.rows.enumerated()), id: \.element.reminder.id) { index, row in
                 let id = row.reminder.id
-                if id == editing {
-                    Reminder.Editor(reminder: draft(id), color: self.color(row.reminder.listID), now: now, calendar: calendar, focus: $focus, actions: editor)
+                if id == editing, let draft = draft(id) {
+                    Reminder.Editor(id: id, draft: draft, color: self.color(row.reminder.listID), now: now, calendar: calendar, focus: $focus, actions: editor)
                 } else {
                     Reminder.Row(row, color: self.color(row.reminder.listID), now: now, calendar: calendar, actions: rowActions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))

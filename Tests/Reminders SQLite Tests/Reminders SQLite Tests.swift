@@ -125,15 +125,15 @@ import Tagged
         let personal = Reminders.Filter.list(sample.lists[0].id)
         let groceries = sample.reminders[0]
         try database.write { db in
-            try Reminder.Record.changes(from: groceries, to: { var r = groceries; r.title = "apples"; return r }())?.execute(db)
+            try Reminder.Record.save({ var draft = Reminder.Record.Draft(groceries); draft.title = "apples"; return draft }()).execute(db)
             try Reminders.Filter.Preference.set(ordering: .title, for: personal).execute(db)
         }
         #expect(try detail(personal, database).reminders.map(\.title) == ["apples", "Buy concert tickets", "Doctor appointment", "Haircut"])
         try database.write { db in try Reminders.Filter.Preference.set(ordering: .dueDate, for: personal).execute(db) }
-        var dated = groceries
+        var dated = Reminder.Record.Draft(groceries)
         dated.title = "apples"
         dated.due = .day(now.addingTimeInterval(-400_000))
-        try database.write { db in try Reminder.Record.changes(from: groceries, to: dated)?.execute(db) }
+        try database.write { db in try Reminder.Record.save(dated).execute(db) }
         #expect(try detail(personal, database).reminders.first?.id == groceries.id)
         #expect(try detail(personal, database, place: groceries).reminders.last?.id == groceries.id)
     }
@@ -202,9 +202,9 @@ import Tagged
         #expect(try overview(database).lists.map(\.list.title) == ["Family", "Business", "Personal", "Chores"])
         var renamed = sample.lists[1]
         renamed.title = "Home"
-        try database.write { db in try List<Reminder>.Record.changes(from: sample.lists[1], to: renamed)?.execute(db) }
+        try database.write { db in try List<Reminder>.Record.save(List<Reminder>.Record.Draft(List<Reminder>.Record(renamed))).execute(db) }
         #expect(try overview(database).lists.map(\.list.title) == ["Home", "Business", "Personal", "Chores"])
-        #expect(List<Reminder>.Record.changes(from: renamed, to: renamed) == nil)
+        #expect(try overview(database).lists.map(\.list.position) == [0, 1, 2, 3])
     }
 
     @Test func `tags are shared, renamed everywhere, merged when renamed onto another, and deleted everywhere`() throws {
@@ -280,27 +280,32 @@ import Tagged
         #expect(try detail(.completed, database).reminders.map(\.title) == ["Take out trash"])
     }
 
-    @Test func `a draft updates only edited fields and leaves completion to the timer`() throws {
+    @Test func `a save writes the form's columns last, replaces the tags, and leaves completion and position to the timer and the order`() throws {
         let (database, sample) = try makeDatabase()
         let groceries = sample.reminders[0]
-        try database.write { db in try Reminder.Record.find(groceries.id).update { $0.flagged = true }.execute(db) }
-        var draft = groceries
-        draft.title = "Groceries and more"
-        draft.tags.insert("fresh")
-        draft.tags.remove("optional")
         try database.write { db in
-            try Reminder.Record.changes(from: groceries, to: draft)?.execute(db)
-            try Reminders.Tagging.detach(groceries.tags.subtracting(draft.tags), from: groceries.id).execute(db)
-            try Reminders.Tagging.attach(draft.tags.subtracting(groceries.tags), to: groceries.id, in: db)
+            try Reminder.Record.find(groceries.id).update { $0.flagged = true }.execute(db)
+            try Reminder.Record.toggle(groceries.id).execute(db)
         }
+        var draft = Reminder.Record.Draft(groceries)
+        draft.title = "Groceries and more"
+        draft.position = 99
+        var tags = groceries.tags
+        tags.insert("fresh")
+        tags.remove("optional")
+        #expect(try database.write { db in try Reminder.Record.save(draft, tags: tags, isNew: false, in: db) } == groceries.id)
         let stored = try stored(groceries.id, database)
-        #expect(stored?.title == "Groceries and more" && stored?.flagged == true && stored?.tags == ["someday", "adulting", "fresh"])
+        #expect(stored?.title == "Groceries and more" && stored?.flagged == false && stored?.tags == ["someday", "adulting", "fresh"])
+        #expect(stored?.completed == true && stored?.position == groceries.position)
         #expect(try self.stored(sample.reminders[1].id, database) == sample.reminders[1])
-        #expect(Reminder.Record.changes(from: stored!, to: stored!) == nil)
-        var completed = stored!
-        completed.completion = .completed
-        #expect(Reminder.Record.changes(from: stored!, to: completed) == nil)
-
+        let bread = Reminder.Record.Draft.create(listID: groceries.list, title: "Bread", created: now)
+        let id = try #require(try database.write { db in try Reminder.Record.save(bread, tags: ["CAR"], isNew: true, in: db) })
+        #expect(try self.stored(id, database)?.tags == ["car"] && self.stored(id, database)?.position == 11)
+        try database.write { db in try Reminder.Record.find(id).delete().execute(db) }
+        var back = bread
+        back.id = id
+        #expect(try database.write { db in try Reminder.Record.save(back, tags: [], isNew: false, in: db) } == nil)
+        #expect(try self.stored(id, database) == nil)
     }
 
     @Test func `a row continues beneath its anchor and moves keep the positions they were given`() throws {
@@ -383,6 +388,34 @@ import Tagged
         try database.write { db in try Tag<Reminder>.Record.delete("café").execute(db) }
         #expect(try database.read { db in try Reminders.Tagging.all.fetchCount(db) } == 1)
         try Reminders.Schema.migrate(database)
+    }
+
+    @Test func `an upgraded database keeps its rows and lets the database mint ids`() throws {
+        var configuration = Configuration()
+        Reminders.Schema.prepare(&configuration)
+        let database = try DatabaseQueue(configuration: configuration)
+        try Reminders.Schema.migrate(database, upTo: "Keep the folded text for the search")
+        let list = List<Reminder>.ID(UUID())
+        let bread = Reminder.ID(UUID())
+        try database.write { db in
+            try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
+            try #sql("INSERT INTO reminders (id, listID, title) VALUES (\(bread), \(list), 'Bread')").execute(db)
+            try #sql("INSERT INTO tags (title) VALUES ('car')").execute(db)
+            try #sql("INSERT INTO remindersTags (reminderID, tagID) VALUES (\(bread), 'car')").execute(db)
+        }
+        try Reminders.Schema.migrate(database)
+        #expect(try stored(bread, database)?.title == "Bread" && stored(bread, database)?.tags == ["car"])
+        try database.write { db in try #sql("INSERT INTO reminders (listID, title) VALUES (\(list), 'Milk')").execute(db) }
+        try database.write { db in try #sql("INSERT INTO lists (title) VALUES ('Errands')").execute(db) }
+        let milk = try #require(try database.read { db in try Reminder.Record.where { $0.title.eq("Milk") }.fetchOne(db) })
+        #expect(milk.id.rawValue.uuidString.count == 36 && milk.listID == list)
+        let errands = try #require(try database.read { db in try List<Reminder>.Record.where { $0.title.eq("Errands") }.fetchOne(db) })
+        #expect(errands.id.rawValue.uuidString.count == 36)
+        let id = try database.write { db in try Reminder.Record.append(Reminder.Record.Draft.create(listID: list, title: "Eggs", created: now), in: db) }
+        #expect(try stored(id, database)?.title == "Eggs" && stored(id, database)?.position == 1)
+        #expect(try database.read { db in try #sql("SELECT searchText FROM reminders WHERE title = 'Milk'", as: String.self).fetchOne(db) } == "milk\n")
+        try database.write { db in try List<Reminder>.Record.find(list).delete().execute(db) }
+        #expect(try database.read { db in try Reminder.Record.all.fetchCount(db) } == 0)
     }
 
     @Test func `a generated sample at scale is written in one transaction and read back whole`() throws {

@@ -4,11 +4,6 @@ public import Reminders
 import Reminders_Interface
 
 extension Reminders.Feature.State {
-    mutating func endEditing(_ session: UUID?) {
-        guard let session, editing?.session == session else { return }
-        editing = nil
-    }
-
     mutating func modifyReminderForm(_ session: UUID, _ body: (inout Reminder.Draft.Feature.State) -> Void) {
         guard case var .reminder(form) = destination, form.session == session else { return }
         body(&form)

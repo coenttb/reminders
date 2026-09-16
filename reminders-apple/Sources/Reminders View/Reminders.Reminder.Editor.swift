@@ -1,11 +1,14 @@
 public import Foundation
 public import Reminders
 public import Reminders_Interface
+public import Reminders_SQL
 public import SwiftUI
+public import Tagged
 
 extension Reminders.Reminder {
     public struct Editor {
-        @Binding private var reminder: Reminder
+        private var id: Reminder.ID
+        @Binding private var reminder: Reminder.Record.Draft
         private var color: SwiftUI.Color
         private var now: Date
         private var calendar: Calendar
@@ -13,14 +16,16 @@ extension Reminders.Reminder {
         private var actions: Actions
 
         public init(
-            reminder: Binding<Reminder>,
+            id: Reminder.ID,
+            draft: Binding<Reminder.Record.Draft>,
             color: SwiftUI.Color,
             now: Date,
             calendar: Calendar,
             focus: FocusState<Reminder.Focus?>.Binding,
             actions: Actions
         ) {
-            self._reminder = reminder
+            self.id = id
+            self._reminder = draft
             self.color = color
             self.now = now
             self.calendar = calendar
@@ -32,7 +37,7 @@ extension Reminders.Reminder {
 extension Reminders.Reminder.Editor: SwiftUI::View {
     public var body: some SwiftUI::View {
         HStack(alignment: .top, spacing: 12) {
-            Button { actions.complete(reminder.id) } label: {
+            Button { actions.complete(id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
                     .foregroundStyle(reminder.completed ? color : SwiftUI.Color(.systemGray3))
                     .font(.title2)
@@ -44,17 +49,17 @@ extension Reminders.Reminder.Editor: SwiftUI::View {
                         Text(priority.marks).foregroundStyle(color)
                     }
                     TextField("", text: $reminder.title)
-                        .focused(focus, equals: .title(reminder.id))
+                        .focused(focus, equals: .title(id))
                         .submitLabel(.return)
                         .onSubmit(actions.submit)
-                    Button("Details", systemImage: "info.circle") { actions.details(reminder.id) }
+                    Button("Details", systemImage: "info.circle") { actions.details(id) }
                         .labelStyle(.iconOnly)
                         .buttonStyle(.borderless)
                         .foregroundStyle(.primary)
                 }
                 TextField("Add Note", text: $reminder.notes, axis: .vertical)
                     .font(.subheadline)
-                    .focused(focus, equals: .notes(reminder.id))
+                    .focused(focus, equals: .notes(id))
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
                         dateChip
@@ -79,22 +84,22 @@ extension Reminders.Reminder.Editor: SwiftUI::View {
         .listRowSeparator(.hidden)
         .listRowBackground(SwiftUI.Color.clear)
         .onChange(of: focus.wrappedValue) { _, focus in
-            if focus == .notes(reminder.id), reminder.isBlank { reminder.title = "New Reminder" }
+            if focus == .notes(id), reminder.isBlank { reminder.title = "New Reminder" }
         }
     }
 
     private var dateChip: some SwiftUI.View {
         Menu {
-            Button { actions.setDate(reminder.id, nil) } label: { checked("None", reminder.due == nil) }
+            Button { actions.setDate(id, nil) } label: { checked("None", reminder.due == nil) }
             Divider()
             ForEach(Reminders.Reminder.Due.Preset.allCases, id: \.self) { preset in
-                Button { actions.setDate(reminder.id, preset) } label: {
+                Button { actions.setDate(id, preset) } label: {
                     let date = preset.date(at: now, calendar: calendar)
                     let current = reminder.due.map { calendar.isDate($0.date, inSameDayAs: date) } ?? false
                     Label(preset.title, systemImage: current ? "checkmark" : "\(calendar.component(.day, from: date)).calendar")
                 }
             }
-            Button("Custom", systemImage: "ellipsis") { actions.details(reminder.id) }
+            Button("Custom", systemImage: "ellipsis") { actions.details(id) }
         } label: {
             chip(tinted: reminder.due != nil) {
                 if let day = reminder.due?.dayDescription(at: now, calendar: calendar) {
@@ -110,17 +115,17 @@ extension Reminders.Reminder.Editor: SwiftUI::View {
 
     private var timeChip: some SwiftUI.View {
         Menu {
-            Button { actions.setTime(reminder.id, nil) } label: { checked("None", reminder.due?.hasTime != true) }
+            Button { actions.setTime(id, nil) } label: { checked("None", reminder.due?.hasTime != true) }
             Divider()
             ForEach(Reminders.Reminder.Due.Preset.Time.allCases, id: \.self) { preset in
-                Button { actions.setTime(reminder.id, preset) } label: {
+                Button { actions.setTime(id, preset) } label: {
                     let current = reminder.due.map { $0.hasTime && calendar.component(.hour, from: $0.date) == preset.hour && calendar.component(.minute, from: $0.date) == 0 } == true
                     Text(preset.description(on: now, calendar: calendar) ?? preset.title)
                     Text(preset.title)
                     Image(systemName: current ? "checkmark" : "clock")
                 }
             }
-            Button("Custom", systemImage: "ellipsis") { actions.details(reminder.id) }
+            Button("Custom", systemImage: "ellipsis") { actions.details(id) }
         } label: {
             chip(tinted: reminder.due?.hasTime == true) {
                 if let time = reminder.due?.timeDescription(calendar: calendar) {
