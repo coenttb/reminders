@@ -23,7 +23,6 @@ extension Reminders {
             public var failure: String?
             public var search = Reminders.Search()
             public var today: Range<Date>?
-            // The snapshot macro cannot see members under `#if DEBUG`, so these stay declared in every build.
             public var lastSeed: Reminders.Sample.Seed?
             public var isSeeding = false
             public var detailWindow = Window<Reminders.Filter>()
@@ -378,7 +377,6 @@ extension Reminders.Feature {
 
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
 
-    /// Runs a task and lands its failure on the screen.
     private func attempt(_ body: () async throws -> Void) async throws {
         do {
             try await body()
@@ -389,7 +387,6 @@ extension Reminders.Feature {
         }
     }
 
-    /// Runs a task and lands its failure on the screen and on the row being edited in `session`.
     private func attempt(editing session: UUID?, _ body: () async throws -> Void) async throws {
         do {
             try await body()
@@ -469,8 +466,6 @@ extension Reminders.Feature {
         }
     }
 
-    /// Writes the row being edited: a blank one is deleted, a changed one has its form columns
-    /// replaced, and one that was deleted meanwhile is left gone.
     private func commit(_ editing: Reminders.Reminder.Editing?, in db: Database) throws {
         guard let editing else { return }
         if editing.draft.isBlank {

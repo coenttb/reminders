@@ -4,8 +4,6 @@ public import Reminders
 public import Tagged
 
 extension Reminders.Reminder.Record.Draft {
-    /// A draft from its fields. The compiler's memberwise initialiser for the generated draft is
-    /// internal and cannot be redeclared as public, so other modules build drafts here.
     public static func create(
         id: Reminder.ID? = nil,
         listID: List<Reminder>.ID,

@@ -5,7 +5,7 @@ public import Reminders
 public import Reminders_Interface
 public import Reminders_SQL
 public import SQLiteData
-public import Foundation
+import Foundation
 
 extension Organizing.List<Reminder>.Form {
     @ComposableArchitecture2.Feature public struct Feature {
@@ -54,7 +54,8 @@ extension Organizing.List<Reminder>.Form {
                         try await attempt {
                             let saved = try write { db in
                                 if isNew {
-                                    guard let id = try List<Reminder>.Record.insert { draft }.returning(\.id).fetchOne(db) else { return false }
+                                    let inserted = List<Reminder>.Record.insert { draft }
+                                    guard let id = try inserted.returning(\.id).fetchOne(db) else { return false }
                                     try List<Reminder>.Record.placeLast(id).execute(db)
                                     return true
                                 }
@@ -78,7 +79,6 @@ extension Organizing.List<Reminder>.Form {
 extension Organizing.List<Reminder>.Form.Feature {
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
 
-    /// Runs a task and lands its failure on the form.
     private func attempt(_ body: () async throws -> Void) async throws {
         do {
             try await body()

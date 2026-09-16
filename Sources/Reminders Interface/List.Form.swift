@@ -1,7 +1,6 @@
 public import Organizing
 
 extension Organizing.List {
-    /// The sheet that edits one list, as the screen describes it. Its renderer holds the draft.
     public struct Form {
         public var isNew: Bool
         public var isDirty: Bool

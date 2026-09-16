@@ -3,8 +3,6 @@ public import Reminders
 public import Reminders_Interface
 
 extension Reminders.Search {
-    /// What the search reads: the matches by list, how many there are in all, and the tags
-    /// completing a typed prefix.
     public struct Contents: Hashable, Sendable {
         public var sections: [Section]
         public var total: Int

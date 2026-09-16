@@ -2,7 +2,6 @@ public import Reminders
 public import StructuredQueries
 
 extension Reminders.Reminder.Record {
-    /// How many open reminders each smart filter holds.
     @Selection
     public struct Counts: Hashable, Sendable {
         public var all: Int

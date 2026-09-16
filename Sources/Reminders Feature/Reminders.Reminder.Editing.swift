@@ -3,8 +3,6 @@ public import Reminders
 public import Reminders_SQL
 
 extension Reminders.Reminder {
-    /// A row being edited in place: the draft the row shows, the record it was read from, and the
-    /// reminder whose place in the order it keeps while it is edited.
     public struct Editing: Hashable, Sendable {
         public var draft: Reminder.Record.Draft
         public var original: Reminder.Record

@@ -1,6 +1,6 @@
 import Foundation
 public import Reminders
-public import Reminders_SQL
+import Reminders_SQL
 public import SQLiteData
 
 extension Reminders {
@@ -215,8 +215,6 @@ extension Reminders.Schema {
         }
     }
 
-    /// A prepared and migrated database where the dependency context puts it: on disk when live,
-    /// in memory under test.
     public static func database(_ configuration: Configuration = Configuration()) throws -> any DatabaseWriter {
         var configuration = configuration
         prepare(&configuration)

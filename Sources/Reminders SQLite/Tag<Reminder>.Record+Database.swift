@@ -13,8 +13,6 @@ extension Tag<Reminder>.Record {
         return Tag<Reminder>.ID(title)
     }
 
-    /// Renames a tag everywhere; a rename onto a tag that already exists merges the two in one
-    /// statement, keeping the links the target already had.
     public static func rename(_ id: Tag<Reminder>.ID, to title: String, in db: Database) throws -> Tag<Reminder>.ID? {
         guard !title.isEmpty, let stored = try canonical(id.rawValue).fetchAll(db).first else { return nil }
         let current: Tag<Reminder>.ID = Tag<Reminder>.ID(rawValue: stored)

@@ -3,8 +3,6 @@ public import Reminders
 public import Tagged
 
 extension Reminders.Reminder {
-    /// The row being edited in place, as the app describes it: which row, when, and what it can
-    /// do. Its renderer holds the draft binding.
     public struct Editor {
         public var id: Reminder.ID
         public var now: Date

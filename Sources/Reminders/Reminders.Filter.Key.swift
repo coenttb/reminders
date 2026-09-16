@@ -4,7 +4,6 @@ import Standard_Library_Extensions
 import Tagged
 
 extension Reminders.Filter {
-    /// A filter as one string, the form a row stores.
     public struct Key: RawRepresentable, Hashable, Sendable {
         public var rawValue: String
 

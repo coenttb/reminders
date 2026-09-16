@@ -3,8 +3,6 @@ public import Reminders
 public import Tagged
 
 extension Reminders.Filter.Detail {
-    /// One filter's screen as the app describes it: its title, the row being edited, and what it
-    /// can do. Its renderer holds the contents and the draft binding.
     public struct View {
         public var title: String
         public var editing: Reminder.ID?

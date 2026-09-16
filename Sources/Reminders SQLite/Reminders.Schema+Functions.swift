@@ -1,10 +1,8 @@
 import Foundation
-public import Reminders
-public import SQLiteData
+import Reminders
+import SQLiteData
 
 extension Reminders.Schema {
-    /// The text rules the database runs: how titles are matched, folded for the search, completed
-    /// from a prefix, and collated.
     @DatabaseFunction(isDeterministic: true)
     nonisolated static func localizedCaseInsensitiveContains(_ text: String, _ query: String) -> Bool {
         text.localizedCaseInsensitiveContains(query)

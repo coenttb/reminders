@@ -20,6 +20,7 @@ extension Tag<Reminder>.Record {
         self.init(title: tag.title)
     }
 }
+
 extension Tag<Reminder>.Record {
     public static func canonical(_ title: String) -> Select<String, Tag<Reminder>.Record, ()> {
         Tag<Reminder>.Record.where { $0.title.eq(title) }.select(\.title)

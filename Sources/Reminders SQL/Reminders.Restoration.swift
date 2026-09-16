@@ -3,7 +3,6 @@ public import StructuredQueries
 public import Tagged
 
 extension Reminders {
-    /// The one row that brings the app back where it was: the open filter and the row being edited.
     @Table("session")
     public struct Restoration: Hashable, Sendable {
         public let id: Int

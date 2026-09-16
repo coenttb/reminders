@@ -10,8 +10,6 @@ import os
 #endif
 
 extension DependencyValues {
-    /// Opens the app's database, migrates it, and puts the baseline in place; a sample, when given,
-    /// is written first into a database that is still empty.
     public mutating func bootstrapDatabase(seeding sample: Reminders.Sample? = nil) throws {
         var configuration = Configuration()
         #if DEBUG

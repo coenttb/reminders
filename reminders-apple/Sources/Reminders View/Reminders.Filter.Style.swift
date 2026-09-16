@@ -5,7 +5,6 @@ public import SwiftUI
 import Tagged
 
 extension Reminders.Filter {
-    /// How a filter looks on screen: its name, its tint, its tile fill, and its symbol.
     public struct Style {
         public var title: String?
         public var tint: SwiftUI.Color
@@ -42,7 +41,6 @@ extension Reminders.Filter.Style {
         }
     }
 
-    /// The smart filters the home screen shows, Flagged only while something is flagged.
     public static func smart(flagged: Bool) -> [Reminders.Filter] {
         flagged ? [.today, .scheduled, .all, .flagged, .completed] : [.today, .scheduled, .all, .completed]
     }

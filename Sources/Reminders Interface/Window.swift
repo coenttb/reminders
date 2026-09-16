@@ -1,5 +1,3 @@
-/// How many rows of a long list are read: one step at a time, widened near the end, and
-/// whole for the key that is being edited.
 public struct Window<Key: Hashable & Sendable>: Hashable, Sendable {
     public var key: Key?
     public var rows: Int?

@@ -1,13 +1,12 @@
 import Organizing
 public import Reminders
 public import Reminders_Sample
-public import Reminders_SQL
+import Reminders_SQL
 public import SQLiteData
 import Standard_Library_Extensions
 import Tagged
 
 extension Reminders.Sample {
-    /// Writes the sample into a database that holds no lists and no reminders yet.
     public static func initialize(with sample: Self, in db: Database) throws {
         guard try List<Reminder>.Record.all.fetchCount(db) == 0, try Reminder.Record.all.fetchCount(db) == 0 else { return }
         try replace(with: sample, in: db)

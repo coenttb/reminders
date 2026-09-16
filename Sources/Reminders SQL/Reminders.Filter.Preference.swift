@@ -2,7 +2,6 @@ public import Reminders
 public import StructuredQueries
 
 extension Reminders.Filter {
-    /// How one filter is shown: its ordering and whether completed reminders are in it.
     @Table("preferences")
     public struct Preference: Hashable, Sendable {
         @Column(primaryKey: true)

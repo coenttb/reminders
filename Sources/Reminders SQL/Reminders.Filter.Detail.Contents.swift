@@ -3,7 +3,6 @@ public import Reminders_Interface
 public import Tagged
 
 extension Reminders.Filter.Detail {
-    /// What one filter's screen reads: its rows in the preferred order, and how many there are in all.
     public struct Contents: Hashable, Sendable {
         public var filter: Reminders.Filter
         public var preference: Reminders.Filter.Preference

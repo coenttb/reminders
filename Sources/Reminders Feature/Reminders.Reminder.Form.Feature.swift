@@ -8,7 +8,7 @@ import Reminders_SQLite
 public import SQLiteData
 import Standard_Library_Extensions
 public import Tagged
-public import Foundation
+import Foundation
 
 extension Reminders.Reminder.Form {
     @ComposableArchitecture2.Feature public struct Feature {
@@ -110,7 +110,6 @@ extension Reminders.Reminder.Form {
 extension Reminders.Reminder.Form.Feature {
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
 
-    /// Runs a task and lands its failure on the form.
     private func attempt(_ body: () async throws -> Void) async throws {
         do {
             try await body()

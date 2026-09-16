@@ -7,7 +7,6 @@ import Reminders_View
 import SwiftUI
 
 extension Reminders.Sample {
-    /// The debug menu that writes a sample, replays a seed, or empties the database.
     struct Menu {
         @Bindable private var store: StoreOf<Reminders.Feature>
 

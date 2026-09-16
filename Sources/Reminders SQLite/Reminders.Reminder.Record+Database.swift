@@ -5,23 +5,20 @@ public import SQLiteData
 public import Tagged
 
 extension Reminders.Reminder.Record {
-    /// Inserts a draft and returns the id the database gave it.
     public static func add(_ draft: Draft, in db: Database) throws -> Reminder.ID {
-        guard let id = try Reminder.Record.insert { draft }.returning(\.id).fetchOne(db) else {
+        let inserted = Reminder.Record.insert { draft }
+        guard let id = try inserted.returning(\.id).fetchOne(db) else {
             throw DatabaseError(message: "The reminder was not inserted.")
         }
         return id
     }
 
-    /// Inserts a draft at the end of every list and returns its id.
     public static func append(_ draft: Draft, in db: Database) throws -> Reminder.ID {
         let id = try add(draft, in: db)
         try placeLast(id).execute(db)
         return id
     }
 
-    /// A form's save: a new draft is appended with its tags; an existing one has its form columns
-    /// and tags replaced, unless the row is gone, in which case nothing is written and `nil` returned.
     public static func save(_ draft: Draft, tags: Set<Tag<Reminder>.ID>, isNew: Bool, in db: Database) throws -> Reminder.ID? {
         if isNew {
             let id = try append(draft, in: db)

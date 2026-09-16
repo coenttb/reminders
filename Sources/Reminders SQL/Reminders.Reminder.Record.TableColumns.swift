@@ -1,8 +1,8 @@
 public import Foundation
-public import Organizing
+package import Organizing
 public import Reminders
 public import StructuredQueries
-public import Tagged
+package import Tagged
 
 extension Reminders.Reminder.Record.TableColumns {
     public var isCompleted: some QueryExpression<Bool> {
