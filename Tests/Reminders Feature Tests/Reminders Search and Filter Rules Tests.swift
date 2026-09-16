@@ -9,18 +9,22 @@ import Tagged
 @Suite struct `Reminders search and filter rules` {
     let list = List<Reminder>.ID(UUID())
 
-    @Test func `the search commits trimmed text as a token and leaves a tag prefix for the suggestions`() {
-        var search = Reminders.Search.Query(text: " Take ")
+    @Test func `the search field commits trimmed text as a term, keeps a tag prefix for the suggestions, and searches by what is committed`() {
+        var search = Reminders.Search.Field(text: " Take ")
+        #expect(search.selection == .search(Reminders.Search.Query(terms: [" Take "])))
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text.isEmpty)
+        #expect(search.query == Reminders.Search.Query(terms: ["Take"]))
         search.text = "#so"
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text == "#so" && search.tagPrefix == "so")
-        #expect(!Reminders.Search.Query(text: "#so").matchesReminders)
-        #expect(search.matchesReminders && search.matchedText.isEmpty)
+        #expect(search.suggestions == Reminders.Tags.Suggestions(prefix: "so", excluding: []))
+        #expect(Reminders.Search.Field(text: "#so").selection == nil)
+        #expect(search.selection == .search(Reminders.Search.Query(terms: ["Take"])))
         search.add(tag: "car")
         #expect(search.text.isEmpty && search.tags == ["car"] && search.isActive)
-        #expect(!Reminders.Search.Query().isActive)
+        #expect(search.selection == .search(Reminders.Search.Query(terms: ["Take"], tags: ["car"])))
+        #expect(!Reminders.Search.Field().isActive && Reminders.Search.Field().selection == nil)
     }
 
     @Test func `a filter narrows and closes as its tags and list go`() {

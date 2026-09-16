@@ -1,7 +1,7 @@
 public import Reminders
 public import StructuredQueries
 
-extension Reminders.Filter.Preference {
+extension Reminders.Preference {
     @Table("preferences")
     public struct Record: Hashable, Sendable {
         @Column(primaryKey: true)
@@ -18,47 +18,37 @@ extension Reminders.Filter.Preference {
     }
 }
 
-extension Reminders.Filter.Preference.Record: Identifiable {
+extension Reminders.Preference.Record: Identifiable {
     public var id: Reminders.Filter.Key { key }
 }
 
-extension Reminders.Filter.Preference {
+extension Reminders.Preference {
     public init(_ record: Record) {
         self.init(ordering: record.ordering, showCompleted: record.showCompleted)
     }
 }
 
-extension Reminders.Filter.Preference.Record {
+extension Reminders.Preference.Record {
+    public init(_ preference: Reminders.Preference, for filter: Reminders.Filter) {
+        self.init(key: Reminders.Filter.Key(filter), ordering: preference.ordering, showCompleted: preference.showCompleted)
+    }
+
     public static func `default`(for filter: Reminders.Filter) -> Self {
-        let preference = Reminders.Filter.Preference.default(for: filter)
-        return Self(key: Reminders.Filter.Key(filter), ordering: preference.ordering, showCompleted: preference.showCompleted)
+        Self(Reminders.Preference.default(for: filter), for: filter)
     }
 
     public static func preference(for filter: Reminders.Filter) -> Where<Self> {
         Self.find(Reminders.Filter.Key(filter))
     }
 
-    public static func set(ordering: Reminders.Ordering, for filter: Reminders.Filter) -> InsertOf<Self> {
-        var preference = Self.default(for: filter)
-        preference.ordering = ordering
-        return Self.insert {
-            preference
+    public static func set(_ preference: Reminders.Preference, for filter: Reminders.Filter) -> InsertOf<Self> {
+        Self.insert {
+            Self(preference, for: filter)
         } onConflict: {
             $0.key
         } doUpdate: { row, excluded in
             row.ordering = excluded.ordering
-        }
-    }
-
-    public static func toggleShowCompleted(for filter: Reminders.Filter) -> InsertOf<Self> {
-        var preference = Self.default(for: filter)
-        preference.showCompleted.toggle()
-        return Self.insert {
-            preference
-        } onConflict: {
-            $0.key
-        } doUpdate: { row, _ in
-            row.showCompleted = !row.showCompleted
+            row.showCompleted = excluded.showCompleted
         }
     }
 }

@@ -56,7 +56,7 @@ extension Reminder.Form {
                     let (draft, isNew) = (state.draft, state.isNew)
                     store.addTask {
                         try await attempt {
-                            if try await reminders.editor.client.save(draft, isNew) {
+                            if try isNew ? reminders.editor.client.add(draft) : reminders.editor.client.update(draft) {
                                 try store.dismiss()
                             } else {
                                 try store.modify { $0.fail("This reminder was deleted.") }
@@ -66,7 +66,7 @@ extension Reminder.Form {
                 case let .tagAdded(title):
                     store.addTask {
                         try await attempt {
-                            guard let tag = try await reminders.tags.client.add(title) else { return }
+                            guard let tag = try reminders.tags.client.add(title) else { return }
                             try store.modify {
                                 $0.draft.tags.insert(tag)
                                 $0.failure = nil
@@ -76,7 +76,7 @@ extension Reminder.Form {
                 case let .tagDeleted(id):
                     store.addTask {
                         try await attempt {
-                            try await reminders.tags.client.delete(id)
+                            try reminders.tags.client.delete(id)
                             try store.modify {
                                 $0.draft.tags.remove(id)
                                 $0.failure = nil
@@ -87,7 +87,7 @@ extension Reminder.Form {
                 case let .tagRenamed(id, title):
                     store.addTask {
                         try await attempt {
-                            guard let renamed = try await reminders.tags.client.rename(id, title) else { return }
+                            guard let renamed = try reminders.tags.client.rename(id, title) else { return }
                             try store.modify {
                                 $0.draft.tags.replace(id, with: renamed)
                                 $0.failure = nil

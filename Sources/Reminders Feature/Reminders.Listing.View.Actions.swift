@@ -2,7 +2,7 @@ public import Reminders
 public import Foundation
 public import Reminder
 
-extension Reminders.Filter.Detail.View {
+extension Reminders.Listing.View {
     public struct Actions {
         public var rows: Reminder.Row.Actions
         public var editor: Reminder.Editor.Actions

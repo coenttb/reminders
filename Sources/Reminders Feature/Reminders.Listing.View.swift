@@ -4,7 +4,7 @@ public import Models
 public import Reminder
 public import Tagged
 
-extension Reminders.Filter.Detail {
+extension Reminders.Listing {
     public struct View {
         public var filter: Reminders.Filter
         public var window: Window<Reminders.Filter>

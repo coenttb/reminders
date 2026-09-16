@@ -6,6 +6,7 @@ import Models
 import Reminder
 public import Reminders
 public import Reminders_Sample
+import Reminders_Session
 import Reminders_SQL
 import Reminders_SQLite
 import SQLiteData

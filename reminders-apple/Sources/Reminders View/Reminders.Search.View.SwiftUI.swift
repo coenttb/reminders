@@ -52,7 +52,7 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
                 }
                 .disabled(completed == 0)
                 Spacer()
-                Button(view.query.showCompleted ? "Hide" : "Show", action: actions.toggleCompleted).disabled(completed == 0)
+                Button(view.showCompleted ? "Hide" : "Show", action: actions.toggleCompleted).disabled(completed == 0)
             }
             .buttonStyle(.borderless)
         }

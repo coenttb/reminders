@@ -1,3 +1,4 @@
+public import Foundation
 import Models
 public import Reminder
 public import Reminders
@@ -14,14 +15,20 @@ extension Reminder.Record.TableColumns {
     }
 
     public func matches(_ query: Reminders.Search.Query) -> SQLQueryExpression<Bool> {
-        guard query.matchesReminders else { return SQLQueryExpression("0") }
-        var predicate = SQLQueryExpression<Bool>(query.matchedText.isEmpty ? "1" : "(\(matches(query.matchedText)))")
-        for token in query.tokens {
-            switch token {
-            case let .near(text): predicate = SQLQueryExpression("\(predicate) AND (\(matches(text)))")
-            case let .tag(tag): predicate = SQLQueryExpression("\(predicate) AND (\(carries(tag)))")
-            }
+        var predicate = SQLQueryExpression<Bool>("1")
+        for term in query.terms {
+            predicate = SQLQueryExpression("\(predicate) AND (\(matches(term)))")
+        }
+        for tag in query.tags.sorted() {
+            predicate = SQLQueryExpression("\(predicate) AND (\(carries(tag)))")
         }
         return predicate
+    }
+
+    public func selected(by selection: Reminders.Selection, today: Range<Date>) -> SQLQueryExpression<Bool> {
+        switch selection {
+        case let .filter(filter): belongs(to: filter, today: today)
+        case let .search(query): matches(query)
+        }
     }
 }

@@ -1,3 +1,5 @@
+public import Reminders
+
 extension Reminders {
     public struct Session: Hashable, Sendable {
         public var filter: Filter?

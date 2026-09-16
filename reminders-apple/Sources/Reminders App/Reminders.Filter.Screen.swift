@@ -26,14 +26,14 @@ extension Reminders.Filter {
 extension Reminders.Filter.Screen: SwiftUI::View {
     @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
-        let contents = store.detail ?? Reminders.Filter.Detail.Contents(filter: filter, preference: .default(for: filter))
+        let contents = store.detail ?? Reminders.Listing.Page(selection: .filter(filter), preference: .default(for: filter))
         let style = Reminders.Filter.Style(filter, list: list, day: calendar.component(.day, from: now))
-        Reminders.Filter.Detail.View.SwiftUI(
+        Reminders.Listing.View.SwiftUI(
             contents: contents,
             style: style,
             color: { store.overview.list($0).map { SwiftUI.Color($0.color) } ?? .blue },
             draft: { Binding($store[dynamicMember: \.[draft: $0]]) },
-            view: Reminders.Filter.Detail.View(
+            view: Reminders.Listing.View(
                 filter: filter,
                 window: store.detailWindow,
                 editing: store.editing?.id,
@@ -56,8 +56,8 @@ extension Reminders.Filter.Screen {
 
     private var list: Models.List<Reminder>? { listID.flatMap(store.overview.list) }
 
-    private var actions: Reminders.Filter.Detail.View.Actions {
-        Reminders.Filter.Detail.View.Actions(
+    private var actions: Reminders.Listing.View.Actions {
+        Reminders.Listing.View.Actions(
             rows: Reminder.Row.Actions(
                 complete: { store.send(.reminderCompleteButtonTapped($0)) },
                 delete: { store.send(.reminderDeleted($0)) },

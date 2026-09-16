@@ -41,7 +41,7 @@ extension Reminders.Screen: SwiftUI::View {
                     Reminders.Search.View.SwiftUI(
                         contents: store.results,
                         view: Reminders.Search.View(
-                            query: store.search,
+                            showCompleted: store.search.showCompleted,
                             window: store.resultsWindow,
                             grace: store.gracing,
                             now: now,

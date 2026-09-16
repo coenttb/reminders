@@ -14,8 +14,15 @@ extension Reminders.Feature.State {
     public func isCompleted(_ id: Reminder.ID) -> Bool? {
         if editing?.id == id { return editing?.original.completed }
         if let row = detail?.rows.first(where: { $0.id == id }) { return row.completed }
-        return results.sections.lazy.flatMap(\.rows).first { $0.id == id }?.completed
+        return matches?.rows.first { $0.id == id }?.completed
     }
 
     public var gracing: Set<Reminder.ID> { Set(grace.keys) }
+}
+
+extension Reminders.Feature.State {
+    public func preference(for filter: Reminders.Filter) -> Reminders.Preference {
+        if let detail, detail.selection == .filter(filter) { return detail.preference }
+        return .default(for: filter)
+    }
 }

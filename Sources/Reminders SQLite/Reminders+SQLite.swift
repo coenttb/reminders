@@ -14,34 +14,7 @@ extension Reminders {
         @Sendable func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
         return Reminders(
             overview: Overview(client: Overview.Client { request in try read(request.fetch) }),
-            search: Search(
-                client: Search.Client(
-                    search: { request in try read(request.fetch) },
-                    deleteCompleted: { query, cutoff in
-                        try write { db in try Reminder.Record.deleteCompleted(matching: query, dueBefore: cutoff).execute(db) }
-                    }
-                )
-            ),
-            detail: Filter.Detail(
-                client: Filter.Detail.Client(
-                    fetch: { request in try read(request.fetch) },
-                    setOrdering: { ordering, filter in
-                        try write { db in try Filter.Preference.Record.set(ordering: ordering, for: filter).execute(db) }
-                    },
-                    toggleShowCompleted: { filter in
-                        try write { db in try Filter.Preference.Record.toggleShowCompleted(for: filter).execute(db) }
-                    },
-                    clearCompleted: { filter, today in
-                        try write { db in try Reminder.Record.deleteCompleted(in: filter, today: today).execute(db) }
-                    },
-                    move: { ids, filter in
-                        try write { db in
-                            try Reminder.Record.reorder(ids, in: db)
-                            try Filter.Preference.Record.set(ordering: .manual, for: filter).execute(db)
-                        }
-                    }
-                )
-            ),
+            listing: Listing(client: Listing.Client { request in try read(request.fetch) }),
             editor: Editor(
                 client: Editor.Client(
                     reminder: { id in
@@ -61,8 +34,11 @@ extension Reminders {
                             return try Reminder.Record.find(id).rows().fetchOne(db).map(Placement.init)
                         }
                     },
-                    save: { reminder, isNew in
-                        try write { db in try Reminder.Record.save(Reminder.Record.Draft(reminder), tags: reminder.tags, isNew: isNew, in: db) != nil }
+                    add: { reminder in
+                        try write { db in try Reminder.Record.save(Reminder.Record.Draft(reminder), tags: reminder.tags, isNew: true, in: db) != nil }
+                    },
+                    update: { reminder in
+                        try write { db in try Reminder.Record.save(Reminder.Record.Draft(reminder), tags: reminder.tags, isNew: false, in: db) != nil }
                     },
                     toggle: { id in
                         try write { db in
@@ -72,21 +48,31 @@ extension Reminders {
                     },
                     delete: { id in
                         try write { db in try Reminder.Record.find(id).delete().execute(db) }
+                    },
+                    move: { ids, filter in
+                        try write { db in
+                            try Reminder.Record.reorder(ids, in: db)
+                            let preference = try Preference.Record.preference(for: filter).fetchOne(db).map(Preference.init) ?? .default(for: filter)
+                            try Preference.Record.set(Preference(ordering: .manual, showCompleted: preference.showCompleted), for: filter).execute(db)
+                        }
+                    },
+                    deleteCompleted: { selection, today, cutoff in
+                        try write { db in try Reminder.Record.deleteCompleted(in: selection, today: today, dueBefore: cutoff).execute(db) }
                     }
                 )
             ),
             lists: Lists(
                 client: Lists.Client(
-                    save: { list, isNew in
+                    add: { list in
                         try write { db in
-                            let record = List<Reminder>.Record(list)
-                            if isNew {
-                                try List<Reminder>.Record.insert { record }.execute(db)
-                                try List<Reminder>.Record.placeLast(list.id).execute(db)
-                                return true
-                            }
+                            try List<Reminder>.Record.insert { List<Reminder>.Record(list) }.execute(db)
+                            try List<Reminder>.Record.placeLast(list.id).execute(db)
+                        }
+                    },
+                    update: { list in
+                        try write { db in
                             guard try List<Reminder>.Record.find(list.id).fetchCount(db) > 0 else { return false }
-                            try List<Reminder>.Record.save(List<Reminder>.Record.Draft(record)).execute(db)
+                            try List<Reminder>.Record.save(List<Reminder>.Record.Draft(List<Reminder>.Record(list))).execute(db)
                             return true
                         }
                     },
@@ -102,21 +88,14 @@ extension Reminders {
                 client: Tags.Client(
                     add: { title in try write { db in try Tag<Reminder>.Record.add(title, in: db) } },
                     rename: { id, title in try write { db in try Tag<Reminder>.Record.rename(id, to: title, in: db) } },
-                    delete: { id in try write { db in try Tag<Reminder>.Record.delete(id).execute(db) } }
+                    delete: { id in try write { db in try Tag<Reminder>.Record.delete(id).execute(db) } },
+                    suggest: { request in try read(request.fetch) }
                 )
             ),
-            restoration: Restoration(
-                client: Restoration.Client(
-                    current: {
-                        try read { db in
-                            guard let record = try Session.Record.current.fetchOne(db) else { return Session() }
-                            let editing = try record.editing.flatMap { try Reminder.Record.find($0).rows().fetchOne(db) }.map(Placement.init)
-                            return Session(record, editing: editing)
-                        }
-                    },
-                    setFilter: { filter in try write { db in try Session.Record.set(filter: filter).execute(db) } },
-                    setEditing: { id in try write { db in try Session.Record.set(editing: id).execute(db) } }
-                )
+            preferences: Preferences(
+                client: Preferences.Client { preference, filter in
+                    try write { db in try Preference.Record.set(preference, for: filter).execute(db) }
+                }
             )
         )
     }

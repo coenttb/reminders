@@ -1,10 +1,11 @@
 public import CasePaths
+public import Reminder
 
 extension Reminders {
     @CasePathable
     public enum Route: Hashable, Sendable {
         case overview
-        case filter(Filter)
-        case search(Search.Query)
+        case selection(Selection)
+        case reminder(Reminder.ID)
     }
 }

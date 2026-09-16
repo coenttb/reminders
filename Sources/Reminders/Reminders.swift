@@ -1,27 +1,24 @@
 public struct Reminders: Sendable {
     public var overview: Overview
-    public var search: Search
-    public var detail: Filter.Detail
+    public var listing: Listing
     public var editor: Editor
     public var lists: Lists
     public var tags: Tags
-    public var restoration: Restoration
+    public var preferences: Preferences
 
     public init(
         overview: Overview,
-        search: Search,
-        detail: Filter.Detail,
+        listing: Listing,
         editor: Editor,
         lists: Lists,
         tags: Tags,
-        restoration: Restoration
+        preferences: Preferences
     ) {
         self.overview = overview
-        self.search = search
-        self.detail = detail
+        self.listing = listing
         self.editor = editor
         self.lists = lists
         self.tags = tags
-        self.restoration = restoration
+        self.preferences = preferences
     }
 }

@@ -20,7 +20,7 @@ extension Reminders.Sample {
         try Reminder.Record.delete().execute(db)
         try List<Reminder>.Record.delete().execute(db)
         try Tag<Reminder>.Record.delete().execute(db)
-        try Reminders.Filter.Preference.Record.delete().execute(db)
+        try Reminders.Preference.Record.delete().execute(db)
         for lists in Array(sample.lists.enumerated()).chunks(of: 200) as [ArraySlice<(offset: Int, element: List<Reminder>)>] {
             try List<Reminder>.Record.insert { lists.map { List<Reminder>.Record($0.element, position: $0.offset) } }.execute(db)
         }

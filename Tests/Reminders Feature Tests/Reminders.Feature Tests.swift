@@ -12,6 +12,7 @@ import Reminder
 import Reminders
 import Reminders_Sample
 import Reminders_Dependency
+import Reminders_Session
 import Reminders_Feature
 import Reminders_SQL
 import Reminders_SQLite
@@ -119,7 +120,7 @@ struct `Reminder feature` {
         #expect(adulting == 1)
         let restored = try await database.read { db in try Reminders.Session.Record.current.fetchOne(db) }
         #expect(restored?.filter == Reminders.Filter.Key(.list(personal)))
-        let preference = try await database.read { [personal] db in try Reminders.Filter.Preference.Record.preference(for: .list(personal)).fetchOne(db) }
+        let preference = try await database.read { [personal] db in try Reminders.Preference.Record.preference(for: .list(personal)).fetchOne(db) }
         #expect(preference?.ordering == .title && preference?.showCompleted == true)
     }
 
@@ -147,7 +148,7 @@ struct `Reminder feature` {
             #expect(await store.state.detailWindow == Window(key: .list(personal), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
             #expect(editing.isSaved && editing.draft.isBlank && editing.draft.list == personal && editing.place.position == 11 && editing.session == UUID(0))
             #expect(try await stored(first)?.isBlank == true)
-            try await until(store.state.$detail) { $0?.ids.contains(first) == true }
+            try await until(store.state.$detail) { $0?.rows.map(\.id).contains(first) == true }
             await store.modify { $0[draft: first]?.title = "Milk" }?.value
             #expect(try await stored(first)?.title == "")
             #expect(await store.state.editing?.isSaved == false)
@@ -156,7 +157,7 @@ struct `Reminder feature` {
             let second = next.id
             #expect(second != first && next.session == UUID(1) && next.draft.isBlank && next.isSaved)
             #expect(next.place.reminder.title == "Milk" && next.place.reminder.id == second && next.place.position == 12)
-            try await until(store.state.$detail) { $0?.ids.suffix(2) == [first, second] }
+            try await until(store.state.$detail) { $0?.rows.map(\.id).suffix(2) == [first, second] }
             #expect(try await stored(first)?.title == "Milk")
             await store.send(.doneButtonTapped) { $0.editing = nil }?.value
             #expect(try await stored(second) == nil)
@@ -195,19 +196,19 @@ struct `Reminder feature` {
         #expect(open > step && open < 2 * step)
         let store = try await makeStore()
         await store.send(.filterTapped(.all)) { $0.filter = .all }?.value
-        try await until(store.state.$detail) { $0?.filter == .all && $0?.rows.count == step }
+        try await until(store.state.$detail) { $0?.selection == .filter(.all) && $0?.rows.count == step }
         #expect(await store.state.detail?.total == open)
         await store.send(.detailEndReached) { $0.detailWindow = Window(key: .all, rows: 2 * step, step: step, margin: Reminders.Feature.paging.margin) }?.value
         try await until(store.state.$detail) { $0?.rows.count == open }
         await store.send(.detailEndReached)?.value
         await store.send(.listTapped(list)) { $0.filter = .list(list) }?.value
-        try await until(store.state.$detail) { $0?.filter == .list(list) && $0?.rows.count == step }
+        try await until(store.state.$detail) { $0?.selection == .filter(.list(list)) && $0?.rows.count == step }
         try await TestExhaustivity.$current.withValue(.off) {
             await store.send(.newReminderButtonTapped)?.value
             let editing = try #require(await store.state.editing)
             #expect(await store.state.detailWindow == Window(key: .list(list), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
             #expect(editing.place.position == 700 && editing.draft.list == list)
-            try await until(store.state.$detail) { $0?.rows.count == open + 1 && $0?.ids.last == editing.id }
+            try await until(store.state.$detail) { $0?.rows.count == open + 1 && $0?.rows.map(\.id).last == editing.id }
             await store.send(.doneButtonTapped) { $0.editing = nil }?.value
         }
         await store.dismount()
@@ -218,7 +219,7 @@ struct `Reminder feature` {
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         await store.dismount()
         let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
-        try await until(revived.state.$detail) { $0?.filter == .list(personal) && $0?.rows.count == 4 }
+        try await until(revived.state.$detail) { $0?.selection == .filter(.list(personal)) && $0?.rows.count == 4 }
         await revived.dismount()
     }
 
@@ -357,7 +358,7 @@ struct `Reminder feature` {
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         try await until(store.state.$detail) { $0?.rows.isEmpty == false }
         await store.send(.showCompletedButtonTapped)?.value
-        try await until(store.state.$detail) { $0?.ids.contains(walk.id) == true }
+        try await until(store.state.$detail) { $0?.rows.map(\.id).contains(walk.id) == true }
         await store.send(.reminderCompleteButtonTapped(walk.id))?.value
         #expect(try await stored(walk.id)?.completed == false)
         await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(0)] }
@@ -635,7 +636,7 @@ struct `Reminder feature` {
     @Test(.dependency(\.defaultDatabase, try DatabaseQueue()))
     func `a database that cannot be read is a failure, not a first run`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await withDependencies { $0.reminders = .sqlite($0.defaultDatabase) } operation: { try await makeStore() }
+            let store = try await withDependencies { $0.reminders = .sqlite($0.defaultDatabase); $0.remindersSession = .sqlite($0.defaultDatabase) } operation: { try await makeStore() }
             #expect(await store.state.failure?.contains("no such table") == true)
             await store.dismount()
         }

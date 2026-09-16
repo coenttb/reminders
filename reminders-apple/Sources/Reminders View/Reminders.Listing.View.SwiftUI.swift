@@ -5,24 +5,24 @@ public import Reminders_Feature
 public import SwiftUI
 public import Tagged
 
-extension Reminders.Filter.Detail.View {
+extension Reminders.Listing.View {
     public struct SwiftUI {
-        private var contents: Reminders.Filter.Detail.Contents
+        private var contents: Reminders.Listing.Page
         private var style: Reminders.Filter.Style
         private var color: (Models.List<Reminder>.ID) -> SwiftUI::Color
         private var draft: (Reminder.ID) -> Binding<Reminder>?
-        private var view: Reminders.Filter.Detail.View
+        private var view: Reminders.Listing.View
         @State private var titleVisible = false
         @State private var editMode: EditMode = .inactive
         @State private var titleHeight: CGFloat = 36
         @FocusState private var focus: Reminder.Focus?
 
         public init(
-            contents: Reminders.Filter.Detail.Contents,
+            contents: Reminders.Listing.Page,
             style: Reminders.Filter.Style,
             color: @escaping (Models.List<Reminder>.ID) -> SwiftUI::Color,
             draft: @escaping (Reminder.ID) -> Binding<Reminder>?,
-            view: Reminders.Filter.Detail.View
+            view: Reminders.Listing.View
         ) {
             self.contents = contents
             self.style = style
@@ -33,7 +33,7 @@ extension Reminders.Filter.Detail.View {
     }
 }
 
-extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
+extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let (title, editing, actions) = (style.title ?? "", view.editing, view.actions)
         let tint = style.tint
@@ -51,7 +51,7 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             if preference.showCompleted, let clearCompleted = actions.clearCompleted {
-                let count = contents.completedCount
+                let count = contents.completed
                 VStack(spacing: 0) {
                     HStack(spacing: 6) {
                         Text("\(count) Completed")
@@ -98,12 +98,12 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
         }
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 42)
-        .animation(.default, value: contents.ids)
+        .animation(.default, value: contents.rows.map(\.id))
         .onChange(of: editing, initial: true) { _, editing in
             guard editing != nil else { return focus = nil }
             focusEditing(proxy)
         }
-        .onChange(of: contents.ids) { _, _ in focusEditing(proxy) }
+        .onChange(of: contents.rows.map(\.id)) { _, _ in focusEditing(proxy) }
         }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top > titleHeight
@@ -180,9 +180,9 @@ extension Reminders.Filter.Detail.View.SwiftUI: SwiftUI::View {
     }
 }
 
-extension Reminders.Filter.Detail.View.SwiftUI {
+extension Reminders.Listing.View.SwiftUI {
     private func focusEditing(_ proxy: ScrollViewProxy) {
-        guard let editing = view.editing, focus != .title(editing), focus != .notes(editing), contents.ids.contains(editing) else { return }
+        guard let editing = view.editing, focus != .title(editing), focus != .notes(editing), contents.rows.map(\.id).contains(editing) else { return }
         Task { @MainActor in
             withAnimation { proxy.scrollTo(editing, anchor: .center) }
             for _ in 0..<3 {

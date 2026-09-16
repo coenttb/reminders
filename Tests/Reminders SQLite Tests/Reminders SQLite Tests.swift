@@ -4,6 +4,7 @@ import Models
 import Reminder
 import Reminders
 import Reminders_Sample
+import Reminders_Session
 import Reminders_SQL
 import Reminders_SQLite
 import SQLiteData
@@ -26,12 +27,16 @@ import Tagged
         try database.read { db in try Reminders.Overview.Request(today: today).fetch(db) }
     }
 
-    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil) throws -> Reminders.Filter.Detail.Contents {
-        try #require(try database.read { db in try Reminders.Filter.Detail.Request(filter: filter, today: today, place: place).fetch(db) })
+    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil, limit: Int? = nil) throws -> Reminders.Listing.Page {
+        try database.read { db in try Reminders.Listing.Request(selection: .filter(filter), today: today, place: place, limit: limit).fetch(db) }
     }
 
-    func results(_ query: Reminders.Search.Query, _ database: some DatabaseWriter) throws -> Reminders.Search.Contents {
-        try database.read { db in try Reminders.Search.Request(query: query).fetch(db) }
+    func results(_ query: Reminders.Search.Query, _ database: some DatabaseWriter, limit: Int? = nil) throws -> Reminders.Listing.Page {
+        try database.read { db in try Reminders.Listing.Request(selection: .search(query), today: today, limit: limit).fetch(db) }
+    }
+
+    func suggestions(_ prefix: String, excluding: Set<Models.Tag<Reminder>> = [], _ database: some DatabaseWriter) throws -> [Models.Tag<Reminder>] {
+        try database.read { db in try Reminders.Tags.Suggestions(prefix: prefix, excluding: excluding).fetch(db) }
     }
 
     func stored(_ id: Reminder.ID, _ database: some DatabaseWriter) throws -> Reminder? {
@@ -103,36 +108,36 @@ import Tagged
     @Test func `a detail and a search read their first rows with the count of all of them`() throws {
         let (database, sample) = try makeDatabase()
         let personal = Reminders.Filter.list(sample.lists[0].id)
-        let window = try #require(try database.read { db in try Reminders.Filter.Detail.Request(filter: personal, today: today, limit: 2).fetch(db) })
+        let window = try detail(personal, database, limit: 2)
         #expect(window.reminders.map(\.title) == ["Haircut", "Doctor appointment"])
-        #expect(window.total == 4 && window.rows.count < window.total && window.ids == window.reminders.map(\.id))
-        #expect(window.completedCount == 0)
+        #expect(window.total == 4 && window.rows.count < window.total)
+        #expect(window.completed == 1)
         let whole = try detail(personal, database)
         #expect(whole.rows.count == 4 && whole.total == 4)
-        try database.write { db in try Reminders.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
-        let shown = try #require(try database.read { db in try Reminders.Filter.Detail.Request(filter: personal, today: today, limit: 1).fetch(db) })
-        #expect(shown.rows.count == 1 && shown.total == 5 && shown.completedCount == 1)
-        let matches = try database.read { db in try Reminders.Search.Request(query: Reminders.Search.Query(text: "Take", showCompleted: true), limit: 1).fetch(db) }
-        #expect(matches.reminders.map(\.title) == ["Take a walk"] && matches.total == 2 && matches.shown < matches.total)
-        #expect(matches.completedCount == 1 && matches.shown == 1)
-        #expect(try results(Reminders.Search.Query(text: "Take", showCompleted: true), database).total == 2)
+        try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(showCompleted: true), for: personal).execute(db) }
+        let shown = try detail(personal, database, limit: 1)
+        #expect(shown.rows.count == 1 && shown.total == 5 && shown.completed == 1)
+        let matches = try results(Reminders.Search.Query(terms: ["Take"], showCompleted: true), database, limit: 1)
+        #expect(matches.reminders.map(\.title) == ["Take a walk"] && matches.total == 2 && matches.rows.count < matches.total)
+        #expect(matches.completed == 1 && matches.rows.count == 1)
+        #expect(try results(Reminders.Search.Query(terms: ["Take"], showCompleted: true), database).total == 2)
     }
 
     @Test func `a detail filters by membership and orders by its preference`() throws {
         let (database, sample) = try makeDatabase()
         let personal = Reminders.Filter.list(sample.lists[0].id)
         var detail = try detail(personal, database)
-        #expect(detail.filter == personal)
+        #expect(detail.selection == .filter(personal))
         #expect(detail.reminders.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
-        try database.write { db in try Reminders.Filter.Preference.Record.set(ordering: .priority, for: personal).execute(db) }
+        try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(ordering: .priority), for: personal).execute(db) }
         detail = try self.detail(personal, database)
         #expect(detail.preference.ordering == .priority)
         #expect(detail.reminders.map(\.title) == ["Doctor appointment", "Haircut", "Groceries", "Buy concert tickets"])
-        try database.write { db in try Reminders.Filter.Preference.Record.set(ordering: .title, for: personal).execute(db) }
+        try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(ordering: .title), for: personal).execute(db) }
         #expect(try self.detail(personal, database).reminders.map(\.title) == ["Buy concert tickets", "Doctor appointment", "Groceries", "Haircut"])
-        try database.write { db in try Reminders.Filter.Preference.Record.set(ordering: .creationDate, for: personal).execute(db) }
+        try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(ordering: .creationDate), for: personal).execute(db) }
         #expect(try self.detail(personal, database).reminders.map(\.title) == ["Groceries", "Haircut", "Doctor appointment", "Buy concert tickets"])
-        try database.write { db in try Reminders.Filter.Preference.Record.toggleShowCompleted(for: personal).execute(db) }
+        try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(ordering: .creationDate, showCompleted: true), for: personal).execute(db) }
         detail = try self.detail(personal, database)
         #expect(detail.preference.showCompleted && detail.reminders.map(\.title).last == "Take a walk")
         #expect(try self.detail(.completed, database).reminders.count == 3)
@@ -151,10 +156,10 @@ import Tagged
         let groceries = sample.reminders[0]
         try database.write { db in
             try Reminder.Record.save({ var draft = Reminder.Record.Draft(groceries); draft.title = "apples"; return draft }()).execute(db)
-            try Reminders.Filter.Preference.Record.set(ordering: .title, for: personal).execute(db)
+            try Reminders.Preference.Record.set(Reminders.Preference(ordering: .title), for: personal).execute(db)
         }
         #expect(try detail(personal, database).reminders.map(\.title) == ["apples", "Buy concert tickets", "Doctor appointment", "Haircut"])
-        try database.write { db in try Reminders.Filter.Preference.Record.set(ordering: .dueDate, for: personal).execute(db) }
+        try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(ordering: .dueDate), for: personal).execute(db) }
         var dated = Reminder.Record.Draft(groceries)
         dated.title = "apples"
         dated.due = .day(now.addingTimeInterval(-400_000))
@@ -247,39 +252,39 @@ import Tagged
             try Tag<Reminder>.Record.add("Cat", in: db)
         }
         #expect(try overview(database).tags.map(\.tag.rawValue) == ["social", "adulting", "optional", "someday", "Car", "kids", "night", "Cat"])
-        #expect(try results(Reminders.Search.Query(text: "#c"), database).suggestions.map(\.rawValue) == ["Car", "Cat"])
-        #expect(try results(Reminders.Search.Query(text: "#so"), database).suggestions.map(\.rawValue) == ["social", "someday"])
-        #expect(try results(Reminders.Search.Query(text: "#so", tokens: [.tag("social")]), database).suggestions.map(\.rawValue) == ["someday"])
+        #expect(try suggestions("c", database).map(\.rawValue) == ["Car", "Cat"])
+        #expect(try suggestions("so", database).map(\.rawValue) == ["social", "someday"])
+        #expect(try suggestions("so", excluding: ["social"], database).map(\.rawValue) == ["someday"])
+        #expect(try suggestions("", database).isEmpty)
     }
 
     @Test func `search matches text and tag tokens and can clear completed matches`() throws {
         let (database, sample) = try makeDatabase()
-        #expect(try results(Reminders.Search.Query(text: "Take", showCompleted: true), database).reminders.map(\.title) == ["Take a walk", "Take out trash"])
-        let hidden = try results(Reminders.Search.Query(text: "Take"), database)
-        #expect(hidden.reminders.map(\.title) == ["Take out trash"] && hidden.completedCount == 1)
-        #expect(hidden.sections.map(\.list.title) == ["Family"])
-        #expect(try results(Reminders.Search.Query(text: "Take", tokens: [.tag("car")], showCompleted: true), database).reminders.map(\.title) == ["Take a walk"])
-        #expect(try results(Reminders.Search.Query(tokens: [.near("Take"), .near("walk")], showCompleted: true), database).reminders.map(\.title) == ["Take a walk"])
-        #expect(try results(Reminders.Search.Query(text: "oatmeal"), database).reminders.map(\.title) == ["Groceries"])
-        #expect(try results(Reminders.Search.Query(text: "ADULT"), database).reminders.map(\.title) == ["Doctor appointment", "Groceries"])
-        #expect(try results(Reminders.Search.Query(text: "payroll"), database).reminders.map(\.title) == ["Call accountant"])
-        #expect(try results(Reminders.Search.Query(text: "#so"), database).reminders.isEmpty)
-        #expect(try results(Reminders.Search.Query(), database).reminders.isEmpty)
-        try database.write { db in
+        #expect(try results(Reminders.Search.Query(terms: ["Take"], showCompleted: true), database).reminders.map(\.title) == ["Take a walk", "Take out trash"])
+        let hidden = try results(Reminders.Search.Query(terms: ["Take"]), database)
+        #expect(hidden.reminders.map(\.title) == ["Take out trash"] && hidden.completed == 1)
+        #expect(hidden.rows.map(\.list) == [sample.lists[1].id])
+        #expect(try results(Reminders.Search.Query(terms: ["Take"], tags: ["car"], showCompleted: true), database).reminders.map(\.title) == ["Take a walk"])
+        #expect(try results(Reminders.Search.Query(terms: ["Take", "walk"], showCompleted: true), database).reminders.map(\.title) == ["Take a walk"])
+        #expect(try results(Reminders.Search.Query(terms: ["oatmeal"]), database).reminders.map(\.title) == ["Groceries"])
+        #expect(try results(Reminders.Search.Query(terms: ["ADULT"]), database).reminders.map(\.title) == ["Doctor appointment", "Groceries"])
+        #expect(try results(Reminders.Search.Query(terms: ["payroll"]), database).reminders.map(\.title) == ["Call accountant"])
+        #expect(try results(Reminders.Search.Query(tags: ["nothing"]), database).reminders.isEmpty)
+        try database.write { [today] db in
             try Reminder.Record.toggle(sample.reminders[7].id).execute(db)
-            try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(text: "Take"), dueBefore: calendar.date(byAdding: .month, value: -12, to: now)).execute(db)
+            try Reminder.Record.deleteCompleted(in: .search(Reminders.Search.Query(terms: ["Take"])), today: today, dueBefore: calendar.date(byAdding: .month, value: -12, to: now)).execute(db)
         }
         #expect(try overview(database).counts.all == 7)
         #expect(try count(database) == 11)
-        try database.write { db in
-            try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(text: "Take"), dueBefore: calendar.date(byAdding: .month, value: -1, to: now)).execute(db)
+        try database.write { [today] db in
+            try Reminder.Record.deleteCompleted(in: .search(Reminders.Search.Query(terms: ["Take"])), today: today, dueBefore: calendar.date(byAdding: .month, value: -1, to: now)).execute(db)
         }
         #expect(try count(database) == 10)
         #expect(try stored(sample.reminders[7].id, database)?.completed == true)
         #expect(try detail(.completed, database).reminders.map(\.title) == ["Get laundry", "Send weekly emails", "Take out trash"])
-        try database.write { db in try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(text: "#so"), dueBefore: nil).execute(db) }
+        try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .search(Reminders.Search.Query(tags: ["nothing"])), today: today, dueBefore: nil).execute(db) }
         #expect(try count(database) == 10)
-        try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .completed, today: today).execute(db) }
+        try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .filter(.completed), today: today, dueBefore: nil).execute(db) }
         #expect(try count(database) == 7)
         #expect(try detail(.completed, database).reminders.isEmpty)
     }
@@ -323,7 +328,7 @@ import Tagged
         }
         #expect(try position(sample.reminders[2].id, database) == 3)
         let personal = Reminders.Filter.list(sample.lists[0].id)
-        try database.write { db in try Reminders.Filter.Preference.Record.set(ordering: .manual, for: personal).execute(db) }
+        try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(ordering: .manual), for: personal).execute(db) }
         #expect(try detail(personal, database, place: { var p = haircut; p.id = next.id; return Reminders.Placement(p, position: 2) }()).reminders.map(\.id).prefix(3) == [sample.reminders[0].id, haircut.id, next.id])
         var ids = try detail(personal, database).reminders.map(\.id)
         ids.swapAt(0, 2)
@@ -335,16 +340,15 @@ import Tagged
     @Test func `a preference for an unknown detail is ignored and each setter touches its own column`() throws {
         let (database, sample) = try makeDatabase()
         try database.write { db in
-            try Reminders.Filter.Preference.Record.insert { Reminders.Filter.Preference.Record(key: Reminders.Filter.Key(rawValue: "nothing"), ordering: .title) }.execute(db)
+            try Reminders.Preference.Record.insert { Reminders.Preference.Record(key: Reminders.Filter.Key(rawValue: "nothing"), ordering: .title) }.execute(db)
         }
         #expect(try detail(.list(sample.lists[0].id), database).preference == .default(for: .list(sample.lists[0].id)))
         #expect(try detail(.completed, database).preference == .default(for: .completed))
         try database.write { db in
-            try Reminders.Filter.Preference.Record.toggleShowCompleted(for: .completed).execute(db)
-            try Reminders.Filter.Preference.Record.set(ordering: .title, for: .completed).execute(db)
-            try Reminders.Filter.Preference.Record.toggleShowCompleted(for: .completed).execute(db)
+            try Reminders.Preference.Record.set(Reminders.Preference(showCompleted: false), for: .completed).execute(db)
+            try Reminders.Preference.Record.set(Reminders.Preference(ordering: .title, showCompleted: true), for: .completed).execute(db)
         }
-        #expect(try detail(.completed, database).preference == Reminders.Filter.Preference(ordering: .title, showCompleted: true))
+        #expect(try detail(.completed, database).preference == Reminders.Preference(ordering: .title, showCompleted: true))
     }
 
     @Test func `a tag is one tag in any case, including beyond ASCII, and links follow a rename`() throws {
@@ -454,7 +458,7 @@ import Tagged
         }
         func today(_ calendar: Calendar) throws -> [String] {
             try database.read { db in
-                try Reminders.Filter.Detail.Request(filter: .today, today: calendar.day(containing: now)!).fetch(db)?.reminders.map(\.title) ?? []
+                try Reminders.Listing.Request(selection: .filter(.today), today: calendar.day(containing: now)!).fetch(db).reminders.map(\.title)
             }
         }
         func count(_ calendar: Calendar) throws -> Int {
@@ -520,18 +524,18 @@ import Tagged
 
     @Test func `a search matches the tags once and looks each reminder's links up in their index`() throws {
         let (database, _) = try makeDatabase()
-        let steps = try plan(Reminder.Record.where { $0.matches(Reminders.Search.Query(text: "day")) }.select(\.id), database)
+        let steps = try plan(Reminder.Record.where { $0.matches(Reminders.Search.Query(terms: ["day"])) }.select(\.id), database)
         #expect(steps.contains { $0.contains("LIST SUBQUERY") }, "\(steps)")
         #expect(steps.contains { $0.hasPrefix("SCAN tags") }, "\(steps)")
         #expect(!steps.contains { $0.contains("CORRELATED") && $0.contains("tags") }, "\(steps)")
-        #expect(try results(Reminders.Search.Query(text: "SOMEDAY", showCompleted: true), database).reminders.map(\.title) == ["Haircut", "Groceries"])
-        let sql = "\(Reminder.Record.where { $0.matches(Reminders.Search.Query(text: "day")) }.select(\.id).query)"
+        #expect(try results(Reminders.Search.Query(terms: ["SOMEDAY"], showCompleted: true), database).reminders.map(\.title) == ["Haircut", "Groceries"])
+        let sql = "\(Reminder.Record.where { $0.matches(Reminders.Search.Query(terms: ["day"])) }.select(\.id).query)"
         #expect(sql.contains("instr(\"reminders\".\"searchText\"") && !sql.contains("localizedCaseInsensitiveContains(\"reminders\""), "\(sql)")
-        let groceries = try #require(try results(Reminders.Search.Query(text: "oatmeal", showCompleted: true), database).reminders.first)
+        let groceries = try #require(try results(Reminders.Search.Query(terms: ["oatmeal"], showCompleted: true), database).reminders.first)
         try database.write { db in try Reminder.Record.find(groceries.id).update { $0.title = "Weekly Shopping" }.execute(db) }
-        #expect(try results(Reminders.Search.Query(text: "shopping", showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
-        #expect(try results(Reminders.Search.Query(text: "grocer", showCompleted: true), database).reminders.isEmpty)
-        #expect(try results(Reminders.Search.Query(text: "OATMEAL", showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
+        #expect(try results(Reminders.Search.Query(terms: ["shopping"], showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
+        #expect(try results(Reminders.Search.Query(terms: ["grocer"], showCompleted: true), database).reminders.isEmpty)
+        #expect(try results(Reminders.Search.Query(terms: ["OATMEAL"], showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
     }
 
     @Test func `Today and the completed set are read through indexes, not a scan of every reminder`() throws {
@@ -545,10 +549,6 @@ import Tagged
     }
 }
 
-extension Reminders.Filter.Detail.Contents {
+extension Reminders.Listing.Page {
     var reminders: [Reminder] { rows }
-}
-
-extension Reminders.Search.Contents {
-    var reminders: [Reminder] { sections.flatMap(\.rows) }
 }

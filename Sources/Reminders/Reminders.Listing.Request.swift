@@ -1,14 +1,14 @@
 public import Foundation
 
-extension Reminders.Filter.Detail {
+extension Reminders.Listing {
     public struct Request: Hashable, Sendable {
-        public var filter: Reminders.Filter?
+        public var selection: Reminders.Selection
         public var today: Range<Date>
         public var place: Reminders.Placement?
         public var limit: Int?
 
-        public init(filter: Reminders.Filter?, today: Range<Date>, place: Reminders.Placement? = nil, limit: Int? = nil) {
-            self.filter = filter
+        public init(selection: Reminders.Selection, today: Range<Date>, place: Reminders.Placement? = nil, limit: Int? = nil) {
+            self.selection = selection
             self.today = today
             self.place = place
             self.limit = limit

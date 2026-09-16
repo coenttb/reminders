@@ -1,5 +1,6 @@
 public import Reminder
 public import Reminders
+public import Reminders_Session
 public import StructuredQueries
 public import Tagged
 

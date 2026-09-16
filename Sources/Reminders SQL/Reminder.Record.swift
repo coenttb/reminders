@@ -84,8 +84,4 @@ extension Reminder.Record {
             row.repeats = excluded.repeats
         }
     }
-
-    public static func deleteCompleted(in filter: Reminders.Filter, today: Range<Date>) -> DeleteOf<Reminder.Record> {
-        Reminder.Record.where { $0.isCompleted && $0.belongs(to: filter, today: today) }.delete()
-    }
 }
