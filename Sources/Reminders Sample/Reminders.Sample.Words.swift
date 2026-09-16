@@ -1,4 +1,4 @@
-import Organizing
+import Models
 import Reminders
 
 extension Reminders.Sample {
@@ -11,14 +11,14 @@ extension Reminders.Sample.Words {
     static let notes = ["Ask about the weekend plans", "Before Friday", "Compare two quotes first", "Milk\nEggs\nApples", "Needs the account number", "Second reminder", "Check the warranty"]
     static let listNames = ["Personal", "Family", "Business", "Errands", "Home", "Travel", "Health", "Finance", "Garden", "Reading", "Projects", "Gifts", "Car", "School", "Music"]
     static let tagNames = ["adulting", "car", "kids", "night", "optional", "social", "someday", "urgent", "weekend", "work", "home", "health", "money", "travel", "gift", "fun", "chores", "calls", "reading", "fitness"]
-    static let colors: [Organizing.Color] = [
+    static let colors: [Models.Color] = [
         .default,
-        Organizing.Color(red: 255 / 255, green: 59 / 255, blue: 48 / 255),
-        Organizing.Color(red: 255 / 255, green: 149 / 255, blue: 0),
-        Organizing.Color(red: 255 / 255, green: 204 / 255, blue: 0),
-        Organizing.Color(red: 52 / 255, green: 199 / 255, blue: 89 / 255),
-        Organizing.Color(red: 175 / 255, green: 82 / 255, blue: 222 / 255),
-        Organizing.Color(red: 162 / 255, green: 132 / 255, blue: 94 / 255),
+        Models.Color(red: 255 / 255, green: 59 / 255, blue: 48 / 255),
+        Models.Color(red: 255 / 255, green: 149 / 255, blue: 0),
+        Models.Color(red: 255 / 255, green: 204 / 255, blue: 0),
+        Models.Color(red: 52 / 255, green: 199 / 255, blue: 89 / 255),
+        Models.Color(red: 175 / 255, green: 82 / 255, blue: 222 / 255),
+        Models.Color(red: 162 / 255, green: 132 / 255, blue: 94 / 255),
     ]
 
     static func list(_ index: Int) -> String {

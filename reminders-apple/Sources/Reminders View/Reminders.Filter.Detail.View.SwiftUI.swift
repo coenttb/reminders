@@ -1,4 +1,4 @@
-public import Organizing
+public import Models
 public import Reminder
 public import Reminders
 public import Reminders_Interface
@@ -10,7 +10,7 @@ extension Reminders.Filter.Detail.View {
     public struct SwiftUI {
         private var contents: Reminders.Filter.Detail.Contents
         private var style: Reminders.Filter.Style
-        private var color: (Organizing.List<Reminder>.ID) -> SwiftUI::Color
+        private var color: (Models.List<Reminder>.ID) -> SwiftUI::Color
         private var draft: (Reminder.ID) -> Binding<Reminder.Record.Draft>?
         private var view: Reminders.Filter.Detail.View
         @State private var titleVisible = false
@@ -21,7 +21,7 @@ extension Reminders.Filter.Detail.View {
         public init(
             contents: Reminders.Filter.Detail.Contents,
             style: Reminders.Filter.Style,
-            color: @escaping (Organizing.List<Reminder>.ID) -> SwiftUI::Color,
+            color: @escaping (Models.List<Reminder>.ID) -> SwiftUI::Color,
             draft: @escaping (Reminder.ID) -> Binding<Reminder.Record.Draft>?,
             view: Reminders.Filter.Detail.View
         ) {

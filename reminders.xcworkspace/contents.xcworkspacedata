@@ -21,9 +21,6 @@
       location = "group:../../pointfreeco/TCA26">
    </FileRef>
    <FileRef
-      location = "container:../organizing">
-   </FileRef>
-   <FileRef
       location = "container:../swift-institute/swift-atoms/swift-standard-library-extensions">
    </FileRef>
    <FileRef

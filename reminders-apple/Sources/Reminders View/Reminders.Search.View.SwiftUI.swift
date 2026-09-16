@@ -1,4 +1,4 @@
-import Organizing
+import Models
 import Reminder
 public import Reminders
 public import Reminders_Interface
@@ -69,7 +69,7 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
         ForEach(Array(contents.sections.enumerated()), id: \.element.id) { position, section in
             Section {
                 ForEach(Array(section.rows.enumerated()), id: \.element.reminder.id) { offset, record in
-                    Reminder.Row.SwiftUI(row: record, color: SwiftUI::Color(Organizing.Color(section.list.color)), view: row)
+                    Reminder.Row.SwiftUI(row: record, color: SwiftUI::Color(Models.Color(section.list.color)), view: row)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if view.window.nearsEnd(starts[position] + offset, of: shown, total: total) { actions.endReached() } }
@@ -77,7 +77,7 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
             } header: {
                 Text(section.list.title)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(SwiftUI::Color(Organizing.Color(section.list.color)))
+                    .foregroundStyle(SwiftUI::Color(Models.Color(section.list.color)))
                     .textCase(nil)
             }
             .listRowBackground(SwiftUI::Color.clear)

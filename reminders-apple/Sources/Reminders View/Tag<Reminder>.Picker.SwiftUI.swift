@@ -1,4 +1,4 @@
-public import Organizing
+public import Models
 public import Reminder
 public import Reminders_Interface
 public import Reminders_SQL

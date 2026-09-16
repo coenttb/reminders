@@ -1,4 +1,3 @@
-public import Organizing
 import Standard_Library_Extensions
 
 extension Color.Hex {

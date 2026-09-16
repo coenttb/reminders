@@ -1,6 +1,6 @@
-public import Organizing
+public import Models
 
-extension Organizing.List.Row {
+extension Models.List.Row {
     public struct Actions {
         public var details: () -> Void
         public var delete: () -> Void

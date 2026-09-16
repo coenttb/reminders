@@ -1,7 +1,7 @@
-public import Organizing
+public import Models
 public import SwiftUI
 
-extension Organizing.List {
+extension Models.List {
     public struct Badge {
         private var color: SwiftUI.Color
         private var size: CGFloat
@@ -13,7 +13,7 @@ extension Organizing.List {
     }
 }
 
-extension Organizing.List.Badge: SwiftUI::View {
+extension Models.List.Badge: SwiftUI::View {
     public var body: some SwiftUI::View {
         Image(systemName: "list.bullet")
             .font(.system(size: size * 0.5, weight: .semibold))

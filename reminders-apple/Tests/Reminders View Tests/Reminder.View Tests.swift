@@ -1,6 +1,6 @@
 import Foundation
 import FoundationEssentials_Extensions
-import Organizing
+import Models
 import Reminder
 import Reminders
 import Reminders_Interface
@@ -75,13 +75,13 @@ import Testing
     }
 
     @Test func `the list color round-trips through SwiftUI`() {
-        let color = Organizing.Color(red: 237 / 255, green: 137 / 255, blue: 53 / 255)
-        let round = Organizing.Color(SwiftUI.Color(color))
+        let color = Models.Color(red: 237 / 255, green: 137 / 255, blue: 53 / 255)
+        let round = Models.Color(SwiftUI.Color(color))
         #expect(abs(round.red - color.red) < 0.002 && abs(round.green - color.green) < 0.002 && abs(round.blue - color.blue) < 0.002)
         #expect(Reminders.Filter.Style(.flagged, list: nil, day: 1).tint == .orange)
         let personal = List<Reminder>.Record(List(id: list, title: "Personal", color: color))
-        #expect(Reminders.Filter.Style(.list(list), list: personal, day: 1).tint == SwiftUI.Color(Organizing.Color(personal.color)))
+        #expect(Reminders.Filter.Style(.list(list), list: personal, day: 1).tint == SwiftUI.Color(Models.Color(personal.color)))
         #expect(Reminders.Filter.Style(.list(list), list: nil, day: 1).tint == .blue)
-        #expect(Organizing.List<Reminder>.Form.SwiftUI.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])
+        #expect(Models.List<Reminder>.Form.SwiftUI.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])
     }
 }

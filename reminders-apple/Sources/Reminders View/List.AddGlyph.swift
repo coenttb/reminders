@@ -1,13 +1,13 @@
-public import Organizing
+public import Models
 public import SwiftUI
 
-extension Organizing.List {
+extension Models.List {
     public struct AddGlyph {
         public init() {}
     }
 }
 
-extension Organizing.List.AddGlyph: SwiftUI::View {
+extension Models.List.AddGlyph: SwiftUI::View {
     public var body: some SwiftUI::View {
         Image(systemName: "list.bullet.rectangle.portrait")
             .overlay(alignment: .bottomTrailing) {

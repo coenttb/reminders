@@ -28,10 +28,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Organizing"
-               BuildableName = "Organizing"
-               BlueprintName = "Organizing"
-               ReferencedContainer = "container:../organizing">
+               BlueprintIdentifier = "Models"
+               BuildableName = "Models"
+               BlueprintName = "Models"
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -140,10 +140,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Organizing Tests"
-               BuildableName = "Organizing Tests"
-               BlueprintName = "Organizing Tests"
-               ReferencedContainer = "container:../organizing">
+               BlueprintIdentifier = "Models Tests"
+               BuildableName = "Models Tests"
+               BlueprintName = "Models Tests"
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -312,10 +312,10 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Organizing Tests"
-               BuildableName = "Organizing Tests"
-               BlueprintName = "Organizing Tests"
-               ReferencedContainer = "container:../organizing">
+               BlueprintIdentifier = "Models Tests"
+               BuildableName = "Models Tests"
+               BlueprintName = "Models Tests"
+               ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
          <TestableReference

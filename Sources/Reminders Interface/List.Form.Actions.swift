@@ -1,6 +1,6 @@
-public import Organizing
+public import Models
 
-extension Organizing.List.Form {
+extension Models.List.Form {
     public struct Actions {
         public var save: () -> Void
         public var cancel: () -> Void

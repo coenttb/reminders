@@ -1,7 +1,7 @@
 import SwiftUI_Extensions
 public import ComposableArchitecture2
 import Dependencies
-import Organizing
+import Models
 import Reminder
 public import Reminders
 import Reminders_Interface
@@ -91,7 +91,7 @@ extension Reminders.Screen: SwiftUI::View {
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { store.send(.addListButtonTapped) } label: { Organizing.List<Reminder>.AddGlyph() }
+                    Button { store.send(.addListButtonTapped) } label: { Models.List<Reminder>.AddGlyph() }
                         .accessibilityLabel("Add List")
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
@@ -158,13 +158,13 @@ extension Reminders.Screen: SwiftUI::View {
         .sheet(item: $store.scope(\.destination).list) { form in
             @Bindable var form = form
             NavigationStack {
-                Organizing.List<Reminder>.Form.SwiftUI(
+                Models.List<Reminder>.Form.SwiftUI(
                     draft: $form.draft,
-                    form: Organizing.List<Reminder>.Form(
+                    form: Models.List<Reminder>.Form(
                         isNew: form.isNew,
                         isDirty: form.isDirty,
                         failure: form.failure,
-                        actions: Organizing.List<Reminder>.Form.Actions(save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
+                        actions: Models.List<Reminder>.Form.Actions(save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
                     )
                 )
                 .navigationTitle(form.isNew ? "New List" : "List Info")

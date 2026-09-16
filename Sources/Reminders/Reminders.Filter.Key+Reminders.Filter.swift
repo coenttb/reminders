@@ -1,5 +1,5 @@
 import Foundation
-import Organizing
+import Models
 import Reminder
 import Standard_Library_Extensions
 import Tagged

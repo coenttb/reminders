@@ -1,5 +1,5 @@
 public import Foundation
-package import Organizing
+package import Models
 public import Reminder
 public import Reminders
 public import StructuredQueries

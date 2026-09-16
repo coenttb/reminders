@@ -1,6 +1,6 @@
-public import Organizing
+public import Models
 
-extension Organizing.List {
+extension Models.List {
     public struct Row {
         public var count: Int
         public var actions: Actions

@@ -1,4 +1,4 @@
-public import Organizing
+public import Models
 public import Reminder
 public import Reminders
 public import Reminders_SQL
@@ -22,7 +22,7 @@ extension Reminders.Filter {
 }
 
 extension Reminders.Filter.Style {
-    public init(_ filter: Reminders.Filter, list: Organizing.List<Reminder>.Record?, day: Int) {
+    public init(_ filter: Reminders.Filter, list: Models.List<Reminder>.Record?, day: Int) {
         switch filter {
         case .all:
             self.init(title: "All", tint: .primary, fill: .all, symbol: "tray.fill")
@@ -31,7 +31,7 @@ extension Reminders.Filter.Style {
         case .flagged:
             self.init(title: "Flagged", tint: .orange, fill: .flagged, symbol: "flag.fill")
         case .list:
-            self.init(title: list?.title, tint: list.map { SwiftUI.Color(Organizing.Color($0.color)) } ?? .blue, fill: .all, symbol: "list.bullet")
+            self.init(title: list?.title, tint: list.map { SwiftUI.Color(Models.Color($0.color)) } ?? .blue, fill: .all, symbol: "list.bullet")
         case .scheduled:
             self.init(title: "Scheduled", tint: .red, fill: .scheduled, symbol: "calendar")
         case let .tags(tags):

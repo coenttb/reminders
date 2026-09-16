@@ -1,6 +1,6 @@
 public import Foundation
 import FoundationEssentials_Extensions
-public import Organizing
+public import Models
 public import Reminder
 public import Reminders
 import Standard_Library_Extensions

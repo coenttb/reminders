@@ -1,6 +1,6 @@
-public import Organizing
+public import Models
 
-extension Organizing.List {
+extension Models.List {
     public struct Form {
         public var isNew: Bool
         public var isDirty: Bool

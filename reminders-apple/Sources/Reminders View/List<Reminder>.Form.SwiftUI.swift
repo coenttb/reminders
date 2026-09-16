@@ -1,43 +1,43 @@
-public import Organizing
+public import Models
 public import Reminder
 public import Reminders
 public import Reminders_Interface
 public import Reminders_SQL
 public import SwiftUI
 
-extension Organizing.List<Reminder>.Form {
+extension Models.List<Reminder>.Form {
     public struct SwiftUI {
-        @Binding private var draft: Organizing.List<Reminder>.Record.Draft
-        private var form: Organizing.List<Reminder>.Form
+        @Binding private var draft: Models.List<Reminder>.Record.Draft
+        private var form: Models.List<Reminder>.Form
         @FocusState private var nameFocused: Bool
         @State private var discardPresented = false
 
-        public init(draft: Binding<Organizing.List<Reminder>.Record.Draft>, form: Organizing.List<Reminder>.Form) {
+        public init(draft: Binding<Models.List<Reminder>.Record.Draft>, form: Models.List<Reminder>.Form) {
             self._draft = draft
             self.form = form
         }
     }
 }
 
-extension Organizing.List<Reminder>.Form.SwiftUI: SwiftUI::View {
-    public static var palette: [(name: String, color: Organizing.Color.Hex)] {
+extension Models.List<Reminder>.Form.SwiftUI: SwiftUI::View {
+    public static var palette: [(name: String, color: Models.Color.Hex)] {
         [
             ("Red", rgb(255, 59, 48)), ("Orange", rgb(255, 149, 0)), ("Yellow", rgb(255, 204, 0)),
-            ("Green", rgb(52, 199, 89)), ("Blue", Organizing.Color.Hex(Organizing.Color.default)), ("Purple", rgb(175, 82, 222)),
+            ("Green", rgb(52, 199, 89)), ("Blue", Models.Color.Hex(Models.Color.default)), ("Purple", rgb(175, 82, 222)),
             ("Brown", rgb(162, 132, 94)),
         ]
     }
 
-    private static func rgb(_ red: Int, _ green: Int, _ blue: Int) -> Organizing.Color.Hex {
-        Organizing.Color.Hex(Organizing.Color(red: Double(red) / 255, green: Double(green) / 255, blue: Double(blue) / 255))
+    private static func rgb(_ red: Int, _ green: Int, _ blue: Int) -> Models.Color.Hex {
+        Models.Color.Hex(Models.Color(red: Double(red) / 255, green: Double(green) / 255, blue: Double(blue) / 255))
     }
 
     public var body: some SwiftUI::View {
-        let color = SwiftUI::Color(Organizing.Color(draft.color))
+        let color = SwiftUI::Color(Models.Color(draft.color))
         SwiftUI::Form {
             Section {
                 VStack(spacing: 20) {
-                    Organizing.List<Reminder>.Badge(color: color, size: 100)
+                    Models.List<Reminder>.Badge(color: color, size: 100)
                         .shadow(color: color.opacity(0.45), radius: 14, y: 6)
                     TextField("List Name", text: $draft.title)
                         .font(.title2.weight(.bold))
@@ -87,12 +87,12 @@ extension Organizing.List<Reminder>.Form.SwiftUI: SwiftUI::View {
         form.isNew ? "Are you sure you want to discard this new list?" : "Are you sure you want to discard your changes?"
     }
 
-    private func swatch(_ name: String, _ hex: Organizing.Color.Hex, selected: Bool) -> some SwiftUI::View {
+    private func swatch(_ name: String, _ hex: Models.Color.Hex, selected: Bool) -> some SwiftUI::View {
         Button {
             draft.color = hex
         } label: {
             Circle()
-                .fill(SwiftUI::Color(Organizing.Color(hex)))
+                .fill(SwiftUI::Color(Models.Color(hex)))
                 .frame(width: 40, height: 40)
                 .overlay {
                     if selected {

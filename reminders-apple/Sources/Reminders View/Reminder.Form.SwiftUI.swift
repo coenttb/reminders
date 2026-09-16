@@ -1,4 +1,4 @@
-public import Organizing
+public import Models
 public import Reminder
 import Reminders
 public import Reminders_Interface
@@ -11,7 +11,7 @@ extension Reminder.Form {
     public struct SwiftUI {
         @Binding private var draft: Reminder.Record.Draft
         @Binding private var tags: Set<Tag<Reminder>.ID>
-        private var lists: [Organizing.List<Reminder>.Record]
+        private var lists: [Models.List<Reminder>.Record]
         private var available: [Tag<Reminder>.Record]
         private var form: Reminder.Form
         @State private var tagsPresented = false
@@ -23,7 +23,7 @@ extension Reminder.Form {
         public init(
             draft: Binding<Reminder.Record.Draft>,
             tags: Binding<Set<Tag<Reminder>.ID>>,
-            lists: [Organizing.List<Reminder>.Record],
+            lists: [Models.List<Reminder>.Record],
             available: [Tag<Reminder>.Record],
             form: Reminder.Form
         ) {
@@ -203,7 +203,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             SwiftUI::List(lists) { list in
                 Button { draft.listID = list.id } label: {
                     HStack(spacing: 16) {
-                        Organizing.List<Reminder>.Badge(color: SwiftUI::Color(Organizing.Color(list.color)))
+                        Models.List<Reminder>.Badge(color: SwiftUI::Color(Models.Color(list.color)))
                         Text(list.title).foregroundStyle(.primary)
                         Spacer()
                         if list.id == draft.listID {
@@ -221,7 +221,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                 Label {
                     Text("List")
                 } icon: {
-                    Organizing.List<Reminder>.Badge(color: lists.first(id: draft.listID).map { SwiftUI::Color(Organizing.Color($0.color)) } ?? .blue, size: 28)
+                    Models.List<Reminder>.Badge(color: lists.first(id: draft.listID).map { SwiftUI::Color(Models.Color($0.color)) } ?? .blue, size: 28)
                 }
             }
         }

@@ -3,7 +3,7 @@ import ComposableArchitecture2
 import Dependencies
 import DependenciesTestSupport
 import Foundation
-import Organizing
+import Models
 import Reminder
 import Reminders
 import Reminders_App

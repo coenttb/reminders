@@ -1,4 +1,4 @@
-import Organizing
+import Models
 import Reminder
 public import Reminders
 public import Reminders_Interface
@@ -50,11 +50,11 @@ extension Reminders.Overview.View.SwiftUI: SwiftUI::View {
         Section {
             ForEach(contents.lists) { entry in
                 Button { view.actions.open(.list(entry.id)) } label: {
-                    Organizing.List<Reminder>.Row.SwiftUI(
+                    Models.List<Reminder>.Row.SwiftUI(
                         list: entry.list,
-                        row: Organizing.List<Reminder>.Row(
+                        row: Models.List<Reminder>.Row(
                             count: entry.count,
-                            actions: Organizing.List<Reminder>.Row.Actions(details: { view.actions.details(entry.id) }, delete: { view.actions.delete(entry.id) })
+                            actions: Models.List<Reminder>.Row.Actions(details: { view.actions.details(entry.id) }, delete: { view.actions.delete(entry.id) })
                         )
                     )
                 }

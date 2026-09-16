@@ -2,7 +2,7 @@
 public import ComposableArchitecture2
 import Dependencies
 import Foundation
-import Organizing
+import Models
 import Reminder
 public import Reminders
 public import Reminders_Sample

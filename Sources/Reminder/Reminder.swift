@@ -1,5 +1,5 @@
 public import Foundation
-public import Organizing
+public import Models
 public import Tagged
 
 public struct Reminder: Identifiable, Hashable, Sendable {

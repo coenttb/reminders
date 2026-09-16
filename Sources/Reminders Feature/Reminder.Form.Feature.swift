@@ -1,6 +1,6 @@
 public import ComposableArchitecture2
 public import Dependencies
-public import Organizing
+public import Models
 public import Reminder
 import Reminders
 public import Reminders_Interface

@@ -7,7 +7,7 @@ import DependenciesTestSupport
 import FoundationEssentials_Extensions
 import Foundation
 import Observation
-import Organizing
+import Models
 import Reminder
 import Reminders
 import Reminders_Interface

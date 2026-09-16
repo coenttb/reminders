@@ -1,13 +1,13 @@
 public import ComposableArchitecture2
 public import Dependencies
-public import Organizing
+public import Models
 public import Reminder
 public import Reminders_Interface
 public import Reminders_SQL
 public import SQLiteData
 import Foundation
 
-extension Organizing.List<Reminder>.Form {
+extension Models.List<Reminder>.Form {
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Sendable {
             public typealias Feature = List<Reminder>.Form.Feature
@@ -76,7 +76,7 @@ extension Organizing.List<Reminder>.Form {
     }
 }
 
-extension Organizing.List<Reminder>.Form.Feature {
+extension Models.List<Reminder>.Form.Feature {
     private func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
 
     private func attempt(_ body: () async throws -> Void) async throws {

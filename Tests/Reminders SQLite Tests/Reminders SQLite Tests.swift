@@ -1,6 +1,6 @@
 import Foundation
 import FoundationEssentials_Extensions
-import Organizing
+import Models
 import Reminder
 import Reminders
 import Reminders_Interface

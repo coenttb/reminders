@@ -1,5 +1,5 @@
 public import ComposableArchitecture2
-public import Organizing
+public import Models
 public import Reminder
 public import Reminders
 public import Tagged

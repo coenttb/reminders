@@ -6,6 +6,7 @@ let package = Package(
     name: "reminders",
     platforms: [.iOS(.v27), .macOS(.v27)],
     products: [
+        .library(name: "Models", targets: ["Models"]),
         .library(name: "Reminder", targets: ["Reminder"]),
         .library(name: "Reminders", targets: ["Reminders"]),
         .library(name: "Reminders Interface", targets: ["Reminders Interface"]),
@@ -21,17 +22,23 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.39.1", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
-        .package(url: "https://github.com/coenttb/organizing", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
         .package(url: "https://github.com/swift-molecules/swift-foundation-extensions.git", branch: "main"),
     ],
     targets: [
         .target(
+            name: "Models",
+            dependencies: [
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
+                .product(name: "Tagged", package: "swift-tagged"),
+            ]
+        ),
+        .target(
             name: "Reminder",
             dependencies: [
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -41,7 +48,7 @@ let package = Package(
                 "Reminder",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "FoundationInternationalization Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -52,7 +59,7 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -63,7 +70,7 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -74,7 +81,7 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Interface",
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "StructuredQueries", package: "swift-structured-queries"),
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -89,7 +96,7 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQL",
                 .product(name: "Dependencies", package: "swift-dependencies"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -109,7 +116,7 @@ let package = Package(
                 "Reminders Interface",
                 "Reminders SQL",
                 "Reminders SQLite",
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
@@ -119,11 +126,18 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "Models Tests",
+            dependencies: [
+                "Models",
+                .product(name: "Tagged", package: "swift-tagged"),
+            ]
+        ),
+        .testTarget(
             name: "Reminder Tests",
             dependencies: [
                 "Reminder",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -133,7 +147,7 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -144,7 +158,7 @@ let package = Package(
                 "Reminders",
                 "Reminders Interface",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -155,7 +169,7 @@ let package = Package(
                 "Reminders",
                 "Reminders Sample",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -166,7 +180,7 @@ let package = Package(
                 "Reminders",
                 "Reminders Interface",
                 "Reminders SQL",
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -180,7 +194,7 @@ let package = Package(
                 "Reminders SQL",
                 "Reminders SQLite",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -190,7 +204,7 @@ let package = Package(
                 "Reminder",
                 "Reminders Feature",
                 "Reminders Sample",
-                .product(name: "Organizing", package: "organizing"),
+                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
                 .product(name: "ComposableArchitectureTestSupport", package: "TCA26"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
