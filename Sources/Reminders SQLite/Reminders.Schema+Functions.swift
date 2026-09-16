@@ -1,4 +1,5 @@
 import Foundation
+public import Reminders
 public import SQLiteData
 
 extension Reminders.Schema {

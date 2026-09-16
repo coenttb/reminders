@@ -3,6 +3,7 @@ import FoundationEssentials_Extensions
 import Organizing
 import Reminders
 import Reminders_Interface
+import Reminders_SQL
 import Reminders_View
 import SwiftUI
 import Tagged
@@ -22,11 +23,13 @@ import Testing
     }
 
     @Test func `filters name themselves except lists, and tags show as hashtags`() {
-        #expect(Reminders.Filter.today.title == "Today" && Reminders.Filter.list(list).title == nil)
-        #expect(Reminders.Filter.tags(["a"]).title == "#a" && Reminders.Filter.tags(["a", "b"]).title == "2 tags")
-        let reminder = Reminder(id: Reminder.ID(UUID()), list: list, tags: ["kids", "car"], created: .distantPast)
-        #expect(Tag<Reminder>(title: "kids").hashtag == "#kids" && reminder.tagLine == "#car #kids")
-        #expect(Reminder(id: reminder.id, list: list, created: .distantPast).tagLine.isEmpty)
+        #expect(Reminders.Filter.Style(.today, list: nil, day: 14).title == "Today" && Reminders.Filter.Style(.list(list), list: nil, day: 14).title == nil)
+        #expect(Reminders.Filter.Style(.list(list), list: List<Reminder>.Record(List(id: list, title: "Personal")), day: 14).title == "Personal")
+        #expect(Reminders.Filter.Style(.tags(["a"]), list: nil, day: 14).title == "#a" && Reminders.Filter.Style(.tags(["a", "b"]), list: nil, day: 14).title == "2 tags")
+        #expect(Reminders.Filter.Style(.today, list: nil, day: 14).symbol == "14.calendar")
+        let record = Reminder.Record(id: Reminder.ID(UUID()), listID: list, created: .distantPast)
+        #expect(Tag<Reminder>(title: "kids").hashtag == "#kids" && Reminder.Record.Row(reminder: record, tags: ["kids", "car"]).tagLine == "#car #kids")
+        #expect(Reminder.Record.Row(reminder: record, tags: []).tagLine.isEmpty)
     }
 
     @Test func `the day is the calendar's, not the process time zone's`() throws {
@@ -74,8 +77,10 @@ import Testing
         let color = Organizing.Color(red: 237 / 255, green: 137 / 255, blue: 53 / 255)
         let round = Organizing.Color(SwiftUI.Color(color))
         #expect(abs(round.red - color.red) < 0.002 && abs(round.green - color.green) < 0.002 && abs(round.blue - color.blue) < 0.002)
-        #expect(Reminders.Filter.flagged.color(list: nil) == .orange)
-        #expect(Reminders.Filter.list(list).color(list: color) == SwiftUI.Color(color))
+        #expect(Reminders.Filter.Style(.flagged, list: nil, day: 1).tint == .orange)
+        let personal = List<Reminder>.Record(List(id: list, title: "Personal", color: color))
+        #expect(Reminders.Filter.Style(.list(list), list: personal, day: 1).tint == SwiftUI.Color(Organizing.Color(personal.color)))
+        #expect(Reminders.Filter.Style(.list(list), list: nil, day: 1).tint == .blue)
         #expect(Organizing.List<Reminder>.Form.SwiftUI.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])
     }
 }

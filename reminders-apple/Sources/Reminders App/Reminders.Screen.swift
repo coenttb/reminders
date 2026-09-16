@@ -4,11 +4,12 @@ import Dependencies
 import Organizing
 public import Reminders
 import Reminders_Interface
-import Reminders_Sample
 import Reminders_SQL
 public import Reminders_Feature
+#if DEBUG
+import Reminders_Sample
+#endif
 import Reminders_View
-import Standard_Library_Extensions
 public import SwiftUI
 import Tagged
 
@@ -31,31 +32,39 @@ extension Reminders.Screen: SwiftUI::View {
         NavigationStack {
             SwiftUI.List {
                 if store.search.isActive {
-                    Reminders.Search.View(
-                        store.search,
-                        results: store.results,
-                        now: now,
-                        calendar: calendar,
-                        rows: .init(
-                            complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                            delete: { store.send(.reminderDeleted($0)) },
-                            details: { store.send(.reminderDetailsButtonTapped($0)) }
-                        ),
-                        addTag: { store.send(.searchTagTapped($0)) },
-                        toggleCompleted: { store.send(.searchCompletedButtonTapped) },
-                        deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) },
-                        endReached: { store.send(.resultsEndReached) }
+                    Reminders.Search.View.SwiftUI(
+                        contents: store.results,
+                        view: Reminders.Search.View(
+                            search: store.search,
+                            now: now,
+                            calendar: calendar,
+                            actions: Reminders.Search.View.Actions(
+                                rows: Reminders.Reminder.Row.Actions(
+                                    complete: { store.send(.reminderCompleteButtonTapped($0)) },
+                                    delete: { store.send(.reminderDeleted($0)) },
+                                    details: { store.send(.reminderDetailsButtonTapped($0)) }
+                                ),
+                                addTag: { store.send(.searchTagTapped($0)) },
+                                toggleCompleted: { store.send(.searchCompletedButtonTapped) },
+                                endReached: { store.send(.resultsEndReached) },
+                                deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) }
+                            )
+                        )
                     )
                 } else {
-                    Reminders.Overview.View(
-                        store.overview,
-                        now: now,
-                        calendar: calendar,
-                        open: { store.send(.filterTapped($0)) },
-                        details: { store.send(.listDetailsButtonTapped($0)) },
-                        delete: { store.send(.listDeleted($0)) },
-                        move: { store.send(.listsMoved($0, $1)) },
-                        deleteTag: { store.send(.tagDeleted($0)) }
+                    Reminders.Overview.View.SwiftUI(
+                        contents: store.overview,
+                        view: Reminders.Overview.View(
+                            now: now,
+                            calendar: calendar,
+                            actions: Reminders.Overview.View.Actions(
+                                open: { store.send(.filterTapped($0)) },
+                                details: { store.send(.listDetailsButtonTapped($0)) },
+                                delete: { store.send(.listDeleted($0)) },
+                                move: { store.send(.listsMoved($0, $1)) },
+                                deleteTag: { store.send(.tagDeleted($0)) }
+                            )
+                        )
                     )
                 }
             }
@@ -69,33 +78,7 @@ extension Reminders.Screen: SwiftUI::View {
             .toolbar {
                 #if DEBUG
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button("Reference sample", systemImage: "leaf") { store.send(.seedButtonTapped) }
-                        Section("Fixed seed") {
-                            ForEach([Reminders.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
-                                Button(scale.title) { store.send(.seedGenerated(scale, seed: 1)) }
-                            }
-                        }
-                        Section("Random seed") {
-                            ForEach([Reminders.Sample.Scale.medium, .large, .extreme], id: \.self) { scale in
-                                Button(scale.title) { store.send(.seedGenerated(scale, seed: nil)) }
-                            }
-                        }
-                        if let last = store.lastSeed {
-                            Button("Replay \(last.description)", systemImage: "arrow.counterclockwise") {
-                                store.send(.seedGenerated(last.scale, seed: last.value))
-                            }
-                        }
-                        Divider()
-                        Button("Delete everything", systemImage: "trash", role: .destructive) { store.send(.deleteEverythingButtonTapped) }
-                    } label: {
-                        if store.isSeeding {
-                            ProgressView()
-                        } else {
-                            Label("Seed data", systemImage: "leaf")
-                        }
-                    }
-                    .disabled(store.isSeeding)
+                    Reminders.Sample.Menu(store: store)
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {

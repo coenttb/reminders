@@ -1,34 +1,30 @@
-public import Foundation
 public import Reminders
-import Reminders_Interface
+public import Reminders_Interface
 public import Reminders_SQL
 public import SwiftUI
-public import Tagged
 
-extension Reminders.Reminder {
-    public struct Row {
+extension Reminders.Reminder.Row {
+    public struct SwiftUI {
         private var row: Reminder.Record.Row
-        private var color: SwiftUI.Color
-        private var now: Date
-        private var calendar: Calendar
-        private var actions: Actions
+        private var color: SwiftUI::Color
+        private var view: Reminders.Reminder.Row
 
-        public init(_ row: Reminder.Record.Row, color: SwiftUI.Color, now: Date, calendar: Calendar, actions: Actions) {
+        public init(row: Reminder.Record.Row, color: SwiftUI::Color, view: Reminders.Reminder.Row) {
             self.row = row
             self.color = color
-            self.now = now
-            self.calendar = calendar
-            self.actions = actions
+            self.view = view
         }
     }
 }
-extension Reminders.Reminder.Row: SwiftUI::View {
+
+extension Reminders.Reminder.Row.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         let reminder = row.reminder
+        let actions = view.actions
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(reminder.completed ? color : SwiftUI.Color(.systemGray3))
+                    .foregroundStyle(reminder.completed ? color : SwiftUI::Color(.systemGray3))
                     .font(.title2)
                     .frame(width: 26, height: 20)
             }
@@ -71,9 +67,10 @@ extension Reminders.Reminder.Row: SwiftUI::View {
 
     private var subtitle: Text? {
         let reminder = row.reminder
+        let (now, calendar) = (view.now, view.calendar)
         let due = reminder.due.map { due in
             Text(due.description(at: now, calendar: calendar))
-                .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI.Color.red : SwiftUI.Color.secondary)
+                .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI::Color.red : SwiftUI::Color.secondary)
         }
         switch (due, row.tagLine.isEmpty) {
         case (nil, true): return nil

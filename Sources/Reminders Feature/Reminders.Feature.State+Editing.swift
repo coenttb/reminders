@@ -1,4 +1,5 @@
 public import Foundation
+import Reminders
 
 extension Reminders.Feature.State {
     /// Closes the row being edited if it is still the one `session` opened.

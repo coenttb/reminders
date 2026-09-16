@@ -1,4 +1,5 @@
 import Foundation
+import Reminders
 
 extension Reminders.Feature {
     /// Runs a task and lands its failure on the screen.

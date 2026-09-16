@@ -1,4 +1,5 @@
 public import Foundation
+public import Reminders
 
 extension Reminders.Reminder {
     /// The sheet that edits one reminder in full, as the screen describes it: what it shows and

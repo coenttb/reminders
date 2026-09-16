@@ -1,3 +1,5 @@
+public import Reminders
+
 extension Reminders {
     /// The grace period between the tap on a reminder and its completion.
     public enum Pending {

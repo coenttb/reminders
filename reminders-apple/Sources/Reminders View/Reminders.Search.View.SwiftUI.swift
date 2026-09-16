@@ -1,0 +1,86 @@
+public import Organizing
+public import Reminders
+public import Reminders_Interface
+public import Reminders_SQL
+public import SwiftUI
+import Tagged
+
+extension Reminders.Search.View {
+    public struct SwiftUI {
+        private var contents: Reminders.Search.Contents
+        private var view: Reminders.Search.View
+
+        public init(contents: Reminders.Search.Contents, view: Reminders.Search.View) {
+            self.contents = contents
+            self.view = view
+        }
+    }
+}
+
+extension Reminders.Search.View.SwiftUI: SwiftUI::View {
+    @ViewBuilder public var body: some SwiftUI::View {
+        let suggestions = contents.suggestions
+        let completed = contents.completedCount
+        let actions = view.actions
+        if !suggestions.isEmpty {
+            Section {
+                ScrollView(.horizontal) {
+                    HStack {
+                        ForEach(suggestions) { tag in
+                            Button(Tag<Reminder>.hashtag(tag.id)) { actions.addTag(tag.id) }.buttonStyle(.glass)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .mask {
+                    LinearGradient(stops: [.init(color: .black, location: 0.9), .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing)
+                }
+            }
+            .listRowBackground(SwiftUI::Color.clear)
+            .listRowInsets(EdgeInsets())
+        }
+        Section {
+            HStack {
+                Text("\(completed) Completed").monospacedDigit().contentTransition(.numericText()).foregroundStyle(.secondary)
+                Text("•").foregroundStyle(.secondary)
+                Menu("Clear") {
+                    Text("Clear Completed Reminders")
+                    Button("Older Than 1 Month") { actions.deleteCompleted(1) }
+                    Button("Older Than 6 Months") { actions.deleteCompleted(6) }
+                    Button("Older Than 1 Year") { actions.deleteCompleted(12) }
+                    Button("All Completed") { actions.deleteCompleted(nil) }
+                }
+                .disabled(completed == 0)
+                Spacer()
+                Button(view.search.showCompleted ? "Hide" : "Show", action: actions.toggleCompleted).disabled(completed == 0)
+            }
+            .buttonStyle(.borderless)
+        }
+        .listRowBackground(SwiftUI::Color.clear)
+        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+        .listRowSeparator(.hidden)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+        .listRowSeparator(.visible, edges: .bottom)
+        .listSectionMargins(.horizontal, 0)
+        let (shown, total) = (contents.shown, contents.total)
+        let starts = contents.sections.reduce(into: [0]) { $0.append($0[$0.count - 1] + $1.rows.count) }
+        let row = Reminders.Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
+        ForEach(Array(contents.sections.enumerated()), id: \.element.id) { position, section in
+            Section {
+                ForEach(Array(section.rows.enumerated()), id: \.element.reminder.id) { offset, record in
+                    Reminders.Reminder.Row.SwiftUI(row: record, color: SwiftUI::Color(Organizing.Color(section.list.color)), view: row)
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .onAppear { if Reminders_Interface.Window<Reminders.Search>.nearsEnd(starts[position] + offset, of: shown, total: total) { actions.endReached() } }
+                }
+            } header: {
+                Text(section.list.title)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(SwiftUI::Color(Organizing.Color(section.list.color)))
+                    .textCase(nil)
+            }
+            .listRowBackground(SwiftUI::Color.clear)
+            .listSectionMargins(.horizontal, 0)
+        }
+    }
+}

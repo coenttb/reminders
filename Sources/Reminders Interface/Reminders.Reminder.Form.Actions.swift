@@ -1,4 +1,5 @@
 public import Organizing
+public import Reminders
 
 extension Reminders.Reminder.Form {
     public struct Actions {

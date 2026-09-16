@@ -27,28 +27,20 @@ extension Reminders.Filter {
 extension Reminders.Filter.Screen: SwiftUI::View {
     @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
-        let detail = store.detail ?? Reminders.Filter.Detail.Contents(filter: filter, preference: .default(for: filter))
-        Reminders.Filter.Detail.View(
-            detail,
-            title: filter.title ?? list?.title ?? "",
-            tint: filter.color(list: list.map { Organizing.Color($0.color) }),
+        let contents = store.detail ?? Reminders.Filter.Detail.Contents(filter: filter, preference: .default(for: filter))
+        let style = Reminders.Filter.Style(filter, list: list, day: calendar.component(.day, from: now))
+        Reminders.Filter.Detail.View.SwiftUI(
+            contents: contents,
+            style: style,
             color: { store.overview.list($0).map { SwiftUI.Color(Organizing.Color($0.color)) } ?? .blue },
-            editing: store.editing?.id,
-            now: now,
-            calendar: calendar,
             draft: { Binding($store[dynamicMember: \.[draft: $0]]) },
-            rows: rows,
-            editor: editor,
-            done: { store.send(.doneButtonTapped) },
-            backgroundTapped: { store.send(.backgroundTapped) },
-            move: { store.send(.remindersMoved($0, $1)) },
-            order: { store.send(.orderingSelected($0)) },
-            toggleCompleted: { store.send(.showCompletedButtonTapped) },
-            newReminder: { store.send(.newReminderButtonTapped) },
-            endReached: { store.send(.detailEndReached) },
-            info: list.map { list in { store.send(.listDetailsButtonTapped(list.id)) } },
-            delete: list.map { list in { store.send(.listDeleted(list.id)) } },
-            clearCompleted: { store.send(.clearCompletedButtonTapped) }
+            view: Reminders.Filter.Detail.View(
+                title: style.title ?? "",
+                editing: store.editing?.id,
+                now: now,
+                calendar: calendar,
+                actions: actions
+            )
         )
         .onChange(of: scenePhase) { _, phase in
             if phase == .background, store.editing != nil { store.send(.doneButtonTapped) }
@@ -57,26 +49,37 @@ extension Reminders.Filter.Screen: SwiftUI::View {
 }
 
 extension Reminders.Filter.Screen {
-    private var list: Organizing.List<Reminder>.Record? {
-        if case let .list(id) = filter { store.overview.list(id) } else { nil }
+    private var listID: Organizing.List<Reminder>.ID? {
+        if case let .list(id) = filter { id } else { nil }
     }
 
-    private var rows: Reminder.Row.Actions {
-        Reminder.Row.Actions(
-            complete: { store.send(.reminderCompleteButtonTapped($0)) },
-            delete: { store.send(.reminderDeleted($0)) },
-            details: { store.send(.reminderDetailsButtonTapped($0)) },
-            edit: { store.send(.reminderTapped($0)) }
-        )
-    }
+    private var list: Organizing.List<Reminder>.Record? { listID.flatMap(store.overview.list) }
 
-    private var editor: Reminder.Editor.Actions {
-        Reminder.Editor.Actions(
-            complete: { store.send(.reminderCompleteButtonTapped($0)) },
-            details: { store.send(.reminderDetailsButtonTapped($0)) },
-            submit: { store.send(.titleSubmitted) },
-            setDate: { store.send(.datePresetSelected($0, $1)) },
-            setTime: { store.send(.timePresetSelected($0, $1)) }
+    private var actions: Reminders.Filter.Detail.View.Actions {
+        Reminders.Filter.Detail.View.Actions(
+            rows: Reminders.Reminder.Row.Actions(
+                complete: { store.send(.reminderCompleteButtonTapped($0)) },
+                delete: { store.send(.reminderDeleted($0)) },
+                details: { store.send(.reminderDetailsButtonTapped($0)) },
+                edit: listID.map { _ in { store.send(.reminderTapped($0)) } }
+            ),
+            editor: Reminders.Reminder.Editor.Actions(
+                complete: { store.send(.reminderCompleteButtonTapped($0)) },
+                details: { store.send(.reminderDetailsButtonTapped($0)) },
+                submit: { store.send(.titleSubmitted) },
+                setDate: { store.send(.datePresetSelected($0, $1)) },
+                setTime: { store.send(.timePresetSelected($0, $1)) }
+            ),
+            done: { store.send(.doneButtonTapped) },
+            backgroundTapped: { store.send(.backgroundTapped) },
+            toggleCompleted: { store.send(.showCompletedButtonTapped) },
+            endReached: { store.send(.detailEndReached) },
+            move: { store.send(.remindersMoved($0, $1)) },
+            order: { store.send(.orderingSelected($0)) },
+            newReminder: listID.map { _ in { store.send(.newReminderButtonTapped) } },
+            info: listID.map { id in { store.send(.listDetailsButtonTapped(id)) } },
+            delete: listID.map { id in { store.send(.listDeleted(id)) } },
+            clearCompleted: { store.send(.clearCompletedButtonTapped) }
         )
     }
 }
