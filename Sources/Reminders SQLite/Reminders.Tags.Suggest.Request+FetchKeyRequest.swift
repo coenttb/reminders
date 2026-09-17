@@ -4,7 +4,7 @@ public import Reminders
 import Reminders_SQL
 public import SQLiteData
 
-extension Reminders.Tags.Client.Suggest.Request: FetchKeyRequest {
+extension Reminders.Tags.Suggest.Request: FetchKeyRequest {
     public func fetch(_ db: Database) throws -> [Tag<Reminder>] {
         guard !prefix.isEmpty else { return [] }
         let taken = excluding.map(\.rawValue)

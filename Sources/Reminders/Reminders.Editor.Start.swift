@@ -2,19 +2,14 @@ public import Foundation
 public import Models
 public import Reminder
 
-extension Reminders.Editor.Client {
-    public struct Start: Models.Operation {
+extension Reminders.Editor {
+    public enum Start {
         public typealias Result = Reminders.Placement?
-
-        public var run: @Sendable (Request) throws -> Result
-
-        public init(_ run: @escaping @Sendable (Request) throws -> Result) {
-            self.run = run
-        }
+        public typealias Client = Models.Operation<Request, Result>
     }
 }
 
-extension Reminders.Editor.Client.Start {
+extension Reminders.Editor.Start {
     public struct Request: Hashable, Sendable {
         public var list: List<Reminder>.ID
         public var below: Reminders.Placement?

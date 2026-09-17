@@ -1,18 +1,13 @@
 public import Models
 
-extension Reminders.Preferences.Client {
-    public struct Ordering: Operation {
+extension Reminders.Preferences {
+    public enum Ordering {
         public typealias Result = Void
-
-        public var run: @Sendable (Request) throws -> Result
-
-        public init(_ run: @escaping @Sendable (Request) throws -> Result) {
-            self.run = run
-        }
+        public typealias Client = Operation<Request, Result>
     }
 }
 
-extension Reminders.Preferences.Client.Ordering {
+extension Reminders.Preferences.Ordering {
     public struct Request: Hashable, Sendable {
         public var ordering: Reminders.Ordering
         public var filter: Reminders.Filter

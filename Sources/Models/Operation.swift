@@ -1,19 +1,11 @@
-public protocol Operation<Request, Result>: Sendable {
-    associatedtype Request
-    associatedtype Result
-    associatedtype Failure: Error = any Error
+public struct Operation<Request, Result>: Sendable {
+    public var run: @Sendable (Request) throws -> Result
 
-    var run: @Sendable (Request) throws(Failure) -> Result { get }
-}
-
-extension Operation {
-    public func callAsFunction(_ request: Request) throws(Failure) -> Result {
-        try run(request)
+    public init(_ run: @escaping @Sendable (Request) throws -> Result) {
+        self.run = run
     }
-}
 
-extension Operation where Request == Void {
-    public func callAsFunction() throws(Failure) -> Result {
-        try run(())
+    public func callAsFunction(_ request: Request) throws -> Result {
+        try run(request)
     }
 }

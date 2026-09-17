@@ -33,9 +33,9 @@ extension Reminders {
                 margin: Feature.paging.margin
             )
 
-            @DebugSnapshotIgnored @Fetch public var detail: Reminders.Listing.Client.Fetch.Result? = nil
-            @DebugSnapshotIgnored @Fetch public var overview = Reminders.Overview.Client.Fetch.Result()
-            @DebugSnapshotIgnored @Fetch public var matches: Reminders.Listing.Client.Fetch.Result? = nil
+            @DebugSnapshotIgnored @Fetch public var detail: Reminders.Listing.Fetch.Result? = nil
+            @DebugSnapshotIgnored @Fetch public var overview = Reminders.Overview.Fetch.Result()
+            @DebugSnapshotIgnored @Fetch public var matches: Reminders.Listing.Fetch.Result? = nil
             @DebugSnapshotIgnored @Fetch public var suggestions: [Tag<Reminder>] = []
             public var grace: [Reminder.ID: UUID] = [:]
 
@@ -272,7 +272,7 @@ extension Reminders {
                 guard let today else { return }
                 let overview = state.$overview
                 store.addTask {
-                    try await attempt { try await overview.load(Reminders.Overview.Client.Fetch.Request(today: today)) }
+                    try await attempt { try await overview.load(Reminders.Overview.Fetch.Request(today: today)) }
                     try await clock.sleep(for: .seconds(max(today.upperBound.timeIntervalSince(now), 0)))
                     try store.modify { $0.today = calendar.day(containing: now) }
                 }
@@ -288,7 +288,7 @@ extension Reminders {
                 of: store.today.map { today in
                     Fetching(
                         store.filter.map { filter in
-                            Reminders.Listing.Client.Fetch.Request(
+                            Reminders.Listing.Fetch.Request(
                                 selection: .filter(filter),
                                 today: today,
                                 place: store.editing?.place,
@@ -310,7 +310,7 @@ extension Reminders {
                     Searching(
                         fetching: Fetching(
                             store.search.selection.map { selection in
-                                Reminders.Listing.Client.Fetch.Request(selection: selection, today: today, limit: store.resultsWindow.limit(for: store.search.query))
+                                Reminders.Listing.Fetch.Request(selection: selection, today: today, limit: store.resultsWindow.limit(for: store.search.query))
                             }
                         ),
                         committed: store.search.query,

@@ -1,4 +1,5 @@
 public import Dependencies
+import Models
 public import Reminders
 
 extension DependencyValues {
@@ -13,12 +14,12 @@ extension Reminders: TestDependencyKey {
         Reminders(
             overview: .init(
                 client: .init(
-                    fetch: .init(unimplemented("\\.reminders.overview.client.fetch", placeholder: Overview.Client.Fetch.Result()))
+                    fetch: .init(unimplemented("\\.reminders.overview.client.fetch", placeholder: Overview.Fetch.Result()))
                 )
             ),
             listing: .init(
                 client: .init(
-                    fetch: .init(unimplemented("\\.reminders.listing.client.fetch", placeholder: Listing.Client.Fetch.Result(selection: .filter(.all), preference: Preference())))
+                    fetch: .init(unimplemented("\\.reminders.listing.client.fetch", placeholder: Listing.Fetch.Result(selection: .filter(.all), preference: Preference())))
                 )
             ),
             editor: .init(

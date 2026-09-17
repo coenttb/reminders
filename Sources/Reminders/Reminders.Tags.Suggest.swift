@@ -1,19 +1,14 @@
 public import Models
 public import Reminder
 
-extension Reminders.Tags.Client {
-    public struct Suggest: Operation {
+extension Reminders.Tags {
+    public enum Suggest {
         public typealias Result = [Tag<Reminder>]
-
-        public var run: @Sendable (Request) throws -> Result
-
-        public init(_ run: @escaping @Sendable (Request) throws -> Result) {
-            self.run = run
-        }
+        public typealias Client = Operation<Request, Result>
     }
 }
 
-extension Reminders.Tags.Client.Suggest {
+extension Reminders.Tags.Suggest {
     public struct Request: Hashable, Sendable {
         public var prefix: String
         public var excluding: Set<Tag<Reminder>>

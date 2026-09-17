@@ -7,3 +7,15 @@ extension Reminders {
         }
     }
 }
+
+extension Reminders.Listing {
+    public struct Client: Sendable {
+        public var fetch: Fetch.Client
+
+        public init(
+            fetch: Fetch.Client
+        ) {
+            self.fetch = fetch
+        }
+    }
+}

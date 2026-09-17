@@ -2,17 +2,13 @@ public import Foundation
 public import Models
 public import Reminder
 
-extension Reminders.Listing.Client {
-    public struct Fetch: Models.Operation {
-        public var run: @Sendable (Request) throws -> Result
-
-        public init(_ run: @escaping @Sendable (Request) throws -> Result) {
-            self.run = run
-        }
+extension Reminders.Listing {
+    public enum Fetch {
+        public typealias Client = Models.Operation<Request, Result>
     }
 }
 
-extension Reminders.Listing.Client.Fetch {
+extension Reminders.Listing.Fetch {
     public struct Request: Hashable, Sendable {
         public var selection: Reminders.Selection
         public var today: Range<Date>
@@ -28,7 +24,7 @@ extension Reminders.Listing.Client.Fetch {
     }
 }
 
-extension Reminders.Listing.Client.Fetch {
+extension Reminders.Listing.Fetch {
     public struct Result: Hashable, Sendable {
         public var selection: Reminders.Selection
         public var preference: Reminders.Preference

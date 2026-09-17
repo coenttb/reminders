@@ -1,19 +1,14 @@
 public import Models
 public import Reminder
 
-extension Reminders.Lists.Client {
-    public struct Delete: Operation {
+extension Reminders.Lists {
+    public enum Delete {
         public typealias Result = Void
-
-        public var run: @Sendable (Request) throws -> Result
-
-        public init(_ run: @escaping @Sendable (Request) throws -> Result) {
-            self.run = run
-        }
+        public typealias Client = Operation<Request, Result>
     }
 }
 
-extension Reminders.Lists.Client.Delete {
+extension Reminders.Lists.Delete {
     public struct Request: Hashable, Sendable {
         public var id: List<Reminder>.ID
         public var replacement: List<Reminder>.ID

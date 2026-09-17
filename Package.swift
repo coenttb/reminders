@@ -58,6 +58,7 @@ let package = Package(
             name: "Reminders Dependency",
             dependencies: [
                 .product(name: "Dependencies", package: "swift-dependencies"),
+                "Models",
                 "Reminders",
             ]
         ),

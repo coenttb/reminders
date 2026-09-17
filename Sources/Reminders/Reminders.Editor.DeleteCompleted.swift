@@ -1,19 +1,14 @@
 public import Foundation
 public import Models
 
-extension Reminders.Editor.Client {
-    public struct DeleteCompleted: Models.Operation {
+extension Reminders.Editor {
+    public enum DeleteCompleted {
         public typealias Result = Void
-
-        public var run: @Sendable (Request) throws -> Result
-
-        public init(_ run: @escaping @Sendable (Request) throws -> Result) {
-            self.run = run
-        }
+        public typealias Client = Models.Operation<Request, Result>
     }
 }
 
-extension Reminders.Editor.Client.DeleteCompleted {
+extension Reminders.Editor.DeleteCompleted {
     public struct Request: Hashable, Sendable {
         public var selection: Reminders.Selection
         public var today: Range<Date>

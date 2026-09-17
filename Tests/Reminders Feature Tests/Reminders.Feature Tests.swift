@@ -634,7 +634,7 @@ struct `Reminder feature` {
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
         await clock.advance(by: .seconds(untilMidnight))
         await store.expect { $0.today = next }
-        @Fetch(Reminders.Overview.Client.Fetch.Request(today: next)) var overview = Reminders.Overview.Client.Fetch.Result()
+        @Fetch(Reminders.Overview.Fetch.Request(today: next)) var overview = Reminders.Overview.Fetch.Result()
         try await until($overview) { $0.counts.today == 0 }
         try await until(store.state.$detail) { $0?.rows.isEmpty == true }
         let later = start.addingTimeInterval(2.days)

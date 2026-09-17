@@ -50,8 +50,8 @@ extension Reminders.Search.Field {
         return .search(query)
     }
 
-    public var suggestions: Reminders.Tags.Client.Suggest.Request {
-        Reminders.Tags.Client.Suggest.Request(prefix: tagPrefix ?? "", excluding: tags)
+    public var suggestions: Reminders.Tags.Suggest.Request {
+        Reminders.Tags.Suggest.Request(prefix: tagPrefix ?? "", excluding: tags)
     }
 
     public mutating func commitText() {

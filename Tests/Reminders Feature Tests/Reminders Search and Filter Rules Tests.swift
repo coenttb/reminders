@@ -18,7 +18,7 @@ import Tagged
         search.text = "#so"
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text == "#so" && search.tagPrefix == "so")
-        #expect(search.suggestions == Reminders.Tags.Client.Suggest.Request(prefix: "so", excluding: []))
+        #expect(search.suggestions == Reminders.Tags.Suggest.Request(prefix: "so", excluding: []))
         #expect(Reminders.Search.Field(text: "#so").selection == nil)
         #expect(search.selection == .search(Reminders.Search.Query(terms: ["Take"])))
         search.add(tag: "car")
@@ -37,7 +37,7 @@ import Tagged
 
     @Test func `an overview finds a list by id and derives the tags in use in case-insensitive order`() {
         let personal = List<Reminder>(id: list, title: "Personal")
-        let overview = Reminders.Overview.Client.Fetch.Result(
+        let overview = Reminders.Overview.Fetch.Result(
             lists: [List<Reminder>.Entry(list: personal, count: 2)],
             tags: [Tag<Reminder>.Entry(tag: "social", count: 3), Tag<Reminder>.Entry(tag: "Adulting", count: 1), Tag<Reminder>.Entry(tag: "car", count: 0)]
         )

@@ -26,7 +26,7 @@ extension Reminders.Filter {
 extension Reminders.Filter.Screen: SwiftUI::View {
     @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
-        let contents = store.detail ?? Reminders.Listing.Client.Fetch.Result(selection: .filter(filter), preference: .default(for: filter))
+        let contents = store.detail ?? Reminders.Listing.Fetch.Result(selection: .filter(filter), preference: .default(for: filter))
         let style = Reminders.Filter.Style(filter, list: list, day: calendar.component(.day, from: now))
         Reminders.Listing.View.SwiftUI(
             contents: contents,

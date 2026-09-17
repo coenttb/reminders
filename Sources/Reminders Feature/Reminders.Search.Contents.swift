@@ -34,7 +34,7 @@ extension Reminders.Search.Contents {
 
     public var shown: Int { sections.reduce(0) { $0 + $1.rows.count } }
 
-    public init(_ page: Reminders.Listing.Client.Fetch.Result?, lists: [List<Reminder>.Entry], suggestions: [Tag<Reminder>]) {
+    public init(_ page: Reminders.Listing.Fetch.Result?, lists: [List<Reminder>.Entry], suggestions: [Tag<Reminder>]) {
         self.init(total: page?.total ?? 0, completedCount: page?.completed ?? 0, suggestions: suggestions)
         for row in page?.rows ?? [] {
             if sections.last?.id == row.list {
