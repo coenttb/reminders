@@ -288,6 +288,49 @@ extension Reminders.Schema {
         migrator.registerMigration("Drop the session table") { db in
             try #sql(#"DROP TABLE IF EXISTS "session""#).execute(db)
         }
+        migrator.registerMigration("Index the text for the search") { db in
+            try #sql(#"DROP TRIGGER "reminders_searchText_insert""#).execute(db)
+            try #sql(#"DROP TRIGGER "reminders_searchText_update""#).execute(db)
+            try #sql(#"ALTER TABLE "reminders" DROP COLUMN "searchText""#).execute(db)
+            try #sql("""
+                CREATE VIRTUAL TABLE "reminderTexts" USING fts5(
+                  "title",
+                  "notes",
+                  "tags",
+                  tokenize = 'unicode61 remove_diacritics 2'
+                )
+                """).execute(db)
+            try #sql(#"""
+                INSERT INTO "reminderTexts" ("rowid", "title", "notes", "tags")
+                SELECT "rowid", "title", "notes",
+                  (SELECT coalesce(group_concat("tagID", ' '), '') FROM "remindersTags" WHERE "reminderID" = "reminders"."id")
+                FROM "reminders"
+                """#).execute(db)
+            try #sql(#"""
+                CREATE TRIGGER "reminders_text_insert" AFTER INSERT ON "reminders" BEGIN
+                  INSERT INTO "reminderTexts" ("rowid", "title", "notes", "tags") VALUES (NEW."rowid", NEW."title", NEW."notes", '');
+                END
+                """#).execute(db)
+            try #sql(#"""
+                CREATE TRIGGER "reminders_text_update" AFTER UPDATE OF "title", "notes" ON "reminders" BEGIN
+                  UPDATE "reminderTexts" SET "title" = NEW."title", "notes" = NEW."notes" WHERE "rowid" = NEW."rowid";
+                END
+                """#).execute(db)
+            try #sql(#"""
+                CREATE TRIGGER "reminders_text_delete" AFTER DELETE ON "reminders" BEGIN
+                  DELETE FROM "reminderTexts" WHERE "rowid" = OLD."rowid";
+                END
+                """#).execute(db)
+            for (name, event, row) in [("insert", "INSERT", "NEW"), ("delete", "DELETE", "OLD"), ("update", "UPDATE OF \"tagID\"", "NEW")] {
+                try #sql(#"""
+                    CREATE TRIGGER "remindersTags_text_\#(raw: name)" AFTER \#(raw: event) ON "remindersTags" BEGIN
+                      UPDATE "reminderTexts"
+                      SET "tags" = (SELECT coalesce(group_concat("tagID", ' '), '') FROM "remindersTags" WHERE "reminderID" = \#(raw: row)."reminderID")
+                      WHERE "rowid" = (SELECT "rowid" FROM "reminders" WHERE "id" = \#(raw: row)."reminderID");
+                    END
+                    """#).execute(db)
+            }
+        }
         if let target {
             try migrator.migrate(database, upTo: target)
         } else {

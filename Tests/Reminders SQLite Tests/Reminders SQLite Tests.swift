@@ -406,9 +406,12 @@ struct `Reminder SQLite storage` {
         let eggs = Reminder(id: Reminder.ID(UUID()), list: list, title: "Eggs", created: now)
         #expect(try await Reminders.sqlite(database).create(eggs, below: nil).position == 1)
         #expect(try stored(eggs.id, database)?.title == "Eggs" && position(eggs.id, database) == 1)
-        #expect(try await database.read { db in try #sql("SELECT searchText FROM reminders WHERE title = 'Milk'", as: String.self).fetchOne(db) } == "milk\n")
+        // The upgrade indexed the old rows, tags included, and the index follows the new ones.
+        #expect(try results(Reminders.Query(terms: ["car"], showCompleted: true), database).reminders.map(\.title) == ["Bread"])
+        #expect(try results(Reminders.Query(terms: ["mi"], showCompleted: true), database).reminders.map(\.title) == ["Milk"])
         try await database.write { db in try Models.List<Reminder>.Record.find(list).delete().execute(db) }
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 0)
+        #expect(try await database.read { db in try Reminder.Record.Text.all.fetchCount(db) } == 0)
     }
 
     @Test func `a generated sample at scale is written in one transaction and read back whole`() async throws {
@@ -505,20 +508,32 @@ struct `Reminder SQLite storage` {
         #expect(try stored(sample.reminders[0].id, database)?.tags == ["Someday", "optional", "adulting"])
     }
 
-    @Test func `a search matches the tags once and looks each reminder's links up in their index`() async throws {
-        let (database, _, _) = try makeDatabase()
+    @Test func `a search is answered by the full-text index, at the start of a word, in any case, and follows every edit`() async throws {
+        let (database, reminders, sample) = try makeDatabase()
         let steps = try plan(Reminder.Record.where { $0.matches(Reminders.Query(terms: ["day"])) }.select(\.id), database)
-        #expect(steps.contains { $0.contains("LIST SUBQUERY") }, "\(steps)")
-        #expect(steps.contains { $0.hasPrefix("SCAN tags") }, "\(steps)")
-        #expect(!steps.contains { $0.contains("CORRELATED") && $0.contains("tags") }, "\(steps)")
+        #expect(steps.contains { $0.contains("VIRTUAL TABLE INDEX") && $0.contains("reminderTexts") }, "\(steps)")
+        #expect(!steps.contains { $0.contains("SCAN tags") || $0.contains("SCAN remindersTags") }, "\(steps)")
         #expect(try results(Reminders.Query(terms: ["SOMEDAY"], showCompleted: true), database).reminders.map(\.title) == ["Haircut", "Groceries"])
-        let sql = "\(Reminder.Record.where { $0.matches(Reminders.Query(terms: ["day"])) }.select(\.id).query)"
-        #expect(sql.contains("instr(\"reminders\".\"searchText\"") && !sql.contains("localizedCaseInsensitiveContains(\"reminders\""), "\(sql)")
+        #expect(try results(Reminders.Query(terms: ["some"], showCompleted: true), database).reminders.map(\.title) == ["Haircut", "Groceries"])
+        #expect(try results(Reminders.Query(terms: ["meday"], showCompleted: true), database).reminders.isEmpty)
+        #expect(try results(Reminders.Query(terms: ["take a"], showCompleted: true), database).reminders.map(\.title) == ["Take a walk"])
+        #expect(try results(Reminders.Query(terms: ["\"take\" OR (x"], showCompleted: true), database).reminders.isEmpty)
         let groceries = try #require(try results(Reminders.Query(terms: ["oatmeal"], showCompleted: true), database).reminders.first)
         try await database.write { db in try Reminder.Record.find(groceries.id).update { $0.title = "Weekly Shopping" }.execute(db) }
         #expect(try results(Reminders.Query(terms: ["shopping"], showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
         #expect(try results(Reminders.Query(terms: ["grocer"], showCompleted: true), database).reminders.isEmpty)
         #expect(try results(Reminders.Query(terms: ["OATMEAL"], showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
+        var shopping = groceries
+        shopping.title = "Weekly Shopping"
+        shopping.tags = ["café", "kids"]
+        _ = try await reminders.update(shopping)
+        #expect(try results(Reminders.Query(terms: ["cafe"], showCompleted: true), database).reminders.map(\.title) == ["Weekly Shopping"])
+        #expect(try results(Reminders.Query(terms: ["adult"], showCompleted: true), database).reminders.map(\.title) == ["Doctor appointment"])
+        _ = try await reminders.tags.rename("kids", to: "children")
+        #expect(try results(Reminders.Query(terms: ["child"], showCompleted: true), database).reminders.count == 2)
+        try await reminders.delete(groceries.id)
+        #expect(try results(Reminders.Query(terms: ["shopping"], showCompleted: true), database).reminders.isEmpty)
+        #expect(try await database.read { db in try Reminder.Record.Text.all.fetchCount(db) } == 10)
     }
 
     @Test func `Today and the completed set are read through indexes, not a scan of every reminder`() async throws {
