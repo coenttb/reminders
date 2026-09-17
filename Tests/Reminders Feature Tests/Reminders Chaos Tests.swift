@@ -52,9 +52,12 @@ struct `Reminder chaos` {
         }
         let steps = ProcessInfo.processInfo.environment["CHAOS_STEPS"].flatMap(Int.init) ?? 150
         var log: [String] = []
+        var deleted: Set<Reminder.ID> = []
         for step in 0..<steps {
             let action = try await pick(store, &random)
             log.append("\(step): \(action)")
+            if case let .send(.listing(.reminderDeleted(id)), _) = action { deleted.insert(id) }
+            if case let .burst(.delete, ids) = action { deleted.formUnion(ids) }
             switch action {
             case .clock(let seconds):
                 await clock.advance(by: .seconds(seconds))
@@ -69,14 +72,24 @@ struct `Reminder chaos` {
             case .send(let action, let name):
                 let task = await store.send(action)
                 if !name.hasPrefix("complete") { await task?.value }
+            case .burst(let kind, let ids):
+                // Back to back, nothing awaited: the tasks of one action replace each other.
+                for id in ids {
+                    switch kind {
+                    case .complete: await store.send(.listing(.reminderCompleteButtonTapped(id)))
+                    case .delete: await store.send(.listing(.reminderDeleted(id)))
+                    }
+                }
+                await Task.yield()
             }
             await Task.yield()
-            if step % 25 == 24 { try await check(store, seed: seed, log: log) }
+            if step % 25 == 24 { try await check(store, seed: seed, log: log, deleted: deleted) }
         }
         await clock.advance(by: .seconds(10))
-        try await check(store, seed: seed, log: log)
+        try await settle(store)
+        try await check(store, seed: seed, log: log, deleted: deleted, settled: true)
         await store.dismount()
-        try await check(store, seed: seed, log: log, dismounted: true)
+        try await check(store, seed: seed, log: log, deleted: deleted, dismounted: true)
         }
     }
 
@@ -86,6 +99,9 @@ struct `Reminder chaos` {
         case modifyNotes(String)
         case modifyFormTitle(String)
         case send(Reminders.Feature.Action, String)
+        case burst(Burst, [Reminder.ID])
+
+        enum Burst { case complete, delete }
 
         var description: String {
             switch self {
@@ -94,6 +110,7 @@ struct `Reminder chaos` {
             case .modifyNotes(let n): "notes = \(n.debugDescription)"
             case .modifyFormTitle(let t): "form title = \(t.debugDescription)"
             case .send(_, let name): name
+            case .burst(let kind, let ids): "\(kind) burst \(ids.count)"
             }
         }
     }
@@ -143,8 +160,14 @@ struct `Reminder chaos` {
             default: return .send(.listing(.backgroundTapped), "background tap")
             }
         }
-        switch Int.random(in: 0..<16, using: &random) {
+        switch Int.random(in: 0..<18, using: &random) {
         case 0: return .send(.listing(.newReminderButtonTapped), "new row")
+        case 16 where rows.count > 1:
+            let picked = rows.shuffled(using: &random).prefix(Int.random(in: 2...min(4, rows.count), using: &random))
+            return .burst(.complete, Array(picked))
+        case 17 where rows.count > 1:
+            let picked = rows.shuffled(using: &random).prefix(Int.random(in: 2...min(3, rows.count), using: &random))
+            return .burst(.delete, Array(picked))
         case 1 where !rows.isEmpty: return .send(.listing(.reminderTapped(rows.randomElement(using: &random)!)), "tap row")
         case 2 where !rows.isEmpty: return .send(.listing(.reminderCompleteButtonTapped(rows.randomElement(using: &random)!)), "complete row")
         case 3 where !rows.isEmpty: return .send(.listing(.reminderDeleted(rows.randomElement(using: &random)!)), "delete row")
@@ -166,12 +189,28 @@ struct `Reminder chaos` {
         }
     }
 
-    func check(_ store: Store, seed: UInt64, log: [String], dismounted: Bool = false) async throws {
+    // Pending work drains once the clock has moved past the grace and the tasks have run.
+    func settle(_ store: Store) async throws {
+        for _ in 0..<50 {
+            let listing = await store.state.listing
+            if listing.map({ $0.grace.isEmpty && $0.reopening.isEmpty && $0.deleting.isEmpty }) ?? true { return }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
+
+    func check(_ store: Store, seed: UInt64, log: [String], deleted: Set<Reminder.ID>, settled: Bool = false, dismounted: Bool = false) async throws {
         let state = await store.state
         let editing = dismounted ? nil : state.listing?.editing
         let replay = "seed \(seed)\n" + log.joined(separator: "\n")
         #expect(state.failure == nil, "failure \(state.failure ?? "")\n\(replay)")
+        if settled, let listing = state.listing {
+            #expect(listing.grace.isEmpty && listing.reopening.isEmpty && listing.deleting.isEmpty, "pending work left \(listing.grace) \(listing.reopening) \(listing.deleting)\n\(replay)")
+        }
         try await database.read { db in
+            if settled {
+                let survivors = try Reminder.Record.where { $0.id.in(deleted) }.fetchCount(db)
+                #expect(survivors == 0, "\(survivors) deleted rows survive\n\(replay)")
+            }
             let blank = try Reminder.Record.where { $0.title.eq("") }.select(\.id).fetchAll(db)
             #expect(Set(blank).subtracting(editing.map { [$0.id] } ?? []).isEmpty, "blank rows \(blank)\n\(replay)")
             let positions = try Reminder.Record.select(\.position).fetchAll(db)
