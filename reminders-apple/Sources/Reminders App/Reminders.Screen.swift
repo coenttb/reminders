@@ -41,6 +41,7 @@ extension Reminders.Screen: SwiftUI::View {
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollDismissesKeyboard(.interactively)
             .scrollContentBackground(store.search.field.isActive ? .hidden : .visible)
             .background(SwiftUI.Color(.systemBackground))
             .environment(\.editMode, $editMode)
