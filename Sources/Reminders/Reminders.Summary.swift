@@ -1,4 +1,3 @@
-public import Foundation
 public import Models
 public import Reminder
 
