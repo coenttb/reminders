@@ -27,6 +27,7 @@ extension Reminders.Listing {
             public var deleting: Set<Reminder.ID> = []
 
             @DebugSnapshotIgnored @Fetch public var page = Reminders.Page()
+            public var contents: Reminders.Page { shown(page) }
             @DebugSnapshotIgnored @Fetch public var preference = Reminders.Preference(ordering: .dueDate, showCompleted: false)
             // The row being edited survives a relaunch.
             @DebugSnapshotIgnored @Shared(.appStorage(Feature.editingKey)) public var editingID: String? = nil

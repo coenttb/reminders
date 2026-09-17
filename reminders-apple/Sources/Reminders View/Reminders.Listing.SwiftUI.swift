@@ -31,7 +31,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let style = Reminders.Filter.Style(store.filter, list: list, day: calendar.component(.day, from: now))
         let (title, tint) = (style.title ?? "", style.tint)
-        let contents = store.page
+        let contents = store.contents
         let preference = store.preference
         let editing = store.editing?.id
         let actions = Reminder.Row.Actions(

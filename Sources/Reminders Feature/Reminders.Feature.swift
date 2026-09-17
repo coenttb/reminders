@@ -71,7 +71,7 @@ extension Reminders {
             }
 
             public var results: Reminders.Search.Contents {
-                Reminders.Search.Contents(search.matches, lists: overview.summary.lists, suggestions: search.suggestions)
+                Reminders.Search.Contents(search.matches.map(search.shown), lists: overview.summary.lists, suggestions: search.suggestions)
             }
         }
 

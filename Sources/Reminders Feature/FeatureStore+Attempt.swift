@@ -10,7 +10,7 @@ extension FeatureStore {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            try post(key: Reminders.Feature.Failed.self, value: error.localizedDescription)
+            try self.post(key: Reminders.Feature.Failed.self, value: error.localizedDescription)
         }
     }
 }
