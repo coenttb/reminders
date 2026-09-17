@@ -11,5 +11,6 @@ public struct Color: Hashable, Sendable {
 }
 
 extension Color {
-    public static let `default` = Color(red: 74 / 255, green: 153 / 255, blue: 239 / 255)
+    // The stock app's "Blue": the system blue.
+    public static let `default` = Color(red: 0, green: 122 / 255, blue: 255 / 255)
 }

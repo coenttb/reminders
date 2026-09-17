@@ -60,11 +60,11 @@ private struct Message {}
     @Test func `the default color has unit components`() {
         let color = Color.default
         #expect((0...1).contains(color.red) && (0...1).contains(color.green) && (0...1).contains(color.blue))
-        #expect((color.red * 255).rounded() == 74 && (color.green * 255).rounded() == 153 && (color.blue * 255).rounded() == 239)
+        #expect((color.red * 255).rounded() == 0 && (color.green * 255).rounded() == 122 && (color.blue * 255).rounded() == 255)
     }
 
     @Test func `colors round-trip through their hex`() {
-        #expect(Color(Color.Hex(rawValue: 0x4a99ef)) == .default && Color.Hex(.default).rawValue == 0x4a99ef)
+        #expect(Color(Color.Hex(rawValue: 0x007aff)) == .default && Color.Hex(.default).rawValue == 0x007aff)
         #expect(Color.Hex(Color(red: 2, green: -1, blue: 0.5)).rawValue == 0xff0080)
     }
 }
