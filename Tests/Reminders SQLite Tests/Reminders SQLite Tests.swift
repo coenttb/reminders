@@ -526,6 +526,11 @@ struct `Reminder SQLite storage` {
         #expect(today.contains { $0.contains("idx_reminders_due") }, "\(today)")
         let completed = try plan(Reminder.Record.where { $0.isCompleted }.select(\.id), database)
         #expect(completed.contains { $0.contains("idx_reminders_completed") }, "\(completed)")
+        let tags = try plan(
+            Tag<Reminder>.Record.group(by: \.title).leftJoin(Reminders.Tagging.all) { $0.title.collate(.binary).eq($1.tagID.text) }.select { ($0.title, $1.reminderID.count()) },
+            database
+        )
+        #expect(tags.contains { $0.contains("SEARCH remindersTags USING") && $0.contains("idx_remindersTags_tagID") }, "\(tags)")
         #expect(try overview(database).counts.today == 2)
         #expect(try detail(.today, database).rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"])
     }

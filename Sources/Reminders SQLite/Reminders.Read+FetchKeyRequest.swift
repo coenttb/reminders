@@ -31,9 +31,11 @@ extension Reminders.Read.Today.Request: FetchKeyRequest {
                 }
                 .fetchOne(db) ?? Reminder.Record.Counts()
             ),
+            // A link holds its tag's title byte for byte (the reference cascades), so the join is binary and
+            // walks the links' index instead of running the localized collation over every link per tag.
             tags: try Tag<Reminder>.Record
                 .group(by: \.title)
-                .leftJoin(Reminders.Tagging.all) { $0.title.eq($1.tagID.text) }
+                .leftJoin(Reminders.Tagging.all) { $0.title.collate(.binary).eq($1.tagID.text) }
                 .order { ($1.reminderID.count().desc(), $0.title.collate(Reminders.Schema.$localizedCaseInsensitive)) }
                 .select { Tag<Reminder>.Record.Entry.Columns(tag: $0, count: $1.reminderID.count()) }
                 .fetchAll(db)
