@@ -7,9 +7,9 @@ extension Reminders {
     public struct Tags: Tags.Interface {
         public protocol Interface {
             func create(_ title: String) throws -> Tag<Reminder>
-            func update(_ tag: Tag<Reminder>, title: String) throws -> Tag<Reminder>
+            func rename(_ tag: Tag<Reminder>, to title: String) throws -> Tag<Reminder>
             func delete(_ tag: Tag<Reminder>) throws
-            func list(prefix: String, excluding: Set<Tag<Reminder>>) throws -> [Tag<Reminder>]
+            func suggest(prefix: String, excluding: Set<Tag<Reminder>>) throws -> [Tag<Reminder>]
         }
     }
 }

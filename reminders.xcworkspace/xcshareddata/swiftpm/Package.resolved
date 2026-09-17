@@ -1,5 +1,5 @@
 {
-  "originHash" : "433f9bd718266d0470756f00d2f3972e09a56c38fa7db1e27e467069d9d2e0d2",
+  "originHash" : "8a0d23e18a3837f744783c5db0c25fbef879de0c8c202f62ab2953d97ef3444a",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -188,15 +188,6 @@
       "state" : {
         "revision" : "597afd46249f4a71885b95d26b26cc5b893daf32",
         "version" : "2.0.12"
-      }
-    },
-    {
-      "identity" : "swift-product",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-atoms/swift-product.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "dae38c0f12b71fc38b2e54be0cd49616df855a56"
       }
     },
     {

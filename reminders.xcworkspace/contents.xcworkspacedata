@@ -29,4 +29,7 @@
    <FileRef
       location = "container:../swift-institute/swift-molecules/swift-interface">
    </FileRef>
+   <FileRef
+      location = "container:../swift-institute/swift-atoms/swift-product">
+   </FileRef>
 </Workspace>
