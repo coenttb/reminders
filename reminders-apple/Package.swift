@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-sharing", from: "2.8.1"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
-        .package(url: "https://github.com/coenttb/swiftui-extensions", branch: "main"),
+        .package(url: "https://github.com/swift-compositions/swiftui-extensions", branch: "main"),
         .package(url: "https://github.com/swift-molecules/swift-foundation-extensions.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
         .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0", traits: ["Tagged"]),
