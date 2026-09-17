@@ -74,7 +74,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
             let (shown, total) = (contents.rows.count, contents.total)
             ForEach(Array(contents.rows.enumerated()), id: \.element.id) { index, reminder in
                 let id = reminder.id
-                let completed = reminder.completed || store.grace[id] != nil
+                let completed = store.state.isShownCompleted(reminder)
                 if id == editing, let editor = store.scope(\.editing) {
                     Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
                 } else {

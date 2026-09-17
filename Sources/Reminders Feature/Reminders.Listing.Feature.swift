@@ -23,6 +23,7 @@ extension Reminders.Listing {
             public var window = Window<Reminders.Filter>(step: Feature.paging.step, margin: Feature.paging.margin)
             public var editing: Reminder.Editor.Feature.State?
             public var grace: [Reminder.ID: UUID] = [:]
+            public var reopening: Set<Reminder.ID> = []
 
             @DebugSnapshotIgnored @Fetch public var page = Reminders.Page()
             @DebugSnapshotIgnored @Fetch public var preference = Reminders.Preference(ordering: .dueDate, showCompleted: false)

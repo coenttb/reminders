@@ -21,6 +21,7 @@ extension Reminders.Search {
             public var today: Date
             public var window = Window<Reminders.Query>(step: Reminders.Listing.Feature.paging.step, margin: Reminders.Listing.Feature.paging.margin)
             public var grace: [Reminder.ID: UUID] = [:]
+            public var reopening: Set<Reminder.ID> = []
 
             @DebugSnapshotIgnored @Fetch public var matches: Reminders.Page? = nil
             @DebugSnapshotIgnored @Fetch public var suggestions: [Tag<Reminder>] = []

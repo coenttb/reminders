@@ -400,6 +400,29 @@ struct `Reminder feature` {
         }
     }
 
+    @Test func `taps on several rows all finish, five seconds after the last tap`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+        let clock = TestClock()
+        let store = try await makeStore(clock: clock)
+        await store.send(.overview(.listTapped(personal)))?.value
+        try await until(try await page(store)) { $0.rows.count == 4 }
+        let rows = try await page(store).wrappedValue.rows.map(\.id)
+        for id in rows.prefix(3) {
+            await store.send(.listing(.reminderCompleteButtonTapped(id)))
+            await clock.advance(by: .seconds(1))
+        }
+        #expect(await store.state.listing?.gracing == Set(rows.prefix(3)))
+        await clock.advance(by: .seconds(4))
+        await Task.yield()
+        #expect(try await stored(rows[0])?.completed == false)
+        await clock.advance(by: .seconds(1))
+        try await until(try await page(store)) { $0.rows.count == 1 }
+        for id in rows.prefix(3) { #expect(try await stored(id)?.completed == true) }
+        #expect(await store.state.listing?.grace == [:])
+        await store.dismount()
+        }
+    }
+
     @Test func `a completed reminder is reopened at once, and leaving the feature writes what is still in grace`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         let clock = TestClock()
