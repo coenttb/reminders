@@ -4,6 +4,7 @@ public import Models
 public import Reminder
 public import Reminders
 import Reminders_Dependency
+import Reminders_SQLite
 import Foundation
 
 extension Models.List<Reminder>.Form {
@@ -54,7 +55,7 @@ extension Models.List<Reminder>.Form {
                             do {
                                 try isNew ? reminders.lists.create(draft) : reminders.lists.update(draft)
                                 try store.dismiss()
-                            } catch Reminders.Error.notFound {
+                            } catch Reminders.SQLite.Error.notFound {
                                 try store.modify { $0.fail("This list was deleted.") }
                             }
                         }

@@ -4,6 +4,7 @@ public import Models
 public import Reminder
 public import Reminders
 import Reminders_Dependency
+import Reminders_SQLite
 import Standard_Library_Extensions
 import Tagged
 import Foundation
@@ -59,7 +60,7 @@ extension Reminder.Form {
                             do {
                                 _ = try isNew ? reminders.create(draft, below: nil) : reminders.update(draft)
                                 try store.dismiss()
-                            } catch Reminders.Error.notFound {
+                            } catch Reminders.SQLite.Error.notFound {
                                 try store.modify { $0.fail("This reminder was deleted.") }
                             }
                         }
@@ -105,15 +106,15 @@ extension Reminder.Form.Feature {
     private func create(tag title: String) throws -> Tag<Reminder>? {
         do {
             return try reminders.tags.create(title)
-        } catch Reminders.Error.blank {
+        } catch Reminders.SQLite.Error.blank {
             return nil
         }
     }
 
     private func rename(tag: Tag<Reminder>, to title: String) throws -> Tag<Reminder>? {
         do {
-            return try reminders.tags.update(tag, title: title)
-        } catch Reminders.Error.blank, Reminders.Error.notFound {
+            return try reminders.tags.rename(tag, to: title)
+        } catch Reminders.SQLite.Error.blank, Reminders.SQLite.Error.notFound {
             return nil
         }
     }

@@ -40,11 +40,11 @@ extension Reminders.Search.Field {
 
     public var terms: [String] { tokens.compactMap { if case let .near(text) = $0 { text } else { nil } } }
 
-    public var query: Reminders.Search.Query {
-        Reminders.Search.Query(terms: terms, tags: tags, showCompleted: showCompleted)
+    public var query: Reminders.Query {
+        Reminders.Query(terms: terms, tags: tags, showCompleted: showCompleted)
     }
 
-    public var selection: Reminders.Selection? {
+    public var selection: Reminders.Page.Query.Selection? {
         guard isActive, tagPrefix == nil || !tokens.isEmpty else { return nil }
         var query = query
         if tagPrefix == nil, !text.isEmpty { query.terms.append(text) }

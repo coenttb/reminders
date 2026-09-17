@@ -206,13 +206,13 @@ struct `Reminder feature` {
         #expect(open > step && open < 2 * step)
         let store = try await makeStore()
         await store.send(.filterTapped(.all)) { $0.filter = .all }?.value
-        try await until(store.state.$detail) { $0?.selection == .filter(.all) && $0?.rows.count == step }
+        try await until(store.state.$detail) { $0?.rows.count == step }
         #expect(await store.state.detail?.total == open)
         await store.send(.detailEndReached) { $0.detailWindow = Window(key: .all, rows: 2 * step, step: step, margin: Reminders.Feature.paging.margin) }?.value
         try await until(store.state.$detail) { $0?.rows.count == open }
         await store.send(.detailEndReached)?.value
         await store.send(.listTapped(list)) { $0.filter = .list(list) }?.value
-        try await until(store.state.$detail) { $0?.selection == .filter(.list(list)) && $0?.rows.count == step }
+        try await until(store.state.$detail) { $0?.rows.count == step }
         try await TestExhaustivity.$current.withValue(.off) {
             await store.send(.newReminderButtonTapped)?.value
             let editing = try #require(await store.state.editing)
@@ -229,7 +229,7 @@ struct `Reminder feature` {
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         await store.dismount()
         let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
-        try await until(revived.state.$detail) { $0?.selection == .filter(.list(personal)) && $0?.rows.count == 4 }
+        try await until(revived.state.$detail) { $0?.rows.count == 4 }
         await revived.dismount()
     }
 

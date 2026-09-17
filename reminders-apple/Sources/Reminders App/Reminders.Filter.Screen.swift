@@ -26,10 +26,11 @@ extension Reminders.Filter {
 extension Reminders.Filter.Screen: SwiftUI::View {
     @ViewBuilder var body: some SwiftUI::View {
         @Bindable var store = store
-        let contents = store.detail ?? Reminders.Page(selection: .filter(filter), preference: .default(for: filter))
+        let contents = store.detail ?? Reminders.Page()
         let style = Reminders.Filter.Style(filter, list: list, day: calendar.component(.day, from: now))
         Reminders.Listing.View.SwiftUI(
             contents: contents,
+            preference: store.preference,
             style: style,
             color: { store.overview.list($0).map { SwiftUI.Color($0.color) } ?? .blue },
             draft: { Binding($store[dynamicMember: \.[draft: $0]]) },

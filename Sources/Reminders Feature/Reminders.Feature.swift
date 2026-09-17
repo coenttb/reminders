@@ -28,12 +28,13 @@ extension Reminders {
                 step: Feature.paging.step,
                 margin: Feature.paging.margin
             )
-            public var resultsWindow = Window<Reminders.Search.Query>(
+            public var resultsWindow = Window<Reminders.Query>(
                 step: Feature.paging.step,
                 margin: Feature.paging.margin
             )
 
             @DebugSnapshotIgnored @Fetch public var detail: Reminders.Page? = nil
+            @DebugSnapshotIgnored @Fetch public var preference = Reminders.Preference(ordering: .dueDate, showCompleted: false)
             @DebugSnapshotIgnored @Fetch public var overview = Reminders.Summary()
             @DebugSnapshotIgnored @Fetch public var matches: Reminders.Page? = nil
             @DebugSnapshotIgnored @Fetch public var suggestions: [Tag<Reminder>] = []
@@ -120,12 +121,12 @@ extension Reminders {
                 case let .datePresetSelected(id, preset):
                     if state.editing?.id == id { state.editing?.draft.set(datePreset: preset, at: now, calendar: calendar) }
                 case .clearCompletedButtonTapped:
-                    guard let filter = state.filter, let today = state.today else { break }
-                    perform { try reminders.deleteCompleted(.filter(filter, today: today)) }
+                    guard let filter = state.filter else { break }
+                    perform { try reminders.delete.completed(in: filter, today: now) }
                 case let .deleteCompletedButtonTapped(months):
                     let query = state.search.query
                     let cutoff = months.map { now.subtracting($0.months, in: calendar) ?? now }
-                    perform { try reminders.deleteCompleted(.search(query, dueBefore: cutoff)) }
+                    perform { try reminders.delete.completed(matching: query, dueBefore: cutoff) }
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
                     state.destination = nil
                 case .detailEndReached:
@@ -163,7 +164,7 @@ extension Reminders {
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
-                    perform { try reminders.preferences.update(filter, change: .ordering(ordering)) }
+                    perform { try reminders.update.order(filter, by: ordering) }
                 case let .reminderCompleteButtonTapped(id):
                     if state.grace.removeValue(forKey: id) != nil { break }
                     if state.isCompleted(id) == true {
@@ -217,7 +218,7 @@ extension Reminders {
                     guard let filter = state.filter else { break }
                     var ids = state.detail?.rows.map(\.id) ?? []
                     ids.move(offsets: source, to: destination)
-                    perform { try reminders.reorder(ids, in: filter) }
+                    perform { try reminders.update.reorder(ids, in: filter) }
                 case .resultsEndReached:
                     guard let matches = state.matches else { break }
                     state.resultsWindow.widen(for: state.search.query, shown: matches.rows.count, total: matches.total)
@@ -232,7 +233,8 @@ extension Reminders {
                     state.editing = nil
                 case .showCompletedButtonTapped:
                     guard let filter = state.filter else { break }
-                    perform { try reminders.preferences.update(filter, change: .toggleShowCompleted) }
+                    let shown = state.preference.showCompleted
+                    perform { try reminders.update.show(completed: !shown, in: filter) }
                 case let .tagDeleted(id):
                     store.addTask {
                         try await attempt {
@@ -279,6 +281,13 @@ extension Reminders {
             .onChange(of: store.filter) { previous, filter, state in
                 if previous != nil { endEditing(&state) }
                 state.$filterKey.withLock { $0 = filter.map(Reminders.Filter.Key.init) }
+            }
+            .onChange(of: store.filter.map { Reminders.Preference.Query(for: $0) }, initial: true) { _, request, state in
+                guard let request else { return }
+                let preference = state.$preference
+                store.addTask {
+                    try await attempt { try await preference.load(request) }
+                }
             }
             .onChange(of: store.editing?.id) { _, id, state in
                 state.$editingID.withLock { $0 = id?.rawValue.uuidString }
@@ -337,7 +346,7 @@ extension Reminders {
                 if !active { state.search.showCompleted = false }
             }
             .onDismount {
-                for id in store.grace.keys { try reminders.complete(id) }
+                for id in store.grace.keys { try complete(id, true) }
             }
         }
     }
@@ -379,7 +388,7 @@ extension Reminders.Feature {
 
     private func finish(_ id: Reminder.ID, completed: Bool) async throws {
         try await attempt {
-            try completed ? reminders.complete(id) : reminders.reopen(id)
+            try complete(id, completed)
             try store.modify {
                 $0.grace.removeValue(forKey: id)
                 if $0.editing?.id == id {
@@ -392,10 +401,16 @@ extension Reminders.Feature {
 
     private func retrieve(_ id: Reminder.ID) throws -> Reminders.Placement? {
         do {
-            return try reminders.retrieve(id)
-        } catch Reminders.Error.notFound {
+            return try reminders.read(id)
+        } catch Reminders.SQLite.Error.notFound {
             return nil
         }
+    }
+
+    private func complete(_ id: Reminder.ID, _ completed: Bool) throws {
+        guard var reminder = try retrieve(id)?.reminder, reminder.completed != completed else { return }
+        reminder.completed = completed
+        _ = try reminders.update(reminder)
     }
 
     private func perform(_ body: @escaping () async throws -> Void) {
@@ -465,7 +480,7 @@ extension Reminders.Feature {
         } else if !editing.isSaved {
             do {
                 _ = try reminders.update(editing.draft)
-            } catch Reminders.Error.notFound {}
+            } catch Reminders.SQLite.Error.notFound {}
         }
     }
 }
@@ -473,7 +488,7 @@ extension Reminders.Feature {
 extension Reminders.Feature {
     struct Searching: Hashable, Sendable {
         var fetching: Fetching
-        var committed: Reminders.Search.Query
+        var committed: Reminders.Query
         var typing: Bool
     }
 }

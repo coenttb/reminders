@@ -41,17 +41,13 @@ extension Reminders {
                 id: { request in try read { db in try placement(request.id, in: db) } },
                 page: { request in try read(Reminders.Page.Query(request, calendar: calendar).fetch) },
                 search: { request in try read(Reminders.Page.Query(request, calendar: calendar).fetch) },
-                preference: { request in
-                    try read { db in
-                        try Preference.Record.preference(for: request.filter).fetchOne(db).map(Preference.init)
-                            ?? Preference(Preference.Record.default(for: request.filter))
-                    }
-                }
+                preference: { request in try read(Reminders.Preference.Query(request).fetch) }
             ),
             update: .init(
                 { request in
                     try write { db in
                         guard try Reminder.Record.save(Reminder.Record.Draft(request.reminder), tags: request.reminder.tags, isNew: false, in: db) != nil else { throw SQLite.Error.notFound }
+                        try Reminder.Record.complete(request.reminder.id, request.reminder.completed).execute(db)
                         return try placement(request.reminder.id, in: db)
                     }
                 },

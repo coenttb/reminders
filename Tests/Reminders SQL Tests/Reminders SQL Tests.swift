@@ -42,13 +42,13 @@ import Tagged
         )
         #expect(Reminder.Record.Draft(record) == draft)
         #expect(Reminder(Reminder.Record.Row(reminder: record, tags: ["car", "kids"])) == reminder)
-        #expect(Reminders.Summary.Counts(Reminder.Record.Counts(all: 3, flagged: 1))[.all] == 3 && Reminders.Summary.Counts()[.completed] == nil)
+        #expect(Reminders.Summary.Counts(Reminder.Record.Counts(all: 3, flagged: 1)).all == 3)
     }
 
     @Test func `filters default to hiding completed reminders except Completed`() {
         #expect(Reminders.Preference.Record.default(for: .all) == Reminders.Preference.Record(key: Reminders.Filter.Key(.all), ordering: .dueDate, showCompleted: false))
         #expect(Reminders.Preference.Record.default(for: .list(list)).id == Reminders.Filter.Key(.list(list)))
-        #expect(Reminders.Preference(Reminders.Preference.Record.default(for: .completed)) == Reminders.Preference(showCompleted: true))
+        #expect(Reminders.Preference(Reminders.Preference.Record.default(for: .completed)) == Reminders.Preference(ordering: .dueDate, showCompleted: true))
     }
 
     @Test func `an overview finds its lists and ranks its tags, and a detail knows its ids`() {
@@ -65,7 +65,7 @@ import Tagged
         #expect(overview.lists.map(\.list) == [personal] && overview.tags.map(\.tag.rawValue) == ["social", "Adulting", "car"])
         let record = Reminder.Record(id: Reminder.ID(UUID()), listID: list, title: "Call", created: now)
         let call = Reminder(Reminder.Record.Row(reminder: record, tags: []))
-        let page = Reminders.Page(selection: .filter(.list(list)), preference: .default(for: .list(list)), rows: [call])
+        let page = Reminders.Page(rows: [call])
         #expect(page.rows.map(\.id) == [record.id] && page.total == 0)
         let stored = Reminders.Preference.Record(Reminders.Preference(ordering: .title, showCompleted: true), for: .today)
         #expect(stored.key == Reminders.Filter.Key(.today) && Reminders.Preference(stored) == Reminders.Preference(ordering: .title, showCompleted: true))

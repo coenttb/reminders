@@ -7,13 +7,13 @@ public import Reminder
 extension Reminders.Search {
     public struct View {
         public var showCompleted: Bool
-        public var window: Window<Query>
+        public var window: Window<Reminders.Query>
         public var grace: Set<Reminder.ID>
         public var now: Date
         public var calendar: Calendar
         public var actions: Actions
 
-        public init(showCompleted: Bool, window: Window<Query>, grace: Set<Reminder.ID> = [], now: Date, calendar: Calendar, actions: Actions) {
+        public init(showCompleted: Bool, window: Window<Reminders.Query>, grace: Set<Reminder.ID> = [], now: Date, calendar: Calendar, actions: Actions) {
             self.showCompleted = showCompleted
             self.window = window
             self.grace = grace

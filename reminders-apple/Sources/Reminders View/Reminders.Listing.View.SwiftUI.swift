@@ -8,6 +8,7 @@ public import Tagged
 extension Reminders.Listing.View {
     public struct SwiftUI {
         private var contents: Reminders.Page
+        private var preference: Reminders.Preference
         private var style: Reminders.Filter.Style
         private var color: (Models.List<Reminder>.ID) -> SwiftUI::Color
         private var draft: (Reminder.ID) -> Binding<Reminder>?
@@ -19,12 +20,14 @@ extension Reminders.Listing.View {
 
         public init(
             contents: Reminders.Page,
+            preference: Reminders.Preference,
             style: Reminders.Filter.Style,
             color: @escaping (Models.List<Reminder>.ID) -> SwiftUI::Color,
             draft: @escaping (Reminder.ID) -> Binding<Reminder>?,
             view: Reminders.Listing.View
         ) {
             self.contents = contents
+            self.preference = preference
             self.style = style
             self.color = color
             self.draft = draft
@@ -37,7 +40,6 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let (title, editing, actions) = (style.title ?? "", view.editing, view.actions)
         let tint = style.tint
-        let preference = contents.preference
         let row = Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
         ScrollViewReader { proxy in
         SwiftUI::List {
