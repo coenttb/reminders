@@ -34,6 +34,8 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
         let contents = store.contents
         let preference = store.preference
         let editing = store.editing?.id
+        // Today, Scheduled, and Completed gather rows from every list and name the list in each row, as the stock app does.
+        let named = store.list == nil && !store.filter.groupsByList
         let actions = Reminder.Row.Actions(
             complete: { store.send(.reminderCompleteButtonTapped($0)) },
             delete: { store.send(.reminderDeleted($0)) },
@@ -87,7 +89,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                         if id == editing, let editor = store.scope(\.editing) {
                             Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
                         } else {
-                            Reminder.Row.SwiftUI(reminder: reminder, completed: completed, color: color(reminder.list), now: now, calendar: calendar, actions: actions)
+                            Reminder.Row.SwiftUI(reminder: reminder, list: named ? lists.first(id: reminder.list)?.title : nil, completed: completed, color: color(reminder.list), now: now, calendar: calendar, actions: actions)
                                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                                 .listRowSeparator(.hidden)
                                 .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }

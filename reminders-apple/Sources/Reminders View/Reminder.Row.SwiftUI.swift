@@ -8,15 +8,18 @@ extension Reminder.Row {
     public struct SwiftUI {
         private var reminder: Reminder
         private var highlight: Reminders.Highlight?
+        // The list's name, on a screen that gathers rows from every list without naming them above.
+        private var list: String?
         private var completed: Bool
         private var color: SwiftUI::Color
         private var now: Date
         private var calendar: Calendar
         private var actions: Actions
 
-        public init(reminder: Reminder, highlight: Reminders.Highlight? = nil, completed: Bool? = nil, color: SwiftUI::Color, now: Date, calendar: Calendar, actions: Actions) {
+        public init(reminder: Reminder, highlight: Reminders.Highlight? = nil, list: String? = nil, completed: Bool? = nil, color: SwiftUI::Color, now: Date, calendar: Calendar, actions: Actions) {
             self.reminder = reminder
             self.highlight = highlight
+            self.list = list
             self.completed = completed ?? reminder.completed
             self.color = color
             self.now = now
@@ -78,12 +81,9 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
                 .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI::Color.red : SwiftUI::Color.secondary)
         }
         let tags = highlight.map { Text(marked: $0.tags.split(separator: " ").map { "#" + $0 }.joined(separator: " ")) } ?? Text(reminder.tagLine)
-        switch (due, reminder.tagLine.isEmpty) {
-        case (nil, true): return nil
-        case let (due?, true): return due
-        case (nil, false): return tags
-        case let (due?, false): return Text("\(due)  \(tags)")
-        }
+        let parts = [list.map { Text($0) }, due, reminder.tagLine.isEmpty ? nil : tags].compactMap { $0 }
+        guard let first = parts.first else { return nil }
+        return parts.dropFirst().reduce(first) { Text("\($0)  \($1)") }
     }
 }
 
