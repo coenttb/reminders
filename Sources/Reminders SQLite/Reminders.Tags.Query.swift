@@ -14,7 +14,7 @@ extension Reminders.Tags {
             self.excluding = excluding
         }
 
-        public init(_ request: Reminders.Tags.List.Request) {
+        public init(_ request: Reminders.Tags.Suggest.Request) {
             self.init(prefix: request.prefix, excluding: request.excluding)
         }
     }

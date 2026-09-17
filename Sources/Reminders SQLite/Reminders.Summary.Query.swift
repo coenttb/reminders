@@ -14,8 +14,8 @@ extension Reminders.Summary {
             self.today = today
         }
 
-        public init(_ request: Reminders.Overview.Request) {
-            self.init(today: request.today)
+        public init(_ request: Reminders.Read.Today.Request, calendar: Calendar) {
+            self.init(today: calendar.day(containing: request.today))
         }
     }
 }

@@ -6,7 +6,7 @@ extension Reminders.Preference {
     public struct Record: Hashable, Sendable {
         @Column(primaryKey: true)
         public var key: Reminders.Filter.Key
-        @Column(as: Reminders.Ordering.RawRepresentation.self)
+        @Column(as: Reminders.Ordering.Representation.self)
         public var ordering: Reminders.Ordering = .dueDate
         public var showCompleted = false
 
@@ -34,7 +34,7 @@ extension Reminders.Preference.Record {
     }
 
     public static func `default`(for filter: Reminders.Filter) -> Self {
-        Self(Reminders.Preference.default(for: filter), for: filter)
+        Self(key: Reminders.Filter.Key(filter), showCompleted: filter == .completed)
     }
 
     public static func preference(for filter: Reminders.Filter) -> Where<Self> {
@@ -64,15 +64,15 @@ extension Reminders.Preference.Record {
         }
     }
 
-    public static func toggleShowCompleted(for filter: Reminders.Filter) -> InsertOf<Self> {
+    public static func set(showCompleted: Bool, for filter: Reminders.Filter) -> InsertOf<Self> {
         var record = Self.default(for: filter)
-        record.showCompleted.toggle()
+        record.showCompleted = showCompleted
         return Self.insert {
             record
         } onConflict: {
             $0.key
-        } doUpdate: { row, _ in
-            row.showCompleted = !row.showCompleted
+        } doUpdate: { row, excluded in
+            row.showCompleted = excluded.showCompleted
         }
     }
 }

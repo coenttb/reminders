@@ -7,20 +7,29 @@ public import SQLiteData
 
 extension Reminders.Page {
     public struct Query: FetchKeyRequest {
-        public var selection: Reminders.Selection
+        public enum Selection: Hashable, Sendable {
+            case filter(Reminders.Filter)
+            case search(Reminders.Query)
+        }
+
+        public var selection: Selection
         public var today: Range<Date>
         public var including: Reminders.Placement?
         public var limit: Int?
 
-        public init(_ selection: Reminders.Selection, today: Range<Date>, including: Reminders.Placement? = nil, limit: Int? = nil) {
+        public init(_ selection: Selection, today: Range<Date>, including: Reminders.Placement? = nil, limit: Int? = nil) {
             self.selection = selection
             self.today = today
             self.including = including
             self.limit = limit
         }
 
-        public init(_ request: Reminders.List.Request) {
-            self.init(request.selection, today: request.today, including: request.including, limit: request.limit)
+        public init(_ request: Reminders.Read.Page.Request, calendar: Calendar) {
+            self.init(.filter(request.filter), today: calendar.day(containing: request.today), including: request.including, limit: request.limit)
+        }
+
+        public init(_ request: Reminders.Read.Search.Request, calendar: Calendar) {
+            self.init(.search(request.query), today: calendar.day(containing: request.today), limit: request.limit)
         }
     }
 }
@@ -29,7 +38,7 @@ extension Reminders.Page.Query {
     public func fetch(_ db: Database) throws -> Reminders.Page {
         let preference: Reminders.Preference = switch selection {
         case let .filter(filter):
-            try Reminders.Preference.Record.preference(for: filter).fetchOne(db).map(Reminders.Preference.init) ?? .default(for: filter)
+            try Reminders.Preference.Record.preference(for: filter).fetchOne(db).map(Reminders.Preference.init) ?? Reminders.Preference(Reminders.Preference.Record.default(for: filter))
         case let .search(query):
             Reminders.Preference(ordering: .dueDate, showCompleted: query.showCompleted)
         }
@@ -56,6 +65,6 @@ extension Reminders.Page.Query {
                 .fetchAll(db)
                 .map(Reminder.init)
         }
-        return Reminders.Page(selection: selection, preference: preference, rows: rows, total: total, completed: completed)
+        return Reminders.Page(rows: rows, total: total, completed: completed)
     }
 }

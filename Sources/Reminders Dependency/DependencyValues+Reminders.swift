@@ -1,5 +1,4 @@
 public import Dependencies
-import Models
 public import Reminders
 
 extension DependencyValues {
@@ -12,16 +11,28 @@ extension DependencyValues {
 extension Reminders: TestDependencyKey {
     public static var testValue: Reminders {
         Self(
-            create: unimplemented("\\.reminders.create"),
-            retrieve: unimplemented("\\.reminders.retrieve"),
-            update: unimplemented("\\.reminders.update"),
-            delete: unimplemented("\\.reminders.delete"),
-            list: unimplemented("\\.reminders.list", placeholder: Page(selection: .filter(.all), preference: Preference())),
-            reorder: unimplemented("\\.reminders.reorder"),
-            complete: unimplemented("\\.reminders.complete"),
-            reopen: unimplemented("\\.reminders.reopen"),
-            deleteCompleted: unimplemented("\\.reminders.deleteCompleted"),
-            overview: unimplemented("\\.reminders.overview", placeholder: Summary()),
+            create: .init(unimplemented("\\.reminders.create")),
+            read: .init(
+                unimplemented("\\.reminders.read", placeholder: Summary()),
+                today: unimplemented("\\.reminders.read(today:)", placeholder: Summary()),
+                id: unimplemented("\\.reminders.read(id)"),
+                page: unimplemented("\\.reminders.read(page:)", placeholder: Page()),
+                search: unimplemented("\\.reminders.read(search:)", placeholder: Page()),
+                preference: unimplemented("\\.reminders.read.preference", placeholder: Preference(ordering: .dueDate, showCompleted: false))
+            ),
+            update: .init(
+                unimplemented("\\.reminders.update"),
+                order: unimplemented("\\.reminders.update.order"),
+                show: unimplemented("\\.reminders.update.show"),
+                reorder: unimplemented("\\.reminders.update.reorder")
+            ),
+            delete: .init(
+                unimplemented("\\.reminders.delete"),
+                completed: .init(
+                    in: unimplemented("\\.reminders.delete.completed(in:)"),
+                    matching: unimplemented("\\.reminders.delete.completed(matching:)")
+                )
+            ),
             lists: .init(
                 create: unimplemented("\\.reminders.lists.create"),
                 update: unimplemented("\\.reminders.lists.update"),
@@ -30,12 +41,9 @@ extension Reminders: TestDependencyKey {
             ),
             tags: .init(
                 create: unimplemented("\\.reminders.tags.create"),
-                update: unimplemented("\\.reminders.tags.update"),
+                rename: unimplemented("\\.reminders.tags.rename"),
                 delete: unimplemented("\\.reminders.tags.delete"),
-                list: unimplemented("\\.reminders.tags.list", placeholder: [])
-            ),
-            preferences: .init(
-                update: unimplemented("\\.reminders.preferences.update")
+                suggest: unimplemented("\\.reminders.tags.suggest", placeholder: [])
             )
         )
     }
@@ -44,8 +52,9 @@ extension Reminders: TestDependencyKey {
 // swift-dependencies requires Sendable values; the interfaces themselves carry no
 // Sendable requirement, so the boundary is asserted here, not in Reminders.
 extension Reminders: @unchecked Sendable {}
+extension Reminders.Create: @unchecked Sendable {}
+extension Reminders.Read: @unchecked Sendable {}
+extension Reminders.Update: @unchecked Sendable {}
 extension Reminders.Delete: @unchecked Sendable {}
-extension Reminders.Filters: @unchecked Sendable {}
-extension Reminders.Search: @unchecked Sendable {}
 extension Reminders.Lists: @unchecked Sendable {}
 extension Reminders.Tags: @unchecked Sendable {}

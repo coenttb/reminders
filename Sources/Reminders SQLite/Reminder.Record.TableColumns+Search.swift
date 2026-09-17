@@ -14,7 +14,7 @@ extension Reminder.Record.TableColumns {
                 .exists()
     }
 
-    public func matches(_ query: Reminders.Search.Query) -> SQLQueryExpression<Bool> {
+    public func matches(_ query: Reminders.Query) -> SQLQueryExpression<Bool> {
         var predicate = SQLQueryExpression<Bool>("1")
         for term in query.terms {
             predicate = SQLQueryExpression("\(predicate) AND (\(matches(term)))")
@@ -25,7 +25,7 @@ extension Reminder.Record.TableColumns {
         return predicate
     }
 
-    public func selected(by selection: Reminders.Selection, today: Range<Date>) -> SQLQueryExpression<Bool> {
+    public func selected(by selection: Reminders.Page.Query.Selection, today: Range<Date>) -> SQLQueryExpression<Bool> {
         switch selection {
         case let .filter(filter): belongs(to: filter, today: today)
         case let .search(query): matches(query)
