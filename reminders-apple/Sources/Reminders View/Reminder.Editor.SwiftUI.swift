@@ -27,7 +27,6 @@ extension Reminder.Editor {
 
 extension Reminder.Editor.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
-        let id = store.state.id
         HStack(alignment: .top, spacing: 12) {
             Button { store.send(.completeButtonTapped) } label: {
                 Image(systemName: completed ? "circle.inset.filled" : "circle")
@@ -41,7 +40,7 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
                         Text(priority.marks).foregroundStyle(color)
                     }
                     TextField("", text: $store.draft.title)
-                        .focused(focus, equals: .title(id))
+                        .focused(focus, equals: .title)
                         .submitLabel(.return)
                         .onSubmit { store.send(.titleSubmitted) }
                     Button("Details", systemImage: "info.circle") { store.send(.detailsButtonTapped) }
@@ -51,7 +50,7 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
                 }
                 TextField("Add Note", text: $store.draft.notes, axis: .vertical)
                     .font(.subheadline)
-                    .focused(focus, equals: .notes(id))
+                    .focused(focus, equals: .notes)
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
                         dateChip
@@ -74,8 +73,9 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
         .listRowInsets(EdgeInsets(top: 8, leading: 6, bottom: 14, trailing: 6))
         .listRowSeparator(.hidden)
         .listRowBackground(SwiftUI::Color.clear)
+        .onAppear { if focus.wrappedValue == nil { focus.wrappedValue = .title } }
         .onChange(of: focus.wrappedValue) { _, focus in
-            if focus == .notes(id) { store.send(.notesFocused) }
+            if focus == .notes { store.send(.notesFocused) }
         }
     }
 

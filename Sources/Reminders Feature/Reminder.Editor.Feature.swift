@@ -14,13 +14,16 @@ extension Reminder.Editor {
             public var draft: Reminder
             public var original: Reminder
             public let place: Reminders.Placement
+            // The row this one was continued from, while the page does not carry it yet.
+            public let anchor: Reminder.ID?
             public let session: UUID
             public var failure: String?
 
-            public init(draft: Reminder, original: Reminder, place: Reminders.Placement, session: UUID) {
+            public init(draft: Reminder, original: Reminder, place: Reminders.Placement, anchor: Reminder.ID? = nil, session: UUID) {
                 self.draft = draft
                 self.original = original
                 self.place = place
+                self.anchor = anchor
                 self.session = session
             }
 

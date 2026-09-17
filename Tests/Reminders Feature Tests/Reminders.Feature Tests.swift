@@ -189,6 +189,9 @@ struct `Reminder feature` {
         let second = next.id
         #expect(second != first && next.session == UUID(2) && next.draft.isBlank && next.isSaved)
         #expect(next.place.reminder.title == "Milk" && next.place.reminder.id == second && next.place.position == 12)
+        // The next row is shown beneath its anchor at once, before the page carries it.
+        #expect(next.anchor == first)
+        #expect(await store.state.listing?.contents.rows.map(\.id).suffix(2) == [first, second])
         try await until(try await page(store)) { $0.rows.map(\.id).suffix(2) == [first, second] }
         #expect(try await stored(first)?.title == "Milk")
         await store.send(.listing(.doneButtonTapped))?.value

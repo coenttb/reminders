@@ -72,7 +72,9 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                 .listRowSeparator(.hidden)
             }
             let (shown, total) = (contents.rows.count, contents.total)
-            ForEach(Array(contents.rows.enumerated()), id: \.element.id) { index, reminder in
+            // The editing card is one view that moves between rows, so the keyboard stays with it across a Return.
+            ForEach(contents.rows.enumerated().map { Reminder.Keyed(index: $0, reminder: $1, key: $1.key(editing)) }, id: \.key) { keyed in
+                let (index, reminder) = (keyed.index, keyed.reminder)
                 let id = reminder.id
                 let completed = store.state.isShownCompleted(reminder)
                 if id == editing, let editor = store.scope(\.editing) {
@@ -101,6 +103,8 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
             focusEditing(proxy)
         }
         .onChange(of: contents.rows.map(\.id)) { _, _ in focusEditing(proxy) }
+        // Return keeps the keyboard on the card, which has moved onto the next row by now.
+        .onSubmit { if store.editing != nil { focus = .title } }
         }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top > titleHeight
@@ -200,16 +204,26 @@ extension Reminders.Listing.SwiftUI {
     }
 
     private func focusEditing(_ proxy: ScrollViewProxy) {
-        guard let editing = store.editing?.id, focus != .title(editing), focus != .notes(editing), store.page.rows.map(\.id).contains(editing) else { return }
-        Task { @MainActor in
-            withAnimation { proxy.scrollTo(editing, anchor: .center) }
-            for _ in 0..<3 {
-                try? await Task.sleep(for: .milliseconds(120))
-                guard store.editing?.id == editing, focus != .notes(editing) else { return }
-                focus = .title(editing)
-                try? await Task.sleep(for: .milliseconds(120))
-                if focus == .title(editing) { return }
-            }
-        }
+        guard let editing = store.editing?.id, focus == nil, store.contents.rows.contains(where: { $0.id == editing }) else { return }
+        focus = .title
+        withAnimation { proxy.scrollTo(Reminder.Key.editor, anchor: .center) }
+    }
+}
+
+extension Reminder {
+    // A row's identity in the list: itself, or the editing card while it is being edited.
+    enum Key: Hashable {
+        case row(Reminder.ID)
+        case editor
+    }
+
+    func key(_ editing: Reminder.ID?) -> Key {
+        id == editing ? .editor : .row(id)
+    }
+
+    struct Keyed {
+        let index: Int
+        let reminder: Reminder
+        let key: Key
     }
 }

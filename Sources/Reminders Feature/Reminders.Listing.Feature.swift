@@ -27,7 +27,14 @@ extension Reminders.Listing {
             public var deleting: Set<Reminder.ID> = []
 
             @DebugSnapshotIgnored @Fetch public var page = Reminders.Page()
-            public var contents: Reminders.Page { shown(page) }
+            // The row being continued is shown beneath its anchor before the page carries it.
+            public var contents: Reminders.Page {
+                var page = shown(page)
+                if let editing, !page.rows.contains(where: { $0.id == editing.id }), let anchor = page.rows.firstIndex(where: { $0.id == editing.anchor }) {
+                    page.rows.insert(editing.draft, at: anchor + 1)
+                }
+                return page
+            }
             @DebugSnapshotIgnored @Fetch public var preference = Reminders.Preference(ordering: .dueDate, showCompleted: false)
             // The row being edited survives a relaunch.
             @DebugSnapshotIgnored @Shared(.appStorage(Feature.editingKey)) public var editingID: String? = nil
@@ -260,30 +267,28 @@ extension Reminders.Listing.Feature {
         }
     }
 
+    // Return moves the editing onto the next row at once, so the keyboard passes from field to field in one
+    // update; the row is written beneath its anchor afterwards and the page catches up.
     private func continueEditing(_ state: inout State) {
         guard let editing = state.editing, !editing.draft.isBlank else { return endEditing(&state) }
+        guard let anchor = try? completion.retrieve(editing.id) else { return endEditing(&state) }
+        let session = uuid()
+        let started = Reminder(id: Reminder.ID(uuid()), list: editing.draft.list, created: now)
+        // The next row sits beneath the draft as it is about to be written, not beneath the row as it was stored.
+        var place = editing.draft
+        place.id = started.id
+        state.window.extend(for: state.filter, by: 1)
+        state.editing = Reminder.Editor.Feature.State(
+            draft: started,
+            original: started,
+            place: Reminders.Placement(place, position: anchor.position + 1),
+            anchor: editing.id,
+            session: session
+        )
         store.addTask {
             try await attempt(editing: editing.session) {
                 try await commit(editing)
-                guard let anchor = try completion.retrieve(editing.id) else {
-                    try store.modify { $0.endEditing(editing.session) }
-                    return
-                }
-                let session = uuid()
-                let started = try await reminders.create(Reminder(id: Reminder.ID(uuid()), list: anchor.reminder.list, created: now), below: anchor)
-                var place = anchor.reminder
-                place.id = started.reminder.id
-                let next = Reminder.Editor.Feature.State(
-                    draft: started.reminder,
-                    original: started.reminder,
-                    place: Reminders.Placement(place, position: started.position),
-                    session: session
-                )
-                try store.modify {
-                    $0.window.extend(for: $0.filter, by: 1)
-                    $0.endEditing(editing.session)
-                    $0.editing = next
-                }
+                _ = try await reminders.create(started, below: anchor)
             }
         }
     }
