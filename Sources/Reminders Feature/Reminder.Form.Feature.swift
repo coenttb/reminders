@@ -17,6 +17,11 @@ extension Reminder.Form {
             public let original: Reminder?
             public var failure: String?
             public var isSaving = false
+            // Pending tag intents: the tasks of one action replace each other, so a restarted task works
+            // through what the state still holds.
+            public var addingTags: [String] = []
+            public var deletingTags: [Tag<Reminder>] = []
+            public var renamingTags: [(Tag<Reminder>, String)] = []
 
             public init(draft: Reminder, original: Reminder?) {
                 self.draft = draft
@@ -77,36 +82,48 @@ extension Reminder.Form {
                         }
                     }
                 case let .tagAdded(title):
+                    state.addingTags.append(title)
                     store.addTask {
-                        try await attempt {
-                            guard let tag = try await create(tag: title) else { return }
-                            try store.modify {
-                                $0.draft.tags.insert(tag)
-                                $0.failure = nil
+                        while let title = store.addingTags.first {
+                            try await attempt {
+                                let tag = try await create(tag: title)
+                                try store.modify {
+                                    if let tag { $0.draft.tags.insert(tag) }
+                                    $0.failure = nil
+                                }
                             }
+                            try store.modify { $0.addingTags.removeFirst() }
                         }
                     }
                 case let .tagDeleted(id):
+                    state.deletingTags.append(id)
                     store.addTask {
-                        try await attempt {
-                            try await reminders.tags.delete(id)
-                            try store.modify {
-                                $0.draft.tags.remove(id)
-                                $0.failure = nil
+                        while let id = store.deletingTags.first {
+                            try await attempt {
+                                try await reminders.tags.delete(id)
+                                try store.modify {
+                                    $0.draft.tags.remove(id)
+                                    $0.failure = nil
+                                }
+                                try store.post(key: Reminders.Feature.TagDeleted.self, value: id)
                             }
-                            try store.post(key: Reminders.Feature.TagDeleted.self, value: id)
+                            try store.modify { $0.deletingTags.removeFirst() }
                         }
                     }
                 case let .tagToggled(tag):
                     state.draft.tags.toggle(tag)
                 case let .tagRenamed(id, title):
+                    state.renamingTags.append((id, title))
                     store.addTask {
-                        try await attempt {
-                            guard let renamed = try await rename(tag: id, to: title) else { return }
-                            try store.modify {
-                                $0.draft.tags.replace(id, with: renamed)
-                                $0.failure = nil
+                        while let (id, title) = store.renamingTags.first {
+                            try await attempt {
+                                guard let renamed = try await rename(tag: id, to: title) else { return }
+                                try store.modify {
+                                    $0.draft.tags.replace(id, with: renamed)
+                                    $0.failure = nil
+                                }
                             }
+                            try store.modify { $0.renamingTags.removeFirst() }
                         }
                     }
                 }

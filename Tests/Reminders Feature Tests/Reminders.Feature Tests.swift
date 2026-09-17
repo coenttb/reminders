@@ -412,10 +412,10 @@ struct `Reminder feature` {
             await clock.advance(by: .seconds(1))
         }
         #expect(await store.state.listing?.gracing == Set(rows.prefix(3)))
-        await clock.advance(by: .seconds(4))
-        await Task.yield()
+        // The first tap was six seconds ago, the last one four: nothing is written yet.
+        await clock.advance(by: .seconds(3))
         #expect(try await stored(rows[0])?.completed == false)
-        await clock.advance(by: .seconds(1))
+        await clock.advance(by: .seconds(2))
         try await until(try await page(store)) { $0.rows.count == 1 }
         for id in rows.prefix(3) { #expect(try await stored(id)?.completed == true) }
         #expect(await store.state.listing?.grace == [:])

@@ -22,6 +22,7 @@ extension Reminders.Search {
             public var window = Window<Reminders.Query>(step: Reminders.Listing.Feature.paging.step, margin: Reminders.Listing.Feature.paging.margin)
             public var grace: [Reminder.ID: UUID] = [:]
             public var reopening: Set<Reminder.ID> = []
+            public var deleting: Set<Reminder.ID> = []
 
             @DebugSnapshotIgnored @Fetch public var matches: Reminders.Page? = nil
             @DebugSnapshotIgnored @Fetch public var suggestions: [Tag<Reminder>] = []
@@ -77,8 +78,14 @@ extension Reminders.Search {
                     completion.tapped(id, &state)
                 case let .reminderDeleted(id):
                     state.grace.removeValue(forKey: id)
+                    state.deleting.insert(id)
                     store.addTask {
-                        try await store.attempt { try await reminders.delete(id) }
+                        for id in store.deleting where store.deleting.contains(id) {
+                            try await store.attempt {
+                                try await reminders.delete(id)
+                                try store.modify { $0.deleting.remove(id) }
+                            }
+                        }
                     }
                 case let .reminderDetailsButtonTapped(id):
                     store.addTask {

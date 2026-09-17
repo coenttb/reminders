@@ -17,6 +17,7 @@ extension Reminders.Overview {
             public typealias Feature = Reminders.Overview.Feature
 
             public var today: Date
+            public var deletingTags: Set<Tag<Reminder>> = []
             @DebugSnapshotIgnored @Fetch public var summary = Reminders.Summary()
 
             public init(today: Date) {
@@ -50,10 +51,14 @@ extension Reminders.Overview {
                         try await store.attempt { try await reminders.lists.reorder(ids) }
                     }
                 case let .tagDeleted(tag):
+                    state.deletingTags.insert(tag)
                     store.addTask {
-                        try await store.attempt {
-                            try await reminders.tags.delete(tag)
-                            try store.post(key: Reminders.Feature.TagDeleted.self, value: tag)
+                        for tag in store.deletingTags where store.deletingTags.contains(tag) {
+                            try await store.attempt {
+                                try await reminders.tags.delete(tag)
+                                try store.modify { $0.deletingTags.remove(tag) }
+                                try store.post(key: Reminders.Feature.TagDeleted.self, value: tag)
+                            }
                         }
                     }
                 }

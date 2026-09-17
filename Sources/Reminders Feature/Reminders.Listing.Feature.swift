@@ -24,6 +24,7 @@ extension Reminders.Listing {
             public var editing: Reminder.Editor.Feature.State?
             public var grace: [Reminder.ID: UUID] = [:]
             public var reopening: Set<Reminder.ID> = []
+            public var deleting: Set<Reminder.ID> = []
 
             @DebugSnapshotIgnored @Fetch public var page = Reminders.Page()
             @DebugSnapshotIgnored @Fetch public var preference = Reminders.Preference(ordering: .dueDate, showCompleted: false)
@@ -120,11 +121,16 @@ extension Reminders.Listing {
                     completion.tapped(id, &state)
                 case let .reminderDeleted(id):
                     state.grace.removeValue(forKey: id)
-                    let session = state.editing?.id == id ? state.editing?.session : nil
+                    state.deleting.insert(id)
                     store.addTask {
-                        try await store.attempt {
-                            try await reminders.delete(id)
-                            try store.modify { $0.endEditing(session) }
+                        for id in store.deleting where store.deleting.contains(id) {
+                            try await store.attempt {
+                                try await reminders.delete(id)
+                                try store.modify {
+                                    $0.deleting.remove(id)
+                                    if $0.editing?.id == id { $0.editing = nil }
+                                }
+                            }
                         }
                     }
                 case let .reminderDetailsButtonTapped(id):
