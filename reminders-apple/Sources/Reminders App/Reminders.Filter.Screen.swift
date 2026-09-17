@@ -33,7 +33,11 @@ extension Reminders.Filter.Screen: SwiftUI::View {
             preference: store.preference,
             style: style,
             color: { store.overview.list($0).map { SwiftUI.Color($0.color) } ?? .blue },
-            draft: { Binding($store[dynamicMember: \.[draft: $0]]) },
+            draft: { id in
+                let draft = $store[dynamicMember: \.[draft: id]]
+                guard let current = draft.wrappedValue else { return nil }
+                return Binding(get: { draft.wrappedValue ?? current }, set: { draft.wrappedValue = $0 })
+            },
             view: Reminders.Listing.View(
                 filter: filter,
                 window: store.detailWindow,
