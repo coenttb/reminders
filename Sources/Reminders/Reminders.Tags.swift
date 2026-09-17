@@ -1,25 +1,15 @@
 extension Reminders {
     public struct Tags: Sendable {
-        public var client: Client
-
-        public init(client: Client) {
-            self.client = client
-        }
-    }
-}
-
-extension Reminders.Tags {
-    public struct Client: Sendable {
-        public var add: Add.Client
-        public var rename: Rename.Client
-        public var delete: Delete.Client
-        public var suggest: Suggest.Client
+        public var add: Add
+        public var rename: Rename
+        public var delete: Delete
+        public var suggest: Suggest
 
         public init(
-            add: Add.Client,
-            rename: Rename.Client,
-            delete: Delete.Client,
-            suggest: Suggest.Client
+            add: Add,
+            rename: Rename,
+            delete: Delete,
+            suggest: Suggest
         ) {
             self.add = add
             self.rename = rename

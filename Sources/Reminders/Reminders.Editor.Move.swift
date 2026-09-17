@@ -2,9 +2,15 @@ public import Models
 public import Reminder
 
 extension Reminders.Editor {
-    public enum Move {
+    public struct Move: Sendable {
         public typealias Result = Void
         public typealias Client = Operation<Request, Result>
+
+        public var client: Client
+
+        public init(client: Client) {
+            self.client = client
+        }
     }
 }
 

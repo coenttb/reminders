@@ -3,8 +3,14 @@ public import Models
 public import Reminder
 
 extension Reminders.Listing {
-    public enum Fetch {
+    public struct Fetch: Sendable {
         public typealias Client = Models.Operation<Request, Result>
+
+        public var client: Client
+
+        public init(client: Client) {
+            self.client = client
+        }
     }
 }
 

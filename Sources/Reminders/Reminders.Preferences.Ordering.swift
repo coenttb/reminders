@@ -1,9 +1,15 @@
 public import Models
 
 extension Reminders.Preferences {
-    public enum Ordering {
+    public struct Ordering: Sendable {
         public typealias Result = Void
         public typealias Client = Operation<Request, Result>
+
+        public var client: Client
+
+        public init(client: Client) {
+            self.client = client
+        }
     }
 }
 

@@ -52,9 +52,9 @@ extension Models.List<Reminder>.Form {
                     store.addTask {
                         try await attempt {
                             if isNew {
-                                try reminders.lists.client.add(draft)
+                                try reminders.lists.add.client(draft)
                                 try store.dismiss()
-                            } else if try reminders.lists.client.update(draft) {
+                            } else if try reminders.lists.update.client(draft) {
                                 try store.dismiss()
                             } else {
                                 try store.modify { $0.fail("This list was deleted.") }

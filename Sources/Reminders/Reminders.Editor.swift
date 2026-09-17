@@ -1,33 +1,23 @@
 extension Reminders {
     public struct Editor: Sendable {
-        public var client: Client
-
-        public init(client: Client) {
-            self.client = client
-        }
-    }
-}
-
-extension Reminders.Editor {
-    public struct Client: Sendable {
-        public var find: Find.Client
-        public var start: Start.Client
-        public var add: Add.Client
-        public var update: Update.Client
-        public var toggle: Toggle.Client
-        public var delete: Delete.Client
-        public var move: Move.Client
-        public var deleteCompleted: DeleteCompleted.Client
+        public var find: Find
+        public var start: Start
+        public var add: Add
+        public var update: Update
+        public var toggle: Toggle
+        public var delete: Delete
+        public var move: Move
+        public var deleteCompleted: DeleteCompleted
 
         public init(
-            find: Find.Client,
-            start: Start.Client,
-            add: Add.Client,
-            update: Update.Client,
-            toggle: Toggle.Client,
-            delete: Delete.Client,
-            move: Move.Client,
-            deleteCompleted: DeleteCompleted.Client
+            find: Find,
+            start: Start,
+            add: Add,
+            update: Update,
+            toggle: Toggle,
+            delete: Delete,
+            move: Move,
+            deleteCompleted: DeleteCompleted
         ) {
             self.find = find
             self.start = start

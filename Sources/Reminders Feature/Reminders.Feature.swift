@@ -121,12 +121,12 @@ extension Reminders {
                     if state.editing?.id == id { state.editing?.draft.set(datePreset: preset, at: now, calendar: calendar) }
                 case .clearCompletedButtonTapped:
                     guard let filter = state.filter, let today = state.today else { break }
-                    perform { try reminders.editor.client.deleteCompleted(.init(selection: .filter(filter), today: today)) }
+                    perform { try reminders.editor.deleteCompleted.client(.init(selection: .filter(filter), today: today)) }
                 case let .deleteCompletedButtonTapped(months):
                     guard let today = state.today else { break }
                     let query = state.search.query
                     let cutoff = months.map { now.subtracting($0.months, in: calendar) ?? now }
-                    perform { try reminders.editor.client.deleteCompleted(.init(selection: .search(query), today: today, dueBefore: cutoff)) }
+                    perform { try reminders.editor.deleteCompleted.client(.init(selection: .search(query), today: today, dueBefore: cutoff)) }
                 case .destination(.list(.cancelButtonTapped)), .destination(.reminder(.cancelButtonTapped)):
                     state.destination = nil
                 case .detailEndReached:
@@ -142,7 +142,7 @@ extension Reminders {
                     let replacement = List<Reminder>.ID(uuid())
                     store.addTask {
                         try await attempt {
-                            try reminders.lists.client.delete(.init(id: id, replacement: replacement))
+                            try reminders.lists.delete.client(.init(id: id, replacement: replacement))
                             try store.modify { $0.filter = $0.filter.flatMap { $0.removing(list: id) } }
                         }
                     }
@@ -155,7 +155,7 @@ extension Reminders {
                 case let .listsMoved(source, destination):
                     var ids = state.overview.lists.map(\.id)
                     ids.move(offsets: source, to: destination)
-                    perform { try reminders.lists.client.reorder(ids) }
+                    perform { try reminders.lists.reorder.client(ids) }
                 case .newReminderButtonTapped:
                     if case let .list(list) = state.filter {
                         startNewReminder(in: list, &state)
@@ -164,7 +164,7 @@ extension Reminders {
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
-                    perform { try reminders.preferences.client.ordering(.init(ordering: ordering, filter: filter)) }
+                    perform { try reminders.preferences.ordering.client(.init(ordering: ordering, filter: filter)) }
                 case let .reminderCompleteButtonTapped(id):
                     if state.grace.removeValue(forKey: id) != nil { break }
                     if state.isCompleted(id) == true {
@@ -183,7 +183,7 @@ extension Reminders {
                     let token = state.editing?.id == id ? state.editing?.session : nil
                     store.addTask {
                         try await attempt {
-                            try reminders.editor.client.delete(id)
+                            try reminders.editor.delete.client(id)
                             try store.modify { $0.endEditing(token) }
                         }
                     }
@@ -192,7 +192,7 @@ extension Reminders {
                     store.addTask {
                         try await attempt(editing: editing?.session) {
                             try commit(editing)
-                            let stored = try reminders.editor.client.find(id)?.reminder
+                            let stored = try reminders.editor.find.client(id)?.reminder
                             try store.modify {
                                 $0.endEditing(editing?.session)
                                 if let stored {
@@ -207,7 +207,7 @@ extension Reminders {
                     store.addTask {
                         try await attempt(editing: editing?.session) {
                             try commit(editing)
-                            let placement = try reminders.editor.client.find(id)
+                            let placement = try reminders.editor.find.client(id)
                             try store.modify {
                                 $0.endEditing(editing?.session)
                                 if let placement { $0.editing = Reminder.Editing(placement, session: uuid()) }
@@ -218,7 +218,7 @@ extension Reminders {
                     guard let filter = state.filter else { break }
                     var ids = state.detail?.rows.map(\.id) ?? []
                     ids.move(offsets: source, to: destination)
-                    perform { try reminders.editor.client.move(.init(ids: ids, filter: filter)) }
+                    perform { try reminders.editor.move.client(.init(ids: ids, filter: filter)) }
                 case .resultsEndReached:
                     guard let matches = state.matches else { break }
                     state.resultsWindow.widen(for: state.search.query, shown: matches.rows.count, total: matches.total)
@@ -233,11 +233,11 @@ extension Reminders {
                     state.editing = nil
                 case .showCompletedButtonTapped:
                     guard let filter = state.filter else { break }
-                    perform { try reminders.preferences.client.toggleShowCompleted(filter) }
+                    perform { try reminders.preferences.toggleShowCompleted.client(filter) }
                 case let .tagDeleted(id):
                     store.addTask {
                         try await attempt {
-                            try reminders.tags.client.delete(id)
+                            try reminders.tags.delete.client(id)
                             try store.modify { $0.filter = $0.filter.flatMap { $0.removing(tag: id) } }
                         }
                     }
@@ -260,7 +260,7 @@ extension Reminders {
                 state.filter = state.filterKey.flatMap(Reminders.Filter.init(key:))
                 do {
                     if let stored = state.editingID.flatMap(UUID.init(uuidString:)),
-                       let placement = try reminders.editor.client.find(Reminder.ID(stored)) {
+                       let placement = try reminders.editor.find.client(Reminder.ID(stored)) {
                         state.editing = Reminder.Editing(placement, session: uuid())
                     }
                 } catch {
@@ -338,7 +338,7 @@ extension Reminders {
                 if !active { state.search.showCompleted = false }
             }
             .onDismount {
-                for id in store.grace.keys { _ = try reminders.editor.client.toggle(id) }
+                for id in store.grace.keys { _ = try reminders.editor.toggle.client(id) }
             }
         }
     }
@@ -380,7 +380,7 @@ extension Reminders.Feature {
 
     private func finish(_ id: Reminder.ID) async throws {
         try await attempt {
-            let completed = try reminders.editor.client.toggle(id)
+            let completed = try reminders.editor.toggle.client(id)
             try store.modify {
                 $0.grace.removeValue(forKey: id)
                 if let completed, $0.editing?.id == id {
@@ -403,7 +403,7 @@ extension Reminders.Feature {
         store.addTask {
             try await attempt(editing: previous?.session) {
                 try commit(previous)
-                let placement = try reminders.editor.client.start(.init(list: list, below: nil, created: now))
+                let placement = try reminders.editor.start.client(.init(list: list, below: nil, created: now))
                 try store.modify {
                     $0.endEditing(previous?.session)
                     if let placement { $0.editing = Reminder.Editing(placement, session: uuid()) }
@@ -428,11 +428,11 @@ extension Reminders.Feature {
         store.addTask {
             try await attempt(editing: editing.session) {
                 try commit(editing)
-                guard let anchor = try reminders.editor.client.find(editing.id) else {
+                guard let anchor = try reminders.editor.find.client(editing.id) else {
                     try store.modify { $0.endEditing(editing.session) }
                     return
                 }
-                let started = try reminders.editor.client.start(.init(list: anchor.reminder.list, below: anchor, created: now))
+                let started = try reminders.editor.start.client(.init(list: anchor.reminder.list, below: anchor, created: now))
                 let next = started.map { started in
                     var place = anchor.reminder
                     place.id = started.reminder.id
@@ -454,9 +454,9 @@ extension Reminders.Feature {
     private func commit(_ editing: Reminder.Editing?) throws {
         guard let editing else { return }
         if editing.draft.isBlank {
-            try reminders.editor.client.delete(editing.id)
+            try reminders.editor.delete.client(editing.id)
         } else if !editing.isSaved {
-            _ = try reminders.editor.client.update(editing.draft)
+            _ = try reminders.editor.update.client(editing.draft)
         }
     }
 }

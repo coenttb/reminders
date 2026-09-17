@@ -3,9 +3,15 @@ public import Models
 public import Reminder
 
 extension Reminders.Editor {
-    public enum Start {
+    public struct Start: Sendable {
         public typealias Result = Reminders.Placement?
         public typealias Client = Models.Operation<Request, Result>
+
+        public var client: Client
+
+        public init(client: Client) {
+            self.client = client
+        }
     }
 }
 

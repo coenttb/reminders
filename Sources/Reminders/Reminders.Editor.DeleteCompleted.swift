@@ -2,9 +2,15 @@ public import Foundation
 public import Models
 
 extension Reminders.Editor {
-    public enum DeleteCompleted {
+    public struct DeleteCompleted: Sendable {
         public typealias Result = Void
         public typealias Client = Models.Operation<Request, Result>
+
+        public var client: Client
+
+        public init(client: Client) {
+            self.client = client
+        }
     }
 }
 
