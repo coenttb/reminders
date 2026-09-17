@@ -4,7 +4,7 @@ public import Reminder
 extension Reminders.Lists {
     public struct Update: Sendable {
         public typealias Request = Models.List<Reminder>
-        public typealias Result = Bool
+        public typealias Result = Void
         public typealias Client = Operation<Request, Result>
 
         public var client: Client

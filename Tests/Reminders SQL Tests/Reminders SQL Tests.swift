@@ -53,7 +53,7 @@ import Tagged
 
     @Test func `an overview finds its lists and ranks its tags, and a detail knows its ids`() {
         let personal = Models.List<Reminder>(id: list, title: "Personal")
-        let overview = Reminders.Overview.Fetch.Result(
+        let overview = Reminders.Overview.Result(
             lists: [Models.List<Reminder>.Entry(Models.List<Reminder>.Record.Entry(list: Models.List<Reminder>.Record(personal), count: 2))],
             counts: Reminders.Overview.Counts(Reminder.Record.Counts(all: 2)),
             tags: [

@@ -1,7 +1,7 @@
 public import Models
 
 extension Reminders.Preferences {
-    public struct Ordering: Sendable {
+    public struct Update: Sendable {
         public typealias Result = Void
         public typealias Client = Operation<Request, Result>
 
@@ -13,14 +13,19 @@ extension Reminders.Preferences {
     }
 }
 
-extension Reminders.Preferences.Ordering {
+extension Reminders.Preferences.Update {
     public struct Request: Hashable, Sendable {
-        public var ordering: Reminders.Ordering
         public var filter: Reminders.Filter
+        public var change: Change
 
-        public init(ordering: Reminders.Ordering, filter: Reminders.Filter) {
-            self.ordering = ordering
+        public init(filter: Reminders.Filter, change: Change) {
             self.filter = filter
+            self.change = change
         }
+    }
+
+    public enum Change: Hashable, Sendable {
+        case ordering(Reminders.Ordering)
+        case toggleShowCompleted
     }
 }

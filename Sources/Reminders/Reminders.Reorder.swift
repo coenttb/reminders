@@ -19,7 +19,7 @@ extension Reminders.Reorder {
         public var ids: [Reminder.ID]
         public var filter: Reminders.Filter
 
-        public init(ids: [Reminder.ID], filter: Reminders.Filter) {
+        public init(ids: [Reminder.ID], in filter: Reminders.Filter) {
             self.ids = ids
             self.filter = filter
         }

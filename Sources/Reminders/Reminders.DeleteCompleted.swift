@@ -15,15 +15,8 @@ extension Reminders {
 }
 
 extension Reminders.DeleteCompleted {
-    public struct Request: Hashable, Sendable {
-        public var selection: Reminders.Selection
-        public var today: Range<Date>
-        public var dueBefore: Date?
-
-        public init(selection: Reminders.Selection, today: Range<Date>, dueBefore: Date? = nil) {
-            self.selection = selection
-            self.today = today
-            self.dueBefore = dueBefore
-        }
+    public enum Request: Hashable, Sendable {
+        case filter(Reminders.Filter, today: Range<Date>)
+        case search(Reminders.Search.Query, dueBefore: Date?)
     }
 }

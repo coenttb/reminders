@@ -19,7 +19,7 @@ extension Reminders.List.Request: FetchKeyRequest {
         let rows: [Reminder] = switch selection {
         case .filter:
             try shown
-                .order { $0.ordered(by: preference.ordering, showCompleted: preference.showCompleted, placing: place) }
+                .order { $0.ordered(by: preference.ordering, showCompleted: preference.showCompleted, placing: including) }
                 .limit(limit ?? total)
                 .rows()
                 .fetchAll(db)

@@ -18,13 +18,13 @@ extension Reminders.List {
     public struct Request: Hashable, Sendable {
         public var selection: Reminders.Selection
         public var today: Range<Date>
-        public var place: Reminders.Placement?
+        public var including: Reminders.Placement?
         public var limit: Int?
 
-        public init(selection: Reminders.Selection, today: Range<Date>, place: Reminders.Placement? = nil, limit: Int? = nil) {
+        public init(selection: Reminders.Selection, today: Range<Date>, including: Reminders.Placement? = nil, limit: Int? = nil) {
             self.selection = selection
             self.today = today
-            self.place = place
+            self.including = including
             self.limit = limit
         }
     }

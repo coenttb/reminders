@@ -1,14 +1,9 @@
 extension Reminders {
     public struct Preferences: Sendable {
-        public var ordering: Ordering
-        public var toggleShowCompleted: ToggleShowCompleted
+        public var update: Update
 
-        public init(
-            ordering: Ordering,
-            toggleShowCompleted: ToggleShowCompleted
-        ) {
-            self.ordering = ordering
-            self.toggleShowCompleted = toggleShowCompleted
+        public init(update: Update) {
+            self.update = update
         }
     }
 }

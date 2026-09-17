@@ -60,6 +60,10 @@ extension Reminder.Record {
         Reminder.Record.find(id).update { $0.completed = !$0.completed }
     }
 
+    public static func complete(_ id: Reminder.ID, _ completed: Bool = true) -> UpdateOf<Reminder.Record> {
+        Reminder.Record.find(id).update { $0.completed = completed }
+    }
+
     public static func placeLast(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
         Reminder.Record.find(id).update { $0.position = Reminder.Record.select { ($0.position.max() ?? -1) + 1 } }
     }

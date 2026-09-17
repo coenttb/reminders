@@ -1,8 +1,9 @@
 public import Models
+public import Reminder
 
-extension Reminders.Preferences {
-    public struct ToggleShowCompleted: Sendable {
-        public typealias Request = Reminders.Filter
+extension Reminders {
+    public struct Reopen: Sendable {
+        public typealias Request = Reminder.ID
         public typealias Result = Void
         public typealias Client = Operation<Request, Result>
 

@@ -37,7 +37,7 @@ import Tagged
 
     @Test func `an overview finds a list by id and derives the tags in use in case-insensitive order`() {
         let personal = Models.List<Reminder>(id: list, title: "Personal")
-        let overview = Reminders.Overview.Fetch.Result(
+        let overview = Reminders.Overview.Result(
             lists: [Models.List<Reminder>.Entry(list: personal, count: 2)],
             tags: [Tag<Reminder>.Entry(tag: "social", count: 3), Tag<Reminder>.Entry(tag: "Adulting", count: 1), Tag<Reminder>.Entry(tag: "car", count: 0)]
         )

@@ -51,12 +51,10 @@ extension Models.List<Reminder>.Form {
                     let (draft, isNew) = (state.draft, state.isNew)
                     store.addTask {
                         try await attempt {
-                            if isNew {
-                                try reminders.lists.create.client(draft)
+                            do {
+                                try isNew ? reminders.lists.create.client(draft) : reminders.lists.update.client(draft)
                                 try store.dismiss()
-                            } else if try reminders.lists.update.client(draft) {
-                                try store.dismiss()
-                            } else {
+                            } catch Reminders.Error.notFound {
                                 try store.modify { $0.fail("This list was deleted.") }
                             }
                         }

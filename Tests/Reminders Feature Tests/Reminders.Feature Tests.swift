@@ -165,7 +165,7 @@ struct `Reminder feature` {
             await store.send(.titleSubmitted)?.value
             let next = try #require(await store.state.editing)
             let second = next.id
-            #expect(second != first && next.session == UUID(1) && next.draft.isBlank && next.isSaved)
+            #expect(second != first && next.session == UUID(2) && next.draft.isBlank && next.isSaved)
             #expect(next.place.reminder.title == "Milk" && next.place.reminder.id == second && next.place.position == 12)
             try await until(store.state.$detail) { $0?.rows.map(\.id).suffix(2) == [first, second] }
             #expect(try await stored(first)?.title == "Milk")
@@ -186,7 +186,7 @@ struct `Reminder feature` {
             #expect(restoredEditing == row)
             let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
             let editing = try #require(await revived.state.editing)
-            #expect(editing.id == row && editing.draft.isBlank && editing.isSaved && editing.session == UUID(1))
+            #expect(editing.id == row && editing.draft.isBlank && editing.isSaved && editing.session == UUID(2))
             await revived.send(.filterTapped(.today)) {
                 $0.filter = .today
                 $0.editing = nil
@@ -411,7 +411,7 @@ struct `Reminder feature` {
             await store.send(.backgroundTapped) { $0.editing = nil }?.value
             let bread = try await self.row(row)
             #expect(bread.reminder.title == "Bread")
-            await store.send(.reminderTapped(row)) { $0.editing = Reminder.Editing(bread, session: UUID(1)) }?.value
+            await store.send(.reminderTapped(row)) { $0.editing = Reminder.Editing(bread, session: UUID(2)) }?.value
             await store.modify { $0[draft: row]?.notes = "Rye" } changes: { $0.editing?.draft.notes = "Rye" }?.value
             await store.send(.filterTapped(.today)) {
                 $0.filter = .today
@@ -634,7 +634,7 @@ struct `Reminder feature` {
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
         await clock.advance(by: .seconds(untilMidnight))
         await store.expect { $0.today = next }
-        @Fetch(Reminders.Overview.Fetch.Request(today: next)) var overview = Reminders.Overview.Fetch.Result()
+        @Fetch(Reminders.Overview.Request(today: next)) var overview = Reminders.Overview.Result()
         try await until($overview) { $0.counts.today == 0 }
         try await until(store.state.$detail) { $0?.rows.isEmpty == true }
         let later = start.addingTimeInterval(2.days)

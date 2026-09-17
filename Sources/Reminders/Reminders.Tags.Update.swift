@@ -3,7 +3,7 @@ public import Reminder
 
 extension Reminders.Tags {
     public struct Update: Sendable {
-        public typealias Result = Tag<Reminder>?
+        public typealias Result = Tag<Reminder>
         public typealias Client = Operation<Request, Result>
 
         public var client: Client

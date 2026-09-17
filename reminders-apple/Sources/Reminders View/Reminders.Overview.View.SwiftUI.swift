@@ -7,11 +7,11 @@ import Tagged
 
 extension Reminders.Overview.View {
     public struct SwiftUI {
-        private var contents: Reminders.Overview.Fetch.Result
+        private var contents: Reminders.Overview.Result
         private var view: Reminders.Overview.View
         @Environment(\.editMode) private var editMode
 
-        public init(contents: Reminders.Overview.Fetch.Result, view: Reminders.Overview.View) {
+        public init(contents: Reminders.Overview.Result, view: Reminders.Overview.View) {
             self.contents = contents
             self.view = view
         }

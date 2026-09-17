@@ -22,12 +22,12 @@ import Tagged
         return (database, sample)
     }
 
-    func overview(_ database: some DatabaseWriter) throws -> Reminders.Overview.Fetch.Result {
-        try database.read { db in try Reminders.Overview.Fetch.Request(today: today).fetch(db) }
+    func overview(_ database: some DatabaseWriter) throws -> Reminders.Overview.Result {
+        try database.read { db in try Reminders.Overview.Request(today: today).fetch(db) }
     }
 
-    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil, limit: Int? = nil) throws -> Reminders.List.Result {
-        try database.read { db in try Reminders.List.Request(selection: .filter(filter), today: today, place: place, limit: limit).fetch(db) }
+    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, including: Reminders.Placement? = nil, limit: Int? = nil) throws -> Reminders.List.Result {
+        try database.read { db in try Reminders.List.Request(selection: .filter(filter), today: today, including: including, limit: limit).fetch(db) }
     }
 
     func results(_ query: Reminders.Search.Query, _ database: some DatabaseWriter, limit: Int? = nil) throws -> Reminders.List.Result {
@@ -153,7 +153,7 @@ import Tagged
         dated.due = .day(now.addingTimeInterval(-400_000))
         try database.write { db in try Reminder.Record.save(dated).execute(db) }
         #expect(try detail(personal, database).reminders.first?.id == groceries.id)
-        #expect(try detail(personal, database, place: Reminders.Placement(groceries, position: 0)).reminders.last?.id == groceries.id)
+        #expect(try detail(personal, database, including: Reminders.Placement(groceries, position: 0)).reminders.last?.id == groceries.id)
     }
 
     @Test func `a toggle flips completion and a toggle of a missing row is nothing`() throws {
@@ -260,19 +260,19 @@ import Tagged
         #expect(try results(Reminders.Search.Query(tags: ["nothing"]), database).reminders.isEmpty)
         try database.write { [today] db in
             try Reminder.Record.toggle(sample.reminders[7].id).execute(db)
-            try Reminder.Record.deleteCompleted(in: .search(Reminders.Search.Query(terms: ["Take"])), today: today, dueBefore: calendar.date(byAdding: .month, value: -12, to: now)).execute(db)
+            try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(terms: ["Take"]), dueBefore: calendar.date(byAdding: .month, value: -12, to: now)).execute(db)
         }
         #expect(try overview(database).counts.all == 7)
         #expect(try count(database) == 11)
         try database.write { [today] db in
-            try Reminder.Record.deleteCompleted(in: .search(Reminders.Search.Query(terms: ["Take"])), today: today, dueBefore: calendar.date(byAdding: .month, value: -1, to: now)).execute(db)
+            try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(terms: ["Take"]), dueBefore: calendar.date(byAdding: .month, value: -1, to: now)).execute(db)
         }
         #expect(try count(database) == 10)
         #expect(try stored(sample.reminders[7].id, database)?.completed == true)
         #expect(try detail(.completed, database).reminders.map(\.title) == ["Get laundry", "Send weekly emails", "Take out trash"])
-        try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .search(Reminders.Search.Query(tags: ["nothing"])), today: today, dueBefore: nil).execute(db) }
+        try database.write { [today] db in try Reminder.Record.deleteCompleted(matching: Reminders.Search.Query(tags: ["nothing"]), dueBefore: nil).execute(db) }
         #expect(try count(database) == 10)
-        try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .filter(.completed), today: today, dueBefore: nil).execute(db) }
+        try database.write { [today] db in try Reminder.Record.deleteCompleted(in: .completed, today: today).execute(db) }
         #expect(try count(database) == 7)
         #expect(try detail(.completed, database).reminders.isEmpty)
     }
@@ -317,7 +317,7 @@ import Tagged
         #expect(try position(sample.reminders[2].id, database) == 3)
         let personal = Reminders.Filter.list(sample.lists[0].id)
         try database.write { db in try Reminders.Preference.Record.set(Reminders.Preference(ordering: .manual), for: personal).execute(db) }
-        #expect(try detail(personal, database, place: { var p = haircut; p.id = next.id; return Reminders.Placement(p, position: 2) }()).reminders.map(\.id).prefix(3) == [sample.reminders[0].id, haircut.id, next.id])
+        #expect(try detail(personal, database, including: { var p = haircut; p.id = next.id; return Reminders.Placement(p, position: 2) }()).reminders.map(\.id).prefix(3) == [sample.reminders[0].id, haircut.id, next.id])
         var ids = try detail(personal, database).reminders.map(\.id)
         ids.swapAt(0, 2)
         try database.write { db in try Reminder.Record.reorder(ids, in: db) }
@@ -451,12 +451,12 @@ import Tagged
             }
         }
         func count(_ calendar: Calendar) throws -> Int {
-            try database.read { db in try Reminders.Overview.Fetch.Request(today: calendar.day(containing: now)!).fetch(db).counts.today }
+            try database.read { db in try Reminders.Overview.Request(today: calendar.day(containing: now)!).fetch(db).counts.today }
         }
         #expect(try today(utc) == [] && count(utc) == 0)
         #expect(try today(tokyo) == ["Late"] && count(tokyo) == 1)
         let tomorrow = utc.day(containing: now.addingTimeInterval(.hour))!
-        #expect(try database.read { db in try Reminders.Overview.Fetch.Request(today: tomorrow).fetch(db).counts.today } == 1)
+        #expect(try database.read { db in try Reminders.Overview.Request(today: tomorrow).fetch(db).counts.today } == 1)
     }
 
     @Test func `a row that could not be read is refused by the schema, and one stored before the rule is brought back inside it`() throws {
