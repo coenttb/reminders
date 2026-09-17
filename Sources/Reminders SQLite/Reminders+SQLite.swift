@@ -62,7 +62,7 @@ extension Reminders {
                 }
             }),
             overview: .init(client: .init { request in try read(request.fetch) }),
-            lists: Lists(product: .init(
+            lists: Lists(
                 create: { list in
                     try write { db in
                         try Models.List<Reminder>.Record.insert { Models.List<Reminder>.Record(list) }.execute(db)
@@ -81,7 +81,7 @@ extension Reminders {
                 reorder: { ids in
                     try write { db in try Models.List<Reminder>.Record.reorder(ids).execute(db) }
                 }
-            )),
+            ),
             tags: Tags(
                 create: .init(client: .init { title in
                     try write { db in

@@ -4,7 +4,7 @@ public import Reminder
 
 extension Reminders {
     @Interface
-    public struct Lists: Sendable {
+    public struct Lists: Lists.`Protocol` {
         public protocol `Protocol` {
             func create(_ list: Models.List<Reminder>) throws
             func update(_ list: Models.List<Reminder>) throws
@@ -14,4 +14,4 @@ extension Reminders {
     }
 }
 
-extension Reminders.Lists.Product: @unchecked Sendable {}
+extension Reminders.Lists: @unchecked Sendable {}

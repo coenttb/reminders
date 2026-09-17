@@ -39,12 +39,12 @@ import Tagged
             reopen: .init(client: .init { id in }),
             deleteCompleted: .init(client: .init { request in }),
             overview: .init(client: .init { request in .init() }),
-            lists: .init(product: .init(
+            lists: .init(
                 create: { list in },
                 update: { list in },
                 delete: { id, replacement in },
                 reorder: { ids in }
-            )),
+            ),
             tags: .init(
                 create: .init(client: .init { title in Tag(title) }),
                 update: .init(client: .init { request in Tag(request.title) }),
