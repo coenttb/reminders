@@ -62,7 +62,7 @@ extension Reminders {
                 }
             }),
             overview: .init(client: .init { request in try read(request.fetch) }),
-            lists: Lists(
+            lists: .init(
                 create: { list in
                     try write { db in
                         try Models.List<Reminder>.Record.insert { Models.List<Reminder>.Record(list) }.execute(db)
@@ -82,7 +82,7 @@ extension Reminders {
                     try write { db in try Models.List<Reminder>.Record.reorder(ids).execute(db) }
                 }
             ),
-            tags: Tags(
+            tags: .init(
                 create: .init(client: .init { title in
                     try write { db in
                         guard let tag = try Tag<Reminder>.Record.add(title, in: db) else { throw Error.blank }
@@ -99,7 +99,7 @@ extension Reminders {
                 delete: .init(client: .init { id in try write { db in try Tag<Reminder>.Record.delete(id).execute(db) } }),
                 list: .init(client: .init { request in try read(request.fetch) })
             ),
-            preferences: Preferences(
+            preferences: .init(
                 update: .init(client: .init { request in
                     try write { db in
                         switch request.change {
