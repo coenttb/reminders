@@ -154,6 +154,12 @@ struct `Reminder SQLite storage` {
         #expect(try self.detail(.tags(["social"]), database).reminders.map(\.title) == ["Buy concert tickets", "Prepare for WWDC"])
         #expect(try self.detail(.all, database).reminders.count == 8)
         #expect(try self.detail(.all, database).rows.map(\.list).contains(sample.lists[2].id))
+        // A smart list comes list by list, in the lists' order, each list by the smart list's own ordering.
+        let lists = sample.lists.map(\.id)
+        #expect(try self.detail(.all, database).rows.map(\.list) == [lists[0], lists[0], lists[0], lists[0], lists[1], lists[1], lists[2], lists[2]])
+        #expect(try self.detail(.all, database).reminders.map(\.title).prefix(4) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
+        #expect(try self.detail(.flagged, database).rows.map(\.list) == [lists[0], lists[1]])
+        #expect(Reminders.Filter.all.groupsByList && Reminders.Filter.tags(["social"]).groupsByList && !Reminders.Filter.scheduled.groupsByList && !Reminders.Filter.list(lists[0]).groupsByList)
         #expect(try self.detail(personal, database).reminders.first { $0.title == "Groceries" }?.tags == ["someday", "optional", "adulting"])
     }
 

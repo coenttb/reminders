@@ -59,13 +59,22 @@ extension Reminders.Read.Page.Request: FetchKeyRequest {
         let matching = Reminder.Record.where { $0.belongs(to: filter, today: today) }
         let shown = matching.where { if !preference.showCompleted { !$0.isCompleted } }
         let total = try shown.fetchCount(db)
-        return Reminders.Page(
-            rows: try shown
+        let rows = if filter.groupsByList {
+            try shown
+                .join(Models.List<Reminder>.Record.all) { $0.listID.eq($1.id) }
+                .order { reminders, lists in (lists.position, reminders.ordered(by: preference, placing: including)) }
+                .limit(limit ?? total)
+                .select { reminders, _ in Reminder.Record.Row.Columns(reminder: reminders, tags: reminders.tagTitles) }
+                .fetchAll(db)
+        } else {
+            try shown
                 .order { $0.ordered(by: preference, placing: including) }
                 .limit(limit ?? total)
                 .rows()
                 .fetchAll(db)
-                .map(Reminder.init),
+        }
+        return Reminders.Page(
+            rows: rows.map(Reminder.init),
             total: total,
             completed: try matching.where { $0.isCompleted }.fetchCount(db)
         )

@@ -72,21 +72,39 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                 .listRowSeparator(.hidden)
             }
             let (shown, total) = (contents.rows.count, contents.total)
-            // The editing card is one view that moves between rows, so the keyboard stays with it across a Return.
-            ForEach(contents.rows.enumerated().map { Reminder.Keyed(index: $0, reminder: $1, key: $1.key(editing)) }, id: \.key) { keyed in
-                let (index, reminder) = (keyed.index, keyed.reminder)
-                let id = reminder.id
-                let completed = store.state.isShownCompleted(reminder)
-                if id == editing, let editor = store.scope(\.editing) {
-                    Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
-                } else {
-                    Reminder.Row.SwiftUI(reminder: reminder, completed: completed, color: color(reminder.list), now: now, calendar: calendar, actions: actions)
-                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                        .listRowSeparator(.hidden)
-                        .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }
-                }
+            let keyed = contents.rows.enumerated().map { Reminder.Keyed(index: $0, reminder: $1, key: $1.key(editing)) }
+            // A smart list shows its rows list by list under the list's name; a list shows them plainly.
+            let groups = !store.filter.groupsByList ? [keyed] : keyed.reduce(into: [[Reminder.Keyed]]()) { groups, row in
+                if groups.last?.last?.reminder.list == row.reminder.list { groups[groups.count - 1].append(row) } else { groups.append([row]) }
             }
-            .onMove { store.send(.remindersMoved($0, $1)) }
+            ForEach(groups, id: \.first?.reminder.list) { group in
+                Section {
+                    // The editing card is one view that moves between rows, so the keyboard stays with it across a Return.
+                    ForEach(group, id: \.key) { keyed in
+                        let (index, reminder) = (keyed.index, keyed.reminder)
+                        let id = reminder.id
+                        let completed = store.state.isShownCompleted(reminder)
+                        if id == editing, let editor = store.scope(\.editing) {
+                            Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
+                        } else {
+                            Reminder.Row.SwiftUI(reminder: reminder, completed: completed, color: color(reminder.list), now: now, calendar: calendar, actions: actions)
+                                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                                .listRowSeparator(.hidden)
+                                .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }
+                        }
+                    }
+                    .onMove { store.send(.remindersMoved($0, $1)) }
+                } header: {
+                    if store.filter.groupsByList, let list = group.first.flatMap({ lists.first(id: $0.reminder.list) }) {
+                        Text(list.title)
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(SwiftUI::Color(list.color))
+                            .textCase(nil)
+                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
+                    }
+                }
+                .listSectionMargins(.all, 0)
+            }
             SwiftUI::Color.clear
                 .frame(height: 320)
                 .contentShape(.rect)

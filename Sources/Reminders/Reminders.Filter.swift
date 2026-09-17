@@ -10,5 +10,13 @@ extension Reminders {
         case today
         case list(Models.List<Reminder>.ID)
         case tags(Set<Tag<Reminder>>)
+
+        // The smart lists that gather rows from every list show them list by list, as the stock app does.
+        public var groupsByList: Bool {
+            switch self {
+            case .all, .flagged, .tags: true
+            case .completed, .scheduled, .today, .list: false
+            }
+        }
     }
 }
