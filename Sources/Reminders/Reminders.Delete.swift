@@ -9,7 +9,7 @@ extension Reminders {
         public protocol Interface {
             func callAsFunction(_ id: Reminder.ID) throws
             func completed(in filter: Reminders.Filter, today: Reminders.Day) throws
-            func completed(matching query: Reminders.Search.Query, dueBefore: Date?) throws
+            func completed(matching query: Reminders.Query, dueBefore: Date?) throws
         }
     }
 }

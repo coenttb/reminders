@@ -1,7 +1,7 @@
 public import Models
 public import Reminder
 
-extension Reminders.Search {
+extension Reminders {
     public struct Query: Hashable, Sendable {
         public var terms: [String]
         public var tags: Set<Tag<Reminder>>
