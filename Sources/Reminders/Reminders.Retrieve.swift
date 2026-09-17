@@ -1,10 +1,10 @@
 public import Models
 public import Reminder
 
-extension Reminders.Editor {
-    public struct Add: Sendable {
-        public typealias Request = Reminder
-        public typealias Result = Bool
+extension Reminders {
+    public struct Retrieve: Sendable {
+        public typealias Request = Reminder.ID
+        public typealias Result = Reminders.Placement?
         public typealias Client = Operation<Request, Result>
 
         public var client: Client

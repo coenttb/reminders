@@ -3,15 +3,15 @@ public import Reminder
 public import StructuredQueries
 public import Tagged
 
-extension List<Reminder> {
+extension Models.List<Reminder> {
     @Table("lists")
     public struct Record: Identifiable, Hashable, Sendable {
-        public let id: List<Reminder>.ID
+        public let id: Models.List<Reminder>.ID
         public var title: String = ""
         public var color: Color.Hex = Color.Hex(Color.default)
         public var position: Int = 0
 
-        public init(id: List<Reminder>.ID, title: String = "", color: Color.Hex = Color.Hex(Color.default), position: Int = 0) {
+        public init(id: Models.List<Reminder>.ID, title: String = "", color: Color.Hex = Color.Hex(Color.default), position: Int = 0) {
             self.id = id
             self.title = title
             self.color = color
@@ -20,33 +20,33 @@ extension List<Reminder> {
     }
 }
 
-extension List<Reminder>.Record.Draft: Hashable, Sendable {}
+extension Models.List<Reminder>.Record.Draft: Hashable, Sendable {}
 
-extension List<Reminder>.Record {
-    public init(_ list: List<Reminder>, position: Int = 0) {
+extension Models.List<Reminder>.Record {
+    public init(_ list: Models.List<Reminder>, position: Int = 0) {
         self.init(id: list.id, title: list.title, color: Color.Hex(list.color), position: position)
     }
 }
 
-extension List<Reminder> {
-    public init(_ record: List<Reminder>.Record) {
+extension Models.List<Reminder> {
+    public init(_ record: Models.List<Reminder>.Record) {
         self.init(id: record.id, title: record.title, color: Color(record.color))
     }
 }
 
-extension List<Reminder>.Entry {
-    public init(_ entry: List<Reminder>.Record.Entry) {
-        self.init(list: List<Reminder>(entry.list), count: entry.count)
+extension Models.List<Reminder>.Entry {
+    public init(_ entry: Models.List<Reminder>.Record.Entry) {
+        self.init(list: Models.List<Reminder>(entry.list), count: entry.count)
     }
 }
 
-extension List<Reminder>.Record {
-    public static func placeLast(_ id: List<Reminder>.ID) -> UpdateOf<List<Reminder>.Record> {
-        List<Reminder>.Record.find(id).update { $0.position = List<Reminder>.Record.select { ($0.position.max() ?? -1) + 1 } }
+extension Models.List<Reminder>.Record {
+    public static func placeLast(_ id: Models.List<Reminder>.ID) -> UpdateOf<Models.List<Reminder>.Record> {
+        Models.List<Reminder>.Record.find(id).update { $0.position = Models.List<Reminder>.Record.select { ($0.position.max() ?? -1) + 1 } }
     }
 
-    public static func save(_ draft: Draft) -> InsertOf<List<Reminder>.Record> {
-        List<Reminder>.Record.insert {
+    public static func save(_ draft: Draft) -> InsertOf<Models.List<Reminder>.Record> {
+        Models.List<Reminder>.Record.insert {
             draft
         } onConflict: {
             $0.id
@@ -56,8 +56,8 @@ extension List<Reminder>.Record {
         }
     }
 
-    public static func reorder(_ ids: [List<Reminder>.ID]) -> UpdateOf<List<Reminder>.Record> {
-        List<Reminder>.Record.where { $0.id.in(ids) }.update { row in
+    public static func reorder(_ ids: [Models.List<Reminder>.ID]) -> UpdateOf<Models.List<Reminder>.Record> {
+        Models.List<Reminder>.Record.where { $0.id.in(ids) }.update { row in
             let places = Array(ids.enumerated())
             guard let first = places.first else { return }
             row.position = places.dropFirst()

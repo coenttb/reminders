@@ -9,7 +9,7 @@ import Tagged
 
 extension Reminders.Sample {
     public static func initialize(with sample: Self, in db: Database) throws {
-        guard try List<Reminder>.Record.all.fetchCount(db) == 0, try Reminder.Record.all.fetchCount(db) == 0 else { return }
+        guard try Models.List<Reminder>.Record.all.fetchCount(db) == 0, try Reminder.Record.all.fetchCount(db) == 0 else { return }
         try replace(with: sample, in: db)
     }
 
@@ -18,11 +18,11 @@ extension Reminders.Sample {
     public static func replace(with sample: Self, in db: Database) throws {
         try Reminders.Tagging.delete().execute(db)
         try Reminder.Record.delete().execute(db)
-        try List<Reminder>.Record.delete().execute(db)
+        try Models.List<Reminder>.Record.delete().execute(db)
         try Tag<Reminder>.Record.delete().execute(db)
         try Reminders.Preference.Record.delete().execute(db)
-        for lists in Array(sample.lists.enumerated()).chunks(of: 200) as [ArraySlice<(offset: Int, element: List<Reminder>)>] {
-            try List<Reminder>.Record.insert { lists.map { List<Reminder>.Record($0.element, position: $0.offset) } }.execute(db)
+        for lists in Array(sample.lists.enumerated()).chunks(of: 200) as [ArraySlice<(offset: Int, element: Models.List<Reminder>)>] {
+            try Models.List<Reminder>.Record.insert { lists.map { Models.List<Reminder>.Record($0.element, position: $0.offset) } }.execute(db)
         }
         for tags in sample.tags.sorted().chunks(of: 500) as [ArraySlice<Tag<Reminder>>] {
             try Tag<Reminder>.Record.insert { tags.map(Tag<Reminder>.Record.init) }.execute(db)

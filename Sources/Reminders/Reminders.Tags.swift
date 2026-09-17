@@ -1,20 +1,20 @@
 extension Reminders {
     public struct Tags: Sendable {
-        public var add: Add
-        public var rename: Rename
+        public var create: Create
+        public var update: Update
         public var delete: Delete
-        public var suggest: Suggest
+        public var list: List
 
         public init(
-            add: Add,
-            rename: Rename,
+            create: Create,
+            update: Update,
             delete: Delete,
-            suggest: Suggest
+            list: List
         ) {
-            self.add = add
-            self.rename = rename
+            self.create = create
+            self.update = update
             self.delete = delete
-            self.suggest = suggest
+            self.list = list
         }
     }
 }

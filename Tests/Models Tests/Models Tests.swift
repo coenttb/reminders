@@ -8,21 +8,21 @@ private struct Message {}
 
 @Suite struct `Models types` {
     @Test func `a list is blank when its title is only whitespace`() {
-        #expect(List<Reminder>(id: List<Reminder>.ID(UUID()), title: " \n").isBlank)
-        #expect(!List<Reminder>(id: List<Reminder>.ID(UUID()), title: "Chores").isBlank)
+        #expect(Models.List<Reminder>(id: Models.List<Reminder>.ID(UUID()), title: " \n").isBlank)
+        #expect(!Models.List<Reminder>(id: Models.List<Reminder>.ID(UUID()), title: "Chores").isBlank)
     }
 
     @Test func `the default list is named and takes the default color`() {
-        let id = List<Reminder>.ID(UUID())
-        let list = List<Reminder>.default(id: id)
+        let id = Models.List<Reminder>.ID(UUID())
+        let list = Models.List<Reminder>.default(id: id)
         #expect(list.id == id && list.title == "Personal" && list.color == .default)
     }
 
     @Test func `lists and tags of different elements have distinct identifiers`() {
         let uuid = UUID()
-        #expect(ObjectIdentifier(List<Reminder>.ID.self) != ObjectIdentifier(List<Message>.ID.self))
+        #expect(ObjectIdentifier(Models.List<Reminder>.ID.self) != ObjectIdentifier(List<Message>.ID.self))
         #expect(ObjectIdentifier(Models.Tag<Reminder>.self) != ObjectIdentifier(Models.Tag<Message>.self))
-        #expect(List<Reminder>.ID(uuid).rawValue == List<Message>.ID(uuid).rawValue)
+        #expect(Models.List<Reminder>.ID(uuid).rawValue == List<Message>.ID(uuid).rawValue)
     }
 
     @Test func `a tag is its text and orders by it`() {
@@ -32,8 +32,8 @@ private struct Message {}
     }
 
     @Test func `an entry is identified by its list`() {
-        let list = List<Reminder>(id: List<Reminder>.ID(UUID()), title: "Family")
-        let entry = List<Reminder>.Entry(list: list, count: 3)
+        let list = Models.List<Reminder>(id: Models.List<Reminder>.ID(UUID()), title: "Family")
+        let entry = Models.List<Reminder>.Entry(list: list, count: 3)
         #expect(entry.id == list.id && entry.count == 3)
     }
 

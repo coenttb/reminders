@@ -4,7 +4,7 @@ public import Reminder
 import FoundationEssentials_Extensions
 
 extension Reminder.Due {
-    public static func applying(_ preset: Reminders.Editor.Preset?, to due: Self?, at now: Date, calendar: Calendar) -> Self? {
+    public static func applying(_ preset: Reminder.Editor.Preset?, to due: Self?, at now: Date, calendar: Calendar) -> Self? {
         guard let preset else { return nil }
         let day = preset.date(at: now, calendar: calendar)
         return switch due {

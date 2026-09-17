@@ -8,13 +8,13 @@ import Tagged
 extension Reminders.Overview.Fetch.Request: FetchKeyRequest {
     public func fetch(_ db: Database) throws -> Reminders.Overview.Fetch.Result {
         Reminders.Overview.Fetch.Result(
-            lists: try List<Reminder>.Record
+            lists: try Models.List<Reminder>.Record
                 .group(by: \.id)
                 .order(by: \.position)
                 .leftJoin(Reminder.Record.all) { $0.id.eq($1.listID) }
-                .select { List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.eq(false))) }
+                .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.eq(false))) }
                 .fetchAll(db)
-                .map(List<Reminder>.Entry.init),
+                .map(Models.List<Reminder>.Entry.init),
             counts: Reminders.Overview.Counts(
                 try Reminder.Record.select {
                     Reminder.Record.Counts.Columns(

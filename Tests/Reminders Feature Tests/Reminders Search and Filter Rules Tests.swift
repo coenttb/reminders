@@ -7,7 +7,7 @@ import Testing
 import Tagged
 
 @Suite struct `Reminders search and filter rules` {
-    let list = List<Reminder>.ID(UUID())
+    let list = Models.List<Reminder>.ID(UUID())
 
     @Test func `the search field commits trimmed text as a term, keeps a tag prefix for the suggestions, and searches by what is committed`() {
         var search = Reminders.Search.Field(text: " Take ")
@@ -18,7 +18,7 @@ import Tagged
         search.text = "#so"
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text == "#so" && search.tagPrefix == "so")
-        #expect(search.suggestions == Reminders.Tags.Suggest.Request(prefix: "so", excluding: []))
+        #expect(search.suggestions == Reminders.Tags.List.Request(prefix: "so", excluding: []))
         #expect(Reminders.Search.Field(text: "#so").selection == nil)
         #expect(search.selection == .search(Reminders.Search.Query(terms: ["Take"])))
         search.add(tag: "car")
@@ -36,12 +36,12 @@ import Tagged
     }
 
     @Test func `an overview finds a list by id and derives the tags in use in case-insensitive order`() {
-        let personal = List<Reminder>(id: list, title: "Personal")
+        let personal = Models.List<Reminder>(id: list, title: "Personal")
         let overview = Reminders.Overview.Fetch.Result(
-            lists: [List<Reminder>.Entry(list: personal, count: 2)],
+            lists: [Models.List<Reminder>.Entry(list: personal, count: 2)],
             tags: [Tag<Reminder>.Entry(tag: "social", count: 3), Tag<Reminder>.Entry(tag: "Adulting", count: 1), Tag<Reminder>.Entry(tag: "car", count: 0)]
         )
-        #expect(overview.list(list) == personal && overview.list(List<Reminder>.ID(UUID())) == nil)
+        #expect(overview.list(list) == personal && overview.list(Models.List<Reminder>.ID(UUID())) == nil)
         #expect(overview.rankedTags.map(\.rawValue) == ["social", "Adulting", "car"])
         #expect(overview.usedTags.map(\.rawValue) == ["Adulting", "social"])
     }

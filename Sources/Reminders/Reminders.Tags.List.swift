@@ -2,7 +2,7 @@ public import Models
 public import Reminder
 
 extension Reminders.Tags {
-    public struct Suggest: Sendable {
+    public struct List: Sendable {
         public typealias Result = [Tag<Reminder>]
         public typealias Client = Operation<Request, Result>
 
@@ -14,7 +14,7 @@ extension Reminders.Tags {
     }
 }
 
-extension Reminders.Tags.Suggest {
+extension Reminders.Tags.List {
     public struct Request: Hashable, Sendable {
         public var prefix: String
         public var excluding: Set<Tag<Reminder>>

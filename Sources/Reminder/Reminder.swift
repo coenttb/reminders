@@ -4,7 +4,7 @@ public import Tagged
 
 public struct Reminder: Identifiable, Hashable, Sendable {
     public var id: Tagged<Reminder, UUID>
-    public var list: List<Reminder>.ID
+    public var list: Models.List<Reminder>.ID
     public var title: String
     public var notes: String
     public var due: Due?
@@ -17,7 +17,7 @@ public struct Reminder: Identifiable, Hashable, Sendable {
 
     public init(
         id: ID,
-        list: List<Reminder>.ID,
+        list: Models.List<Reminder>.ID,
         title: String = "",
         notes: String = "",
         due: Due? = nil,

@@ -1,7 +1,7 @@
 public import Foundation
 public import Models
 
-extension Reminders.Editor {
+extension Reminders {
     public struct DeleteCompleted: Sendable {
         public typealias Result = Void
         public typealias Client = Models.Operation<Request, Result>
@@ -14,7 +14,7 @@ extension Reminders.Editor {
     }
 }
 
-extension Reminders.Editor.DeleteCompleted {
+extension Reminders.DeleteCompleted {
     public struct Request: Hashable, Sendable {
         public var selection: Reminders.Selection
         public var today: Range<Date>

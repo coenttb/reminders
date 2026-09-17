@@ -21,12 +21,12 @@ extension Reminders.Search {
 
 extension Reminders.Search.Contents {
     public struct Section: Identifiable, Hashable, Sendable {
-        public var list: List<Reminder>
+        public var list: Models.List<Reminder>
         public var rows: [Reminder]
 
-        public var id: List<Reminder>.ID { list.id }
+        public var id: Models.List<Reminder>.ID { list.id }
 
-        public init(list: List<Reminder>, rows: [Reminder]) {
+        public init(list: Models.List<Reminder>, rows: [Reminder]) {
             self.list = list
             self.rows = rows
         }
@@ -34,7 +34,7 @@ extension Reminders.Search.Contents {
 
     public var shown: Int { sections.reduce(0) { $0 + $1.rows.count } }
 
-    public init(_ page: Reminders.Listing.Fetch.Result?, lists: [List<Reminder>.Entry], suggestions: [Tag<Reminder>]) {
+    public init(_ page: Reminders.List.Result?, lists: [Models.List<Reminder>.Entry], suggestions: [Tag<Reminder>]) {
         self.init(total: page?.total ?? 0, completedCount: page?.completed ?? 0, suggestions: suggestions)
         for row in page?.rows ?? [] {
             if sections.last?.id == row.list {

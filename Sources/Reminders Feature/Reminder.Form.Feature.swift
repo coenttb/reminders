@@ -56,7 +56,7 @@ extension Reminder.Form {
                     let (draft, isNew) = (state.draft, state.isNew)
                     store.addTask {
                         try await attempt {
-                            if try isNew ? reminders.editor.add.client(draft) : reminders.editor.update.client(draft) {
+                            if try isNew ? reminders.create.client(draft) : reminders.update.client(draft) {
                                 try store.dismiss()
                             } else {
                                 try store.modify { $0.fail("This reminder was deleted.") }
@@ -66,7 +66,7 @@ extension Reminder.Form {
                 case let .tagAdded(title):
                     store.addTask {
                         try await attempt {
-                            guard let tag = try reminders.tags.add.client(title) else { return }
+                            guard let tag = try reminders.tags.create.client(title) else { return }
                             try store.modify {
                                 $0.draft.tags.insert(tag)
                                 $0.failure = nil
@@ -87,7 +87,7 @@ extension Reminder.Form {
                 case let .tagRenamed(id, title):
                     store.addTask {
                         try await attempt {
-                            guard let renamed = try reminders.tags.rename.client(.init(tag: id, title: title)) else { return }
+                            guard let renamed = try reminders.tags.update.client(.init(tag: id, title: title)) else { return }
                             try store.modify {
                                 $0.draft.tags.replace(id, with: renamed)
                                 $0.failure = nil

@@ -1,7 +1,8 @@
+public import Reminder
 public import Reminders
 public import Reminders_Feature
 
-extension Reminders.Editor.Preset {
+extension Reminder.Editor.Preset {
     public var title: String {
         switch self {
         case .today: "Today"

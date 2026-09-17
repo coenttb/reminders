@@ -1,10 +1,10 @@
 public import Models
 public import Reminder
 
-extension Reminders.Tags {
-    public struct Add: Sendable {
-        public typealias Request = String
-        public typealias Result = Tag<Reminder>?
+extension Reminders {
+    public struct Update: Sendable {
+        public typealias Request = Reminder
+        public typealias Result = Bool
         public typealias Client = Operation<Request, Result>
 
         public var client: Client

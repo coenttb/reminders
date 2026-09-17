@@ -3,7 +3,7 @@ public import Reminder
 
 extension Reminders.Lists {
     public struct Reorder: Sendable {
-        public typealias Request = [List<Reminder>.ID]
+        public typealias Request = [Models.List<Reminder>.ID]
         public typealias Result = Void
         public typealias Client = Operation<Request, Result>
 

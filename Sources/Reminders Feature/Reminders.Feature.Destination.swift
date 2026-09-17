@@ -5,7 +5,7 @@ public import Reminders
 
 extension Reminders.Feature {
     @ComposableArchitecture2.Feature public enum Destination {
-        case list(List<Reminder>.Form.Feature)
+        case list(Models.List<Reminder>.Form.Feature)
         case reminder(Reminder.Form.Feature)
     }
 }

@@ -10,5 +10,5 @@ extension Reminders.Overview.Fetch.Result {
 
     public var rankedTags: [Tag<Reminder>] { tags.map(\.tag) }
 
-    public func list(_ id: List<Reminder>.ID) -> List<Reminder>? { lists.first { $0.id == id }?.list }
+    public func list(_ id: Models.List<Reminder>.ID) -> Models.List<Reminder>? { lists.first { $0.id == id }?.list }
 }

@@ -26,16 +26,16 @@ import Tagged
         try database.read { db in try Reminders.Overview.Fetch.Request(today: today).fetch(db) }
     }
 
-    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil, limit: Int? = nil) throws -> Reminders.Listing.Fetch.Result {
-        try database.read { db in try Reminders.Listing.Fetch.Request(selection: .filter(filter), today: today, place: place, limit: limit).fetch(db) }
+    func detail(_ filter: Reminders.Filter, _ database: some DatabaseWriter, place: Reminders.Placement? = nil, limit: Int? = nil) throws -> Reminders.List.Result {
+        try database.read { db in try Reminders.List.Request(selection: .filter(filter), today: today, place: place, limit: limit).fetch(db) }
     }
 
-    func results(_ query: Reminders.Search.Query, _ database: some DatabaseWriter, limit: Int? = nil) throws -> Reminders.Listing.Fetch.Result {
-        try database.read { db in try Reminders.Listing.Fetch.Request(selection: .search(query), today: today, limit: limit).fetch(db) }
+    func results(_ query: Reminders.Search.Query, _ database: some DatabaseWriter, limit: Int? = nil) throws -> Reminders.List.Result {
+        try database.read { db in try Reminders.List.Request(selection: .search(query), today: today, limit: limit).fetch(db) }
     }
 
     func suggestions(_ prefix: String, excluding: Set<Models.Tag<Reminder>> = [], _ database: some DatabaseWriter) throws -> [Models.Tag<Reminder>] {
-        try database.read { db in try Reminders.Tags.Suggest.Request(prefix: prefix, excluding: excluding).fetch(db) }
+        try database.read { db in try Reminders.Tags.List.Request(prefix: prefix, excluding: excluding).fetch(db) }
     }
 
     func stored(_ id: Reminder.ID, _ database: some DatabaseWriter) throws -> Reminder? {
@@ -53,10 +53,10 @@ import Tagged
     @Test func `an empty database is installed with one list, and installing again changes nothing`() throws {
         let database = try Reminders.Schema.database()
         #expect(try database.read { db in try db.tableExists("session") } == false)
-        let personal = List<Reminder>.ID(UUID())
+        let personal = Models.List<Reminder>.ID(UUID())
         try database.write { db in try Reminders.Schema.install(db, default: personal) }
         #expect(try overview(database).lists.map(\.list.title) == ["Personal"] && overview(database).lists.first?.id == personal)
-        try database.write { db in try Reminders.Schema.install(db, default: List<Reminder>.ID(UUID())) }
+        try database.write { db in try Reminders.Schema.install(db, default: Models.List<Reminder>.ID(UUID())) }
         #expect(try overview(database).lists.map(\.id) == [personal])
         try database.write { db in try Reminders.sample(at: now).initialize(in: db) }
         #expect(try overview(database).lists.map(\.id) == [personal])
@@ -76,7 +76,7 @@ import Tagged
         try database.write { db in try sample.replace(in: db) }
         #expect(try overview(database).counts.all == 8)
         #expect(try database.read { db in try Reminders.Tagging.all.fetchCount(db) } == sample.reminders.reduce(0) { $0 + $1.tags.count })
-        try database.write { db in try List<Reminder>.Record.delete().execute(db) }
+        try database.write { db in try Models.List<Reminder>.Record.delete().execute(db) }
         try database.write { db in try sample.initialize(in: db) }
         #expect(try overview(database).lists.map(\.list.title) == ["Personal", "Family", "Business"])
     }
@@ -173,13 +173,13 @@ import Tagged
     @Test func `deleting a list takes its reminders and the last one is replaced by the default`() throws {
         let (database, sample) = try makeDatabase()
         let business = sample.lists[2].id
-        try database.write { db in try List<Reminder>.Record.delete(business, replacement: List<Reminder>.ID(UUID()), in: db) }
+        try database.write { db in try Models.List<Reminder>.Record.delete(business, replacement: Models.List<Reminder>.ID(UUID()), in: db) }
         #expect(try database.read { db in try Reminder.Record.where { $0.listID.eq(business) }.fetchCount(db) } == 0)
         #expect(try database.read { db in try Reminders.Tagging.all.fetchCount(db) } == sample.reminders.filter { $0.list != business }.reduce(0) { $0 + $1.tags.count })
-        let replacement = List<Reminder>.ID(UUID())
+        let replacement = Models.List<Reminder>.ID(UUID())
         try database.write { db in
-            try List<Reminder>.Record.delete(sample.lists[0].id, replacement: List<Reminder>.ID(UUID()), in: db)
-            try List<Reminder>.Record.delete(sample.lists[1].id, replacement: replacement, in: db)
+            try Models.List<Reminder>.Record.delete(sample.lists[0].id, replacement: Models.List<Reminder>.ID(UUID()), in: db)
+            try Models.List<Reminder>.Record.delete(sample.lists[1].id, replacement: replacement, in: db)
         }
         let overview = try overview(database)
         #expect(overview.lists.map(\.list.title) == ["Personal"] && overview.lists.first?.id == replacement && overview.counts.all == 0)
@@ -187,21 +187,21 @@ import Tagged
 
     @Test func `a new list takes the last position and lists move as SwiftUI moves them`() throws {
         let (database, sample) = try makeDatabase()
-        let chores = List<Reminder>(id: List<Reminder>.ID(UUID()), title: "Chores")
+        let chores = Models.List<Reminder>(id: Models.List<Reminder>.ID(UUID()), title: "Chores")
         try database.write { db in
-            try List<Reminder>.Record.insert { List<Reminder>.Record(chores) }.execute(db)
-            try List<Reminder>.Record.placeLast(chores.id).execute(db)
+            try Models.List<Reminder>.Record.insert { Models.List<Reminder>.Record(chores) }.execute(db)
+            try Models.List<Reminder>.Record.placeLast(chores.id).execute(db)
         }
         #expect(try overview(database).lists.map(\.list.title) == ["Personal", "Family", "Business", "Chores"])
         let before = try overview(database).lists.map(\.id)
         let ids = [before[1], before[2], before[0], before[3]]
-        try database.write { db in try List<Reminder>.Record.reorder(ids).execute(db) }
+        try database.write { db in try Models.List<Reminder>.Record.reorder(ids).execute(db) }
         #expect(try overview(database).lists.map(\.list.title) == ["Family", "Business", "Personal", "Chores"])
         var renamed = sample.lists[1]
         renamed.title = "Home"
-        try database.write { db in try List<Reminder>.Record.save(List<Reminder>.Record.Draft(List<Reminder>.Record(renamed))).execute(db) }
+        try database.write { db in try Models.List<Reminder>.Record.save(Models.List<Reminder>.Record.Draft(Models.List<Reminder>.Record(renamed))).execute(db) }
         #expect(try overview(database).lists.map(\.list.title) == ["Home", "Business", "Personal", "Chores"])
-        #expect(try database.read { db in try List<Reminder>.Record.order(by: \.position).select(\.position).fetchAll(db) } == [0, 1, 2, 3])
+        #expect(try database.read { db in try Models.List<Reminder>.Record.order(by: \.position).select(\.position).fetchAll(db) } == [0, 1, 2, 3])
     }
 
     @Test func `tags are shared, renamed everywhere, merged when renamed onto another, and deleted everywhere`() throws {
@@ -366,7 +366,7 @@ import Tagged
         Reminders.Schema.prepare(&configuration)
         let database = try DatabaseQueue(configuration: configuration)
         try Reminders.Schema.migrate(database, upTo: "Create the Reminders tables")
-        let list = List<Reminder>.ID(UUID())
+        let list = Models.List<Reminder>.ID(UUID())
         let (first, second) = (Reminder.ID(UUID()), Reminder.ID(UUID()))
         try database.write { db in
             try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
@@ -393,7 +393,7 @@ import Tagged
         Reminders.Schema.prepare(&configuration)
         let database = try DatabaseQueue(configuration: configuration)
         try Reminders.Schema.migrate(database, upTo: "Keep the folded text for the search")
-        let list = List<Reminder>.ID(UUID())
+        let list = Models.List<Reminder>.ID(UUID())
         let bread = Reminder.ID(UUID())
         try database.write { db in
             try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
@@ -407,14 +407,14 @@ import Tagged
         try database.write { db in try #sql("INSERT INTO lists (title) VALUES ('Errands')").execute(db) }
         let milk = try #require(try database.read { db in try Reminder.Record.where { $0.title.eq("Milk") }.fetchOne(db) })
         #expect(milk.id.rawValue.uuidString.count == 36 && milk.listID == list)
-        let errands = try #require(try database.read { db in try List<Reminder>.Record.where { $0.title.eq("Errands") }.fetchOne(db) })
+        let errands = try #require(try database.read { db in try Models.List<Reminder>.Record.where { $0.title.eq("Errands") }.fetchOne(db) })
         #expect(errands.id.rawValue.uuidString.count == 36)
         var eggs = Reminder.Record.Draft.start(in: list, created: now)
         eggs.title = "Eggs"
         let id = try database.write { db in try Reminder.Record.append(eggs, in: db) }
         #expect(try stored(id, database)?.title == "Eggs" && position(id, database) == 1)
         #expect(try database.read { db in try #sql("SELECT searchText FROM reminders WHERE title = 'Milk'", as: String.self).fetchOne(db) } == "milk\n")
-        try database.write { db in try List<Reminder>.Record.find(list).delete().execute(db) }
+        try database.write { db in try Models.List<Reminder>.Record.find(list).delete().execute(db) }
         #expect(try database.read { db in try Reminder.Record.all.fetchCount(db) } == 0)
     }
 
@@ -423,7 +423,7 @@ import Tagged
         let sample = Reminders.Sample.generated(.medium, seed: 1, at: now, calendar: calendar)
         try database.write { db in try sample.replace(in: db) }
         #expect(try database.read { db in try Reminder.Record.all.fetchCount(db) } == 1_000)
-        #expect(try database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 10)
+        #expect(try database.read { db in try Models.List<Reminder>.Record.all.fetchCount(db) } == 10)
         #expect(try database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 30)
         let links = sample.reminders.reduce(0) { $0 + $1.tags.count }
         #expect(try database.read { db in try Reminders.Tagging.all.fetchCount(db) } == links)
@@ -447,7 +447,7 @@ import Tagged
         }
         func today(_ calendar: Calendar) throws -> [String] {
             try database.read { db in
-                try Reminders.Listing.Fetch.Request(selection: .filter(.today), today: calendar.day(containing: now)!).fetch(db).reminders.map(\.title)
+                try Reminders.List.Request(selection: .filter(.today), today: calendar.day(containing: now)!).fetch(db).reminders.map(\.title)
             }
         }
         func count(_ calendar: Calendar) throws -> Int {
@@ -472,7 +472,7 @@ import Tagged
         Reminders.Schema.prepare(&configuration)
         let old = try DatabaseQueue(configuration: configuration)
         try Reminders.Schema.migrate(old, upTo: "Compare tag titles as Swift does")
-        let list = List<Reminder>.ID(UUID())
+        let list = Models.List<Reminder>.ID(UUID())
         let (bad, good) = (Reminder.ID(UUID()), Reminder.ID(UUID()))
         try old.write { db in
             try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
@@ -487,7 +487,7 @@ import Tagged
         let kept = try old.read { db in try Reminder.Record.find(good).rows().fetchOne(db).map(Reminder.init) }
         #expect(kept?.completed == true && kept?.priority == .high && kept?.due != nil)
         #expect(try old.read { db in try #sql("SELECT completed FROM reminders WHERE id = \(good)", as: Int.self).fetchOne(db) } == 1)
-        try old.write { db in try List<Reminder>.Record.find(list).delete().execute(db) }
+        try old.write { db in try Models.List<Reminder>.Record.find(list).delete().execute(db) }
         #expect(try old.read { db in try Reminders.Tagging.all.fetchCount(db) } == 0)
     }
 
@@ -538,6 +538,6 @@ import Tagged
     }
 }
 
-extension Reminders.Listing.Fetch.Result {
+extension Reminders.List.Result {
     var reminders: [Reminder] { rows }
 }

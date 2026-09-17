@@ -10,7 +10,7 @@ import Tagged
 import Testing
 
 @Suite struct `Reminder presentation` {
-    let list = List<Reminder>.ID(UUID())
+    let list = Models.List<Reminder>.ID(UUID())
 
     @Test func `the sort menu and the chips name the domain's values as the stock app does`() {
         #expect(Reminders.Ordering.allCases.map(\.title) == ["Manual", "Deadline", "Creation Date", "Priority", "Title"])
@@ -18,8 +18,8 @@ import Testing
         #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
         #expect(Reminder.repeatOptions.map(\.title) == ["Daily", "Weekly", "Monthly", "Yearly"])
         #expect(Calendar.RecurrenceRule(calendar: Calendar(identifier: .gregorian), frequency: .weekly).title == "Weekly")
-        #expect(Reminders.Editor.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
-        #expect(Reminders.Editor.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
+        #expect(Reminder.Editor.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
+        #expect(Reminder.Editor.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
     }
 
     @Test func `filters name themselves except lists, and tags show as hashtags`() {
@@ -48,7 +48,7 @@ import Testing
         let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20)))
         let evening = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 18)))
         let style = Date.FormatStyle(date: .omitted, time: .shortened, calendar: calendar, timeZone: calendar.timeZone)
-        #expect(Reminders.Editor.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
+        #expect(Reminder.Editor.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.moment(evening).timeDescription(calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.day(evening).timeDescription(calendar: calendar) == nil)
     }
@@ -80,7 +80,7 @@ import Testing
         let round = Models.Color(SwiftUI.Color(color))
         #expect(abs(round.red - color.red) < 0.002 && abs(round.green - color.green) < 0.002 && abs(round.blue - color.blue) < 0.002)
         #expect(Reminders.Filter.Style(.flagged, list: nil, day: 1).tint == .orange)
-        let personal = List<Reminder>(id: list, title: "Personal", color: color)
+        let personal = Models.List<Reminder>(id: list, title: "Personal", color: color)
         #expect(Reminders.Filter.Style(.list(list), list: personal, day: 1).tint == SwiftUI.Color(personal.color))
         #expect(Reminders.Filter.Style(.list(list), list: nil, day: 1).tint == .blue)
         #expect(Models.List<Reminder>.Form.SwiftUI.palette.map(\.name) == ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Brown"])

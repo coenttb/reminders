@@ -2,7 +2,7 @@ public import Models
 public import Reminder
 
 extension Reminders.Tags {
-    public struct Rename: Sendable {
+    public struct Update: Sendable {
         public typealias Result = Tag<Reminder>?
         public typealias Client = Operation<Request, Result>
 
@@ -14,7 +14,7 @@ extension Reminders.Tags {
     }
 }
 
-extension Reminders.Tags.Rename {
+extension Reminders.Tags.Update {
     public struct Request: Hashable, Sendable {
         public var tag: Tag<Reminder>
         public var title: String

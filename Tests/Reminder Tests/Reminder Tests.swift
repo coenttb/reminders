@@ -8,7 +8,7 @@ import Tagged
 @Suite struct `Reminder rules` {
     let now = Date(timeIntervalSince1970: 1_234_567_890)
     let calendar = Calendar(identifier: .gregorian)
-    let list = List<Reminder>.ID(UUID())
+    let list = Models.List<Reminder>.ID(UUID())
 
     func reminder(_ title: String = "x", due: Reminder.Due? = nil) -> Reminder {
         Reminder(id: Reminder.ID(UUID()), list: list, title: title, due: due, created: now)

@@ -76,13 +76,13 @@ extension Reminders.Sample {
                         }
                     }
                 case .deleteEverythingButtonTapped:
-                    let replacement = List<Reminder>.ID(uuid())
+                    let replacement = Models.List<Reminder>.ID(uuid())
                     state.isSeeding = true
                     store.addTask {
                         try await attempt {
                             try write { db in
                                 try Reminders.Sample(lists: []).replace(in: db)
-                                try List<Reminder>.Record.installDefault(replacement, in: db)
+                                try Models.List<Reminder>.Record.installDefault(replacement, in: db)
                             }
                             $editingID.withLock { $0 = nil }
                             replaced()

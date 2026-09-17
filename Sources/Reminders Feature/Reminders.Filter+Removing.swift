@@ -10,9 +10,9 @@ extension Reminders.Filter {
 
     public func removing(tag id: Tag<Reminder>) -> Self? { Self.removing(self, tag: id) }
 
-    public static func removing(_ filter: Self, list id: List<Reminder>.ID) -> Self? {
+    public static func removing(_ filter: Self, list id: Models.List<Reminder>.ID) -> Self? {
         if case let .list(open) = filter, open == id { nil } else { filter }
     }
 
-    public func removing(list id: List<Reminder>.ID) -> Self? { Self.removing(self, list: id) }
+    public func removing(list id: Models.List<Reminder>.ID) -> Self? { Self.removing(self, list: id) }
 }

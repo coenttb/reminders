@@ -9,14 +9,14 @@ import Foundation
 extension Models.List<Reminder>.Form {
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Sendable {
-            public typealias Feature = List<Reminder>.Form.Feature
+            public typealias Feature = Models.List<Reminder>.Form.Feature
 
-            public var draft: List<Reminder>
-            public let original: List<Reminder>?
+            public var draft: Models.List<Reminder>
+            public let original: Models.List<Reminder>?
             public var failure: String?
             public var isSaving = false
 
-            public init(draft: List<Reminder>, original: List<Reminder>?) {
+            public init(draft: Models.List<Reminder>, original: Models.List<Reminder>?) {
                 self.draft = draft
                 self.original = original
             }
@@ -52,7 +52,7 @@ extension Models.List<Reminder>.Form {
                     store.addTask {
                         try await attempt {
                             if isNew {
-                                try reminders.lists.add.client(draft)
+                                try reminders.lists.create.client(draft)
                                 try store.dismiss()
                             } else if try reminders.lists.update.client(draft) {
                                 try store.dismiss()

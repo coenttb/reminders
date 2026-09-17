@@ -35,7 +35,7 @@ struct `Reminder feature` {
     @Dependency(\.defaultDatabase) var database
 
     let sample = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890))
-    var personal: List<Reminder>.ID { sample.lists[0].id }
+    var personal: Models.List<Reminder>.ID { sample.lists[0].id }
     var groceries: Reminder { sample.reminders[0] }
     var today: Range<Date> { calendar.day(containing: now)! }
 
@@ -457,7 +457,7 @@ struct `Reminder feature` {
         await store.send(.listDeleted(ids[2]))?.value
         try await until(store.state.$overview) { $0.lists.map(\.list.title) == ["Personal"] }
         let overview = await store.state.overview
-        #expect(overview.lists.first?.id == List<Reminder>.ID(UUID(2)))
+        #expect(overview.lists.first?.id == Models.List<Reminder>.ID(UUID(2)))
         #expect(overview.counts.all == 0)
         await store.dismount()
     }
@@ -479,7 +479,7 @@ struct `Reminder feature` {
         try await store.state.$overview.load()
         let family = sample.lists[1]
         await store.send(.listDetailsButtonTapped(family.id)) {
-            $0.destination = .list(snap(List<Reminder>.Form.Feature.State(draft: family, original: family)))
+            $0.destination = .list(snap(Models.List<Reminder>.Form.Feature.State(draft: family, original: family)))
         }?.value
         await store.modify {
             if case var .list(form) = $0.destination { form.draft.title = "Home"; $0.destination = .list(form) }
@@ -492,14 +492,14 @@ struct `Reminder feature` {
             if case var .list(form) = $0.destination { form.isSaving = true; $0.destination = .list(form) }
         }?.value
         await store.send(.destination(.list(.saveButtonTapped)))?.value
-        #expect(try await database.read { db in try List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Family")
+        #expect(try await database.read { db in try Models.List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Family")
         await store.modify {
             if case var .list(form) = $0.destination { form.isSaving = false; $0.destination = .list(form) }
         } changes: {
             if case var .list(form) = $0.destination { form.isSaving = false; $0.destination = .list(form) }
         }?.value
         await store.send(.destination(.list(.saveButtonTapped))) { $0.destination = nil }?.value
-        #expect(try await database.read { db in try List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Home")
+        #expect(try await database.read { db in try Models.List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Home")
         let groceriesRow = try await row(groceries.id)
         await store.send(.reminderDetailsButtonTapped(groceries.id)) {
             $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: groceriesRow.reminder, original: groceriesRow.reminder)))
@@ -573,10 +573,10 @@ struct `Reminder feature` {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
         await store.send(.addListButtonTapped) {
-            $0.destination = .list(snap(List<Reminder>.Form.Feature.State(draft: List<Reminder>(id: List<Reminder>.ID(UUID(0))), original: nil)))
+            $0.destination = .list(snap(Models.List<Reminder>.Form.Feature.State(draft: Models.List<Reminder>(id: Models.List<Reminder>.ID(UUID(0))), original: nil)))
         }?.value
         await store.send(.destination(.list(.saveButtonTapped)))?.value
-        #expect(try await database.read { db in try List<Reminder>.Record.all.fetchCount(db) } == 3)
+        #expect(try await database.read { db in try Models.List<Reminder>.Record.all.fetchCount(db) } == 3)
         await store.send(.destination(.list(.cancelButtonTapped))) { $0.destination = nil }?.value
         try await until(store.state.$overview) { !$0.lists.isEmpty }
         await store.send(.newReminderButtonTapped) { [personal, now] in
@@ -587,7 +587,7 @@ struct `Reminder feature` {
         } changes: {
             if case var .reminder(form) = $0.destination { form.draft.title = "Orphan"; $0.destination = .reminder(form) }
         }?.value
-        try await database.write { [personal] db in try List<Reminder>.Record.find(personal).delete().execute(db) }
+        try await database.write { [personal] db in try Models.List<Reminder>.Record.find(personal).delete().execute(db) }
         await store.send(.destination(.reminder(.saveButtonTapped)))?.value
         let failed = await store.state.destination.flatMap { if case let .reminder(form) = $0 { form } else { nil } }
         #expect(failed?.failure?.contains("FOREIGN KEY") == true)

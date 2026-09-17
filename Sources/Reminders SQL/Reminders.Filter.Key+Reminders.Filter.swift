@@ -15,7 +15,7 @@ extension Reminders.Filter {
         case "today": self = .today
         case let raw:
             if let uuid = raw.removing(prefix: "list_").flatMap({ UUID(uuidString: String($0)) }) {
-                self = .list(List<Reminder>.ID(uuid))
+                self = .list(Models.List<Reminder>.ID(uuid))
             } else if let tags = raw.removing(prefix: "tags_") {
                 self = .tags(Set(tags.split(separator: Character.unitSeparator).map { Tag<Reminder>(String($0)) }))
             } else {

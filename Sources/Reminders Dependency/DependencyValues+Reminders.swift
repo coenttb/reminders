@@ -11,34 +11,30 @@ extension DependencyValues {
 
 extension Reminders: TestDependencyKey {
     public static var testValue: Reminders {
-        Reminders(
+        Self(
+            list: .init(client: .init(unimplemented("\\.reminders.list.client", placeholder: List.Result(selection: .filter(.all), preference: Preference())))),
+            retrieve: .init(client: .init(unimplemented("\\.reminders.retrieve.client", placeholder: nil))),
+            start: .init(client: .init(unimplemented("\\.reminders.start.client", placeholder: nil))),
+            create: .init(client: .init(unimplemented("\\.reminders.create.client", placeholder: false))),
+            update: .init(client: .init(unimplemented("\\.reminders.update.client", placeholder: false))),
+            toggle: .init(client: .init(unimplemented("\\.reminders.toggle.client", placeholder: nil))),
+            delete: .init(client: .init(unimplemented("\\.reminders.delete.client"))),
+            reorder: .init(client: .init(unimplemented("\\.reminders.reorder.client"))),
+            deleteCompleted: .init(client: .init(unimplemented("\\.reminders.deleteCompleted.client"))),
             overview: .init(
                 fetch: .init(client: .init(unimplemented("\\.reminders.overview.fetch.client", placeholder: Overview.Fetch.Result())))
             ),
-            listing: .init(
-                fetch: .init(client: .init(unimplemented("\\.reminders.listing.fetch.client", placeholder: Listing.Fetch.Result(selection: .filter(.all), preference: Preference()))))
-            ),
-            editor: .init(
-                find: .init(client: .init(unimplemented("\\.reminders.editor.find.client", placeholder: nil))),
-                start: .init(client: .init(unimplemented("\\.reminders.editor.start.client", placeholder: nil))),
-                add: .init(client: .init(unimplemented("\\.reminders.editor.add.client", placeholder: false))),
-                update: .init(client: .init(unimplemented("\\.reminders.editor.update.client", placeholder: false))),
-                toggle: .init(client: .init(unimplemented("\\.reminders.editor.toggle.client", placeholder: nil))),
-                delete: .init(client: .init(unimplemented("\\.reminders.editor.delete.client"))),
-                move: .init(client: .init(unimplemented("\\.reminders.editor.move.client"))),
-                deleteCompleted: .init(client: .init(unimplemented("\\.reminders.editor.deleteCompleted.client")))
-            ),
             lists: .init(
-                add: .init(client: .init(unimplemented("\\.reminders.lists.add.client"))),
+                create: .init(client: .init(unimplemented("\\.reminders.lists.create.client"))),
                 update: .init(client: .init(unimplemented("\\.reminders.lists.update.client", placeholder: false))),
                 delete: .init(client: .init(unimplemented("\\.reminders.lists.delete.client"))),
                 reorder: .init(client: .init(unimplemented("\\.reminders.lists.reorder.client")))
             ),
             tags: .init(
-                add: .init(client: .init(unimplemented("\\.reminders.tags.add.client", placeholder: nil))),
-                rename: .init(client: .init(unimplemented("\\.reminders.tags.rename.client", placeholder: nil))),
+                create: .init(client: .init(unimplemented("\\.reminders.tags.create.client", placeholder: nil))),
+                update: .init(client: .init(unimplemented("\\.reminders.tags.update.client", placeholder: nil))),
                 delete: .init(client: .init(unimplemented("\\.reminders.tags.delete.client"))),
-                suggest: .init(client: .init(unimplemented("\\.reminders.tags.suggest.client", placeholder: [])))
+                list: .init(client: .init(unimplemented("\\.reminders.tags.list.client", placeholder: [])))
             ),
             preferences: .init(
                 ordering: .init(client: .init(unimplemented("\\.reminders.preferences.ordering.client"))),

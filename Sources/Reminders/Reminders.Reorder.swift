@@ -1,8 +1,8 @@
 public import Models
 public import Reminder
 
-extension Reminders.Editor {
-    public struct Move: Sendable {
+extension Reminders {
+    public struct Reorder: Sendable {
         public typealias Result = Void
         public typealias Client = Operation<Request, Result>
 
@@ -14,7 +14,7 @@ extension Reminders.Editor {
     }
 }
 
-extension Reminders.Editor.Move {
+extension Reminders.Reorder {
     public struct Request: Hashable, Sendable {
         public var ids: [Reminder.ID]
         public var filter: Reminders.Filter

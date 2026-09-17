@@ -136,7 +136,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
         let (now, calendar) = (form.now, form.calendar)
         return HStack {
             Menu {
-                ForEach(Reminders.Editor.Preset.allCases, id: \.self) { preset in
+                ForEach(Reminder.Editor.Preset.allCases, id: \.self) { preset in
                     let date = preset.date(at: now, calendar: calendar)
                     Button(preset.title, systemImage: "\(calendar.component(.day, from: date)).calendar") {
                         draft.set(datePreset: preset, at: now, calendar: calendar)

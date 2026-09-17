@@ -9,7 +9,7 @@ extension Reminders {
         case flagged
         case scheduled
         case today
-        case list(List<Reminder>.ID)
+        case list(Models.List<Reminder>.ID)
         case tags(Set<Tag<Reminder>>)
     }
 }

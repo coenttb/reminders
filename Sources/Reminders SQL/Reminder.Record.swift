@@ -9,7 +9,7 @@ extension Reminder {
     @Table("reminders")
     public struct Record: Identifiable, Hashable, Sendable {
         public let id: Reminder.ID
-        public var listID: List<Reminder>.ID
+        public var listID: Models.List<Reminder>.ID
         public var title: String = ""
         public var notes: String = ""
         @Column("due")
@@ -25,7 +25,7 @@ extension Reminder {
 
         public init(
             id: Reminder.ID,
-            listID: List<Reminder>.ID,
+            listID: Models.List<Reminder>.ID,
             title: String = "",
             notes: String = "",
             dueDate: Date? = nil,

@@ -8,7 +8,7 @@ import Tagged
 
 @Suite struct `Reminders SQL records` {
     let now = Date(timeIntervalSince1970: 1_234_567_890)
-    let list = List<Reminder>.ID(UUID())
+    let list = Models.List<Reminder>.ID(UUID())
 
     @Test func `a reminder round-trips through its record and row`() {
         let reminder = Reminder(
@@ -52,9 +52,9 @@ import Tagged
     }
 
     @Test func `an overview finds its lists and ranks its tags, and a detail knows its ids`() {
-        let personal = List<Reminder>(id: list, title: "Personal")
+        let personal = Models.List<Reminder>(id: list, title: "Personal")
         let overview = Reminders.Overview.Fetch.Result(
-            lists: [List<Reminder>.Entry(List<Reminder>.Record.Entry(list: List<Reminder>.Record(personal), count: 2))],
+            lists: [Models.List<Reminder>.Entry(Models.List<Reminder>.Record.Entry(list: Models.List<Reminder>.Record(personal), count: 2))],
             counts: Reminders.Overview.Counts(Reminder.Record.Counts(all: 2)),
             tags: [
                 Tag<Reminder>.Entry(Tag<Reminder>.Record.Entry(tag: Tag<Reminder>.Record(Tag("social")), count: 3)),
@@ -65,14 +65,14 @@ import Tagged
         #expect(overview.lists.map(\.list) == [personal] && overview.tags.map(\.tag.rawValue) == ["social", "Adulting", "car"])
         let record = Reminder.Record(id: Reminder.ID(UUID()), listID: list, title: "Call", created: now)
         let call = Reminder(Reminder.Record.Row(reminder: record, tags: []))
-        let page = Reminders.Listing.Fetch.Result(selection: .filter(.list(list)), preference: .default(for: .list(list)), rows: [call])
+        let page = Reminders.List.Result(selection: .filter(.list(list)), preference: .default(for: .list(list)), rows: [call])
         #expect(page.rows.map(\.id) == [record.id] && page.total == 0)
         let stored = Reminders.Preference.Record(Reminders.Preference(ordering: .title, showCompleted: true), for: .today)
         #expect(stored.key == Reminders.Filter.Key(.today) && Reminders.Preference(stored) == Reminders.Preference(ordering: .title, showCompleted: true))
     }
 
     @Test func `filters round-trip through their keys`() {
-        let id = List<Reminder>.ID(UUID())
+        let id = Models.List<Reminder>.ID(UUID())
         for filter in [Reminders.Filter.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b, c"]), .today] {
             #expect(Reminders.Filter(key: Reminders.Filter.Key(filter)) == filter)
         }

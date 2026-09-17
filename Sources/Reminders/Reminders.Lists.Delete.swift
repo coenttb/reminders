@@ -16,10 +16,10 @@ extension Reminders.Lists {
 
 extension Reminders.Lists.Delete {
     public struct Request: Hashable, Sendable {
-        public var id: List<Reminder>.ID
-        public var replacement: List<Reminder>.ID
+        public var id: Models.List<Reminder>.ID
+        public var replacement: Models.List<Reminder>.ID
 
-        public init(id: List<Reminder>.ID, replacement: List<Reminder>.ID) {
+        public init(id: Models.List<Reminder>.ID, replacement: Models.List<Reminder>.ID) {
             self.id = id
             self.replacement = replacement
         }

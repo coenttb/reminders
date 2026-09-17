@@ -2,8 +2,8 @@ public import Foundation
 public import Models
 public import Reminder
 
-extension Reminders.Listing {
-    public struct Fetch: Sendable {
+extension Reminders {
+    public struct List: Sendable {
         public typealias Client = Models.Operation<Request, Result>
 
         public var client: Client
@@ -14,7 +14,7 @@ extension Reminders.Listing {
     }
 }
 
-extension Reminders.Listing.Fetch {
+extension Reminders.List {
     public struct Request: Hashable, Sendable {
         public var selection: Reminders.Selection
         public var today: Range<Date>
@@ -30,7 +30,7 @@ extension Reminders.Listing.Fetch {
     }
 }
 
-extension Reminders.Listing.Fetch {
+extension Reminders.List {
     public struct Result: Hashable, Sendable {
         public var selection: Reminders.Selection
         public var preference: Reminders.Preference

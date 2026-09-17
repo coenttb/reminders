@@ -4,8 +4,8 @@ public import Reminders
 import Reminders_SQL
 public import SQLiteData
 
-extension Reminders.Listing.Fetch.Request: FetchKeyRequest {
-    public func fetch(_ db: Database) throws -> Reminders.Listing.Fetch.Result {
+extension Reminders.List.Request: FetchKeyRequest {
+    public func fetch(_ db: Database) throws -> Reminders.List.Result {
         let preference: Reminders.Preference = switch selection {
         case let .filter(filter):
             try Reminders.Preference.Record.preference(for: filter).fetchOne(db).map(Reminders.Preference.init) ?? .default(for: filter)
@@ -26,7 +26,7 @@ extension Reminders.Listing.Fetch.Request: FetchKeyRequest {
                 .map(Reminder.init)
         case .search:
             try shown
-                .join(List<Reminder>.Record.all) { $0.listID.eq($1.id) }
+                .join(Models.List<Reminder>.Record.all) { $0.listID.eq($1.id) }
                 .order { reminders, lists in
                     (lists.position, reminders.isCompleted, reminders.ordered(by: .dueDate, showCompleted: false))
                 }
@@ -35,6 +35,6 @@ extension Reminders.Listing.Fetch.Request: FetchKeyRequest {
                 .fetchAll(db)
                 .map(Reminder.init)
         }
-        return Reminders.Listing.Fetch.Result(selection: selection, preference: preference, rows: rows, total: total, completed: completed)
+        return Reminders.List.Result(selection: selection, preference: preference, rows: rows, total: total, completed: completed)
     }
 }

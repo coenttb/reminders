@@ -2,7 +2,7 @@ public import Foundation
 public import Models
 public import Reminder
 
-extension Reminders.Editor {
+extension Reminders {
     public struct Start: Sendable {
         public typealias Result = Reminders.Placement?
         public typealias Client = Models.Operation<Request, Result>
@@ -15,13 +15,13 @@ extension Reminders.Editor {
     }
 }
 
-extension Reminders.Editor.Start {
+extension Reminders.Start {
     public struct Request: Hashable, Sendable {
-        public var list: List<Reminder>.ID
+        public var list: Models.List<Reminder>.ID
         public var below: Reminders.Placement?
         public var created: Date
 
-        public init(list: List<Reminder>.ID, below: Reminders.Placement?, created: Date) {
+        public init(list: Models.List<Reminder>.ID, below: Reminders.Placement?, created: Date) {
             self.list = list
             self.below = below
             self.created = created

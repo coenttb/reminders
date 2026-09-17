@@ -27,11 +27,11 @@ extension Reminders.Overview.Fetch {
 
 extension Reminders.Overview.Fetch {
     public struct Result: Hashable, Sendable {
-        public var lists: [List<Reminder>.Entry]
+        public var lists: [Models.List<Reminder>.Entry]
         public var counts: Reminders.Overview.Counts
         public var tags: [Tag<Reminder>.Entry]
 
-        public init(lists: [List<Reminder>.Entry] = [], counts: Reminders.Overview.Counts = Reminders.Overview.Counts(), tags: [Tag<Reminder>.Entry] = []) {
+        public init(lists: [Models.List<Reminder>.Entry] = [], counts: Reminders.Overview.Counts = Reminders.Overview.Counts(), tags: [Tag<Reminder>.Entry] = []) {
             self.lists = lists
             self.counts = counts
             self.tags = tags
