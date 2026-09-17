@@ -1,20 +1,17 @@
-public import Models
 public import Interface_Macro
+public import Models
 public import Reminder
 
 extension Reminders {
     @Interface
     public struct Lists: Sendable {
         public protocol `Protocol` {
-            func create(_ list: Models.List<Reminder>) throws(any Swift.Error)
-            func update(_ list: Models.List<Reminder>) throws(any Swift.Error)
-            func delete(_ id: Models.List<Reminder>.ID, replacement: Models.List<Reminder>.ID) throws(any Swift.Error)
-            func reorder(_ ids: [Models.List<Reminder>.ID]) throws(any Swift.Error)
+            func create(_ list: Models.List<Reminder>) throws
+            func update(_ list: Models.List<Reminder>) throws
+            func delete(_ id: Models.List<Reminder>.ID, replacement: Models.List<Reminder>.ID) throws
+            func reorder(_ ids: [Models.List<Reminder>.ID]) throws
         }
-
-        // generated / required by interface protocol
-        var product: Lists.Product
-        // any other generated types we can safely add here or compute / get for free
     }
 }
 
+extension Reminders.Lists.Product: @unchecked Sendable {}

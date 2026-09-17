@@ -1,5 +1,5 @@
 {
-  "originHash" : "96386e77a83ea55a9b5b7c13bc3d7c7d3eeb6839d60038b9b7410560f00c9cb8",
+  "originHash" : "a51d94f9f289e619096d744ef28574364edd02e2b446d718b5555379ade9e1ba",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -134,15 +134,6 @@
       "state" : {
         "revision" : "322d9ffeeba85c9f7c4984b39422ec7cc3c56597",
         "version" : "1.1.1"
-      }
-    },
-    {
-      "identity" : "swift-interface",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-molecules/swift-interface.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "c393c6b5e8fa95116d7e8802ee40a6f82b237157"
       }
     },
     {

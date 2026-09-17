@@ -26,4 +26,7 @@
    <FileRef
       location = "container:../swift-institute/swift-molecules/swift-foundation-extensions">
    </FileRef>
+   <FileRef
+      location = "container:../swift-institute/swift-molecules/swift-interface">
+   </FileRef>
 </Workspace>

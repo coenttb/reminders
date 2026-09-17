@@ -141,7 +141,7 @@ extension Reminders {
                     let replacement = Models.List<Reminder>.ID(uuid())
                     store.addTask {
                         try await attempt {
-                            try reminders.lists.product.delete(id, replacement: replacement)
+                            try reminders.lists.delete(id, replacement: replacement)
                             try store.modify { $0.filter = $0.filter.flatMap { $0.removing(list: id) } }
                         }
                     }
@@ -154,7 +154,7 @@ extension Reminders {
                 case let .listsMoved(source, destination):
                     var ids = state.overview.lists.map(\.id)
                     ids.move(offsets: source, to: destination)
-                    perform { try reminders.lists.product.reorder(ids) }
+                    perform { try reminders.lists.reorder(ids) }
                 case .newReminderButtonTapped:
                     if case let .list(list) = state.filter {
                         startNewReminder(in: list, &state)

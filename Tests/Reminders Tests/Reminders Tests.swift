@@ -83,10 +83,11 @@ import Tagged
     @Test func `the sub-resources hang off the root`() throws {
         let reminders = reminders()
 
-        try reminders.lists.product.create(.default(id: list))
-        try reminders.lists.product.update(.default(id: list))
-        try reminders.lists.product.delete(list, replacement: list)
-        try reminders.lists.product.reorder([list])
+        try reminders.lists.create(.default(id: list))
+        try reminders.lists.update(.default(id: list))
+        try reminders.lists.delete(list, replacement: list)
+        try reminders[keyPath: \.lists.reorder]([list])
+        try reminders.lists.reorder([list])
 
         let tag = try reminders.tags.create.client("home")
         let renamed = try reminders.tags.update.client(.init(tag: "home", title: "house"))
