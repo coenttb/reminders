@@ -15,7 +15,7 @@ extension Reminders {
         public struct State: Sendable {
             public typealias Feature = Reminders.Feature
 
-            public var overview: Reminders.Overview.Feature.State
+            public var overview: Reminders.Read.Feature.State
             public var search: Reminders.Search.Feature.State
             public var listing: Reminders.Listing.Feature.State?
             public var destination: Destination.State?
@@ -64,7 +64,7 @@ extension Reminders {
                     $editingID.withLock { $0 = listing?.editing?.id.rawValue.uuidString }
                 }
                 self.today = today
-                self.overview = Reminders.Overview.Feature.State(today: today)
+                self.overview = Reminders.Read.Feature.State(today: today)
                 self.search = Reminders.Search.Feature.State(today: today)
                 self.listing = listing
                 self.failure = failure
@@ -83,7 +83,7 @@ extension Reminders {
             case destination(Destination.Action)
             case listing(Reminders.Listing.Feature.Action)
             case newReminderButtonTapped
-            case overview(Reminders.Overview.Feature.Action)
+            case overview(Reminders.Read.Feature.Action)
             case search(Reminders.Search.Feature.Action)
         }
 
@@ -139,7 +139,7 @@ extension Reminders {
                         break
                     }
                 }
-                ComposableArchitecture2.Scope(\.overview) { Reminders.Overview.Feature() }
+                ComposableArchitecture2.Scope(\.overview) { Reminders.Read.Feature() }
                 ComposableArchitecture2.Scope(\.search) { Reminders.Search.Feature() }
             }
             .ifLet(\.listing) {

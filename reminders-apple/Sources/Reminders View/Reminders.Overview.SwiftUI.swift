@@ -7,20 +7,20 @@ public import Reminders_Feature
 public import SwiftUI
 import Tagged
 
-extension Reminders.Overview {
+extension Reminders.Read {
     public struct SwiftUI {
-        private var store: StoreOf<Reminders.Overview.Feature>
+        private var store: StoreOf<Reminders.Read.Feature>
         @Dependency(\.date.now) private var now
         @Dependency(\.calendar) private var calendar
         @Environment(\.editMode) private var editMode
 
-        public init(store: StoreOf<Reminders.Overview.Feature>) {
+        public init(store: StoreOf<Reminders.Read.Feature>) {
             self.store = store
         }
     }
 }
 
-extension Reminders.Overview.SwiftUI: SwiftUI::View {
+extension Reminders.Read.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let contents = store.summary
         let counts = contents.counts

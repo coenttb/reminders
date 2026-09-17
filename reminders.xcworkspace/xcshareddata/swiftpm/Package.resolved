@@ -1,5 +1,5 @@
 {
-  "originHash" : "5a79226827165af608553cb9e256bc4a7e37d0d73974ee47400b871265b0831c",
+  "originHash" : "c880ea6f06af6c8202c80da638ea262ea511e62e03082e9eb6a8dd12afc69fc2",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -101,30 +101,21 @@
       }
     },
     {
-      "identity" : "swift-docc-plugin",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-docc-plugin",
-      "state" : {
-        "revision" : "647c708be89f834fa6a6d4945442793a77ddf5b6",
-        "version" : "1.5.0"
-      }
-    },
-    {
-      "identity" : "swift-docc-symbolkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-docc-symbolkit",
-      "state" : {
-        "revision" : "b45d1f2ed151d057b54504d653e0da5552844e34",
-        "version" : "1.0.0"
-      }
-    },
-    {
       "identity" : "swift-either",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-atoms/swift-either.git",
       "state" : {
         "branch" : "main",
         "revision" : "3ca99751d2f74512bd4b42779243034b5c179f91"
+      }
+    },
+    {
+      "identity" : "swift-foundation-extensions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-molecules/swift-foundation-extensions.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "8adb131db29ba67b13f0ee5a17ec79ec6fa3a498"
       }
     },
     {
@@ -152,15 +143,6 @@
       "state" : {
         "revision" : "71c7c9a761d1ca6ed4ccb6ced040fe1c1a39e8e7",
         "version" : "2.1.0"
-      }
-    },
-    {
-      "identity" : "swift-macro-testing",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-macro-testing",
-      "state" : {
-        "revision" : "0b6bd11ea72e07eec539f2f000efad0b363a90cc",
-        "version" : "0.7.0"
       }
     },
     {
@@ -227,6 +209,15 @@
       }
     },
     {
+      "identity" : "swift-standard-library-extensions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-standard-library-extensions.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "17d58ed862f83e1846ab1b09acd6d59acfe7a657"
+      }
+    },
+    {
       "identity" : "swift-structured-queries",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-structured-queries",
@@ -251,6 +242,24 @@
       "state" : {
         "revision" : "3907a9438f5b57d317001dc99f3f11b46882272b",
         "version" : "0.10.0"
+      }
+    },
+    {
+      "identity" : "swiftui-extensions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-compositions/swiftui-extensions",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3f99a345ca240789054effc64cde21bc85e7f33d"
+      }
+    },
+    {
+      "identity" : "tca26",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/TCA26.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "8b5ca62729b09010159016007f6916af8ee1aca9"
       }
     }
   ],

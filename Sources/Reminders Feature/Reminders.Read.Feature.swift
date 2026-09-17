@@ -10,11 +10,11 @@ public import SQLiteData
 import Standard_Library_Extensions
 public import Tagged
 
-extension Reminders.Overview {
+extension Reminders.Read {
     // The front screen: `read(today:)` observed, with the intents that act on lists and tags as a whole.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Sendable {
-            public typealias Feature = Reminders.Overview.Feature
+            public typealias Feature = Reminders.Read.Feature
 
             public var today: Date
             public var deletingTags: Set<Tag<Reminder>> = []

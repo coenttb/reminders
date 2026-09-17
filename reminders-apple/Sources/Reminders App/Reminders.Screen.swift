@@ -37,7 +37,7 @@ extension Reminders.Screen: SwiftUI::View {
                 if store.search.field.isActive {
                     Reminders.Search.SwiftUI(store: store.scope(\.search), contents: store.results)
                 } else {
-                    Reminders.Overview.SwiftUI(store: store.scope(\.overview))
+                    Reminders.Read.SwiftUI(store: store.scope(\.overview))
                 }
             }
             .listStyle(.insetGrouped)
