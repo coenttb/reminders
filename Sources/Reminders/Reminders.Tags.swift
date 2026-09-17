@@ -14,4 +14,3 @@ extension Reminders {
     }
 }
 
-extension Reminders.Tags: @unchecked Sendable {}

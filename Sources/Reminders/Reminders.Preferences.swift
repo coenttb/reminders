@@ -10,4 +10,3 @@ extension Reminders {
     }
 }
 
-extension Reminders.Preferences: @unchecked Sendable {}

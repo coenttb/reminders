@@ -23,4 +23,3 @@ public struct Reminders: Reminders.Interface {
     }
 }
 
-extension Reminders: @unchecked Sendable {}

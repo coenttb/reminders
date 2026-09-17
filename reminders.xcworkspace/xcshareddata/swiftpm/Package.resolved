@@ -1,5 +1,5 @@
 {
-  "originHash" : "7d91dab9b47c91a05e1a9375873797afcf7c2da9c4593e6a7cc35e6450694b2c",
+  "originHash" : "433f9bd718266d0470756f00d2f3972e09a56c38fa7db1e27e467069d9d2e0d2",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -70,7 +70,7 @@
       "location" : "https://github.com/swift-atoms/swift-coproduct.git",
       "state" : {
         "branch" : "main",
-        "revision" : "7fb0410f5bfa2239481cc652acfb278d9a04a0ce"
+        "revision" : "f53d93b2bef871ede6edce682acfcaa35042494f"
       }
     },
     {
@@ -137,15 +137,6 @@
       }
     },
     {
-      "identity" : "swift-interface",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-molecules/swift-interface.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "c393c6b5e8fa95116d7e8802ee40a6f82b237157"
-      }
-    },
-    {
       "identity" : "swift-issue-reporting",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-issue-reporting",
@@ -187,7 +178,7 @@
       "location" : "https://github.com/swift-atoms/swift-optic.git",
       "state" : {
         "branch" : "main",
-        "revision" : "6543798b672c3886c1c3d4b218cf91d3666d4041"
+        "revision" : "ed5398b41c1a0d125f80429c48494d4cf25f4bf4"
       }
     },
     {
@@ -205,7 +196,7 @@
       "location" : "https://github.com/swift-atoms/swift-product.git",
       "state" : {
         "branch" : "main",
-        "revision" : "e0c81345f8774b7169585b24597a0b28fb19ede5"
+        "revision" : "dae38c0f12b71fc38b2e54be0cd49616df855a56"
       }
     },
     {
