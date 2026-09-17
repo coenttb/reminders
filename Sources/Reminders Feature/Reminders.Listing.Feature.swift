@@ -223,13 +223,14 @@ extension Reminders.Listing.Feature {
 
     private func startNewReminder(in list: Models.List<Reminder>.ID, _ state: inout State) {
         let previous = state.editing
-        state.window.open(for: state.filter)
         store.addTask {
             try await attempt(editing: previous?.session) {
                 try await commit(previous)
                 let session = uuid()
                 let placement = try await reminders.create(Reminder(id: Reminder.ID(uuid()), list: list, created: now), below: nil)
+                // The window and the row change together: one page request, one load.
                 try store.modify {
+                    $0.window.open(for: $0.filter)
                     $0.endEditing(previous?.session)
                     $0.editing = Reminder.Editor.Feature.State(placement, session: session)
                 }
@@ -249,7 +250,6 @@ extension Reminders.Listing.Feature {
 
     private func continueEditing(_ state: inout State) {
         guard let editing = state.editing, !editing.draft.isBlank else { return endEditing(&state) }
-        state.window.extend(for: state.filter, by: 1)
         store.addTask {
             try await attempt(editing: editing.session) {
                 try await commit(editing)
@@ -268,6 +268,7 @@ extension Reminders.Listing.Feature {
                     session: session
                 )
                 try store.modify {
+                    $0.window.extend(for: $0.filter, by: 1)
                     $0.endEditing(editing.session)
                     $0.editing = next
                 }
