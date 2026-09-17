@@ -4,14 +4,20 @@ public import Models
 public import Reminder
 public import SwiftUI
 
+extension Tag<Reminder> {
+    public enum Cloud {}
+}
+
 extension Tag<Reminder>.Cloud {
     public struct SwiftUI {
         private var tags: [Tag<Reminder>]
-        private var cloud: Tag<Reminder>.Cloud
+        private var open: ([Tag<Reminder>]) -> Void
+        private var delete: (Tag<Reminder>) -> Void
 
-        public init(tags: [Tag<Reminder>], cloud: Tag<Reminder>.Cloud) {
+        public init(tags: [Tag<Reminder>], open: @escaping ([Tag<Reminder>]) -> Void, delete: @escaping (Tag<Reminder>) -> Void) {
             self.tags = tags
-            self.cloud = cloud
+            self.open = open
+            self.delete = delete
         }
     }
 }
@@ -19,11 +25,11 @@ extension Tag<Reminder>.Cloud {
 extension Tag<Reminder>.Cloud.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         Tag<Reminder>.Cloud.Flow(spacing: 8) {
-            Button { cloud.actions.open(tags) } label: { Tag<Reminder>.Pill(title: "All Tags") }
+            Button { open(tags) } label: { Tag<Reminder>.Pill(title: "All Tags") }
             ForEach(tags) { tag in
-                Button { cloud.actions.open([tag]) } label: { Tag<Reminder>.Pill(title: tag.hashtag) }
+                Button { open([tag]) } label: { Tag<Reminder>.Pill(title: tag.hashtag) }
                     .contextMenu {
-                        Button("Delete Tag", systemImage: "trash", role: .destructive) { cloud.actions.delete(tag) }
+                        Button("Delete Tag", systemImage: "trash", role: .destructive) { delete(tag) }
                     }
             }
         }

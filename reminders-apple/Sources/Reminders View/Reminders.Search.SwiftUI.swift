@@ -1,3 +1,5 @@
+public import ComposableArchitecture2
+import Dependencies
 import Models
 import Reminder
 public import Reminders
@@ -5,29 +7,30 @@ public import Reminders_Feature
 public import SwiftUI
 import Tagged
 
-extension Reminders.Search.View {
+extension Reminders.Search {
     public struct SwiftUI {
+        private var store: StoreOf<Reminders.Search.Feature>
         private var contents: Reminders.Search.Contents
-        private var view: Reminders.Search.View
+        @Dependency(\.date.now) private var now
+        @Dependency(\.calendar) private var calendar
 
-        public init(contents: Reminders.Search.Contents, view: Reminders.Search.View) {
+        public init(store: StoreOf<Reminders.Search.Feature>, contents: Reminders.Search.Contents) {
+            self.store = store
             self.contents = contents
-            self.view = view
         }
     }
 }
 
-extension Reminders.Search.View.SwiftUI: SwiftUI::View {
+extension Reminders.Search.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let suggestions = contents.suggestions
         let completed = contents.completedCount
-        let actions = view.actions
         if !suggestions.isEmpty {
             Section {
                 ScrollView(.horizontal) {
                     HStack {
                         ForEach(suggestions) { tag in
-                            Button(tag.hashtag) { actions.addTag(tag) }.buttonStyle(.glass)
+                            Button(tag.hashtag) { store.send(.tagTapped(tag)) }.buttonStyle(.glass)
                         }
                     }
                 }
@@ -45,14 +48,14 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
                 Text("•").foregroundStyle(.secondary)
                 Menu("Clear") {
                     Text("Clear Completed Reminders")
-                    Button("Older Than 1 Month") { actions.deleteCompleted(1) }
-                    Button("Older Than 6 Months") { actions.deleteCompleted(6) }
-                    Button("Older Than 1 Year") { actions.deleteCompleted(12) }
-                    Button("All Completed") { actions.deleteCompleted(nil) }
+                    Button("Older Than 1 Month") { store.send(.deleteCompletedButtonTapped(olderThanMonths: 1)) }
+                    Button("Older Than 6 Months") { store.send(.deleteCompletedButtonTapped(olderThanMonths: 6)) }
+                    Button("Older Than 1 Year") { store.send(.deleteCompletedButtonTapped(olderThanMonths: 12)) }
+                    Button("All Completed") { store.send(.deleteCompletedButtonTapped(olderThanMonths: nil)) }
                 }
                 .disabled(completed == 0)
                 Spacer()
-                Button(view.showCompleted ? "Hide" : "Show", action: actions.toggleCompleted).disabled(completed == 0)
+                Button(store.field.showCompleted ? "Hide" : "Show") { store.send(.completedButtonTapped) }.disabled(completed == 0)
             }
             .buttonStyle(.borderless)
         }
@@ -64,14 +67,18 @@ extension Reminders.Search.View.SwiftUI: SwiftUI::View {
         .listSectionMargins(.horizontal, 0)
         let (shown, total) = (contents.shown, contents.total)
         let starts = contents.sections.reduce(into: [0]) { $0.append($0[$0.count - 1] + $1.rows.count) }
-        let row = Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
+        let actions = Reminder.Row.Actions(
+            complete: { store.send(.reminderCompleteButtonTapped($0)) },
+            delete: { store.send(.reminderDeleted($0)) },
+            details: { store.send(.reminderDetailsButtonTapped($0)) }
+        )
         ForEach(Array(contents.sections.enumerated()), id: \.element.id) { position, section in
             Section {
                 ForEach(Array(section.rows.enumerated()), id: \.element.id) { offset, reminder in
-                    Reminder.Row.SwiftUI(reminder: reminder, completed: reminder.completed || view.grace.contains(reminder.id), color: SwiftUI::Color(section.list.color), view: row)
+                    Reminder.Row.SwiftUI(reminder: reminder, completed: reminder.completed || store.grace[reminder.id] != nil, color: SwiftUI::Color(section.list.color), now: now, calendar: calendar, actions: actions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if view.window.nearsEnd(starts[position] + offset, of: shown, total: total) { actions.endReached() } }
+                        .onAppear { if store.window.nearsEnd(starts[position] + offset, of: shown, total: total) { store.send(.endReached) } }
                 }
             } header: {
                 Text(section.list.title)

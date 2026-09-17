@@ -3,7 +3,6 @@ import Models
 import Reminder
 import Reminders
 import Reminders_Feature
-import Reminders_SQLite
 import Testing
 import Tagged
 
@@ -12,20 +11,20 @@ import Tagged
 
     @Test func `the search field commits trimmed text as a term, keeps a tag prefix for the suggestions, and searches by what is committed`() {
         var search = Reminders.Search.Field(text: " Take ")
-        #expect(search.selection == .search(Reminders.Query(terms: [" Take "])))
+        #expect(search.effective == Reminders.Query(terms: [" Take "]))
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text.isEmpty)
         #expect(search.query == Reminders.Query(terms: ["Take"]))
         search.text = "#so"
         search.commitText()
         #expect(search.tokens == [.near("Take")] && search.text == "#so" && search.tagPrefix == "so")
-        #expect(search.suggestions == Reminders.Tags.Query(prefix: "so", excluding: []))
-        #expect(Reminders.Search.Field(text: "#so").selection == nil)
-        #expect(search.selection == .search(Reminders.Query(terms: ["Take"])))
+        #expect(search.suggestions == Reminders.Tags.Suggest.Request(prefix: "so", excluding: []))
+        #expect(Reminders.Search.Field(text: "#so").effective == nil)
+        #expect(search.effective == Reminders.Query(terms: ["Take"]))
         search.add(tag: "car")
         #expect(search.text.isEmpty && search.tags == ["car"] && search.isActive)
-        #expect(search.selection == .search(Reminders.Query(terms: ["Take"], tags: ["car"])))
-        #expect(!Reminders.Search.Field().isActive && Reminders.Search.Field().selection == nil)
+        #expect(search.effective == Reminders.Query(terms: ["Take"], tags: ["car"]))
+        #expect(!Reminders.Search.Field().isActive && Reminders.Search.Field().effective == nil)
     }
 
     @Test func `a filter narrows and closes as its tags and list go`() {

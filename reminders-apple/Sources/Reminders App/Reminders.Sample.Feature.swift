@@ -29,7 +29,6 @@ extension Reminders.Sample {
             case seedButtonTapped
             case seedGenerated(Reminders.Sample.Scale, seed: UInt64?)
             case deleteEverythingButtonTapped
-            case failureDismissed
         }
 
         @Dependency(\.calendar) var calendar
@@ -38,7 +37,7 @@ extension Reminders.Sample {
         @Dependency(\.uuid) var uuid
         @Dependency(\.withRandomNumberGenerator) var withRandomNumberGenerator
         // A replaced database has no row to restore.
-        @Shared(.appStorage(Reminders.Feature.editingKey)) var editingID: String?
+        @Shared(.appStorage(Reminders.Listing.Feature.editingKey)) var editingID: String?
 
         let replaced: () -> Void
 
@@ -88,8 +87,6 @@ extension Reminders.Sample {
                             replaced()
                         }
                     }
-                case .failureDismissed:
-                    state.failure = nil
                 }
             }
         }

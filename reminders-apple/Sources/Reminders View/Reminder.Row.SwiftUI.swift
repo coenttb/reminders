@@ -1,3 +1,4 @@
+public import Foundation
 import Reminders
 public import Reminders_Feature
 public import Reminder
@@ -8,20 +9,23 @@ extension Reminder.Row {
         private var reminder: Reminder
         private var completed: Bool
         private var color: SwiftUI::Color
-        private var view: Reminder.Row
+        private var now: Date
+        private var calendar: Calendar
+        private var actions: Actions
 
-        public init(reminder: Reminder, completed: Bool? = nil, color: SwiftUI::Color, view: Reminder.Row) {
+        public init(reminder: Reminder, completed: Bool? = nil, color: SwiftUI::Color, now: Date, calendar: Calendar, actions: Actions) {
             self.reminder = reminder
             self.completed = completed ?? reminder.completed
             self.color = color
-            self.view = view
+            self.now = now
+            self.calendar = calendar
+            self.actions = actions
         }
     }
 }
 
 extension Reminder.Row.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
-        let actions = view.actions
         HStack(alignment: .top, spacing: 12) {
             Button { actions.complete(reminder.id) } label: {
                 Image(systemName: completed ? "circle.inset.filled" : "circle")
@@ -67,7 +71,6 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
     }
 
     private var subtitle: Text? {
-        let (now, calendar) = (view.now, view.calendar)
         let due = reminder.due.map { due in
             Text(due.description(at: now, calendar: calendar))
                 .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI::Color.red : SwiftUI::Color.secondary)

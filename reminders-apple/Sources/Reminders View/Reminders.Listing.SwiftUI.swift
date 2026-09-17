@@ -1,46 +1,45 @@
+public import ComposableArchitecture2
+import Dependencies
 public import Models
 public import Reminder
 public import Reminders
 public import Reminders_Feature
+import Standard_Library_Extensions
 public import SwiftUI
 public import Tagged
 
-extension Reminders.Listing.View {
+extension Reminders.Listing {
     public struct SwiftUI {
-        private var contents: Reminders.Page
-        private var preference: Reminders.Preference
-        private var style: Reminders.Filter.Style
-        private var color: (Models.List<Reminder>.ID) -> SwiftUI::Color
-        private var draft: (Reminder.ID) -> Binding<Reminder>?
-        private var view: Reminders.Listing.View
+        @Bindable private var store: StoreOf<Reminders.Listing.Feature>
+        private var lists: [Models.List<Reminder>]
+        @Dependency(\.date.now) private var now
+        @Dependency(\.calendar) private var calendar
+        @Environment(\.scenePhase) private var scenePhase
         @State private var titleVisible = false
         @State private var editMode: EditMode = .inactive
         @State private var titleHeight: CGFloat = 36
         @FocusState private var focus: Reminder.Focus?
 
-        public init(
-            contents: Reminders.Page,
-            preference: Reminders.Preference,
-            style: Reminders.Filter.Style,
-            color: @escaping (Models.List<Reminder>.ID) -> SwiftUI::Color,
-            draft: @escaping (Reminder.ID) -> Binding<Reminder>?,
-            view: Reminders.Listing.View
-        ) {
-            self.contents = contents
-            self.preference = preference
-            self.style = style
-            self.color = color
-            self.draft = draft
-            self.view = view
+        public init(store: StoreOf<Reminders.Listing.Feature>, lists: [Models.List<Reminder>]) {
+            self.store = store
+            self.lists = lists
         }
     }
 }
 
-extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
+extension Reminders.Listing.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
-        let (title, editing, actions) = (style.title ?? "", view.editing, view.actions)
-        let tint = style.tint
-        let row = Reminder.Row(now: view.now, calendar: view.calendar, actions: actions.rows)
+        let style = Reminders.Filter.Style(store.filter, list: list, day: calendar.component(.day, from: now))
+        let (title, tint) = (style.title ?? "", style.tint)
+        let contents = store.page ?? Reminders.Page()
+        let preference = store.preference
+        let editing = store.editing?.id
+        let actions = Reminder.Row.Actions(
+            complete: { store.send(.reminderCompleteButtonTapped($0)) },
+            delete: { store.send(.reminderDeleted($0)) },
+            details: { store.send(.reminderDetailsButtonTapped($0)) },
+            edit: store.list.map { _ in { store.send(.reminderTapped($0)) } }
+        )
         ScrollViewReader { proxy in
         SwiftUI::List {
             GeometryReader { proxy in
@@ -52,13 +51,13 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
             .frame(height: 48)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-            if preference.showCompleted, let clearCompleted = actions.clearCompleted {
+            if preference.showCompleted {
                 let count = contents.completed
                 VStack(spacing: 0) {
                     HStack(spacing: 6) {
                         Text("\(count) Completed")
                         Text("•").font(.caption2)
-                        Button("Clear", action: clearCompleted)
+                        Button("Clear") { store.send(.clearCompletedButtonTapped) }
                             .disabled(count == 0)
                             .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
                     }
@@ -75,25 +74,21 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
             let (shown, total) = (contents.rows.count, contents.total)
             ForEach(Array(contents.rows.enumerated()), id: \.element.id) { index, reminder in
                 let id = reminder.id
-                if id == editing, let draft = draft(id) {
-                    Reminder.Editor.SwiftUI(
-                        draft: draft,
-                        color: color(reminder.list),
-                        focus: $focus,
-                        view: Reminder.Editor(id: id, completed: reminder.completed || view.grace.contains(id), now: view.now, calendar: view.calendar, actions: actions.editor)
-                    )
+                let completed = reminder.completed || store.grace[id] != nil
+                if id == editing, let editor = store.scope(\.editing) {
+                    Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
                 } else {
-                    Reminder.Row.SwiftUI(reminder: reminder, completed: reminder.completed || view.grace.contains(id), color: color(reminder.list), view: row)
+                    Reminder.Row.SwiftUI(reminder: reminder, completed: completed, color: color(reminder.list), now: now, calendar: calendar, actions: actions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
-                        .onAppear { if view.window.nearsEnd(index, of: shown, total: total) { actions.endReached() } }
+                        .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }
                 }
             }
-            .onMove(perform: actions.move)
+            .onMove { store.send(.remindersMoved($0, $1)) }
             SwiftUI::Color.clear
                 .frame(height: 320)
                 .contentShape(.rect)
-                .onTapGesture(perform: actions.backgroundTapped)
+                .onTapGesture { store.send(.backgroundTapped) }
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(SwiftUI::Color.clear)
@@ -119,10 +114,10 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
                     .opacity(titleVisible ? 1 : 0)
                     .animation(.default.speed(2), value: titleVisible)
             }
-            if let newReminder = actions.newReminder, editing == nil, !editMode.isEditing {
+            if store.list != nil, editing == nil, !editMode.isEditing {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
-                    Button("New Reminder", systemImage: "plus", action: newReminder)
+                    Button("New Reminder", systemImage: "plus") { store.send(.newReminderButtonTapped) }
                         .buttonStyle(.glassProminent)
                         .tint(tint)
                 }
@@ -131,7 +126,7 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
             if editing != nil || editMode.isEditing {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark") {
-                        if editMode.isEditing { withAnimation { editMode = .inactive } } else { actions.done() }
+                        if editMode.isEditing { withAnimation { editMode = .inactive } } else { store.send(.doneButtonTapped) }
                     }
                     .buttonStyle(.glassProminent)
                     .tint(tint)
@@ -140,13 +135,13 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
             if !editMode.isEditing {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    if let info = actions.info {
-                        Button("Show List Info", systemImage: "info.circle", action: info)
+                    if store.list != nil {
+                        Button("Show List Info", systemImage: "info.circle") { store.send(.listInfoButtonTapped) }
                     }
                     Button("Select Reminders", systemImage: "checkmark.circle") { withAnimation { editMode = .active } }
                     Menu {
                         ForEach(Reminders.Ordering.allCases, id: \.self) { ordering in
-                            Button { actions.order(ordering) } label: {
+                            Button { store.send(.orderingSelected(ordering)) } label: {
                                 if ordering == preference.ordering {
                                     Label(ordering.title, systemImage: "checkmark")
                                 } else {
@@ -159,12 +154,12 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
                         Text(preference.ordering.title)
                         Image(systemName: "arrow.up.arrow.down")
                     }
-                    Button(action: actions.toggleCompleted) {
+                    Button { store.send(.showCompletedButtonTapped) } label: {
                         Text(preference.showCompleted ? "Hide Completed" : "Show Completed")
                         Image(systemName: preference.showCompleted ? "eye.slash" : "eye")
                     }
-                    if let delete = actions.delete {
-                        Button("Delete List", systemImage: "trash", role: .destructive, action: delete)
+                    if store.list != nil {
+                        Button("Delete List", systemImage: "trash", role: .destructive) { store.send(.listDeleteButtonTapped) }
                     }
                 } label: {
                     Label("More", systemImage: "ellipsis")
@@ -179,17 +174,26 @@ extension Reminders.Listing.View.SwiftUI: SwiftUI::View {
             }
         }
         .toolbarTitleDisplayMode(.inline)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background, store.editing != nil { store.send(.doneButtonTapped) }
+        }
     }
 }
 
-extension Reminders.Listing.View.SwiftUI {
+extension Reminders.Listing.SwiftUI {
+    private var list: Models.List<Reminder>? { store.list.flatMap { lists.first(id: $0) } }
+
+    private func color(_ id: Models.List<Reminder>.ID) -> SwiftUI::Color {
+        lists.first(id: id).map { SwiftUI::Color($0.color) } ?? .blue
+    }
+
     private func focusEditing(_ proxy: ScrollViewProxy) {
-        guard let editing = view.editing, focus != .title(editing), focus != .notes(editing), contents.rows.map(\.id).contains(editing) else { return }
+        guard let editing = store.editing?.id, focus != .title(editing), focus != .notes(editing), (store.page?.rows.map(\.id) ?? []).contains(editing) else { return }
         Task { @MainActor in
             withAnimation { proxy.scrollTo(editing, anchor: .center) }
             for _ in 0..<3 {
                 try? await Task.sleep(for: .milliseconds(120))
-                guard view.editing == editing, focus != .notes(editing) else { return }
+                guard store.editing?.id == editing, focus != .notes(editing) else { return }
                 focus = .title(editing)
                 try? await Task.sleep(for: .milliseconds(120))
                 if focus == .title(editing) { return }

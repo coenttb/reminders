@@ -3,7 +3,6 @@ import FoundationEssentials_Extensions
 public import Models
 public import Reminder
 public import Reminders
-public import Reminders_SQLite
 import Standard_Library_Extensions
 
 extension Reminders.Search {
@@ -44,15 +43,16 @@ extension Reminders.Search.Field {
         Reminders.Query(terms: terms, tags: tags, showCompleted: showCompleted)
     }
 
-    public var selection: Reminders.Page.Query.Selection? {
+    // What is read: the committed tokens plus the live term, unless only a tag prefix is typed.
+    public var effective: Reminders.Query? {
         guard isActive, tagPrefix == nil || !tokens.isEmpty else { return nil }
         var query = query
         if tagPrefix == nil, !text.isEmpty { query.terms.append(text) }
-        return .search(query)
+        return query
     }
 
-    public var suggestions: Reminders.Tags.Query {
-        Reminders.Tags.Query(prefix: tagPrefix ?? "", excluding: tags)
+    public var suggestions: Reminders.Tags.Suggest.Request {
+        Reminders.Tags.Suggest.Request(prefix: tagPrefix ?? "", excluding: tags)
     }
 
     public mutating func commitText() {

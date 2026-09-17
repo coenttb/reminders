@@ -1,15 +1,22 @@
 public import Reminders
-public import Reminders_Feature
 public import SwiftUI
+
+extension Reminders.Filter {
+    public enum Tile {}
+}
 
 extension Reminders.Filter.Tile {
     public struct SwiftUI {
-        private var tile: Reminders.Filter.Tile
+        private var filter: Reminders.Filter
+        private var count: Int?
         private var style: Reminders.Filter.Style
+        private var open: () -> Void
 
-        public init(tile: Reminders.Filter.Tile, style: Reminders.Filter.Style) {
-            self.tile = tile
+        public init(filter: Reminders.Filter, count: Int?, style: Reminders.Filter.Style, open: @escaping () -> Void) {
+            self.filter = filter
+            self.count = count
             self.style = style
+            self.open = open
         }
     }
 }
@@ -17,14 +24,14 @@ extension Reminders.Filter.Tile {
 extension Reminders.Filter.Tile.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let title = style.title ?? ""
-        Button { tile.open(tile.filter) } label: {
+        Button(action: open) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
                     Image(systemName: style.symbol)
                         .font(.system(size: 24, weight: .medium))
                         .frame(width: 30, height: 30, alignment: .topLeading)
                     Spacer(minLength: 0)
-                    if let count = tile.count {
+                    if let count {
                         Text("\(count)")
                             .font(.system(.title, design: .rounded).weight(.bold))
                             .monospacedDigit()
@@ -40,6 +47,6 @@ extension Reminders.Filter.Tile.SwiftUI: SwiftUI::View {
             .background(LinearGradient(colors: [style.fill.top, style.fill.bottom], startPoint: .top, endPoint: .bottom), in: .rect(cornerRadius: 18))
             .contentShape(.rect(cornerRadius: 18))
         }
-        .accessibilityLabel(tile.count.map { "\(title), \($0) reminders" } ?? title)
+        .accessibilityLabel(count.map { "\(title), \($0) reminders" } ?? title)
     }
 }

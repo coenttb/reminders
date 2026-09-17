@@ -1,3 +1,4 @@
+public import ComposableArchitecture2
 import Reminders
 public import Reminders_Feature
 public import Models
@@ -6,20 +7,23 @@ import Standard_Library_Extensions
 public import SwiftUI
 import Tagged
 
+extension Tag<Reminder> {
+    public enum Picker {}
+}
+
 extension Tag<Reminder>.Picker {
+    // Picks the tags of the reminder form's draft; the tag intents are the form's.
     public struct SwiftUI {
-        @Binding private var selection: Set<Tag<Reminder>>
+        @Bindable private var store: StoreOf<Reminder.Form.Feature>
         private var tags: [Tag<Reminder>]
-        private var picker: Tag<Reminder>.Picker
         @State private var editing: Tag<Reminder>?
         @State private var adding = false
         @State private var title = ""
         @Environment(\.dismiss) private var dismiss
 
-        public init(selection: Binding<Set<Tag<Reminder>>>, tags: [Tag<Reminder>], picker: Tag<Reminder>.Picker) {
-            self._selection = selection
+        public init(store: StoreOf<Reminder.Form.Feature>, tags: [Tag<Reminder>]) {
+            self.store = store
             self.tags = tags
-            self.picker = picker
         }
     }
 }
@@ -36,15 +40,15 @@ extension Tag<Reminder>.Picker.SwiftUI: SwiftUI::View {
             Section {
                 ForEach(tags) { tag in
                     Button {
-                        selection.toggle(tag)
+                        store.send(.tagToggled(tag))
                     } label: {
                         HStack {
-                            Image(systemName: selection.contains(tag) ? "checkmark.circle.fill" : "circle").foregroundStyle(.blue)
+                            Image(systemName: store.draft.tags.contains(tag) ? "checkmark.circle.fill" : "circle").foregroundStyle(.blue)
                             Text(tag.hashtag).foregroundStyle(.primary)
                         }
                     }
                     .swipeActions {
-                        Button("Delete", role: .destructive) { picker.actions.delete(tag) }
+                        Button("Delete", role: .destructive) { store.send(.tagDeleted(tag)) }
                         Button("Edit") {
                             title = tag.rawValue
                             editing = tag
@@ -55,12 +59,12 @@ extension Tag<Reminder>.Picker.SwiftUI: SwiftUI::View {
         }
         .alert("New tag", isPresented: $adding) {
             TextField("Tag name", text: $title)
-            Button("Save") { picker.actions.add(title) }
+            Button("Save") { store.send(.tagAdded(title)) }
             Button("Cancel", role: .cancel) {}
         }
         .alert("Edit tag", isPresented: $editing.isPresent) {
             TextField("Tag name", text: $title)
-            Button("Save") { if let editing { picker.actions.rename(editing, title) } }
+            Button("Save") { if let editing { store.send(.tagRenamed(editing, title)) } }
             Button("Cancel", role: .cancel) {}
         }
         .toolbar { ToolbarItem { Button("Done") { dismiss() } } }

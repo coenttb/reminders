@@ -1,91 +1,26 @@
-import ComposableArchitecture2
-import Dependencies
+public import ComposableArchitecture2
 import Models
 import Reminder
-import Reminders
-import Reminders_Feature
+public import Reminders
+public import Reminders_Feature
 import Reminders_View
-import SwiftUI
-import Tagged
+public import SwiftUI
 
 extension Reminders.Filter {
-    struct Screen {
-        private var filter: Reminders.Filter
+    // One open filter: the listing on its own store, with the lists the root already reads.
+    public struct Screen {
         private var store: StoreOf<Reminders.Feature>
-        @Dependency(\.date.now) private var now
-        @Dependency(\.calendar) private var calendar
-        @Environment(\.scenePhase) private var scenePhase
+        private var listing: StoreOf<Reminders.Listing.Feature>
 
-        init(_ filter: Reminders.Filter, store: StoreOf<Reminders.Feature>) {
-            self.filter = filter
+        public init(store: StoreOf<Reminders.Feature>, listing: StoreOf<Reminders.Listing.Feature>) {
             self.store = store
+            self.listing = listing
         }
     }
 }
 
 extension Reminders.Filter.Screen: SwiftUI::View {
-    @ViewBuilder var body: some SwiftUI::View {
-        @Bindable var store = store
-        let contents = store.detail ?? Reminders.Page()
-        let style = Reminders.Filter.Style(filter, list: list, day: calendar.component(.day, from: now))
-        Reminders.Listing.View.SwiftUI(
-            contents: contents,
-            preference: store.preference,
-            style: style,
-            color: { store.overview.list($0).map { SwiftUI.Color($0.color) } ?? .blue },
-            draft: { id in
-                let draft = $store[dynamicMember: \.[draft: id]]
-                guard let current = draft.wrappedValue else { return nil }
-                return Binding(get: { draft.wrappedValue ?? current }, set: { draft.wrappedValue = $0 })
-            },
-            view: Reminders.Listing.View(
-                filter: filter,
-                window: store.detailWindow,
-                editing: store.editing?.id,
-                grace: store.gracing,
-                now: now,
-                calendar: calendar,
-                actions: actions
-            )
-        )
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .background, store.editing != nil { store.send(.doneButtonTapped) }
-        }
-    }
-}
-
-extension Reminders.Filter.Screen {
-    private var listID: Models.List<Reminder>.ID? {
-        if case let .list(id) = filter { id } else { nil }
-    }
-
-    private var list: Models.List<Reminder>? { listID.flatMap(store.overview.list) }
-
-    private var actions: Reminders.Listing.View.Actions {
-        Reminders.Listing.View.Actions(
-            rows: Reminder.Row.Actions(
-                complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                delete: { store.send(.reminderDeleted($0)) },
-                details: { store.send(.reminderDetailsButtonTapped($0)) },
-                edit: listID.map { _ in { store.send(.reminderTapped($0)) } }
-            ),
-            editor: Reminder.Editor.Actions(
-                complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                details: { store.send(.reminderDetailsButtonTapped($0)) },
-                submit: { store.send(.titleSubmitted) },
-                setDate: { store.send(.datePresetSelected($0, $1)) },
-                setTime: { store.send(.timePresetSelected($0, $1)) }
-            ),
-            done: { store.send(.doneButtonTapped) },
-            backgroundTapped: { store.send(.backgroundTapped) },
-            toggleCompleted: { store.send(.showCompletedButtonTapped) },
-            endReached: { store.send(.detailEndReached) },
-            move: { store.send(.remindersMoved($0, $1)) },
-            order: { store.send(.orderingSelected($0)) },
-            newReminder: listID.map { _ in { store.send(.newReminderButtonTapped) } },
-            info: listID.map { id in { store.send(.listDetailsButtonTapped(id)) } },
-            delete: listID.map { id in { store.send(.listDeleted(id)) } },
-            clearCompleted: { store.send(.clearCompletedButtonTapped) }
-        )
+    public var body: some SwiftUI::View {
+        Reminders.Listing.SwiftUI(store: listing, lists: store.overview.summary.lists.map(\.list))
     }
 }

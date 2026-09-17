@@ -1,3 +1,5 @@
+public import ComposableArchitecture2
+public import Foundation
 public import Reminder
 import Reminders
 public import Reminders_Feature
@@ -5,51 +7,55 @@ public import SwiftUI
 
 extension Reminder.Editor {
     public struct SwiftUI {
-        @Binding private var draft: Reminder
+        @Bindable private var store: StoreOf<Reminder.Editor.Feature>
+        private var completed: Bool
         private var color: SwiftUI::Color
+        private var now: Date
+        private var calendar: Calendar
         private var focus: FocusState<Reminder.Focus?>.Binding
-        private var view: Reminder.Editor
 
-        public init(draft: Binding<Reminder>, color: SwiftUI::Color, focus: FocusState<Reminder.Focus?>.Binding, view: Reminder.Editor) {
-            self._draft = draft
+        public init(store: StoreOf<Reminder.Editor.Feature>, completed: Bool, color: SwiftUI::Color, now: Date, calendar: Calendar, focus: FocusState<Reminder.Focus?>.Binding) {
+            self.store = store
+            self.completed = completed
             self.color = color
+            self.now = now
+            self.calendar = calendar
             self.focus = focus
-            self.view = view
         }
     }
 }
 
 extension Reminder.Editor.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
-        let (id, actions) = (view.id, view.actions)
+        let id = store.state.id
         HStack(alignment: .top, spacing: 12) {
-            Button { actions.complete(id) } label: {
-                Image(systemName: view.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(view.completed ? color : SwiftUI::Color(.systemGray3))
+            Button { store.send(.completeButtonTapped) } label: {
+                Image(systemName: completed ? "circle.inset.filled" : "circle")
+                    .foregroundStyle(completed ? color : SwiftUI::Color(.systemGray3))
                     .font(.title2)
             }
             .buttonStyle(.borderless)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    if let priority = draft.priority {
+                    if let priority = store.draft.priority {
                         Text(priority.marks).foregroundStyle(color)
                     }
-                    TextField("", text: $draft.title)
+                    TextField("", text: $store.draft.title)
                         .focused(focus, equals: .title(id))
                         .submitLabel(.return)
-                        .onSubmit(actions.submit)
-                    Button("Details", systemImage: "info.circle") { actions.details(id) }
+                        .onSubmit { store.send(.titleSubmitted) }
+                    Button("Details", systemImage: "info.circle") { store.send(.detailsButtonTapped) }
                         .labelStyle(.iconOnly)
                         .buttonStyle(.borderless)
                         .foregroundStyle(.primary)
                 }
-                TextField("Add Note", text: $draft.notes, axis: .vertical)
+                TextField("Add Note", text: $store.draft.notes, axis: .vertical)
                     .font(.subheadline)
                     .focused(focus, equals: .notes(id))
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
                         dateChip
-                        if draft.due != nil {
+                        if store.draft.due != nil {
                             timeChip
                             repeatChip
                         }
@@ -69,23 +75,23 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
         .listRowSeparator(.hidden)
         .listRowBackground(SwiftUI::Color.clear)
         .onChange(of: focus.wrappedValue) { _, focus in
-            if focus == .notes(id), draft.isBlank { draft.title = "New Reminder" }
+            if focus == .notes(id) { store.send(.notesFocused) }
         }
     }
 
     private var dateChip: some SwiftUI::View {
-        let (id, now, calendar, actions) = (view.id, view.now, view.calendar, view.actions)
+        let draft = store.draft
         return Menu {
-            Button { actions.setDate(id, nil) } label: { checked("None", draft.due == nil) }
+            Button { store.send(.datePresetSelected(nil)) } label: { checked("None", draft.due == nil) }
             Divider()
             ForEach(Reminder.Editor.Preset.allCases, id: \.self) { preset in
-                Button { actions.setDate(id, preset) } label: {
+                Button { store.send(.datePresetSelected(preset)) } label: {
                     let date = preset.date(at: now, calendar: calendar)
                     let current = draft.due.map { calendar.isDate($0.date, inSameDayAs: date) } ?? false
                     Label(preset.title, systemImage: current ? "checkmark" : "\(calendar.component(.day, from: date)).calendar")
                 }
             }
-            Button("Custom", systemImage: "ellipsis") { actions.details(id) }
+            Button("Custom", systemImage: "ellipsis") { store.send(.detailsButtonTapped) }
         } label: {
             chip(tinted: draft.due != nil) {
                 if let day = draft.due?.dayDescription(at: now, calendar: calendar) {
@@ -100,19 +106,19 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
     }
 
     private var timeChip: some SwiftUI::View {
-        let (id, now, calendar, actions) = (view.id, view.now, view.calendar, view.actions)
+        let draft = store.draft
         return Menu {
-            Button { actions.setTime(id, nil) } label: { checked("None", draft.due?.hasTime != true) }
+            Button { store.send(.timePresetSelected(nil)) } label: { checked("None", draft.due?.hasTime != true) }
             Divider()
             ForEach(Reminder.Editor.Preset.Time.allCases, id: \.self) { preset in
-                Button { actions.setTime(id, preset) } label: {
+                Button { store.send(.timePresetSelected(preset)) } label: {
                     let current = draft.due.map { $0.hasTime && calendar.component(.hour, from: $0.date) == preset.hour && calendar.component(.minute, from: $0.date) == 0 } == true
                     Text(preset.description(on: now, calendar: calendar) ?? preset.title)
                     Text(preset.title)
                     Image(systemName: current ? "checkmark" : "clock")
                 }
             }
-            Button("Custom", systemImage: "ellipsis") { actions.details(id) }
+            Button("Custom", systemImage: "ellipsis") { store.send(.detailsButtonTapped) }
         } label: {
             chip(tinted: draft.due?.hasTime == true) {
                 if let time = draft.due?.timeDescription(calendar: calendar) {
@@ -127,19 +133,18 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
     }
 
     private var repeatChip: some SwiftUI::View {
-        Menu {
-            Button { draft.repeats = nil } label: { checked("Never", draft.repeats == nil) }
+        let repeats = store.draft.repeats
+        return Menu {
+            Button { store.send(.repeatSelected(nil)) } label: { checked("Never", repeats == nil) }
             Divider()
             ForEach(Reminder.repeatOptions, id: \.self) { frequency in
-                Button {
-                    draft.repeats = Calendar.RecurrenceRule(calendar: view.calendar, frequency: frequency)
-                } label: {
-                    checked(frequency.title, draft.repeats?.frequency == frequency)
+                Button { store.send(.repeatSelected(frequency)) } label: {
+                    checked(frequency.title, repeats?.frequency == frequency)
                 }
             }
         } label: {
-            chip(tinted: draft.repeats != nil) {
-                if let repeats = draft.repeats {
+            chip(tinted: repeats != nil) {
+                if let repeats {
                     Label(repeats.title, systemImage: "repeat")
                 } else {
                     Label("Repeat", systemImage: "repeat").labelStyle(.iconOnly)

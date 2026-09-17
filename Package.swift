@@ -50,6 +50,7 @@ let package = Package(
                 .product(name: "Interface Macro", package: "swift-interface"),
                 "Models",
                 "Reminder",
+                .product(name: "Tagged", package: "swift-tagged"),
             ],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
@@ -110,7 +111,6 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
-                "Reminders SQL",
                 "Reminders SQLite",
                 "Models",
                 .product(name: "ComposableArchitecture2", package: "TCA26"),

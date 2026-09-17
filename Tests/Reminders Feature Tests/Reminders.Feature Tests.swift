@@ -34,26 +34,40 @@ struct `Reminder feature` {
     @Dependency(\.date.now) var now
     @Dependency(\.defaultDatabase) var database
 
+    typealias Listing = Reminders.Listing.Feature
+    typealias Editor = Reminder.Editor.Feature
+
     let sample = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890))
     var personal: Models.List<Reminder>.ID { sample.lists[0].id }
     var groceries: Reminder { sample.reminders[0] }
-    var today: Range<Date> { calendar.day(containing: now)! }
+    var today: Date { calendar.startOfDay(for: now) }
+    var day: Range<Date> { calendar.day(containing: now)! }
 
     func makeStore(
         clock: TestClock<Duration> = TestClock(),
-        restoring: @escaping @Sendable (inout Reminders.Feature.State.DebugSnapshot) -> Void = { _ in }
+        restoring filter: Reminders.Filter? = nil,
+        editing: Editor.State? = nil
     ) async throws -> TestStoreActor<Reminders.Feature> {
-        await withDependencies { $0.continuousClock = clock } operation: {
+        let store = await withDependencies { $0.continuousClock = clock } operation: {
             await TestStoreActor(initialState: Reminders.Feature.State()) { Reminders.Feature() } changes: { [today] in
                 $0.today = today
-                restoring(&$0)
+                $0.overview.today = today
+                $0.search.today = today
             }
         }
+        if let filter {
+            await store.expect { [today] in
+                var listing = snap(Listing.State(filter: filter, today: today))
+                listing.editing = editing.map(snap)
+                $0.listing = listing
+            }
+        }
+        return store
     }
 
-    // The restoration state the feature keeps in app storage; read here as the next launch would.
+    // The restoration state the app keeps in app storage; read here as the next launch would.
     var restoredEditing: Reminder.ID? {
-        @Shared(.appStorage(Reminders.Feature.editingKey)) var editing: String?
+        @Shared(.appStorage(Listing.editingKey)) var editing: String?
         return editing.flatMap(UUID.init(uuidString:)).map { Reminder.ID($0) }
     }
 
@@ -96,33 +110,43 @@ struct `Reminder feature` {
         }
     }
 
+    func page(_ store: TestStoreActor<Reminders.Feature>) async throws -> Fetch<Reminders.Page?> {
+        try #require(await store.state.listing?.$page)
+    }
+
+    func editing(_ store: TestStoreActor<Reminders.Feature>) async throws -> Editor.State {
+        try #require(await store.state.listing?.editing)
+    }
+
+    func form(_ store: TestStoreActor<Reminders.Feature>) async -> Reminder.Form.Feature.State? {
+        await store.state.destination.flatMap { if case let .reminder(form) = $0 { form } else { nil } }
+    }
+
     @Test func `completing a reminder finishes after the grace period and everything persists`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
-        let grace = await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(0)] }
+        await store.send(.overview(.listTapped(personal)))?.value
+        let grace = await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))
+        #expect(await store.state.listing?.grace == [groceries.id: UUID(0)])
         #expect(try await stored(groceries.id)?.completed == false)
         await clock.advance(by: .seconds(5))
         await grace?.value
-        await store.expect { $0.grace = [:] }
+        #expect(await store.state.listing?.grace == [:])
         #expect(try await stored(groceries.id)?.completed == true)
-        await store.send(.newReminderButtonTapped) { [personal, now] in
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder(id: Reminder.ID(UUID(1)), list: personal, created: now), original: nil)))
-        }?.value
+        try await store.state.overview.$summary.load()
+        await store.send(.newReminderButtonTapped)?.value
+        #expect(await form(store)?.isNew == true)
         await store.modify {
             if case var .reminder(form) = $0.destination { form.draft.title = "Water plants"; $0.destination = .reminder(form) }
-        } changes: {
-            if case var .reminder(form) = $0.destination { form.draft.title = "Water plants"; $0.destination = .reminder(form) }
         }?.value
-        await store.send(.destination(.reminder(.tagAdded("garden")))) {
-            if case var .reminder(form) = $0.destination { form.draft.tags.insert("garden"); $0.destination = .reminder(form) }
-        }?.value
-        await store.send(.destination(.reminder(.tagAdded("ADULTING")))) {
-            if case var .reminder(form) = $0.destination { form.draft.tags.insert("adulting"); $0.destination = .reminder(form) }
-        }?.value
-        await store.send(.destination(.reminder(.saveButtonTapped))) { $0.destination = nil }?.value
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-        await store.send(.orderingSelected(.title))?.value
-        await store.send(.showCompletedButtonTapped)?.value
+        await store.send(.destination(.reminder(.tagAdded("garden"))))?.value
+        await store.send(.destination(.reminder(.tagAdded("ADULTING"))))?.value
+        #expect(await form(store)?.draft.tags == ["garden", "adulting"])
+        await store.send(.destination(.reminder(.saveButtonTapped)))?.value
+        #expect(await store.state.destination == nil)
+        await store.send(.listing(.orderingSelected(.title)))?.value
+        await store.send(.listing(.showCompletedButtonTapped))?.value
         await store.dismount()
         let saved = try await database.read { db in try Reminder.Record.where { $0.title.eq("Water plants") }.rows().fetchOne(db) }
         #expect(saved?.reminder.title == "Water plants" && saved?.reminder.position == 11)
@@ -132,226 +156,245 @@ struct `Reminder feature` {
         #expect(restoredFilter == .list(personal))
         let preference = try await database.read { [personal] db in try Reminders.Preference.Record.preference(for: .list(personal)).fetchOne(db) }
         #expect(preference?.ordering == .title && preference?.showCompleted == true)
+        }
     }
 
     @Test func `the screens read the database and follow writes made elsewhere`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        try await store.state.$overview.load()
-        #expect(await store.state.overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
-        #expect(await store.state.overview.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-        #expect(await store.state.detail?.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
+        try await store.state.overview.$summary.load()
+        #expect(await store.state.overview.summary.lists.map(\.list.title) == ["Personal", "Family", "Business"])
+        #expect(await store.state.overview.summary.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
+        await store.send(.overview(.listTapped(personal)))?.value
+        #expect(await store.state.listing?.page?.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
-        try await until(store.state.$overview) { $0.counts.all == 7 }
-        try await until(store.state.$detail) { $0?.rows.count == 3 }
-        #expect(await store.state.overview.lists.first?.count == 3)
+        try await until(store.state.overview.$summary) { $0.counts.all == 7 }
+        try await until(try await page(store)) { $0?.rows.count == 3 }
+        #expect(await store.state.overview.summary.lists.first?.count == 3)
         await store.dismount()
+        }
     }
 
     @Test func `typing in a row is a draft until Return writes it and continues beneath, and Done drops a blank row`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await makeStore()
-            await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-            await store.send(.newReminderButtonTapped)?.value
-            let editing = try #require(await store.state.editing)
-            let first = editing.id
-            #expect(await store.state.detailWindow == Window(key: .list(personal), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
-            #expect(editing.isSaved && editing.draft.isBlank && editing.draft.list == personal && editing.place.position == 11 && editing.session == UUID(0))
-            #expect(try await stored(first)?.isBlank == true)
-            try await until(store.state.$detail) { $0?.rows.map(\.id).contains(first) == true }
-            await store.modify { $0[draft: first]?.title = "Milk" }?.value
-            #expect(try await stored(first)?.title == "")
-            #expect(await store.state.editing?.isSaved == false)
-            await store.send(.titleSubmitted)?.value
-            let next = try #require(await store.state.editing)
-            let second = next.id
-            #expect(second != first && next.session == UUID(2) && next.draft.isBlank && next.isSaved)
-            #expect(next.place.reminder.title == "Milk" && next.place.reminder.id == second && next.place.position == 12)
-            try await until(store.state.$detail) { $0?.rows.map(\.id).suffix(2) == [first, second] }
-            #expect(try await stored(first)?.title == "Milk")
-            await store.send(.doneButtonTapped) { $0.editing = nil }?.value
-            #expect(try await stored(second) == nil)
-            #expect(restoredEditing == nil)
-            await store.dismount()
+        let store = try await makeStore()
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.newReminderButtonTapped))?.value
+        let editing = try await editing(store)
+        let first = editing.id
+        #expect(await store.state.listing?.window == Window(key: .list(personal), rows: nil, step: Listing.paging.step, margin: Listing.paging.margin))
+        #expect(editing.isSaved && editing.draft.isBlank && editing.draft.list == personal && editing.place.position == 11 && editing.session == UUID(0))
+        #expect(try await stored(first)?.isBlank == true)
+        try await until(try await page(store)) { $0?.rows.map(\.id).contains(first) == true }
+        await store.modify { $0.listing?.editing?.draft.title = "Milk" }?.value
+        #expect(try await stored(first)?.title == "")
+        #expect(await store.state.listing?.editing?.isSaved == false)
+        await store.send(.listing(.editing(.titleSubmitted)))?.value
+        let next = try await self.editing(store)
+        let second = next.id
+        #expect(second != first && next.session == UUID(2) && next.draft.isBlank && next.isSaved)
+        #expect(next.place.reminder.title == "Milk" && next.place.reminder.id == second && next.place.position == 12)
+        try await until(try await page(store)) { $0?.rows.map(\.id).suffix(2) == [first, second] }
+        #expect(try await stored(first)?.title == "Milk")
+        await store.send(.listing(.doneButtonTapped))?.value
+        #expect(await store.state.listing?.editing == nil)
+        #expect(try await stored(second) == nil)
+        #expect(restoredEditing == nil)
+        await store.dismount()
         }
     }
 
     @Test func `a relaunch reopens the row that was being edited`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await makeStore()
-            await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-            await store.send(.newReminderButtonTapped)?.value
-            let row = try #require(await store.state.editing?.id)
-            await store.dismount()
-            #expect(restoredEditing == row)
-            let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
-            let editing = try #require(await revived.state.editing)
-            #expect(editing.id == row && editing.draft.isBlank && editing.isSaved && editing.session == UUID(2))
-            await revived.send(.filterTapped(.today)) {
-                $0.filter = .today
-                $0.editing = nil
-            }?.value
-            #expect(restoredEditing == nil)
-            await revived.dismount()
+        let store = try await makeStore()
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.newReminderButtonTapped))?.value
+        let row = try await editing(store).id
+        await store.dismount()
+        #expect(restoredEditing == row)
+        let revived = try await makeStore(restoring: .list(personal), editing: Editor.State(try await self.row(row), session: UUID(2)))
+        let editing = try await editing(revived)
+        #expect(editing.id == row && editing.draft.isBlank && editing.isSaved && editing.session == UUID(2))
+        await revived.modify { $0.listing = nil }?.value
+        #expect(restoredEditing == nil)
+        await revived.send(.overview(.filterTapped(.today)))?.value
+        #expect(await revived.state.listing?.filter == .today)
+        #expect(await revived.state.listing?.editing == nil)
+        await revived.dismount()
         }
     }
 
     @Test func `a long filter is read a window at a time, widened near its end, and whole when a row starts at its end`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let scale = Reminders.Sample.Scale(lists: 1, remindersPerList: 700, tags: 5)
         let generated = Reminders.Sample.generated(scale, seed: 1, at: now, calendar: calendar)
         try await database.write { db in try generated.replace(in: db) }
         let list = generated.lists[0].id
         let open = generated.reminders.count { !$0.completed }
-        let step = Reminders.Feature.paging.step
+        let step = Listing.paging.step
         #expect(open > step && open < 2 * step)
         let store = try await makeStore()
-        await store.send(.filterTapped(.all)) { $0.filter = .all }?.value
-        try await until(store.state.$detail) { $0?.rows.count == step }
-        #expect(await store.state.detail?.total == open)
-        await store.send(.detailEndReached) { $0.detailWindow = Window(key: .all, rows: 2 * step, step: step, margin: Reminders.Feature.paging.margin) }?.value
-        try await until(store.state.$detail) { $0?.rows.count == open }
-        await store.send(.detailEndReached)?.value
-        await store.send(.listTapped(list)) { $0.filter = .list(list) }?.value
-        try await until(store.state.$detail) { $0?.rows.count == step }
-        try await TestExhaustivity.$current.withValue(.off) {
-            await store.send(.newReminderButtonTapped)?.value
-            let editing = try #require(await store.state.editing)
-            #expect(await store.state.detailWindow == Window(key: .list(list), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
-            #expect(editing.place.position == 700 && editing.draft.list == list)
-            try await until(store.state.$detail) { $0?.rows.count == open + 1 && $0?.rows.map(\.id).last == editing.id }
-            await store.send(.doneButtonTapped) { $0.editing = nil }?.value
-        }
+        await store.send(.overview(.filterTapped(.all)))?.value
+        try await until(try await page(store)) { $0?.rows.count == step }
+        #expect(await store.state.listing?.page?.total == open)
+        await store.send(.listing(.endReached))?.value
+        #expect(await store.state.listing?.window == Window(key: .all, rows: 2 * step, step: step, margin: Listing.paging.margin))
+        try await until(try await page(store)) { $0?.rows.count == open }
+        await store.send(.listing(.endReached))?.value
+        await store.send(.overview(.listTapped(list)))?.value
+        try await until(try await page(store)) { $0?.rows.count == step }
+        await store.send(.listing(.newReminderButtonTapped))?.value
+        let editing = try await editing(store)
+        #expect(await store.state.listing?.window == Window(key: .list(list), rows: nil, step: Listing.paging.step, margin: Listing.paging.margin))
+        #expect(editing.place.position == 700 && editing.draft.list == list)
+        try await until(try await page(store)) { $0?.rows.count == open + 1 && $0?.rows.map(\.id).last == editing.id }
+        await store.send(.listing(.doneButtonTapped))?.value
+        #expect(await store.state.listing?.editing == nil)
         await store.dismount()
+        }
     }
 
     @Test func `a relaunch onto an open list reads its rows`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
+        await store.send(.overview(.listTapped(personal)))?.value
         await store.dismount()
-        let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
-        try await until(revived.state.$detail) { $0?.rows.count == 4 }
+        let revived = try await makeStore(restoring: .list(personal))
+        try await until(try await page(revived)) { $0?.rows.count == 4 }
         await revived.dismount()
+        }
     }
 
     @Test func `a commit that fails keeps the row open with its draft, and the next commit tries the whole difference again`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await makeStore()
-            await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-            let groceriesRow0 = try await row(groceries.id)
-            await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
-            try await block("UPDATE OF title", on: "reminders", reason: "title locked")
-            await store.modify { $0[draft: groceries.id]?.title = "Groceries!" }?.value
-            var editing = try #require(await store.state.editing)
-            #expect(editing.draft.title == "Groceries!" && editing.original.title == "Groceries" && !editing.isSaved)
-            #expect(editing.failure == nil)
-            await store.send(.doneButtonTapped)?.value
-            editing = try #require(await store.state.editing)
-            #expect(editing.failure?.contains("title locked") == true)
-            #expect(await store.state.failure?.contains("title locked") == true)
-            #expect(try await stored(groceries.id) == groceries)
-            await store.send(.reminderTapped(sample.reminders[1].id))?.value
-            await store.send(.reminderDetailsButtonTapped(groceries.id))?.value
-            editing = try #require(await store.state.editing)
-            #expect(editing.id == groceries.id && editing.draft.title == "Groceries!")
-            #expect(await store.state.destination == nil)
-            await store.modify { $0[draft: groceries.id]?.notes = "Oat milk" }?.value
-            #expect(try await stored(groceries.id) == groceries)
-            try await unblock()
-            await store.send(.doneButtonTapped)?.value
-            #expect(await store.state.editing == nil)
-            let saved = try await stored(groceries.id)
-            #expect(saved?.title == "Groceries!" && saved?.notes == "Oat milk")
-            await store.dismount()
+        let store = try await makeStore()
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.reminderTapped(groceries.id)))?.value
+        let expected = Editor.State(try await row(groceries.id), session: UUID(0))
+        #expect(try await editing(store) == expected)
+        try await block("UPDATE OF title", on: "reminders", reason: "title locked")
+        await store.modify { $0.listing?.editing?.draft.title = "Groceries!" }?.value
+        var editing = try await editing(store)
+        #expect(editing.draft.title == "Groceries!" && editing.original.title == "Groceries" && !editing.isSaved)
+        #expect(editing.failure == nil)
+        await store.send(.listing(.doneButtonTapped))?.value
+        editing = try await self.editing(store)
+        #expect(editing.failure?.contains("title locked") == true)
+        #expect(await store.state.failure?.contains("title locked") == true)
+        #expect(try await stored(groceries.id) == groceries)
+        await store.send(.listing(.reminderTapped(sample.reminders[1].id)))?.value
+        await store.send(.listing(.reminderDetailsButtonTapped(groceries.id)))?.value
+        editing = try await self.editing(store)
+        #expect(editing.id == groceries.id && editing.draft.title == "Groceries!")
+        #expect(await store.state.destination == nil)
+        await store.modify { $0.listing?.editing?.draft.notes = "Oat milk" }?.value
+        #expect(try await stored(groceries.id) == groceries)
+        try await unblock()
+        await store.send(.listing(.doneButtonTapped))?.value
+        #expect(await store.state.listing?.editing == nil)
+        let saved = try await stored(groceries.id)
+        #expect(saved?.title == "Groceries!" && saved?.notes == "Oat milk")
+        await store.dismount()
         }
     }
 
     @Test func `a commit writes the form's columns last and never brings a deleted row back`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-        let groceriesRow0 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.reminderTapped(groceries.id)))?.value
+        let expected = Editor.State(try await row(groceries.id), session: UUID(0))
+        #expect(try await editing(store) == expected)
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).update { $0.flagged = true }.execute(db) }
-        await store.modify { $0[draft: groceries.id]?.title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
-        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
+        await store.modify { $0.listing?.editing?.draft.title = "Groceries and more" }?.value
+        await store.send(.listing(.doneButtonTapped))?.value
+        #expect(await store.state.listing?.editing == nil)
         let saved = try await stored(groceries.id)
         #expect(saved?.title == "Groceries and more")
         #expect(saved?.flagged == false)
-        let groceriesRow1 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow1, session: UUID(1)) }?.value
+        await store.send(.listing(.reminderTapped(groceries.id)))?.value
+        let reopened = Editor.State(try await row(groceries.id), session: UUID(1))
+        #expect(try await editing(store) == reopened)
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
-        await store.modify { $0[draft: groceries.id]?.title = "Back" } changes: { $0.editing?.draft.title = "Back" }?.value
-        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
-        #expect(try await stored(groceries.id) == nil)
-        await store.modify { $0[draft: groceries.id]?.title = "Late" }?.value
+        await store.modify { $0.listing?.editing?.draft.title = "Back" }?.value
+        await store.send(.listing(.doneButtonTapped))?.value
+        #expect(await store.state.listing?.editing == nil)
         #expect(try await stored(groceries.id) == nil)
         await store.dismount()
+        }
     }
 
     @Test func `the inline chips run the domain rules on the feature's clock and are written when editing ends`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-        await store.send(.newReminderButtonTapped)?.value
-        let row = try #require(await store.state.editing?.id)
-        await store.send(.datePresetSelected(row, .tomorrow)) { [now, calendar] in
-            $0.editing?.draft.set(datePreset: .tomorrow, at: now, calendar: calendar)
-        }?.value
-        await store.send(.timePresetSelected(row, .evening)) { [now, calendar] in
-            $0.editing?.draft.set(timePreset: .evening, at: now, calendar: calendar)
-        }?.value
-        let draft = try #require(await store.state.editing?.draft)
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.newReminderButtonTapped))?.value
+        let row = try await editing(store).id
+        await store.send(.listing(.editing(.datePresetSelected(.tomorrow))))?.value
+        await store.send(.listing(.editing(.timePresetSelected(.evening))))?.value
+        let draft = try await editing(store).draft
         let due = try #require(draft.due)
         #expect(due.hasTime)
         #expect(calendar.isDate(due.date, inSameDayAs: now.addingTimeInterval(.day)))
         #expect(calendar.component(.hour, from: due.date) == 18)
         #expect(try await stored(row)?.due == nil)
-        await store.send(.timePresetSelected(row, nil)) { [now, calendar] in
-            $0.editing?.draft.set(timePreset: nil, at: now, calendar: calendar)
-        }?.value
-        #expect(await store.state.editing?.draft.due?.hasTime == false)
-        await store.modify { $0[draft: row]?.title = "Call" } changes: { $0.editing?.draft.title = "Call" }?.value
-        let dated = try #require(await store.state.editing?.draft)
-        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
+        await store.send(.listing(.editing(.timePresetSelected(nil))))?.value
+        #expect(try await editing(store).draft.due?.hasTime == false)
+        await store.modify { $0.listing?.editing?.draft.title = "Call" }?.value
+        let dated = try await editing(store).draft
+        await store.send(.listing(.doneButtonTapped))?.value
+        #expect(await store.state.listing?.editing == nil)
         #expect(try await stored(row) == dated)
         await store.dismount()
         }
     }
 
     @Test func `submitting the search commits the text as a token and the results follow`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        await store.modify { $0.search.text = "Take" } changes: { $0.search.text = "Take" }
-        await store.send(.searchSubmitted) { $0.search.commitText() }?.value
+        await store.modify { $0.search.field.text = "Take" }
+        await store.send(.search(.submitted))?.value
         let state = await store.state
-        #expect(state.search.tokens == [.near("Take")])
-        #expect(state.search.text.isEmpty)
-        #expect(state.results.titles == ["Take out trash"])
-        #expect(state.results.completedCount == 1)
-        await store.send(.searchCompletedButtonTapped) { $0.search.showCompleted = true }?.value
+        #expect(state.search.field.tokens == [.near("Take")])
+        #expect(state.search.field.text.isEmpty)
+        try await store.state.overview.$summary.load()
+        #expect(await store.state.results.titles == ["Take out trash"])
+        #expect(await store.state.results.completedCount == 1)
+        await store.send(.search(.completedButtonTapped))?.value
+        #expect(await store.state.search.field.showCompleted)
         #expect(await store.state.results.titles == ["Take a walk", "Take out trash"])
         await store.dismount()
+        }
     }
 
     @Test func `typing in the search is read once after a pause, and a cleared field at once`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
-        await store.modify { $0.search.text = "Tak" } changes: { $0.search.text = "Tak" }
-        let typed = await store.modify { $0.search.text = "Take" } changes: { $0.search.text = "Take" }
-        await clock.advance(by: Reminders.Feature.searchPause - .milliseconds(1))
+        try await store.state.overview.$summary.load()
+        await store.modify { $0.search.field.text = "Tak" }
+        let typed = await store.modify { $0.search.field.text = "Take" }
+        await clock.advance(by: Reminders.Search.Feature.pause - .milliseconds(1))
         #expect(await store.state.results.titles.isEmpty)
         await clock.advance(by: .milliseconds(1))
         await typed?.value
         #expect(await store.state.results.titles == ["Take out trash"])
-        await store.modify { $0.search.text = "" } changes: { $0.search.text = "" }?.value
+        await store.modify { $0.search.field.text = "" }?.value
         #expect(await store.state.results.titles.isEmpty)
         await store.dismount()
+        }
     }
 
     @Test func `a second tap inside the grace period takes the first back without a write`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
-        let grace = await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(0)] }
+        await store.send(.overview(.listTapped(personal)))?.value
+        let grace = await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))
+        #expect(await store.state.listing?.grace == [groceries.id: UUID(0)])
         await clock.advance(by: .seconds(2))
-        await store.send(.reminderCompleteButtonTapped(groceries.id)) { $0.grace = [:] }?.value
+        await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))?.value
+        #expect(await store.state.listing?.grace == [:])
         try await block("UPDATE OF completed", on: "reminders", reason: "completion locked")
         await clock.advance(by: .seconds(5))
         await grace?.value
@@ -359,251 +402,248 @@ struct `Reminder feature` {
         #expect(await store.state.failure == nil)
         try await unblock()
         await store.dismount()
+        }
     }
 
     @Test func `a completed reminder is reopened at once, and leaving the feature writes what is still in grace`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
         let walk = sample.reminders[3]
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-        try await until(store.state.$detail) { $0?.rows.isEmpty == false }
-        await store.send(.showCompletedButtonTapped)?.value
-        try await until(store.state.$detail) { $0?.rows.map(\.id).contains(walk.id) == true }
-        await store.send(.reminderCompleteButtonTapped(walk.id))?.value
+        await store.send(.overview(.listTapped(personal)))?.value
+        try await until(try await page(store)) { $0?.rows.isEmpty == false }
+        await store.send(.listing(.showCompletedButtonTapped))?.value
+        try await until(try await page(store)) { $0?.rows.map(\.id).contains(walk.id) == true }
+        await store.send(.listing(.reminderCompleteButtonTapped(walk.id)))?.value
         #expect(try await stored(walk.id)?.completed == false)
-        await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(0)] }
+        await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))
+        #expect(await store.state.listing?.grace == [groceries.id: UUID(0)])
         await store.dismount()
         #expect(try await stored(groceries.id)?.completed == true)
+        }
     }
 
     @Test func `a grace period that ends does not touch a newer editing session`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let clock = TestClock()
         let store = try await makeStore(clock: clock)
         let haircut = sample.reminders[1]
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-        let groceriesRow0 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
-        let grace = await store.send(.reminderCompleteButtonTapped(groceries.id)) { [groceries] in $0.grace = [groceries.id: UUID(1)] }
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.reminderTapped(groceries.id)))?.value
+        #expect(try await editing(store).session == UUID(0))
+        let grace = await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))
+        #expect(await store.state.listing?.grace == [groceries.id: UUID(1)])
         let haircutRow = try await row(haircut.id)
-        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow, session: UUID(2)) }?.value
+        await store.send(.listing(.reminderTapped(haircut.id)))?.value
+        #expect(try await editing(store) == Editor.State(haircutRow, session: UUID(2)))
         await clock.advance(by: .seconds(5))
         await grace?.value
-        await store.expect { $0.grace = [:] }
+        #expect(await store.state.listing?.grace == [:])
         #expect(try await stored(groceries.id)?.completed == true)
-        let editing = try #require(await store.state.editing)
+        let editing = try await editing(store)
         #expect(editing.id == haircut.id && editing.session == UUID(2) && editing.draft == haircutRow.reminder)
-        await store.send(.doneButtonTapped) { $0.editing = nil }?.value
+        await store.send(.listing(.doneButtonTapped))?.value
         await store.dismount()
+        }
     }
 
     @Test func `a tap on the empty part of a list starts a row or ends editing, and leaving the detail ends it`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await makeStore()
-            await store.send(.backgroundTapped)?.value
-            #expect(await store.state.editing == nil)
-            await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
-            await store.send(.backgroundTapped)?.value
-            let editing = try #require(await store.state.editing)
-            let row = editing.id
-            #expect(await store.state.detailWindow == Window(key: .list(personal), rows: nil, step: Reminders.Feature.paging.step, margin: Reminders.Feature.paging.margin))
-            #expect(editing.draft.isBlank && editing.place.position == 11 && editing.session == UUID(0))
-            await store.modify { $0[draft: row]?.title = "Bread" } changes: { $0.editing?.draft.title = "Bread" }?.value
-            await store.send(.backgroundTapped) { $0.editing = nil }?.value
-            let bread = try await self.row(row)
-            #expect(bread.reminder.title == "Bread")
-            await store.send(.reminderTapped(row)) { $0.editing = Reminder.Editing(bread, session: UUID(2)) }?.value
-            await store.modify { $0[draft: row]?.notes = "Rye" } changes: { $0.editing?.draft.notes = "Rye" }?.value
-            await store.send(.filterTapped(.today)) {
-                $0.filter = .today
-                $0.editing = nil
-            }?.value
-            #expect(try await stored(row)?.notes == "Rye")
-            #expect(restoredEditing == nil)
-            await store.modify { $0[draft: row]?.title = "Late" }?.value
-            #expect(try await stored(row)?.title == "Bread")
-            await store.dismount()
+        let store = try await makeStore()
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.backgroundTapped))?.value
+        let editing = try await editing(store)
+        let row = editing.id
+        #expect(await store.state.listing?.window == Window(key: .list(personal), rows: nil, step: Listing.paging.step, margin: Listing.paging.margin))
+        #expect(editing.draft.isBlank && editing.place.position == 11 && editing.session == UUID(0))
+        await store.modify { $0.listing?.editing?.draft.title = "Bread" }?.value
+        await store.send(.listing(.backgroundTapped))?.value
+        #expect(await store.state.listing?.editing == nil)
+        let bread = try await self.row(row)
+        #expect(bread.reminder.title == "Bread")
+        await store.send(.listing(.reminderTapped(row)))?.value
+        #expect(try await self.editing(store) == Editor.State(bread, session: UUID(2)))
+        await store.modify { $0.listing?.editing?.draft.notes = "Rye" }?.value
+        // Popping the listing dismounts it; the draft is written on the way out.
+        await store.modify { $0.listing = nil }?.value
+        #expect(try await stored(row)?.notes == "Rye")
+        #expect(restoredEditing == nil && restoredFilter == nil)
+        await store.dismount()
         }
     }
 
     @Test func `details from a row ends editing and opens the sheet on the stored reminder`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
+        await store.send(.overview(.listTapped(personal)))?.value
         let groceriesRow0 = try await row(groceries.id)
-        await store.send(.reminderTapped(groceries.id)) { $0.editing = Reminder.Editing(groceriesRow0, session: UUID(0)) }?.value
-        await store.modify { $0[draft: groceries.id]?.title = "Groceries and more" } changes: { $0.editing?.draft.title = "Groceries and more" }?.value
+        await store.send(.listing(.reminderTapped(groceries.id)))?.value
+        await store.modify { $0.listing?.editing?.draft.title = "Groceries and more" }?.value
         var committed = groceriesRow0.reminder
         committed.title = "Groceries and more"
-        await store.send(.reminderDetailsButtonTapped(groceries.id)) {
-            $0.editing = nil
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: committed, original: committed)))
-        }?.value
-        await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
+        await store.send(.listing(.reminderDetailsButtonTapped(groceries.id)))?.value
+        #expect(await store.state.listing?.editing == nil)
+        #expect(await form(store)?.draft == committed)
+        #expect(await form(store)?.original == committed)
+        await store.send(.destination(.reminder(.cancelButtonTapped)))?.value
+        #expect(await store.state.destination == nil)
         let (haircut, doctor) = (sample.reminders[1], sample.reminders[2])
-        let haircutRow1 = try await row(haircut.id)
-        await store.send(.reminderTapped(haircut.id)) { $0.editing = Reminder.Editing(haircutRow1, session: UUID(1)) }?.value
-        let doctorRow2 = try await row(doctor.id)
-        await store.send(.reminderTapped(doctor.id)) { $0.editing = Reminder.Editing(doctorRow2, session: UUID(2)) }?.value
-        await store.send(.reminderTapped(doctor.id))?.value
+        await store.send(.listing(.reminderTapped(haircut.id)))?.value
+        let expected = Editor.State(try await row(haircut.id), session: UUID(1))
+        #expect(try await editing(store) == expected)
+        await store.send(.listing(.reminderTapped(doctor.id)))?.value
+        let doctorRow = Editor.State(try await row(doctor.id), session: UUID(2))
+        #expect(try await editing(store) == doctorRow)
+        await store.send(.listing(.reminderTapped(doctor.id)))?.value
         #expect(restoredEditing == doctor.id)
         await store.dismount()
+        }
     }
 
     @Test func `deleting the last list leaves a default one and closes its detail`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
         let ids = sample.lists.map(\.id)
-        await store.send(.listTapped(ids[0])) { $0.filter = .list(ids[0]) }?.value
-        await store.send(.listDeleted(ids[0])) { $0.filter = nil }?.value
-        await store.send(.listDeleted(ids[1]))?.value
-        await store.send(.listDeleted(ids[2]))?.value
-        try await until(store.state.$overview) { $0.lists.map(\.list.title) == ["Personal"] }
-        let overview = await store.state.overview
+        await store.send(.overview(.listTapped(ids[0])))?.value
+        await store.send(.listing(.listDeleteButtonTapped))?.value
+        #expect(await store.state.listing == nil)
+        await store.send(.overview(.listDeleted(ids[1])))?.value
+        await store.send(.overview(.listDeleted(ids[2])))?.value
+        try await until(store.state.overview.$summary) { $0.lists.map(\.list.title) == ["Personal"] }
+        let overview = await store.state.overview.summary
         #expect(overview.lists.first?.id == Models.List<Reminder>.ID(UUID(2)))
         #expect(overview.counts.all == 0)
         await store.dismount()
+        }
     }
 
     @Test func `the grace period between the tap and completed is five seconds`() {
-        #expect(Reminders.Feature.grace == .seconds(5))
+        #expect(Listing.grace == .seconds(5))
     }
 
     @Test func `an editing session starts saved and knows when the draft differs`() {
         let reminder = Reminder(id: groceries.id, list: personal, title: "Groceries", tags: ["car"], created: now)
-        var editing = Reminder.Editing(Reminders.Placement(reminder, position: 4), session: UUID())
+        var editing = Editor.State(Reminders.Placement(reminder, position: 4), session: UUID())
         #expect(editing.isSaved && editing.id == reminder.id && editing.place.reminder.tags == ["car"] && editing.place.position == 4)
         editing.draft.title = "Call back"
         #expect(!editing.isSaved && editing.original == reminder)
     }
 
     @Test func `the list form edits a list, Done is one save, and the reminder form's tag intents change every reminder`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        try await store.state.$overview.load()
+        try await store.state.overview.$summary.load()
         let family = sample.lists[1]
-        await store.send(.listDetailsButtonTapped(family.id)) {
-            $0.destination = .list(snap(Models.List<Reminder>.Form.Feature.State(draft: family, original: family)))
-        }?.value
+        await store.send(.overview(.listDetailsButtonTapped(family.id)))?.value
         await store.modify {
-            if case var .list(form) = $0.destination { form.draft.title = "Home"; $0.destination = .list(form) }
-        } changes: {
             if case var .list(form) = $0.destination { form.draft.title = "Home"; $0.destination = .list(form) }
         }?.value
         await store.modify {
-            if case var .list(form) = $0.destination { form.isSaving = true; $0.destination = .list(form) }
-        } changes: {
             if case var .list(form) = $0.destination { form.isSaving = true; $0.destination = .list(form) }
         }?.value
         await store.send(.destination(.list(.saveButtonTapped)))?.value
         #expect(try await database.read { db in try Models.List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Family")
         await store.modify {
             if case var .list(form) = $0.destination { form.isSaving = false; $0.destination = .list(form) }
-        } changes: {
-            if case var .list(form) = $0.destination { form.isSaving = false; $0.destination = .list(form) }
         }?.value
-        await store.send(.destination(.list(.saveButtonTapped))) { $0.destination = nil }?.value
+        await store.send(.destination(.list(.saveButtonTapped)))?.value
+        #expect(await store.state.destination == nil)
         #expect(try await database.read { db in try Models.List<Reminder>.Record.find(family.id).fetchOne(db)?.title } == "Home")
+        await store.send(.overview(.listTapped(personal)))?.value
         let groceriesRow = try await row(groceries.id)
-        await store.send(.reminderDetailsButtonTapped(groceries.id)) {
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: groceriesRow.reminder, original: groceriesRow.reminder)))
-        }?.value
-        await store.send(.destination(.reminder(.tagRenamed("someday", "later")))) {
-            if case var .reminder(form) = $0.destination {
-                form.draft.tags.remove("someday")
-                form.draft.tags.insert("later")
-                $0.destination = .reminder(form)
-            }
-        }?.value
-        await store.send(.destination(.reminder(.tagDeleted("optional")))) {
-            if case var .reminder(form) = $0.destination { form.draft.tags.remove("optional"); $0.destination = .reminder(form) }
-        }?.value
-        await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
+        await store.send(.listing(.reminderDetailsButtonTapped(groceries.id)))?.value
+        #expect(await form(store)?.draft == groceriesRow.reminder)
+        #expect(await form(store)?.original == groceriesRow.reminder)
+        await store.send(.destination(.reminder(.tagRenamed("someday", "later"))))?.value
+        #expect(await form(store)?.draft.tags.contains("later") == true)
+        #expect(await form(store)?.draft.tags.contains("someday") == false)
+        await store.send(.destination(.reminder(.tagDeleted("optional"))))?.value
+        #expect(await form(store)?.draft.tags.contains("optional") == false)
+        await store.send(.destination(.reminder(.cancelButtonTapped)))?.value
         #expect(try await database.read { db in try Reminders.Tagging.where { $0.tagID.eq(Tag<Reminder>("later")) }.fetchCount(db) } == 2)
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("optional") == false)
         await store.dismount()
+        }
     }
 
     @Test func `a tag intent that fails is the form's failure and leaves its draft and the tags alone`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await makeStore()
-            try await store.state.$overview.load()
-            await store.send(.tagTapped("car"))?.value
-            await store.send(.reminderDetailsButtonTapped(groceries.id))?.value
-            func form() async -> Reminder.Form.Feature.State? {
-                await store.state.destination.flatMap { if case let .reminder(form) = $0 { form } else { nil } }
-            }
-            try await block("INSERT", on: "tags", reason: "tags locked")
-            await store.send(.destination(.reminder(.tagAdded("garden"))))?.value
-            #expect(await form()?.failure?.contains("tags locked") == true)
-            #expect(await form()?.draft.tags == groceries.tags)
-            try await unblock()
-            try await block("DELETE", on: "tags", reason: "tags kept")
-            await store.send(.destination(.reminder(.tagDeleted("car"))))?.value
-            #expect(await form()?.failure?.contains("tags kept") == true)
-            #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 7)
-            #expect(await store.state.filter == .tags(["car"]))
-            try await unblock()
-            try await block("UPDATE", on: "tags", reason: "tags fixed")
-            await store.send(.destination(.reminder(.tagRenamed("car", "auto"))))?.value
-            #expect(await form()?.failure?.contains("tags fixed") == true)
-            #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("car"))
-            try await unblock()
-            #expect(await store.state.failure == nil)
-            await store.send(.destination(.reminder(.tagDeleted("car"))))?.value
-            #expect(await store.state.filter == nil)
-            #expect(await form()?.failure == nil)
-            await store.dismount()
+        let store = try await makeStore()
+        try await store.state.overview.$summary.load()
+        await store.send(.overview(.tagTapped("car")))?.value
+        await store.send(.listing(.reminderDetailsButtonTapped(groceries.id)))?.value
+        try await block("INSERT", on: "tags", reason: "tags locked")
+        await store.send(.destination(.reminder(.tagAdded("garden"))))?.value
+        #expect(await form(store)?.failure?.contains("tags locked") == true)
+        #expect(await form(store)?.draft.tags == groceries.tags)
+        try await unblock()
+        try await block("DELETE", on: "tags", reason: "tags kept")
+        await store.send(.destination(.reminder(.tagDeleted("car"))))?.value
+        #expect(await form(store)?.failure?.contains("tags kept") == true)
+        #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 7)
+        #expect(await store.state.listing?.filter == .tags(["car"]))
+        try await unblock()
+        try await block("UPDATE", on: "tags", reason: "tags fixed")
+        await store.send(.destination(.reminder(.tagRenamed("car", "auto"))))?.value
+        #expect(await form(store)?.failure?.contains("tags fixed") == true)
+        #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("car"))
+        try await unblock()
+        #expect(await store.state.failure == nil)
+        await store.send(.destination(.reminder(.tagDeleted("car"))))?.value
+        #expect(await store.state.listing == nil)
+        #expect(await form(store)?.failure == nil)
+        await store.dismount()
         }
     }
 
     @Test func `search tokens, the completed toggle, and clearing`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        await store.send(.searchTagTapped("car")) { $0.search.add(tag: "car") }?.value
-        await store.send(.searchCompletedButtonTapped) { $0.search.showCompleted = true }?.value
-        await store.send(.deleteCompletedButtonTapped(olderThanMonths: nil))?.value
+        try await store.state.overview.$summary.load()
+        await store.send(.search(.tagTapped("car")))?.value
+        #expect(await store.state.search.field.tokens == [.tag("car")])
+        await store.send(.search(.completedButtonTapped))?.value
+        await store.send(.search(.deleteCompletedButtonTapped(olderThanMonths: nil)))?.value
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 10)
-        await store.modify { $0.search.tokens = [] } changes: {
-            $0.search.tokens = []
-            $0.search.showCompleted = false
-        }?.value
-        await store.send(.tagTapped("car")) { $0.filter = .tags(["car"]) }?.value
-        await store.send(.tagDeleted("car")) { $0.filter = nil }?.value
+        await store.modify { $0.search.field.tokens = [] }?.value
+        #expect(await store.state.search.field.showCompleted == false)
+        await store.send(.overview(.tagTapped("car")))?.value
+        #expect(await store.state.listing?.filter == .tags(["car"]))
+        await store.send(.overview(.tagDeleted("car")))?.value
+        #expect(await store.state.listing == nil)
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchCount(db) } == 6)
         await store.dismount()
+        }
     }
 
     @Test func `a form with a blank title does not save, and a failed save keeps the draft`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        await store.send(.addListButtonTapped) {
-            $0.destination = .list(snap(Models.List<Reminder>.Form.Feature.State(draft: Models.List<Reminder>(id: Models.List<Reminder>.ID(UUID(0))), original: nil)))
-        }?.value
+        await store.send(.addListButtonTapped)?.value
         await store.send(.destination(.list(.saveButtonTapped)))?.value
         #expect(try await database.read { db in try Models.List<Reminder>.Record.all.fetchCount(db) } == 3)
-        await store.send(.destination(.list(.cancelButtonTapped))) { $0.destination = nil }?.value
-        try await until(store.state.$overview) { !$0.lists.isEmpty }
-        await store.send(.newReminderButtonTapped) { [personal, now] in
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: Reminder(id: Reminder.ID(UUID(1)), list: personal, created: now), original: nil)))
-        }?.value
+        await store.send(.destination(.list(.cancelButtonTapped)))?.value
+        try await until(store.state.overview.$summary) { !$0.lists.isEmpty }
+        await store.send(.newReminderButtonTapped)?.value
+        #expect(await form(store)?.draft == Reminder(id: Reminder.ID(UUID(1)), list: personal, created: now))
         await store.modify {
-            if case var .reminder(form) = $0.destination { form.draft.title = "Orphan"; $0.destination = .reminder(form) }
-        } changes: {
             if case var .reminder(form) = $0.destination { form.draft.title = "Orphan"; $0.destination = .reminder(form) }
         }?.value
         try await database.write { [personal] db in try Models.List<Reminder>.Record.find(personal).delete().execute(db) }
         await store.send(.destination(.reminder(.saveButtonTapped)))?.value
-        let failed = await store.state.destination.flatMap { if case let .reminder(form) = $0 { form } else { nil } }
+        let failed = await form(store)
         #expect(failed?.failure?.contains("FOREIGN KEY") == true)
         #expect(failed?.draft.title == "Orphan")
         #expect(failed?.isSaving == false)
         #expect(try await database.read { db in try Reminder.Record.where { $0.title.eq("Orphan") }.fetchCount(db) } == 0)
-        await store.send(.destination(.reminder(.cancelButtonTapped))) { $0.destination = nil }?.value
+        await store.send(.destination(.reminder(.cancelButtonTapped)))?.value
         let trash = sample.reminders[7]
-        let trashRow = try await row(trash.id)
-        await store.send(.reminderDetailsButtonTapped(trash.id)) {
-            $0.destination = .reminder(snap(Reminder.Form.Feature.State(draft: trashRow.reminder, original: trashRow.reminder)))
-        }?.value
+        await store.send(.overview(.listTapped(trash.list)))?.value
+        await store.send(.listing(.reminderDetailsButtonTapped(trash.id)))?.value
+        #expect(await form(store)?.draft.id == trash.id)
         try await database.write { db in try Reminder.Record.find(trash.id).delete().execute(db) }
-        await store.send(.destination(.reminder(.saveButtonTapped))) {
-            if case var .reminder(form) = $0.destination { form.failure = "This reminder was deleted."; $0.destination = .reminder(form) }
-        }?.value
+        await store.send(.destination(.reminder(.saveButtonTapped)))?.value
+        #expect(await form(store)?.failure == "This reminder was deleted.")
         #expect(try await stored(trash.id) == nil)
         await store.dismount()
         }
@@ -619,6 +659,7 @@ struct `Reminder feature` {
         $0.date = DateGenerator { tokyoDate.withLock { $0 } }
     })
     func `the day changes on the clock at midnight and on activation, by the feature's calendar`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let clock = Self.tokyoClock
         let tokyo = Self.tokyo
         let start = Date(timeIntervalSince1970: 1_234_567_890)
@@ -626,59 +667,64 @@ struct `Reminder feature` {
         let day = tokyo.day(containing: start)!
         #expect(day.lowerBound == tokyo.date(from: DateComponents(year: 2009, month: 2, day: 14)))
         let store = try await makeStore(clock: clock)
-        #expect(await store.state.today == day)
-        await store.send(.filterTapped(.today)) { $0.filter = .today }?.value
-        try await until(store.state.$detail) { $0?.rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"] }
+        #expect(await store.state.today == day.lowerBound)
+        await store.send(.overview(.filterTapped(.today)))?.value
+        try await until(try await page(store)) { $0?.rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"] }
         let untilMidnight = day.upperBound.timeIntervalSince(start)
         let next = try #require(tokyo.day(containing: day.upperBound))
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
         await clock.advance(by: .seconds(untilMidnight))
-        await store.expect { $0.today = next }
-        @Fetch(Reminders.Summary.Query(today: next)) var overview = Reminders.Summary()
+        await store.expect { $0.today = next.lowerBound }
+        #expect(await store.state.listing?.today == next.lowerBound)
+        #expect(await store.state.overview.today == next.lowerBound)
+        @Fetch(Reminders.Read.Today.Request(today: next.lowerBound)) var overview = Reminders.Summary()
         try await until($overview) { $0.counts.today == 0 }
-        try await until(store.state.$detail) { $0?.rows.isEmpty == true }
+        try await until(try await page(store)) { $0?.rows.isEmpty == true }
         let later = start.addingTimeInterval(2.days)
         Self.tokyoDate.withLock { $0 = later }
-        await store.send(.appActivated) { $0.today = tokyo.day(containing: later)! }
+        await store.send(.appActivated) { $0.today = tokyo.startOfDay(for: later) }
         await store.dismount()
+        }
     }
 
     @Test(.dependency(\.defaultDatabase, try DatabaseQueue()))
     func `a database that cannot be read is a failure, not a first run`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = try await withDependencies { $0.reminders = .sqlite($0.defaultDatabase) } operation: { try await makeStore() }
-            // The failure surfaces from the overview read that mounting starts.
-            for _ in 0..<100 where await store.state.failure == nil { try await Task.sleep(for: .milliseconds(20)) }
-            #expect(await store.state.failure?.contains("no such table") == true)
-            await store.dismount()
-        }
+        let store = try await withDependencies { $0.reminders = .sqlite($0.defaultDatabase) } operation: { try await makeStore() }
+        // The failure surfaces from the overview read that mounting starts.
+        for _ in 0..<100 where await store.state.failure == nil { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(await store.state.failure?.contains("no such table") == true)
+        await store.dismount()
         #expect(try await database.read { db in try db.tableExists("lists") } == false)
+        }
     }
 
     @Test(.dependencies { try $0.bootstrapDatabase() })
     func `the first run installs the default list`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
-        try await until(store.state.$overview) { $0.lists.map(\.list.title) == ["Personal"] && $0.counts.all == 0 }
+        try await until(store.state.overview.$summary) { $0.lists.map(\.list.title) == ["Personal"] && $0.counts.all == 0 }
         await store.dismount()
+        }
     }
 
     @Test func `a launch restores the open filter and the row being edited from app storage, and forgets a row that is gone`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
         @Shared(.appStorage(Reminders.Feature.filterKey)) var filter: Reminders.Filter.Key?
-        @Shared(.appStorage(Reminders.Feature.editingKey)) var editing: String?
+        @Shared(.appStorage(Listing.editingKey)) var editing: String?
         $filter.withLock { $0 = Reminders.Filter.Key(.list(personal)) }
         $editing.withLock { $0 = groceries.id.rawValue.uuidString }
         let groceriesRow = try await row(groceries.id)
-        let store = try await makeStore { [personal] in
-            $0.filter = .list(personal)
-            $0.editing = Reminder.Editing(groceriesRow, session: UUID(0))
-        }
+        let store = try await makeStore(restoring: .list(personal), editing: Editor.State(groceriesRow, session: UUID(0)))
+        #expect(try await self.editing(store) == Editor.State(groceriesRow, session: UUID(0)))
         await store.dismount()
         try await database.write { [id = groceries.id] db in try Reminder.Record.find(id).delete().execute(db) }
-        let revived = try await makeStore { [personal] in $0.filter = .list(personal) }
-        #expect(await revived.state.editing == nil)
+        let revived = try await makeStore(restoring: .list(personal))
+        #expect(await revived.state.listing?.editing == nil)
         #expect(await revived.state.failure == nil)
         #expect(restoredEditing == nil && restoredFilter == .list(personal))
         await revived.dismount()
+        }
     }
 }
 

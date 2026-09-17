@@ -1,3 +1,4 @@
+public import ComposableArchitecture2
 public import Models
 public import Reminder
 import Reminders
@@ -6,14 +7,12 @@ public import SwiftUI
 
 extension Models.List<Reminder>.Form {
     public struct SwiftUI {
-        @Binding private var draft: Models.List<Reminder>
-        private var form: Models.List<Reminder>.Form
+        @Bindable private var store: StoreOf<Models.List<Reminder>.Form.Feature>
         @FocusState private var nameFocused: Bool
         @State private var discardPresented = false
 
-        public init(draft: Binding<Models.List<Reminder>>, form: Models.List<Reminder>.Form) {
-            self._draft = draft
-            self.form = form
+        public init(store: StoreOf<Models.List<Reminder>.Form.Feature>) {
+            self.store = store
         }
     }
 }
@@ -32,13 +31,14 @@ extension Models.List<Reminder>.Form.SwiftUI: SwiftUI::View {
     }
 
     public var body: some SwiftUI::View {
+        let draft = store.draft
         let color = SwiftUI::Color(draft.color)
         SwiftUI::Form {
             Section {
                 VStack(spacing: 20) {
                     Models.List<Reminder>.Badge(color: color, size: 100)
                         .shadow(color: color.opacity(0.45), radius: 14, y: 6)
-                    TextField("List Name", text: $draft.title)
+                    TextField("List Name", text: $store.draft.title)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(color)
                         .multilineTextAlignment(.center)
@@ -60,7 +60,7 @@ extension Models.List<Reminder>.Form.SwiftUI: SwiftUI::View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
             }
-            if let failure = form.failure {
+            if let failure = store.failure {
                 Section { Text(failure).foregroundStyle(.red) } header: { Text("Not saved") }
             }
         }
@@ -69,26 +69,26 @@ extension Models.List<Reminder>.Form.SwiftUI: SwiftUI::View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel", systemImage: "xmark") {
-                    if form.isDirty { discardPresented = true } else { form.actions.cancel() }
+                    if store.isDirty { discardPresented = true } else { store.send(.cancelButtonTapped) }
                 }
-                .discardPrompt(discardTitle, isPresented: $discardPresented, discard: form.actions.cancel)
+                .discardPrompt(discardTitle, isPresented: $discardPresented) { store.send(.cancelButtonTapped) }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done", systemImage: "checkmark", action: form.actions.save)
+                Button("Done", systemImage: "checkmark") { store.send(.saveButtonTapped) }
                     .buttonStyle(.glassProminent)
                     .disabled(draft.isBlank)
             }
         }
-        .onAppear { nameFocused = form.isNew }
+        .onAppear { nameFocused = store.isNew }
     }
 
     public var discardTitle: String {
-        form.isNew ? "Are you sure you want to discard this new list?" : "Are you sure you want to discard your changes?"
+        store.isNew ? "Are you sure you want to discard this new list?" : "Are you sure you want to discard your changes?"
     }
 
     private func swatch(_ name: String, _ hex: Models.Color.Hex, selected: Bool) -> some SwiftUI::View {
         Button {
-            draft.color = Models.Color(hex)
+            store.send(.colorSelected(Models.Color(hex)))
         } label: {
             Circle()
                 .fill(SwiftUI::Color(Models.Color(hex)))

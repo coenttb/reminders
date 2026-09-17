@@ -4,7 +4,6 @@ public import Models
 public import Reminder
 public import Reminders
 import Reminders_Dependency
-import Reminders_SQLite
 import Foundation
 
 extension Models.List<Reminder>.Form {
@@ -34,6 +33,7 @@ extension Models.List<Reminder>.Form {
 
         public enum Action {
             case cancelButtonTapped
+            case colorSelected(Models.Color)
             case saveButtonTapped
         }
 
@@ -46,6 +46,8 @@ extension Models.List<Reminder>.Form {
                 switch action {
                 case .cancelButtonTapped:
                     break
+                case let .colorSelected(color):
+                    state.draft.color = color
                 case .saveButtonTapped:
                     guard !state.draft.isBlank, !state.isSaving else { break }
                     state.isSaving = true
@@ -55,7 +57,7 @@ extension Models.List<Reminder>.Form {
                             do {
                                 try isNew ? reminders.lists.create(draft) : reminders.lists.update(draft)
                                 try store.dismiss()
-                            } catch Reminders.SQLite.Error.notFound {
+                            } catch Reminders.Lists.Error.notFound {
                                 try store.modify { $0.fail("This list was deleted.") }
                             }
                         }

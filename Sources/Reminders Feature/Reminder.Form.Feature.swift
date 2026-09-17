@@ -4,9 +4,8 @@ public import Models
 public import Reminder
 public import Reminders
 import Reminders_Dependency
-import Reminders_SQLite
 import Standard_Library_Extensions
-import Tagged
+public import Tagged
 import Foundation
 
 extension Reminder.Form {
@@ -36,12 +35,18 @@ extension Reminder.Form {
 
         public enum Action {
             case cancelButtonTapped
+            case datePresetSelected(Reminder.Editor.Preset)
+            case flagToggled
+            case listSelected(Models.List<Reminder>.ID)
             case saveButtonTapped
             case tagAdded(String)
             case tagDeleted(Tag<Reminder>)
             case tagRenamed(Tag<Reminder>, String)
+            case tagToggled(Tag<Reminder>)
         }
 
+        @Dependency(\.calendar) var calendar
+        @Dependency(\.date.now) var now
         @Dependency(\.reminders) var reminders
 
         public init() {}
@@ -51,6 +56,12 @@ extension Reminder.Form {
                 switch action {
                 case .cancelButtonTapped:
                     break
+                case let .datePresetSelected(preset):
+                    state.draft.set(datePreset: preset, at: now, calendar: calendar)
+                case .flagToggled:
+                    state.draft.flagged.toggle()
+                case let .listSelected(list):
+                    state.draft.list = list
                 case .saveButtonTapped:
                     guard !state.draft.isBlank, !state.isSaving else { break }
                     state.isSaving = true
@@ -60,7 +71,7 @@ extension Reminder.Form {
                             do {
                                 _ = try isNew ? reminders.create(draft, below: nil) : reminders.update(draft)
                                 try store.dismiss()
-                            } catch Reminders.SQLite.Error.notFound {
+                            } catch Reminders.Update.Error.notFound {
                                 try store.modify { $0.fail("This reminder was deleted.") }
                             }
                         }
@@ -86,6 +97,8 @@ extension Reminder.Form {
                             try store.post(key: Reminders.Feature.TagDeleted.self, value: id)
                         }
                     }
+                case let .tagToggled(tag):
+                    state.draft.tags.toggle(tag)
                 case let .tagRenamed(id, title):
                     store.addTask {
                         try await attempt {
@@ -106,7 +119,7 @@ extension Reminder.Form.Feature {
     private func create(tag title: String) throws -> Tag<Reminder>? {
         do {
             return try reminders.tags.create(title)
-        } catch Reminders.SQLite.Error.blank {
+        } catch Reminders.Tags.Error.blank {
             return nil
         }
     }
@@ -114,7 +127,7 @@ extension Reminder.Form.Feature {
     private func rename(tag: Tag<Reminder>, to title: String) throws -> Tag<Reminder>? {
         do {
             return try reminders.tags.rename(tag, to: title)
-        } catch Reminders.SQLite.Error.blank, Reminders.SQLite.Error.notFound {
+        } catch Reminders.Tags.Error.blank, Reminders.Tags.Error.notFound {
             return nil
         }
     }

@@ -1,3 +1,6 @@
+public import ComposableArchitecture2
+import Dependencies
+public import Foundation
 public import Models
 public import Reminder
 import Reminders
@@ -8,26 +11,21 @@ import Tagged
 
 extension Reminder.Form {
     public struct SwiftUI {
-        @Binding private var draft: Reminder
+        @Bindable private var store: StoreOf<Reminder.Form.Feature>
         private var lists: [Models.List<Reminder>]
         private var available: [Tag<Reminder>]
-        private var form: Reminder.Form
+        @Dependency(\.date.now) private var now
+        @Dependency(\.calendar) private var calendar
         @State private var tagsPresented = false
         @State private var discardPresented = false
         @State private var expanded: Expansion?
         @FocusState private var titleFocused: Bool
         @FocusState private var notesFocused: Bool
 
-        public init(
-            draft: Binding<Reminder>,
-            lists: [Models.List<Reminder>],
-            available: [Tag<Reminder>],
-            form: Reminder.Form
-        ) {
-            self._draft = draft
+        public init(store: StoreOf<Reminder.Form.Feature>, lists: [Models.List<Reminder>], available: [Tag<Reminder>]) {
+            self.store = store
             self.lists = lists
             self.available = available
-            self.form = form
         }
 
         private enum Expansion { case date, time }
@@ -36,42 +34,42 @@ extension Reminder.Form {
 
 extension Reminder.Form.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
-        let (now, calendar) = (form.now, form.calendar)
+        let draft = store.draft
         SwiftUI::Form {
             Section {
-                TextField("Title", text: $draft.title, axis: .vertical)
+                TextField("Title", text: $store.draft.title, axis: .vertical)
                     .font(.title2)
                     .focused($titleFocused)
                     .listRowSeparator(.hidden)
-                TextField("Notes", text: $draft.notes, axis: .vertical)
+                TextField("Notes", text: $store.draft.notes, axis: .vertical)
                     .lineLimit(1...6)
                     .focused($notesFocused)
             }
             .listSectionMargins(.top, 6)
             Section("Date & Time") {
-                Toggle(isOn: $draft.dueOn(now, calendar: calendar).animation()) {
+                Toggle(isOn: $store.draft.dueOn(now, calendar: calendar).animation()) {
                     row("Date", systemImage: "calendar", subtitle: draft.due?.dayDescription(at: now, calendar: calendar)) {
                         if draft.due != nil { expanded = expanded == .date ? nil : .date }
                     }
                 }
                 if expanded == .date, let due = draft.due {
-                    DatePicker("Date", selection: $draft.date(or: due.date), displayedComponents: .date)
+                    DatePicker("Date", selection: $store.draft.date(or: due.date), displayedComponents: .date)
                         .datePickerStyle(.graphical)
                 }
-                Toggle(isOn: $draft.timeOn(now, calendar: calendar).animation()) {
+                Toggle(isOn: $store.draft.timeOn(now, calendar: calendar).animation()) {
                     row("Time", systemImage: "clock", subtitle: draft.due?.timeDescription(calendar: calendar)) {
                         if draft.due?.hasTime == true { expanded = expanded == .time ? nil : .time }
                     }
                 }
                 if expanded == .time, let due = draft.due, due.hasTime {
-                    DatePicker("Time", selection: $draft.date(or: due.date), displayedComponents: .hourAndMinute)
+                    DatePicker("Time", selection: $store.draft.date(or: due.date), displayedComponents: .hourAndMinute)
                         .datePickerStyle(.wheel)
                         .labelsHidden()
                 }
             }
             if draft.due != nil {
                 Section {
-                    Picker(selection: $draft.repeatFrequency(in: calendar)) {
+                    Picker(selection: $store.draft.repeatFrequency(in: calendar)) {
                         Text("Never").tag(Calendar.RecurrenceRule.Frequency?.none)
                         Divider()
                         ForEach(Reminder.repeatOptions, id: \.self) { Text($0.title).tag(Optional($0)) }
@@ -80,10 +78,10 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                     }
                 }
             }
-            if let failure = form.failure {
+            if let failure = store.failure {
                 Section { Text(failure).foregroundStyle(.red) } header: { Text("Not saved") }
             }
-            if form.isNew {
+            if store.isNew {
                 Section("More Options") { listPicker }
                 Section {
                     NavigationLink {
@@ -111,17 +109,17 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel", systemImage: "xmark") {
-                    if form.isDirty { discardPresented = true } else { form.actions.cancel() }
+                    if store.isDirty { discardPresented = true } else { store.send(.cancelButtonTapped) }
                 }
-                .discardPrompt(discardTitle, isPresented: $discardPresented, discard: form.actions.cancel)
+                .discardPrompt(discardTitle, isPresented: $discardPresented) { store.send(.cancelButtonTapped) }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done", systemImage: "checkmark", action: form.actions.save)
+                Button("Done", systemImage: "checkmark") { store.send(.saveButtonTapped) }
                     .buttonStyle(.glassProminent)
                     .disabled(draft.isBlank)
             }
         }
-        .onAppear { titleFocused = form.isNew }
+        .onAppear { titleFocused = store.isNew }
         .onChange(of: draft.due != nil) { _, on in
             expanded = on ? .date : nil
             titleFocused = false
@@ -133,24 +131,24 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     }
 
     private var quickBar: some SwiftUI::View {
-        let (now, calendar) = (form.now, form.calendar)
+        let draft = store.draft
         return HStack {
             Menu {
                 ForEach(Reminder.Editor.Preset.allCases, id: \.self) { preset in
                     let date = preset.date(at: now, calendar: calendar)
                     Button(preset.title, systemImage: "\(calendar.component(.day, from: date)).calendar") {
-                        draft.set(datePreset: preset, at: now, calendar: calendar)
+                        store.send(.datePresetSelected(preset))
                     }
                 }
                 Button("Custom", systemImage: "ellipsis") {
-                    if draft.due == nil { draft.set(datePreset: .today, at: now, calendar: calendar) }
+                    if draft.due == nil { store.send(.datePresetSelected(.today)) }
                     expanded = .date
                 }
             } label: {
                 Label("Date & Time", systemImage: "calendar.badge.clock")
             }
             Spacer()
-            Button("Flag", systemImage: draft.flagged ? "flag.fill" : "flag") { draft.flagged.toggle() }
+            Button("Flag", systemImage: draft.flagged ? "flag.fill" : "flag") { store.send(.flagToggled) }
                 .disabled(draft.isBlank)
             Spacer()
             Button("Photos", systemImage: "camera") {}
@@ -167,7 +165,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     }
 
     public var discardTitle: String {
-        form.isNew ? "Are you sure you want to discard this new reminder?" : "Are you sure you want to discard your changes?"
+        store.isNew ? "Are you sure you want to discard this new reminder?" : "Are you sure you want to discard your changes?"
     }
 
     private func row(_ title: String, systemImage: String, subtitle: String?, tap: @escaping () -> Void) -> some SwiftUI::View {
@@ -187,9 +185,10 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     }
 
     private var listPicker: some SwiftUI::View {
-        NavigationLink {
+        let draft = store.draft
+        return NavigationLink {
             SwiftUI::List(lists) { list in
-                Button { draft.list = list.id } label: {
+                Button { store.send(.listSelected(list.id)) } label: {
                     HStack(spacing: 16) {
                         Models.List<Reminder>.Badge(color: SwiftUI::Color(list.color))
                         Text(list.title).foregroundStyle(.primary)
@@ -222,7 +221,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     }
 
     private var priorityPicker: some SwiftUI::View {
-        Picker(selection: $draft.priority) {
+        Picker(selection: $store.draft.priority) {
             Text("None").tag(Reminder.Priority?.none)
             Divider()
             ForEach(Reminder.Priority.allCases.reversed(), id: \.self) { Text($0.title).tag(Optional($0)) }
@@ -232,7 +231,8 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     }
 
     private var tagsRow: some SwiftUI::View {
-        Button { tagsPresented = true } label: {
+        let draft = store.draft
+        return Button { tagsPresented = true } label: {
             LabeledContent {
                 HStack(spacing: 6) {
                     if !draft.tags.isEmpty {
@@ -247,13 +247,13 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
         .foregroundStyle(.primary)
         .popover(isPresented: $tagsPresented) {
             NavigationStack {
-                Tag<Reminder>.Picker.SwiftUI(selection: $draft.tags, tags: available, picker: Tag<Reminder>.Picker(actions: form.actions.tags))
+                Tag<Reminder>.Picker.SwiftUI(store: store, tags: available)
             }
         }
     }
 
     private var flagToggle: some SwiftUI::View {
-        Toggle(isOn: $draft.flagged) {
+        Toggle(isOn: $store.draft.flagged) {
             Label("Flag", systemImage: "flag").foregroundStyle(.primary, .secondary)
         }
     }

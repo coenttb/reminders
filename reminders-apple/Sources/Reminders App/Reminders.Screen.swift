@@ -1,6 +1,5 @@
 import SwiftUI_Extensions
 public import ComposableArchitecture2
-import Dependencies
 import Models
 import Reminder
 public import Reminders
@@ -16,8 +15,6 @@ import Tagged
 extension Reminders {
     public struct Screen {
         @Bindable private var store: StoreOf<Reminders.Feature>
-        @Dependency(\.date.now) private var now
-        @Dependency(\.calendar) private var calendar
         @Environment(\.scenePhase) private var scenePhase
         @State private var editMode: EditMode = .inactive
         #if DEBUG
@@ -37,52 +34,19 @@ extension Reminders.Screen: SwiftUI::View {
     public var body: some SwiftUI::View {
         NavigationStack {
             SwiftUI.List {
-                if store.search.isActive {
-                    Reminders.Search.View.SwiftUI(
-                        contents: store.results,
-                        view: Reminders.Search.View(
-                            showCompleted: store.search.showCompleted,
-                            window: store.resultsWindow,
-                            grace: store.gracing,
-                            now: now,
-                            calendar: calendar,
-                            actions: Reminders.Search.View.Actions(
-                                rows: .init(
-                                    complete: { store.send(.reminderCompleteButtonTapped($0)) },
-                                    delete: { store.send(.reminderDeleted($0)) },
-                                    details: { store.send(.reminderDetailsButtonTapped($0)) }
-                                ),
-                                addTag: { store.send(.searchTagTapped($0)) },
-                                toggleCompleted: { store.send(.searchCompletedButtonTapped) },
-                                endReached: { store.send(.resultsEndReached) },
-                                deleteCompleted: { store.send(.deleteCompletedButtonTapped(olderThanMonths: $0)) }
-                            )
-                        )
-                    )
+                if store.search.field.isActive {
+                    Reminders.Search.SwiftUI(store: store.scope(\.search), contents: store.results)
                 } else {
-                    Reminders.Overview.View.SwiftUI(
-                        contents: store.overview,
-                        view: Reminders.Overview.View(
-                            now: now,
-                            calendar: calendar,
-                            actions: Reminders.Overview.View.Actions(
-                                open: { store.send(.filterTapped($0)) },
-                                details: { store.send(.listDetailsButtonTapped($0)) },
-                                delete: { store.send(.listDeleted($0)) },
-                                move: { store.send(.listsMoved($0, $1)) },
-                                deleteTag: { store.send(.tagDeleted($0)) }
-                            )
-                        )
-                    )
+                    Reminders.Overview.SwiftUI(store: store.scope(\.overview))
                 }
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(store.search.isActive ? .hidden : .visible)
+            .scrollContentBackground(store.search.field.isActive ? .hidden : .visible)
             .background(SwiftUI.Color(.systemBackground))
             .environment(\.editMode, $editMode)
             .contentMargins(.bottom, 72, for: .scrollContent)
-            .animation(.default, value: store.overview)
-            .onSubmit(of: .search) { store.send(.searchSubmitted) }
+            .animation(.default, value: store.overview.summary)
+            .onSubmit(of: .search) { store.send(.search(.submitted)) }
             .toolbar {
                 #if DEBUG
                 ToolbarItem(placement: .topBarTrailing) {
@@ -110,11 +74,11 @@ extension Reminders.Screen: SwiftUI::View {
                 }
                 .visibilityPriority(.high)
             }
-            .navigationDestination(item: $store.filter) { filter in
-                Reminders.Filter.Screen(filter, store: store)
+            .navigationDestination(item: $store.scope(\.listing)) { listing in
+                Reminders.Filter.Screen(store: store, listing: listing)
             }
         }
-        .searchable(text: $store.search.text, tokens: $store.search.tokens) { token in
+        .searchable(text: $store.search.field.text, tokens: $store.search.field.tokens) { token in
             switch token {
             case let .near(text): Text(text)
             case let .tag(tag): Text(Tag<Reminder>.hashtag(tag))
@@ -123,30 +87,9 @@ extension Reminders.Screen: SwiftUI::View {
         .searchToolbarBehavior(.minimize)
         .observingDivision()
         .sheet(item: $store.scope(\.destination).reminder) { form in
-            @Bindable var form = form
             NavigationStack {
-                Reminder.Form.SwiftUI(
-                    draft: $form.draft,
-                    lists: store.overview.lists.map(\.list),
-                    available: store.overview.rankedTags,
-                    form: Reminder.Form(
-                        isNew: form.isNew,
-                        isDirty: form.isDirty,
-                        failure: form.failure,
-                        now: now,
-                        calendar: calendar,
-                        actions: Reminder.Form.Actions(
-                            save: { form.send(.saveButtonTapped) },
-                            cancel: { form.send(.cancelButtonTapped) },
-                            tags: Tag<Reminder>.Picker.Actions(
-                                add: { form.send(.tagAdded($0)) },
-                                rename: { form.send(.tagRenamed($0, $1)) },
-                                delete: { form.send(.tagDeleted($0)) }
-                            )
-                        )
-                    )
-                )
-                .navigationTitle(form.isNew ? "New Reminder" : "Details")
+                Reminder.Form.SwiftUI(store: form, lists: store.overview.summary.lists.map(\.list), available: store.overview.summary.rankedTags)
+                    .navigationTitle(form.isNew ? "New Reminder" : "Details")
             }
             .interactiveDismissDisabled(form.isDirty)
             .presentationDetents(form.isNew ? [.large] : [.fraction(0.715), .large])
@@ -154,18 +97,9 @@ extension Reminders.Screen: SwiftUI::View {
             .presentationBackground(SwiftUI.Color(.systemGroupedBackground))
         }
         .sheet(item: $store.scope(\.destination).list) { form in
-            @Bindable var form = form
             NavigationStack {
-                Models.List<Reminder>.Form.SwiftUI(
-                    draft: $form.draft,
-                    form: Models.List<Reminder>.Form(
-                        isNew: form.isNew,
-                        isDirty: form.isDirty,
-                        failure: form.failure,
-                        actions: Models.List<Reminder>.Form.Actions(save: { form.send(.saveButtonTapped) }, cancel: { form.send(.cancelButtonTapped) })
-                    )
-                )
-                .navigationTitle(form.isNew ? "New List" : "List Info")
+                Models.List<Reminder>.Form.SwiftUI(store: form)
+                    .navigationTitle(form.isNew ? "New List" : "List Info")
             }
             .interactiveDismissDisabled(form.isDirty)
             .presentationDetents([.large])

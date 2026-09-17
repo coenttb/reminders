@@ -26,10 +26,10 @@ struct `Reminder root` {
     @Test func `constructs from a store and reads the database through it`() async throws {
         let store = Store(initialState: Reminders.Feature.State()) { Reminders.Feature() }
         _ = Reminders.Screen(store: store)
-        store.send(.filterTapped(.today))
-        #expect(store.filter == .today)
-        try await store.state.$overview.load()
-        #expect(store.overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
+        store.send(.overview(.filterTapped(.today)))
+        #expect(store.listing?.filter == .today)
+        try await store.state.overview.$summary.load()
+        #expect(store.overview.summary.lists.map(\.list.title) == ["Personal", "Family", "Business"])
     }
 
     #if DEBUG
@@ -37,10 +37,10 @@ struct `Reminder root` {
         @Dependency(\.defaultDatabase) var database
         let store = Store(initialState: Reminders.Feature.State()) { Reminders.Feature() }
         let sample = Store(initialState: Reminders.Sample.Feature.State()) { Reminders.Sample.Feature(replaced: { store.send(.databaseReplaced) }) }
-        store.send(.filterTapped(.today))
+        store.send(.overview(.filterTapped(.today)))
         try await database.write { db in try Reminder.Record.delete().execute(db) }
         await sample.send(.seedButtonTapped)?.value
-        #expect(store.filter == nil)
+        #expect(store.listing?.filter == nil)
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
     }
     #endif

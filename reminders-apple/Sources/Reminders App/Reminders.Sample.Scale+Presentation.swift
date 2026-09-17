@@ -1,8 +1,9 @@
-public import Reminders
-public import Reminders_Sample
+#if DEBUG
+import Reminders
+import Reminders_Sample
 
 extension Reminders.Sample.Scale {
-    public var title: String {
+    var title: String {
         let count = reminders >= 1_000 ? "\(reminders / 1_000)k" : "\(reminders)"
         switch self {
         case .medium: return "Medium (\(count))"
@@ -12,3 +13,4 @@ extension Reminders.Sample.Scale {
         }
     }
 }
+#endif

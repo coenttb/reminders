@@ -16,7 +16,7 @@ extension Reminders {
         @Sendable func read<T>(_ body: (Database) throws -> T) throws -> T { try database.read(body) }
         @Sendable func write<T>(_ body: (Database) throws -> T) throws -> T { try database.write(body) }
         @Sendable func placement(_ id: Reminder.ID, in db: Database) throws -> Placement {
-            guard let row = try Reminder.Record.find(id).rows().fetchOne(db) else { throw SQLite.Error.notFound }
+            guard let row = try Reminder.Record.find(id).rows().fetchOne(db) else { throw Read.Error.notFound }
             return Placement(row)
         }
         return Self(
@@ -46,7 +46,7 @@ extension Reminders {
             update: .init(
                 { request in
                     try write { db in
-                        guard try Reminder.Record.save(Reminder.Record.Draft(request.reminder), tags: request.reminder.tags, isNew: false, in: db) != nil else { throw SQLite.Error.notFound }
+                        guard try Reminder.Record.save(Reminder.Record.Draft(request.reminder), tags: request.reminder.tags, isNew: false, in: db) != nil else { throw Update.Error.notFound }
                         try Reminder.Record.complete(request.reminder.id, request.reminder.completed).execute(db)
                         return try placement(request.reminder.id, in: db)
                     }
@@ -88,7 +88,7 @@ extension Reminders {
                 },
                 update: { request in
                     try write { db in
-                        guard try Models.List<Reminder>.Record.find(request.list.id).fetchCount(db) > 0 else { throw SQLite.Error.notFound }
+                        guard try Models.List<Reminder>.Record.find(request.list.id).fetchCount(db) > 0 else { throw Lists.Error.notFound }
                         try Models.List<Reminder>.Record.save(Models.List<Reminder>.Record.Draft(Models.List<Reminder>.Record(request.list))).execute(db)
                     }
                 },
@@ -102,14 +102,14 @@ extension Reminders {
             tags: .init(
                 create: { request in
                     try write { db in
-                        guard let tag = try Tag<Reminder>.Record.add(request.title, in: db) else { throw SQLite.Error.blank }
+                        guard let tag = try Tag<Reminder>.Record.add(request.title, in: db) else { throw Tags.Error.blank }
                         return tag
                     }
                 },
                 rename: { request in
                     try write { db in
-                        guard !request.title.isEmpty else { throw SQLite.Error.blank }
-                        guard let tag = try Tag<Reminder>.Record.rename(request.tag, to: request.title, in: db) else { throw SQLite.Error.notFound }
+                        guard !request.title.isEmpty else { throw Tags.Error.blank }
+                        guard let tag = try Tag<Reminder>.Record.rename(request.tag, to: request.title, in: db) else { throw Tags.Error.notFound }
                         return tag
                     }
                 },

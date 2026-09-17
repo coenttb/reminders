@@ -3,7 +3,9 @@ import ComposableArchitecture2
 import Reminders
 import Reminders_Sample
 import Reminders_View
+import Standard_Library_Extensions
 import SwiftUI
+import Standard_Library_Extensions
 
 extension Reminders.Sample {
     struct Menu {
@@ -44,7 +46,7 @@ extension Reminders.Sample.Menu: SwiftUI::View {
             }
         }
         .disabled(store.isSeeding)
-        .alert("The sample was not written", isPresented: Binding(get: { store.failure != nil }, set: { if !$0 { store.send(.failureDismissed) } })) {
+        .alert("The sample was not written", isPresented: $store.failure.isPresent) {
             Button("OK") {}
         } message: {
             Text(store.failure ?? "")

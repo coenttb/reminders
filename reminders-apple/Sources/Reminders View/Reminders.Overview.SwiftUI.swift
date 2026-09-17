@@ -1,3 +1,5 @@
+public import ComposableArchitecture2
+import Dependencies
 import Models
 import Reminder
 public import Reminders
@@ -5,23 +7,24 @@ public import Reminders_Feature
 public import SwiftUI
 import Tagged
 
-extension Reminders.Overview.View {
+extension Reminders.Overview {
     public struct SwiftUI {
-        private var contents: Reminders.Summary
-        private var view: Reminders.Overview.View
+        private var store: StoreOf<Reminders.Overview.Feature>
+        @Dependency(\.date.now) private var now
+        @Dependency(\.calendar) private var calendar
         @Environment(\.editMode) private var editMode
 
-        public init(contents: Reminders.Summary, view: Reminders.Overview.View) {
-            self.contents = contents
-            self.view = view
+        public init(store: StoreOf<Reminders.Overview.Feature>) {
+            self.store = store
         }
     }
 }
 
-extension Reminders.Overview.View.SwiftUI: SwiftUI::View {
+extension Reminders.Overview.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
+        let contents = store.summary
         let counts = contents.counts
-        let day = view.calendar.component(.day, from: view.now)
+        let day = calendar.component(.day, from: now)
         Section {
             if editMode?.wrappedValue.isEditing == true {
                 ForEach(Reminders.Filter.Style.smart(flagged: counts.flagged > 0), id: \.self) { filter in
@@ -34,10 +37,9 @@ extension Reminders.Overview.View.SwiftUI: SwiftUI::View {
             } else {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                     ForEach(Reminders.Filter.Style.smart(flagged: counts.flagged > 0), id: \.self) { filter in
-                        Reminders.Filter.Tile.SwiftUI(
-                            tile: Reminders.Filter.Tile(filter: filter, count: counts[filter], open: view.actions.open),
-                            style: Reminders.Filter.Style(filter, list: nil, day: day)
-                        )
+                        Reminders.Filter.Tile.SwiftUI(filter: filter, count: counts[filter], style: Reminders.Filter.Style(filter, list: nil, day: day)) {
+                            store.send(.filterTapped(filter))
+                        }
                     }
                 }
                 .buttonStyle(.plain)
@@ -48,21 +50,20 @@ extension Reminders.Overview.View.SwiftUI: SwiftUI::View {
         .listSectionMargins(.top, 0)
         Section {
             ForEach(contents.lists) { entry in
-                Button { view.actions.open(.list(entry.id)) } label: {
+                Button { store.send(.listTapped(entry.id)) } label: {
                     Models.List<Reminder>.Row.SwiftUI(
                         list: entry.list,
-                        row: Models.List<Reminder>.Row(
-                            count: entry.count,
-                            actions: Models.List<Reminder>.Row.Actions(details: { view.actions.details(entry.id) }, delete: { view.actions.delete(entry.id) })
-                        )
+                        count: entry.count,
+                        details: { store.send(.listDetailsButtonTapped(entry.id)) },
+                        delete: { store.send(.listDeleted(entry.id)) }
                     )
                 }
                 .buttonStyle(.borderless)
                 .foregroundStyle(.primary)
             }
-            .onMove(perform: view.actions.move)
+            .onMove { store.send(.listsMoved($0, $1)) }
             .onDelete { offsets in
-                for offset in offsets { view.actions.delete(contents.lists[offset].id) }
+                for offset in offsets { store.send(.listDeleted(contents.lists[offset].id)) }
             }
         } header: {
             header("My Lists")
@@ -72,7 +73,8 @@ extension Reminders.Overview.View.SwiftUI: SwiftUI::View {
             Section {
                 Tag<Reminder>.Cloud.SwiftUI(
                     tags: usedTags,
-                    cloud: Tag<Reminder>.Cloud(actions: Tag<Reminder>.Cloud.Actions(open: { view.actions.open(.tags(Set($0))) }, delete: view.actions.deleteTag))
+                    open: { store.send(.filterTapped(.tags(Set($0)))) },
+                    delete: { store.send(.tagDeleted($0)) }
                 )
             } header: {
                 header("Tags")

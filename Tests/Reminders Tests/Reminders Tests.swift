@@ -104,4 +104,14 @@ import Testing
 
         #expect(tag == "home" && renamed == "house" && suggestions.isEmpty)
     }
+
+    @Test func `filters round-trip through their keys`() {
+        let id = Models.List<Reminder>.ID(UUID())
+        for filter in [Reminders.Filter.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b, c"]), .today] {
+            #expect(Reminders.Filter(key: Reminders.Filter.Key(filter)) == filter)
+        }
+        #expect(Reminders.Filter.Key(.tags(["b", "a"])) == Reminders.Filter.Key(.tags(["a", "b"])))
+        #expect(Reminders.Filter.Key(.list(id)).rawValue == "list_\(id.rawValue.uuidString)")
+        #expect(Reminders.Filter(key: Reminders.Filter.Key(rawValue: "list_not-a-uuid")) == nil)
+    }
 }
