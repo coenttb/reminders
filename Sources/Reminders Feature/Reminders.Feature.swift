@@ -36,7 +36,22 @@ extension Reminders {
                 let today = calendar.startOfDay(for: now)
                 var listing: Reminders.Listing.Feature.State?
                 var failure: String?
+                // A list or tags that are gone since take the app back to the front screen.
+                var known = false
                 if let filter = filterKey.flatMap(Reminders.Filter.init(key:)) {
+                    do {
+                        let summary = try reminders.read(today: now)
+                        known = switch filter {
+                        case let .list(id): summary.lists.contains { $0.id == id }
+                        case let .tags(tags): tags.allSatisfy { tag in summary.tags.contains { $0.tag == tag } }
+                        default: true
+                        }
+                    } catch {
+                        failure = error.localizedDescription
+                    }
+                }
+                if !known { $filterKey.withLock { $0 = nil } }
+                if known, let filter = filterKey.flatMap(Reminders.Filter.init(key:)) {
                     listing = Reminders.Listing.Feature.State(filter: filter, today: today)
                     if let stored = editingID.flatMap(UUID.init(uuidString:)) {
                         do {

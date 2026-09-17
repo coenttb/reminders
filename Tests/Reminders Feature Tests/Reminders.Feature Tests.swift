@@ -742,6 +742,21 @@ struct `Reminder feature` {
         #expect(await revived.state.failure == nil)
         #expect(restoredEditing == nil && restoredFilter == .list(personal))
         await revived.dismount()
+        // A list that is gone takes the launch back to the front screen and forgets the filter.
+        $filter.withLock { $0 = Reminders.Filter.Key(.list(Models.List<Reminder>.ID(UUID()))) }
+        let fronted = try await makeStore()
+        let front = await fronted.state
+        #expect(front.listing == nil && front.failure == nil)
+        #expect(restoredFilter == nil)
+        await fronted.dismount()
+        $filter.withLock { $0 = Reminders.Filter.Key(.tags(["someday", "nothing"])) }
+        let retagged = try await makeStore()
+        let untagged = await retagged.state.listing
+        #expect(untagged == nil && restoredFilter == nil)
+        await retagged.dismount()
+        $filter.withLock { $0 = Reminders.Filter.Key(.completed) }
+        let completed = try await makeStore(restoring: .completed)
+        await completed.dismount()
         }
     }
 }
