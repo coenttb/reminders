@@ -84,12 +84,26 @@ extension Reminders {
                 },
                 order: { request in
                     try await database.write { db in
+                        // A newly chosen ordering starts in its own direction, as the stock app does.
                         try Preference.Record.insert {
                             Preference.Record(key: Filter.Key(request.filter), ordering: request.ordering, showCompleted: request.filter == .completed)
                         } onConflict: {
                             $0.key
                         } doUpdate: { row, excluded in
                             row.ordering = excluded.ordering
+                            row.direction = excluded.direction
+                        }
+                        .execute(db)
+                    }
+                },
+                turn: { request in
+                    try await database.write { db in
+                        try Preference.Record.insert {
+                            Preference.Record(key: Filter.Key(request.filter), direction: request.direction, showCompleted: request.filter == .completed)
+                        } onConflict: {
+                            $0.key
+                        } doUpdate: { row, excluded in
+                            row.direction = excluded.direction
                         }
                         .execute(db)
                     }

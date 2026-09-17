@@ -23,6 +23,7 @@ extension Reminders: TestDependencyKey {
             update: .init(
                 unimplemented("\\.reminders.update"),
                 order: unimplemented("\\.reminders.update.order"),
+                turn: unimplemented("\\.reminders.update.turn"),
                 show: unimplemented("\\.reminders.update.show"),
                 reorder: unimplemented("\\.reminders.update.reorder")
             ),

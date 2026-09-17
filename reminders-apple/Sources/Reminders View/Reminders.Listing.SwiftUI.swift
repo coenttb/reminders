@@ -149,6 +149,18 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                                 }
                             }
                         }
+                        if preference.ordering != .manual {
+                            Divider()
+                            ForEach([SortOrder.forward, .reverse], id: \.self) { direction in
+                                Button { store.send(.directionSelected(direction)) } label: {
+                                    if direction == preference.direction {
+                                        Label(preference.ordering.title(direction) ?? "", systemImage: "checkmark")
+                                    } else {
+                                        Text(preference.ordering.title(direction) ?? "")
+                                    }
+                                }
+                            }
+                        }
                     } label: {
                         Text("Sort By")
                         Text(preference.ordering.title)

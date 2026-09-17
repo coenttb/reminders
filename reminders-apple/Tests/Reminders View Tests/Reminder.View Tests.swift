@@ -14,6 +14,8 @@ import Testing
 
     @Test func `the sort menu and the chips name the domain's values as the stock app does`() {
         #expect(Reminders.Ordering.allCases.map(\.title) == ["Manual", "Deadline", "Creation Date", "Priority", "Title"])
+        #expect(Reminders.Ordering.allCases.map { $0.title(.forward) } == [nil, "Earliest First", "Oldest First", "Highest First", "Ascending"])
+        #expect(Reminders.Ordering.allCases.map { $0.title(.reverse) } == [nil, "Latest First", "Newest First", "Lowest First", "Descending"])
         #expect(Reminder.Priority.allCases.map(\.title) == ["Low", "Medium", "High"])
         #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
         #expect(Reminder.repeatOptions.map(\.title) == ["Daily", "Weekly", "Monthly", "Yearly"])

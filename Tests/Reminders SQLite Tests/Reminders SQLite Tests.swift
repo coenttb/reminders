@@ -138,6 +138,11 @@ struct `Reminder SQLite storage` {
         try await reminders.update.order(personal, by: .creationDate)
         try await reminders.update.show(completed: false, in: personal)
         #expect(try self.detail(personal, database).reminders.map(\.title) == ["Groceries", "Haircut", "Doctor appointment", "Buy concert tickets"])
+        try await reminders.update.turn(personal, .reverse)
+        #expect(try preference(personal, database).direction == .reverse)
+        #expect(try self.detail(personal, database).reminders.map(\.title) == ["Buy concert tickets", "Doctor appointment", "Haircut", "Groceries"])
+        try await reminders.update.order(personal, by: .creationDate)
+        #expect(try preference(personal, database).direction == .forward)
         try await reminders.update.order(personal, by: .creationDate)
         try await reminders.update.show(completed: true, in: personal)
         detail = try self.detail(personal, database)
@@ -150,6 +155,27 @@ struct `Reminder SQLite storage` {
         #expect(try self.detail(.all, database).reminders.count == 8)
         #expect(try self.detail(.all, database).rows.map(\.list).contains(sample.lists[2].id))
         #expect(try self.detail(personal, database).reminders.first { $0.title == "Groceries" }?.tags == ["someday", "optional", "adulting"])
+    }
+
+    @Test func `a reversed direction turns the key around and keeps the rows without one last`() async throws {
+        let (database, reminders, sample) = try makeDatabase()
+        let personal = Reminders.Filter.list(sample.lists[0].id)
+        try await reminders.update.order(personal, by: .dueDate)
+        try await reminders.update.turn(personal, .reverse)
+        // Doctor and the tickets are due at the same instant; the tie keeps the manual order in both directions.
+        #expect(try detail(personal, database).reminders.map(\.title) == ["Doctor appointment", "Buy concert tickets", "Haircut", "Groceries"])
+        try await reminders.update.order(personal, by: .priority)
+        #expect(try detail(personal, database).reminders.map(\.title) == ["Doctor appointment", "Haircut", "Groceries", "Buy concert tickets"])
+        try await reminders.update.turn(personal, .reverse)
+        #expect(try detail(personal, database).reminders.map(\.title) == ["Doctor appointment", "Groceries", "Buy concert tickets", "Haircut"])
+        try await reminders.update.order(personal, by: .title)
+        try await reminders.update.turn(personal, .reverse)
+        #expect(try detail(personal, database).reminders.map(\.title) == ["Haircut", "Groceries", "Doctor appointment", "Buy concert tickets"])
+        try await reminders.update.order(personal, by: .manual)
+        try await reminders.update.turn(personal, .reverse)
+        #expect(try detail(personal, database).reminders.map(\.title) == ["Groceries", "Haircut", "Doctor appointment", "Buy concert tickets"])
+        try await reminders.update.show(completed: true, in: personal)
+        #expect(try detail(personal, database).reminders.map(\.title).last == "Take a walk")
     }
 
     @Test func `titles order case-insensitively and the row being edited keeps its place`() async throws {

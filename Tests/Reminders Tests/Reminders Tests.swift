@@ -34,6 +34,7 @@ import Testing
             update: .init(
                 { request in Reminders.Placement(request.reminder, position: 0) },
                 order: { _ in },
+                turn: { _ in },
                 show: { _ in },
                 reorder: { _ in }
             ),

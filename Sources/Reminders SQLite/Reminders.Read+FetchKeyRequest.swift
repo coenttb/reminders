@@ -61,7 +61,7 @@ extension Reminders.Read.Page.Request: FetchKeyRequest {
         let total = try shown.fetchCount(db)
         return Reminders.Page(
             rows: try shown
-                .order { $0.ordered(by: preference.ordering, showCompleted: preference.showCompleted, placing: including) }
+                .order { $0.ordered(by: preference, placing: including) }
                 .limit(limit ?? total)
                 .rows()
                 .fetchAll(db)
@@ -83,7 +83,7 @@ extension Reminders.Read.Search.Request: FetchKeyRequest {
         guard let pattern = Reminder.Record.Text.pattern(query.terms) else {
             let rows = try shown
                 .join(Models.List<Reminder>.Record.all) { $0.listID.eq($1.id) }
-                .order { reminders, lists in (lists.position, reminders.isCompleted, reminders.ordered(by: .dueDate, showCompleted: false)) }
+                .order { reminders, lists in (lists.position, reminders.isCompleted, reminders.ordered(by: Reminders.Preference(ordering: .dueDate, showCompleted: false))) }
                 .limit(limit ?? total)
                 .select { reminders, _ in Reminder.Record.Row.Columns(reminder: reminders, tags: reminders.tagTitles) }
                 .fetchAll(db)

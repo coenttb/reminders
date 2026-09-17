@@ -172,7 +172,11 @@ struct `Reminder chaos` {
         case 2 where !rows.isEmpty: return .send(.listing(.reminderCompleteButtonTapped(rows.randomElement(using: &random)!)), "complete row")
         case 3 where !rows.isEmpty: return .send(.listing(.reminderDeleted(rows.randomElement(using: &random)!)), "delete row")
         case 4 where !rows.isEmpty: return .send(.listing(.reminderDetailsButtonTapped(rows.randomElement(using: &random)!)), "details row")
-        case 5: return .send(.listing(.orderingSelected([Reminders.Ordering.manual, .dueDate, .title, .priority].randomElement(using: &random)!)), "ordering")
+        case 5:
+            if Bool.random(using: &random) {
+                return .send(.listing(.directionSelected(Bool.random(using: &random) ? .forward : .reverse)), "direction")
+            }
+            return .send(.listing(.orderingSelected(Reminders.Ordering.allCases.randomElement(using: &random)!)), "ordering")
         case 6: return .send(.listing(.showCompletedButtonTapped), "show completed")
         case 7 where rows.count > 1:
             let from = Int.random(in: 0..<rows.count, using: &random)

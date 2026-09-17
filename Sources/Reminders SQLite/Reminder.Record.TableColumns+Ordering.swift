@@ -14,7 +14,7 @@ extension Reminder.Record.TableColumns {
         return SQLQueryExpression("\(Case().when(id.eq(place.reminder.id), then: value).else(column))")
     }
 
-    public func ordered(by ordering: Reminders.Ordering, showCompleted: Bool, placing place: Reminders.Placement? = nil) -> SQLQueryExpression<Bool> {
+    public func ordered(by preference: Reminders.Preference, placing place: Reminders.Placement? = nil) -> SQLQueryExpression<Bool> {
         let dueDate = placed(dueDate, place?.reminder.due?.date, of: place)
         let position = placed(position, place?.position ?? 0, of: place)
         let priority = placed(priority, place?.reminder.priority, of: place)
@@ -22,13 +22,17 @@ extension Reminder.Record.TableColumns {
         let title = placed(title, place?.reminder.title ?? "", of: place)
         let created = placed(created, place?.reminder.created ?? .distantPast, of: place)
         let completed = placed(isCompleted, place?.reminder.completed ?? false, of: place)
-        var fragment: QueryFragment = showCompleted ? "\(completed), " : ""
-        switch ordering {
-        case .dueDate: fragment.append("\(dueDate.asc(nulls: .last)), \(position)")
-        case .creationDate: fragment.append("\(created), \(position)")
+        var fragment: QueryFragment = preference.showCompleted ? "\(completed), " : ""
+        // A reversed direction turns the key around; rows without a date or priority stay last either way.
+        let forward = preference.direction == .forward
+        switch preference.ordering {
+        case .dueDate: fragment.append("\(forward ? dueDate.asc(nulls: .last) : dueDate.desc(nulls: .last)), \(position)")
+        case .creationDate: fragment.append("\(forward ? created.asc() : created.desc()), \(position)")
         case .manual: fragment.append("\(position)")
-        case .priority: fragment.append("\(priority.desc(nulls: .last)), \(flagged.desc()), \(position)")
-        case .title: fragment.append("\(title.collate(Reminders.Schema.$localizedCaseInsensitive)), \(position)")
+        case .priority: fragment.append("\(forward ? priority.desc(nulls: .last) : priority.asc(nulls: .last)), \(forward ? flagged.desc() : flagged.asc()), \(position)")
+        case .title:
+            let title = title.collate(Reminders.Schema.$localizedCaseInsensitive)
+            fragment.append("\(forward ? title.asc() : title.desc()), \(position)")
         }
         return SQLQueryExpression(fragment)
     }

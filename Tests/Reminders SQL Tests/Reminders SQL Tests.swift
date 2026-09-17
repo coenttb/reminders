@@ -61,7 +61,8 @@ import Tagged
         let call = Reminder(Reminder.Record.Row(reminder: record, tags: []))
         let page = Reminders.Page(rows: [call])
         #expect(page.rows.map(\.id) == [record.id] && page.total == 0)
-        let stored = Reminders.Preference.Record(Reminders.Preference(ordering: .title, showCompleted: true), for: .today)
-        #expect(stored.key == Reminders.Filter.Key(.today) && Reminders.Preference(stored) == Reminders.Preference(ordering: .title, showCompleted: true))
+        let stored = Reminders.Preference.Record(Reminders.Preference(ordering: .title, direction: .reverse, showCompleted: true), for: .today)
+        #expect(stored.key == Reminders.Filter.Key(.today) && Reminders.Preference(stored) == Reminders.Preference(ordering: .title, direction: .reverse, showCompleted: true))
+        #expect(Reminders.Preference.Record(key: Reminders.Filter.Key(.today)).direction == .forward)
     }
 }

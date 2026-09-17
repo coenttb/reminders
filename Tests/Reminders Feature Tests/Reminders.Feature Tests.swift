@@ -140,6 +140,7 @@ struct `Reminder feature` {
         await store.send(.destination(.reminder(.saveButtonTapped)))?.value
         #expect(await store.state.destination == nil)
         await store.send(.listing(.orderingSelected(.title)))?.value
+        await store.send(.listing(.directionSelected(.reverse)))?.value
         await store.send(.listing(.showCompletedButtonTapped))?.value
         await store.dismount()
         let saved = try await database.read { db in try Reminder.Record.where { $0.title.eq("Water plants") }.rows().fetchOne(db) }
@@ -149,7 +150,7 @@ struct `Reminder feature` {
         #expect(adulting == 1)
         #expect(restoredFilter == .list(personal))
         let preference = try await database.read { [personal] db in try Reminders.Preference.Record.find(Reminders.Filter.Key(.list(personal))).fetchOne(db) }
-        #expect(preference?.ordering == .title && preference?.showCompleted == true)
+        #expect(preference?.ordering == .title && preference?.direction == .reverse && preference?.showCompleted == true)
         }
     }
 

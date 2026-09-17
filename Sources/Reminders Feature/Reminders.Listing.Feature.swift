@@ -62,6 +62,7 @@ extension Reminders.Listing {
         public enum Action {
             case backgroundTapped
             case clearCompletedButtonTapped
+            case directionSelected(SortOrder)
             case doneButtonTapped
             case editing(Reminder.Editor.Feature.Action)
             case endReached
@@ -118,6 +119,9 @@ extension Reminders.Listing {
                 case let .orderingSelected(ordering):
                     let filter = state.filter
                     perform { try await reminders.update.order(filter, by: ordering) }
+                case let .directionSelected(direction):
+                    let filter = state.filter
+                    perform { try await reminders.update.turn(filter, direction) }
                 case let .reminderCompleteButtonTapped(id):
                     completion.tapped(id, &state)
                 case let .reminderDeleted(id):

@@ -53,6 +53,7 @@ extension Reminders.Schema {
                 CREATE TABLE "preferences" (
                   "key" TEXT PRIMARY KEY NOT NULL,
                   "ordering" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT '',
+                  "direction" TEXT NOT NULL ON CONFLICT REPLACE DEFAULT 'forward' CHECK ("direction" IN ('forward', 'reverse')),
                   "showCompleted" INTEGER NOT NULL ON CONFLICT REPLACE DEFAULT 0
                 ) STRICT
                 """).execute(db)
