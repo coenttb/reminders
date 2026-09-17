@@ -47,13 +47,9 @@ let package = Package(
         .target(
             name: "Reminders",
             dependencies: [
-                .product(name: "CasePaths", package: "swift-case-paths"),
                 .product(name: "Interface Macro", package: "swift-interface"),
-                "Reminder",
-                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 "Models",
-                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
-                .product(name: "Tagged", package: "swift-tagged"),
+                "Reminder",
             ],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
@@ -146,9 +142,9 @@ let package = Package(
         .testTarget(
             name: "Reminders Tests",
             dependencies: [
+                "Models",
                 "Reminder",
                 "Reminders",
-                "Models",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),

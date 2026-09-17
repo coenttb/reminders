@@ -1,7 +1,6 @@
 public import Foundation
 public import Models
 public import Reminder
-public import Tagged
 
 extension Reminders {
     public struct Summary: Hashable, Sendable {

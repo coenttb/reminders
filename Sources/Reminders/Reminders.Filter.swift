@@ -1,6 +1,5 @@
 public import Models
 public import Reminder
-public import Tagged
 
 extension Reminders {
     public enum Filter: Hashable, Sendable {
