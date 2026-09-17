@@ -19,17 +19,17 @@ extension Reminders.Listing {
             public typealias Feature = Reminders.Listing.Feature
 
             public var filter: Reminders.Filter
-            public var today: Date?
+            public var today: Date
             public var window = Window<Reminders.Filter>(step: Feature.paging.step, margin: Feature.paging.margin)
             public var editing: Reminder.Editor.Feature.State?
             public var grace: [Reminder.ID: UUID] = [:]
 
-            @DebugSnapshotIgnored @Fetch public var page: Reminders.Page? = nil
+            @DebugSnapshotIgnored @Fetch public var page = Reminders.Page()
             @DebugSnapshotIgnored @Fetch public var preference = Reminders.Preference(ordering: .dueDate, showCompleted: false)
             // The row being edited survives a relaunch.
             @DebugSnapshotIgnored @Shared(.appStorage(Feature.editingKey)) public var editingID: String? = nil
 
-            public init(filter: Reminders.Filter, today: Date? = nil) {
+            public init(filter: Reminders.Filter, today: Date) {
                 self.filter = filter
                 self.today = today
             }
@@ -40,7 +40,7 @@ extension Reminders.Listing {
 
             public func isCompleted(_ id: Reminder.ID) -> Bool? {
                 if editing?.id == id { return editing?.original.completed }
-                return page?.rows.first { $0.id == id }?.completed
+                return page.rows.first { $0.id == id }?.completed
             }
 
             public mutating func finished(_ id: Reminder.ID, completed: Bool) {
@@ -105,8 +105,7 @@ extension Reminders.Listing {
                 case .editing:
                     break
                 case .endReached:
-                    guard let page = state.page else { break }
-                    state.window.widen(for: state.filter, shown: page.rows.count, total: page.total)
+                    state.window.widen(for: state.filter, shown: state.page.rows.count, total: state.page.total)
                 case .graceEnded:
                     completion.finishAll(&state)
                 case .listDeleteButtonTapped, .listInfoButtonTapped:
@@ -144,7 +143,7 @@ extension Reminders.Listing {
                     }
                 case let .remindersMoved(source, destination):
                     let filter = state.filter
-                    var ids = state.page?.rows.map(\.id) ?? []
+                    var ids = state.page.rows.map(\.id)
                     ids.move(offsets: source, to: destination)
                     perform { try reminders.update.reorder(ids, in: filter) }
                 case .showCompletedButtonTapped:
@@ -165,17 +164,18 @@ extension Reminders.Listing {
                 }
             }
             .onChange(
-                of: Reminders.Fetching(
-                    store.today.map { today in
-                        Reminders.Read.Page.Request(page: store.filter, today: today, including: store.editing?.place, limit: store.window.limit(for: store.filter))
-                    }
-                ),
+                of: Reminders.Read.Page.Request(page: store.filter, today: store.today, including: store.editing?.place, limit: store.window.limit(for: store.filter)),
                 initial: true
             ) { _, request, state in
                 let page = state.$page
                 store.addTask {
                     try await store.attempt { try await page.load(request) }
                 }
+            }
+            // Leaving writes the draft and what is still in grace.
+            .onDismount {
+                try commit(store.editing)
+                try completion.finish(store.grace.keys)
             }
         }
     }
@@ -275,12 +275,8 @@ extension Reminders.Listing.Feature {
         }
     }
 
-    private func commit(_ editing: Reminder.Editor.Feature.State?) throws {
-        try Self.commit(editing, reminders)
-    }
-
     // A draft is written whole when its session ends; a blank row is dropped; a row that is gone stays gone.
-    static func commit(_ editing: Reminder.Editor.Feature.State?, _ reminders: Reminders) throws {
+    private func commit(_ editing: Reminder.Editor.Feature.State?) throws {
         guard let editing else { return }
         if editing.draft.isBlank {
             try reminders.delete(editing.id)

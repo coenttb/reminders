@@ -49,21 +49,12 @@ extension Reminders.Completion {
         }
     }
 
+    // Leaving writes what is still in grace, on the spot.
+    func finish(_ ids: some Sequence<Reminder.ID>) throws {
+        for id in ids { try complete(id, true) }
+    }
+
     func retrieve(_ id: Reminder.ID) throws -> Reminders.Placement? {
-        try Reminders.Grace.retrieve(id, reminders)
-    }
-
-    private func complete(_ id: Reminder.ID, _ completed: Bool) throws {
-        try Reminders.Grace.complete(id, completed, reminders)
-    }
-}
-
-extension Reminders {
-    enum Grace {}
-}
-
-extension Reminders.Grace {
-    static func retrieve(_ id: Reminder.ID, _ reminders: Reminders) throws -> Reminders.Placement? {
         do {
             return try reminders.read(id)
         } catch Reminders.Read.Error.notFound {
@@ -71,14 +62,9 @@ extension Reminders.Grace {
         }
     }
 
-    static func complete(_ id: Reminder.ID, _ completed: Bool, _ reminders: Reminders) throws {
-        guard var reminder = try retrieve(id, reminders)?.reminder, reminder.completed != completed else { return }
+    private func complete(_ id: Reminder.ID, _ completed: Bool) throws {
+        guard var reminder = try retrieve(id)?.reminder, reminder.completed != completed else { return }
         reminder.completed = completed
         _ = try reminders.update(reminder)
-    }
-
-    // Leaving writes what is still in grace, on the spot.
-    static func finish(_ ids: some Sequence<Reminder.ID>, _ reminders: Reminders) throws {
-        for id in ids { try complete(id, true, reminders) }
     }
 }

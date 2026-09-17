@@ -48,19 +48,13 @@ struct `Reminder feature` {
         restoring filter: Reminders.Filter? = nil,
         editing: Editor.State? = nil
     ) async throws -> TestStoreActor<Reminders.Feature> {
+        // The initial state restores app storage, as a launch does.
         let store = await withDependencies { $0.continuousClock = clock } operation: {
-            await TestStoreActor(initialState: Reminders.Feature.State()) { Reminders.Feature() } changes: { [today] in
-                $0.today = today
-                $0.overview.today = today
-                $0.search.today = today
-            }
+            await TestStoreActor(initialState: Reminders.Feature.State()) { Reminders.Feature() }
         }
         if let filter {
-            await store.expect { [today] in
-                var listing = snap(Listing.State(filter: filter, today: today))
-                listing.editing = editing.map(snap)
-                $0.listing = listing
-            }
+            let listing = await store.state.listing
+            #expect(listing?.filter == filter && listing?.editing == editing)
         }
         return store
     }
@@ -110,7 +104,7 @@ struct `Reminder feature` {
         }
     }
 
-    func page(_ store: TestStoreActor<Reminders.Feature>) async throws -> Fetch<Reminders.Page?> {
+    func page(_ store: TestStoreActor<Reminders.Feature>) async throws -> Fetch<Reminders.Page> {
         try #require(await store.state.listing?.$page)
     }
 
@@ -166,10 +160,10 @@ struct `Reminder feature` {
         #expect(await store.state.overview.summary.lists.map(\.list.title) == ["Personal", "Family", "Business"])
         #expect(await store.state.overview.summary.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         await store.send(.overview(.listTapped(personal)))?.value
-        #expect(await store.state.listing?.page?.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
+        #expect(await store.state.listing?.page.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
         try await until(store.state.overview.$summary) { $0.counts.all == 7 }
-        try await until(try await page(store)) { $0?.rows.count == 3 }
+        try await until(try await page(store)) { $0.rows.count == 3 }
         #expect(await store.state.overview.summary.lists.first?.count == 3)
         await store.dismount()
         }
@@ -185,7 +179,7 @@ struct `Reminder feature` {
         #expect(await store.state.listing?.window == Window(key: .list(personal), rows: nil, step: Listing.paging.step, margin: Listing.paging.margin))
         #expect(editing.isSaved && editing.draft.isBlank && editing.draft.list == personal && editing.place.position == 11 && editing.session == UUID(0))
         #expect(try await stored(first)?.isBlank == true)
-        try await until(try await page(store)) { $0?.rows.map(\.id).contains(first) == true }
+        try await until(try await page(store)) { $0.rows.map(\.id).contains(first) == true }
         await store.modify { $0.listing?.editing?.draft.title = "Milk" }?.value
         #expect(try await stored(first)?.title == "")
         #expect(await store.state.listing?.editing?.isSaved == false)
@@ -194,7 +188,7 @@ struct `Reminder feature` {
         let second = next.id
         #expect(second != first && next.session == UUID(2) && next.draft.isBlank && next.isSaved)
         #expect(next.place.reminder.title == "Milk" && next.place.reminder.id == second && next.place.position == 12)
-        try await until(try await page(store)) { $0?.rows.map(\.id).suffix(2) == [first, second] }
+        try await until(try await page(store)) { $0.rows.map(\.id).suffix(2) == [first, second] }
         #expect(try await stored(first)?.title == "Milk")
         await store.send(.listing(.doneButtonTapped))?.value
         #expect(await store.state.listing?.editing == nil)
@@ -210,11 +204,12 @@ struct `Reminder feature` {
         await store.send(.overview(.listTapped(personal)))?.value
         await store.send(.listing(.newReminderButtonTapped))?.value
         let row = try await editing(store).id
-        await store.dismount()
         #expect(restoredEditing == row)
+        // A relaunch is a new store over the same app storage; the first process is gone without a dismount.
         let revived = try await makeStore(restoring: .list(personal), editing: Editor.State(try await self.row(row), session: UUID(2)))
         let editing = try await editing(revived)
         #expect(editing.id == row && editing.draft.isBlank && editing.isSaved && editing.session == UUID(2))
+        await store.dismount()
         await revived.modify { $0.listing = nil }?.value
         #expect(restoredEditing == nil)
         await revived.send(.overview(.filterTapped(.today)))?.value
@@ -235,19 +230,19 @@ struct `Reminder feature` {
         #expect(open > step && open < 2 * step)
         let store = try await makeStore()
         await store.send(.overview(.filterTapped(.all)))?.value
-        try await until(try await page(store)) { $0?.rows.count == step }
-        #expect(await store.state.listing?.page?.total == open)
+        try await until(try await page(store)) { $0.rows.count == step }
+        #expect(await store.state.listing?.page.total == open)
         await store.send(.listing(.endReached))?.value
         #expect(await store.state.listing?.window == Window(key: .all, rows: 2 * step, step: step, margin: Listing.paging.margin))
-        try await until(try await page(store)) { $0?.rows.count == open }
+        try await until(try await page(store)) { $0.rows.count == open }
         await store.send(.listing(.endReached))?.value
         await store.send(.overview(.listTapped(list)))?.value
-        try await until(try await page(store)) { $0?.rows.count == step }
+        try await until(try await page(store)) { $0.rows.count == step }
         await store.send(.listing(.newReminderButtonTapped))?.value
         let editing = try await editing(store)
         #expect(await store.state.listing?.window == Window(key: .list(list), rows: nil, step: Listing.paging.step, margin: Listing.paging.margin))
         #expect(editing.place.position == 700 && editing.draft.list == list)
-        try await until(try await page(store)) { $0?.rows.count == open + 1 && $0?.rows.map(\.id).last == editing.id }
+        try await until(try await page(store)) { $0.rows.count == open + 1 && $0.rows.map(\.id).last == editing.id }
         await store.send(.listing(.doneButtonTapped))?.value
         #expect(await store.state.listing?.editing == nil)
         await store.dismount()
@@ -260,7 +255,7 @@ struct `Reminder feature` {
         await store.send(.overview(.listTapped(personal)))?.value
         await store.dismount()
         let revived = try await makeStore(restoring: .list(personal))
-        try await until(try await page(revived)) { $0?.rows.count == 4 }
+        try await until(try await page(revived)) { $0.rows.count == 4 }
         await revived.dismount()
         }
     }
@@ -411,9 +406,9 @@ struct `Reminder feature` {
         let store = try await makeStore(clock: clock)
         let walk = sample.reminders[3]
         await store.send(.overview(.listTapped(personal)))?.value
-        try await until(try await page(store)) { $0?.rows.isEmpty == false }
+        try await until(try await page(store)) { $0.rows.isEmpty == false }
         await store.send(.listing(.showCompletedButtonTapped))?.value
-        try await until(try await page(store)) { $0?.rows.map(\.id).contains(walk.id) == true }
+        try await until(try await page(store)) { $0.rows.map(\.id).contains(walk.id) == true }
         await store.send(.listing(.reminderCompleteButtonTapped(walk.id)))?.value
         #expect(try await stored(walk.id)?.completed == false)
         await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))
@@ -669,7 +664,7 @@ struct `Reminder feature` {
         let store = try await makeStore(clock: clock)
         #expect(await store.state.today == day.lowerBound)
         await store.send(.overview(.filterTapped(.today)))?.value
-        try await until(try await page(store)) { $0?.rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"] }
+        try await until(try await page(store)) { $0.rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"] }
         let untilMidnight = day.upperBound.timeIntervalSince(start)
         let next = try #require(tokyo.day(containing: day.upperBound))
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
@@ -679,7 +674,7 @@ struct `Reminder feature` {
         #expect(await store.state.overview.today == next.lowerBound)
         @Fetch(Reminders.Read.Today.Request(today: next.lowerBound)) var overview = Reminders.Summary()
         try await until($overview) { $0.counts.today == 0 }
-        try await until(try await page(store)) { $0?.rows.isEmpty == true }
+        try await until(try await page(store)) { $0.rows.isEmpty == true }
         let later = start.addingTimeInterval(2.days)
         Self.tokyoDate.withLock { $0 = later }
         await store.send(.appActivated) { $0.today = tokyo.startOfDay(for: later) }

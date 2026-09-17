@@ -31,7 +31,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
     @ViewBuilder public var body: some SwiftUI::View {
         let style = Reminders.Filter.Style(store.filter, list: list, day: calendar.component(.day, from: now))
         let (title, tint) = (style.title ?? "", style.tint)
-        let contents = store.page ?? Reminders.Page()
+        let contents = store.page
         let preference = store.preference
         let editing = store.editing?.id
         let actions = Reminder.Row.Actions(
@@ -188,7 +188,7 @@ extension Reminders.Listing.SwiftUI {
     }
 
     private func focusEditing(_ proxy: ScrollViewProxy) {
-        guard let editing = store.editing?.id, focus != .title(editing), focus != .notes(editing), (store.page?.rows.map(\.id) ?? []).contains(editing) else { return }
+        guard let editing = store.editing?.id, focus != .title(editing), focus != .notes(editing), store.page.rows.map(\.id).contains(editing) else { return }
         Task { @MainActor in
             withAnimation { proxy.scrollTo(editing, anchor: .center) }
             for _ in 0..<3 {

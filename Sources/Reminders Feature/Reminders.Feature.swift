@@ -15,17 +15,45 @@ extension Reminders {
         public struct State: Sendable {
             public typealias Feature = Reminders.Feature
 
-            public var overview = Reminders.Overview.Feature.State()
-            public var search = Reminders.Search.Feature.State()
+            public var overview: Reminders.Overview.Feature.State
+            public var search: Reminders.Search.Feature.State
             public var listing: Reminders.Listing.Feature.State?
             public var destination: Destination.State?
-            public var today: Date?
+            public var today: Date
             public var failure: String?
 
             @DebugSnapshotIgnored @Shared(.appStorage(Feature.filterKey)) public var filterKey: Reminders.Filter.Key? = nil
             @DebugSnapshotIgnored @Shared(.appStorage(Reminders.Listing.Feature.editingKey)) public var editingID: String? = nil
 
-            public init() {}
+            // The initial state is the restored one: the open filter and the row being edited come back from app storage.
+            public init() {
+                @Dependency(\.calendar) var calendar
+                @Dependency(\.date.now) var now
+                @Dependency(\.reminders) var reminders
+                @Dependency(\.uuid) var uuid
+                @Shared(.appStorage(Feature.filterKey)) var filterKey: Reminders.Filter.Key?
+                @Shared(.appStorage(Reminders.Listing.Feature.editingKey)) var editingID: String?
+                let today = calendar.startOfDay(for: now)
+                var listing: Reminders.Listing.Feature.State?
+                var failure: String?
+                if let filter = filterKey.flatMap(Reminders.Filter.init(key:)) {
+                    listing = Reminders.Listing.Feature.State(filter: filter, today: today)
+                    if let stored = editingID.flatMap(UUID.init(uuidString:)) {
+                        do {
+                            listing?.editing = Reminder.Editor.Feature.State(try reminders.read(Reminder.ID(stored)), session: uuid())
+                        } catch Reminders.Read.Error.notFound {
+                        } catch {
+                            failure = error.localizedDescription
+                        }
+                    }
+                    $editingID.withLock { $0 = listing?.editing?.id.rawValue.uuidString }
+                }
+                self.today = today
+                self.overview = Reminders.Overview.Feature.State(today: today)
+                self.search = Reminders.Search.Feature.State(today: today)
+                self.listing = listing
+                self.failure = failure
+            }
 
             public var results: Reminders.Search.Contents {
                 Reminders.Search.Contents(search.matches, lists: overview.summary.lists, suggestions: search.suggestions)
@@ -99,24 +127,6 @@ extension Reminders {
                 ComposableArchitecture2.Scope(\.overview) { Reminders.Overview.Feature() }
                 ComposableArchitecture2.Scope(\.search) { Reminders.Search.Feature() }
             }
-            // The restored listing is set once mounted: a child created inside the mount never starts its reads.
-            .onMount { state in
-                state.today = calendar.startOfDay(for: now)
-                guard let filter = state.filterKey.flatMap(Reminders.Filter.init(key:)) else { return }
-                var listing = Reminders.Listing.Feature.State(filter: filter, today: state.today)
-                if let stored = state.editingID.flatMap(UUID.init(uuidString:)) {
-                    do {
-                        listing.editing = Reminder.Editor.Feature.State(try reminders.read(Reminder.ID(stored)), session: uuid())
-                    } catch Reminders.Read.Error.notFound {
-                    } catch {
-                        state.failure = error.localizedDescription
-                    }
-                }
-                state.$editingID.withLock { $0 = listing.editing?.id.rawValue.uuidString }
-                store.addTask {
-                    try store.modify { $0.listing = listing }
-                }
-            }
             .ifLet(\.listing) {
                 Reminders.Listing.Feature()
             }
@@ -141,7 +151,7 @@ extension Reminders {
                 state.overview.today = today
                 state.search.today = today
                 state.listing?.today = today
-                guard let today, let day = calendar.day(containing: today) else { return }
+                guard let day = calendar.day(containing: today) else { return }
                 store.addTask {
                     try await clock.sleep(for: .seconds(max(day.upperBound.timeIntervalSince(now), 0)))
                     try store.modify { $0.today = calendar.startOfDay(for: now) }
@@ -150,24 +160,6 @@ extension Reminders {
             .onChange(of: store.listing?.filter) { _, filter, state in
                 state.$filterKey.withLock { $0 = filter.map(Reminders.Filter.Key.init) }
                 if filter == nil { state.$editingID.withLock { $0 = nil } }
-            }
-            // A popped listing writes its draft and what was still in grace on the way out.
-            .onChange(of: store.listing?.editing) { previous, _, state in
-                guard state.listing == nil, let previous else { return }
-                store.addTask {
-                    try await store.attempt { try Reminders.Listing.Feature.commit(previous, reminders) }
-                }
-            }
-            .onChange(of: store.listing?.grace) { previous, _, state in
-                guard state.listing == nil, let previous, !previous.isEmpty else { return }
-                store.addTask {
-                    try await store.attempt { try Reminders.Grace.finish(previous.keys, reminders) }
-                }
-            }
-            // The row being edited is left for the relaunch; what is in grace is written.
-            .onDismount {
-                try Reminders.Grace.finish((store.listing?.grace.keys).map(Array.init) ?? [], reminders)
-                try Reminders.Grace.finish(store.search.grace.keys, reminders)
             }
         }
     }

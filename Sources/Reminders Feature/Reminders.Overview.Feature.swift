@@ -16,10 +16,10 @@ extension Reminders.Overview {
         public struct State: Sendable {
             public typealias Feature = Reminders.Overview.Feature
 
-            public var today: Date?
+            public var today: Date
             @DebugSnapshotIgnored @Fetch public var summary = Reminders.Summary()
 
-            public init(today: Date? = nil) {
+            public init(today: Date) {
                 self.today = today
             }
         }
@@ -58,8 +58,7 @@ extension Reminders.Overview {
                     }
                 }
             }
-            .onChange(of: store.today.map { Reminders.Read.Today.Request(today: $0) }, initial: true) { _, request, state in
-                guard let request else { return }
+            .onChange(of: Reminders.Read.Today.Request(today: store.today), initial: true) { _, request, state in
                 let summary = state.$summary
                 store.addTask {
                     try await store.attempt { try await summary.load(request) }

@@ -18,14 +18,14 @@ extension Reminders.Search {
             public typealias Feature = Reminders.Search.Feature
 
             public var field = Reminders.Search.Field()
-            public var today: Date?
+            public var today: Date
             public var window = Window<Reminders.Query>(step: Reminders.Listing.Feature.paging.step, margin: Reminders.Listing.Feature.paging.margin)
             public var grace: [Reminder.ID: UUID] = [:]
 
             @DebugSnapshotIgnored @Fetch public var matches: Reminders.Page? = nil
             @DebugSnapshotIgnored @Fetch public var suggestions: [Tag<Reminder>] = []
 
-            public init(today: Date? = nil) {
+            public init(today: Date) {
                 self.today = today
             }
 
@@ -96,10 +96,8 @@ extension Reminders.Search {
             .onChange(
                 of: Searching(
                     fetching: Reminders.Fetching(
-                        store.today.flatMap { today in
-                            store.field.effective.map { query in
-                                Reminders.Read.Search.Request(search: query, today: today, limit: store.window.limit(for: store.field.query))
-                            }
+                        store.field.effective.map { query in
+                            Reminders.Read.Search.Request(search: query, today: store.today, limit: store.window.limit(for: store.field.query))
                         }
                     ),
                     committed: store.field.query,
@@ -123,6 +121,10 @@ extension Reminders.Search {
             }
             .onChange(of: store.field.isActive) { _, active, state in
                 if !active { state.field.showCompleted = false }
+            }
+            // Leaving writes what is still in grace.
+            .onDismount {
+                try completion.finish(store.grace.keys)
             }
         }
     }
