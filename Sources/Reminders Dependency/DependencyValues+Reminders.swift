@@ -44,6 +44,8 @@ extension Reminders: TestDependencyKey {
 // swift-dependencies requires Sendable values; the interfaces themselves carry no
 // Sendable requirement, so the boundary is asserted here, not in Reminders.
 extension Reminders: @unchecked Sendable {}
+extension Reminders.Delete: @unchecked Sendable {}
+extension Reminders.Filters: @unchecked Sendable {}
+extension Reminders.Search: @unchecked Sendable {}
 extension Reminders.Lists: @unchecked Sendable {}
 extension Reminders.Tags: @unchecked Sendable {}
-extension Reminders.Preferences: @unchecked Sendable {}
