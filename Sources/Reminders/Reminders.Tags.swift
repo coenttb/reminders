@@ -4,12 +4,12 @@ public import Reminder
 
 extension Reminders {
     @Interface
-    public struct Tags: Tags.`Protocol` {
-        public protocol `Protocol` {
+    public struct Tags: Tags.Interface {
+        public protocol Interface {
             func create(_ title: String) throws -> Tag<Reminder>
-            func update(_ request: Update.Request) throws -> Tag<Reminder>
+            func update(_ tag: Tag<Reminder>, title: String) throws -> Tag<Reminder>
             func delete(_ tag: Tag<Reminder>) throws
-            func list(_ request: List.Request) throws -> [Tag<Reminder>]
+            func list(prefix: String, excluding: Set<Tag<Reminder>>) throws -> [Tag<Reminder>]
         }
     }
 }

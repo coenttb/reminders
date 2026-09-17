@@ -33,9 +33,9 @@ extension Reminders {
                 margin: Feature.paging.margin
             )
 
-            @DebugSnapshotIgnored @Fetch public var detail: Reminders.List.Result? = nil
-            @DebugSnapshotIgnored @Fetch public var overview = Reminders.Overview.Result()
-            @DebugSnapshotIgnored @Fetch public var matches: Reminders.List.Result? = nil
+            @DebugSnapshotIgnored @Fetch public var detail: Reminders.Page? = nil
+            @DebugSnapshotIgnored @Fetch public var overview = Reminders.Summary()
+            @DebugSnapshotIgnored @Fetch public var matches: Reminders.Page? = nil
             @DebugSnapshotIgnored @Fetch public var suggestions: [Tag<Reminder>] = []
             public var grace: [Reminder.ID: UUID] = [:]
 
@@ -163,7 +163,7 @@ extension Reminders {
                     }
                 case let .orderingSelected(ordering):
                     guard let filter = state.filter else { break }
-                    perform { try reminders.preferences.update(.init(filter: filter, change: .ordering(ordering))) }
+                    perform { try reminders.preferences.update(filter, change: .ordering(ordering)) }
                 case let .reminderCompleteButtonTapped(id):
                     if state.grace.removeValue(forKey: id) != nil { break }
                     if state.isCompleted(id) == true {
@@ -217,7 +217,7 @@ extension Reminders {
                     guard let filter = state.filter else { break }
                     var ids = state.detail?.rows.map(\.id) ?? []
                     ids.move(offsets: source, to: destination)
-                    perform { try reminders.reorder(.init(ids: ids, in: filter)) }
+                    perform { try reminders.reorder(ids, in: filter) }
                 case .resultsEndReached:
                     guard let matches = state.matches else { break }
                     state.resultsWindow.widen(for: state.search.query, shown: matches.rows.count, total: matches.total)
@@ -232,7 +232,7 @@ extension Reminders {
                     state.editing = nil
                 case .showCompletedButtonTapped:
                     guard let filter = state.filter else { break }
-                    perform { try reminders.preferences.update(.init(filter: filter, change: .toggleShowCompleted)) }
+                    perform { try reminders.preferences.update(filter, change: .toggleShowCompleted) }
                 case let .tagDeleted(id):
                     store.addTask {
                         try await attempt {
@@ -271,7 +271,7 @@ extension Reminders {
                 guard let today else { return }
                 let overview = state.$overview
                 store.addTask {
-                    try await attempt { try await overview.load(Reminders.Overview.Request(today: today)) }
+                    try await attempt { try await overview.load(Reminders.Summary.Query(today: today)) }
                     try await clock.sleep(for: .seconds(max(today.upperBound.timeIntervalSince(now), 0)))
                     try store.modify { $0.today = calendar.day(containing: now) }
                 }
@@ -287,8 +287,8 @@ extension Reminders {
                 of: store.today.map { today in
                     Fetching(
                         store.filter.map { filter in
-                            Reminders.List.Request(
-                                selection: .filter(filter),
+                            Reminders.Page.Query(
+                                .filter(filter),
                                 today: today,
                                 including: store.editing?.place,
                                 limit: store.detailWindow.limit(for: filter)
@@ -309,7 +309,7 @@ extension Reminders {
                     Searching(
                         fetching: Fetching(
                             store.search.selection.map { selection in
-                                Reminders.List.Request(selection: selection, today: today, limit: store.resultsWindow.limit(for: store.search.query))
+                                Reminders.Page.Query(selection, today: today, including: nil, limit: store.resultsWindow.limit(for: store.search.query))
                             }
                         ),
                         committed: store.search.query,
@@ -411,7 +411,7 @@ extension Reminders.Feature {
             try await attempt(editing: previous?.session) {
                 try commit(previous)
                 let session = uuid()
-                let placement = try reminders.create(.init(Reminder(id: Reminder.ID(uuid()), list: list, created: now)))
+                let placement = try reminders.create(Reminder(id: Reminder.ID(uuid()), list: list, created: now), below: nil)
                 try store.modify {
                     $0.endEditing(previous?.session)
                     $0.editing = Reminder.Editing(placement, session: session)
@@ -441,7 +441,7 @@ extension Reminders.Feature {
                     return
                 }
                 let session = uuid()
-                let started = try reminders.create(.init(Reminder(id: Reminder.ID(uuid()), list: anchor.reminder.list, created: now), below: anchor))
+                let started = try reminders.create(Reminder(id: Reminder.ID(uuid()), list: anchor.reminder.list, created: now), below: anchor)
                 var place = anchor.reminder
                 place.id = started.reminder.id
                 let next = Reminder.Editing(

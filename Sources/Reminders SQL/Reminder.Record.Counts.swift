@@ -19,7 +19,7 @@ extension Reminder.Record {
     }
 }
 
-extension Reminders.Overview.Counts {
+extension Reminders.Summary.Counts {
     public init(_ counts: Reminder.Record.Counts) {
         self.init(all: counts.all, flagged: counts.flagged, scheduled: counts.scheduled, today: counts.today)
     }

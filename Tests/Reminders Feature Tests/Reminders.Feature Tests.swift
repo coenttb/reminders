@@ -138,7 +138,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         try await store.state.$overview.load()
         #expect(await store.state.overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
-        #expect(await store.state.overview.counts == Reminders.Overview.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
+        #expect(await store.state.overview.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
         await store.send(.listTapped(personal)) { $0.filter = .list(personal) }?.value
         #expect(await store.state.detail?.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
@@ -634,7 +634,7 @@ struct `Reminder feature` {
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
         await clock.advance(by: .seconds(untilMidnight))
         await store.expect { $0.today = next }
-        @Fetch(Reminders.Overview.Request(today: next)) var overview = Reminders.Overview.Result()
+        @Fetch(Reminders.Summary.Query(today: next)) var overview = Reminders.Summary()
         try await until($overview) { $0.counts.today == 0 }
         try await until(store.state.$detail) { $0?.rows.isEmpty == true }
         let later = start.addingTimeInterval(2.days)

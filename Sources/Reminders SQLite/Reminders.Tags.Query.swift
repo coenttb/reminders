@@ -4,7 +4,23 @@ public import Reminders
 import Reminders_SQL
 public import SQLiteData
 
-extension Reminders.Tags.List.Request: FetchKeyRequest {
+extension Reminders.Tags {
+    public struct Query: FetchKeyRequest {
+        public var prefix: String
+        public var excluding: Set<Tag<Reminder>>
+
+        public init(prefix: String, excluding: Set<Tag<Reminder>> = []) {
+            self.prefix = prefix
+            self.excluding = excluding
+        }
+
+        public init(_ request: Reminders.Tags.List.Request) {
+            self.init(prefix: request.prefix, excluding: request.excluding)
+        }
+    }
+}
+
+extension Reminders.Tags.Query {
     public func fetch(_ db: Database) throws -> [Tag<Reminder>] {
         guard !prefix.isEmpty else { return [] }
         let taken = excluding.map(\.rawValue)

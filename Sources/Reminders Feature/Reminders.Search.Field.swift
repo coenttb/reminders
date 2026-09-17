@@ -3,6 +3,7 @@ import FoundationEssentials_Extensions
 public import Models
 public import Reminder
 public import Reminders
+public import Reminders_SQLite
 import Standard_Library_Extensions
 
 extension Reminders.Search {
@@ -50,8 +51,8 @@ extension Reminders.Search.Field {
         return .search(query)
     }
 
-    public var suggestions: Reminders.Tags.List.Request {
-        Reminders.Tags.List.Request(prefix: tagPrefix ?? "", excluding: tags)
+    public var suggestions: Reminders.Tags.Query {
+        Reminders.Tags.Query(prefix: tagPrefix ?? "", excluding: tags)
     }
 
     public mutating func commitText() {

@@ -1,4 +1,4 @@
-extension Reminders.Overview {
+extension Reminders.Summary {
     public struct Counts: Hashable, Sendable {
         public var all: Int
         public var flagged: Int
@@ -14,7 +14,7 @@ extension Reminders.Overview {
     }
 }
 
-extension Reminders.Overview.Counts {
+extension Reminders.Summary.Counts {
     public subscript(_ filter: Reminders.Filter) -> Int? {
         switch filter {
         case .all: all

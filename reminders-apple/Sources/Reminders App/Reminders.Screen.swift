@@ -47,7 +47,7 @@ extension Reminders.Screen: SwiftUI::View {
                             now: now,
                             calendar: calendar,
                             actions: Reminders.Search.View.Actions(
-                                rows: Reminder.Row.Actions(
+                                rows: .init(
                                     complete: { store.send(.reminderCompleteButtonTapped($0)) },
                                     delete: { store.send(.reminderDeleted($0)) },
                                     details: { store.send(.reminderDetailsButtonTapped($0)) }

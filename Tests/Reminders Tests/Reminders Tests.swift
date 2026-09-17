@@ -30,25 +30,25 @@ import Tagged
     func reminders() -> Reminders {
         Reminders(
             create: { request in Reminders.Placement(request.reminder, position: request.below.map { $0.position + 1 } ?? 0) },
-            retrieve: { id in Reminders.Placement(reminder, position: 0) },
-            update: { reminder in Reminders.Placement(reminder, position: 0) },
-            delete: { id in },
+            retrieve: { _ in Reminders.Placement(reminder, position: 0) },
+            update: { request in Reminders.Placement(request.reminder, position: 0) },
+            delete: { _ in },
             list: { request in .init(selection: request.selection, preference: .default(for: .all)) },
             reorder: { request in },
-            complete: { id in },
-            reopen: { id in },
+            complete: { _ in },
+            reopen: { _ in },
             deleteCompleted: { request in },
             overview: { request in .init() },
             lists: .init(
-                create: { list in },
-                update: { list in },
-                delete: { id, replacement in },
-                reorder: { ids in }
+                create: { _ in },
+                update: { _ in },
+                delete: { _ in },
+                reorder: { _ in }
             ),
             tags: .init(
-                create: { title in Tag(title) },
+                create: { request in Tag(request.title) },
                 update: { request in Tag(request.title) },
-                delete: { tag in },
+                delete: { _ in },
                 list: { request in [] }
             ),
             preferences: .init(
@@ -60,21 +60,21 @@ import Tagged
     @Test func `the root is the reminders resource`() throws {
         let reminders = reminders()
 
-        let created = try reminders.create(.init(reminder))
+        let created = try reminders.create(reminder, below: nil)
         let placement = try reminders.retrieve(reminder.id)
         let updated = try reminders.update(reminder)
         try reminders.delete(reminder.id)
 
-        let page = try reminders.list(.init(selection: .filter(.today), today: today))
-        let page2 = try reminders.list(.init(selection: .search(.init(terms: ["milk"])), today: today, including: nil, limit: 50))
-        let continued = try reminders.create(.init(reminder, below: placement))
-        try reminders.reorder(.init(ids: [reminder.id], in: .today))
+        let page = try reminders.list(.filter(.today), today: today, including: nil, limit: nil)
+        let page2 = try reminders.list(.search(.init(terms: ["milk"])), today: today, including: nil, limit: 50)
+        let continued = try reminders.create(reminder, below: placement)
+        try reminders.reorder([reminder.id], in: .today)
         try reminders.complete(reminder.id)
         try reminders.reopen(reminder.id)
         try reminders.deleteCompleted(.filter(.today, today: today))
         try reminders.deleteCompleted(.search(.init(terms: ["milk"]), dueBefore: now))
 
-        let overview = try reminders.overview(.init(today: today))
+        let overview = try reminders.overview(today: today)
 
         #expect(created.position == 0 && placement.position == 0 && updated.position == 0 && continued.position == 1)
         #expect(page.selection == .filter(.today) && page2.rows.isEmpty && overview.counts == .init())
@@ -90,12 +90,12 @@ import Tagged
         try reminders.lists.reorder([list])
 
         let tag = try reminders.tags.create("home")
-        let renamed = try reminders.tags.update(.init(tag: "home", title: "house"))
+        let renamed = try reminders.tags.update("home", title: "house")
         try reminders.tags.delete("house")
-        let suggestions = try reminders.tags.list(.init(prefix: "ho", excluding: ["home"]))
+        let suggestions = try reminders.tags.list(prefix: "ho", excluding: ["home"])
 
-        try reminders.preferences.update(.init(filter: .today, change: .ordering(.title)))
-        try reminders.preferences.update(.init(filter: .today, change: .toggleShowCompleted))
+        try reminders.preferences.update(.today, change: .ordering(.title))
+        try reminders.preferences.update(.today, change: .toggleShowCompleted)
 
         #expect(tag == "home" && renamed == "house" && suggestions.isEmpty)
     }

@@ -3,9 +3,9 @@ public import Models
 
 extension Reminders {
     @Interface
-    public struct Preferences: Preferences.`Protocol` {
-        public protocol `Protocol` {
-            func update(_ request: Update.Request) throws
+    public struct Preferences: Preferences.Interface {
+        public protocol Interface {
+            func update(_ filter: Reminders.Filter, change: Reminders.Preference.Change) throws
         }
     }
 }

@@ -57,7 +57,7 @@ extension Reminder.Form {
                     store.addTask {
                         try await attempt {
                             do {
-                                _ = try isNew ? reminders.create(.init(draft)) : reminders.update(draft)
+                                _ = try isNew ? reminders.create(draft, below: nil) : reminders.update(draft)
                                 try store.dismiss()
                             } catch Reminders.Error.notFound {
                                 try store.modify { $0.fail("This reminder was deleted.") }
@@ -112,7 +112,7 @@ extension Reminder.Form.Feature {
 
     private func rename(tag: Tag<Reminder>, to title: String) throws -> Tag<Reminder>? {
         do {
-            return try reminders.tags.update(.init(tag: tag, title: title))
+            return try reminders.tags.update(tag, title: title)
         } catch Reminders.Error.blank, Reminders.Error.notFound {
             return nil
         }

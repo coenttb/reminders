@@ -1,3 +1,4 @@
+public import Foundation
 import Models
 import Reminder
 public import Reminders
@@ -5,9 +6,23 @@ import Reminders_SQL
 public import SQLiteData
 import Tagged
 
-extension Reminders.Overview.Request: FetchKeyRequest {
-    public func fetch(_ db: Database) throws -> Reminders.Overview.Result {
-        Reminders.Overview.Result(
+extension Reminders.Summary {
+    public struct Query: FetchKeyRequest {
+        public var today: Range<Date>
+
+        public init(today: Range<Date>) {
+            self.today = today
+        }
+
+        public init(_ request: Reminders.Overview.Request) {
+            self.init(today: request.today)
+        }
+    }
+}
+
+extension Reminders.Summary.Query {
+    public func fetch(_ db: Database) throws -> Reminders.Summary {
+        Reminders.Summary(
             lists: try Models.List<Reminder>.Record
                 .group(by: \.id)
                 .order(by: \.position)
@@ -15,7 +30,7 @@ extension Reminders.Overview.Request: FetchKeyRequest {
                 .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.eq(false))) }
                 .fetchAll(db)
                 .map(Models.List<Reminder>.Entry.init),
-            counts: Reminders.Overview.Counts(
+            counts: Reminders.Summary.Counts(
                 try Reminder.Record.select {
                     Reminder.Record.Counts.Columns(
                         all: $0.id.count(filter: !$0.isCompleted),
