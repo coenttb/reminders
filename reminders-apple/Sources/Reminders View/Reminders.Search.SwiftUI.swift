@@ -75,7 +75,7 @@ extension Reminders.Search.SwiftUI: SwiftUI::View {
         ForEach(Array(contents.sections.enumerated()), id: \.element.id) { position, section in
             Section {
                 ForEach(Array(section.rows.enumerated()), id: \.element.id) { offset, reminder in
-                    Reminder.Row.SwiftUI(reminder: reminder, completed: store.state.isShownCompleted(reminder), color: SwiftUI::Color(section.list.color), now: now, calendar: calendar, actions: actions)
+                    Reminder.Row.SwiftUI(reminder: reminder, highlight: contents.highlights[reminder.id], completed: store.state.isShownCompleted(reminder), color: SwiftUI::Color(section.list.color), now: now, calendar: calendar, actions: actions)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                         .listRowSeparator(.hidden)
                         .onAppear { if store.window.nearsEnd(starts[position] + offset, of: shown, total: total) { store.send(.endReached) } }

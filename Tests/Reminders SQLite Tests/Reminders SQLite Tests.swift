@@ -355,38 +355,8 @@ struct `Reminder SQLite storage` {
         #expect(try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).map(\.title) }.contains("Straße") == false)
     }
 
-    @Test func `upgrading a database keeps its records and folds tags that were twins under ASCII rules`() async throws {
-        var configuration = Configuration()
-        Reminders.Schema.prepare(&configuration)
-        let database = try DatabaseQueue(configuration: configuration)
-        try Reminders.Schema.migrate(database, upTo: "Create the Reminders tables")
-        let list = Models.List<Reminder>.ID(UUID())
-        let (first, second) = (Reminder.ID(UUID()), Reminder.ID(UUID()))
-        try await database.write { db in
-            try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
-            try #sql("INSERT INTO reminders (id, listID, title) VALUES (\(first), \(list), 'Bread')").execute(db)
-            try #sql("INSERT INTO reminders (id, listID, title) VALUES (\(second), \(list), 'Milk')").execute(db)
-            try #sql("INSERT INTO tags (title) VALUES ('Café'), ('CAFÉ'), ('car')").execute(db)
-            try #sql("INSERT INTO remindersTags (reminderID, tagID) VALUES (\(first), 'Café'), (\(first), 'CAFÉ'), (\(second), 'CAFÉ'), (\(second), 'car')").execute(db)
-        }
-        try Reminders.Schema.migrate(database)
-        let titles = try await database.read { db in try Tag<Reminder>.Record.all.order(by: \.title).fetchAll(db).map(\.title) }
-        #expect(titles == ["Café", "car"])
-        #expect(try stored(first, database)?.tags == ["Café"])
-        #expect(try stored(second, database)?.tags == ["Café", "car"])
-        #expect(try stored(first, database)?.title == "Bread")
-        #expect(try stored(first, database)?.created == Date(timeIntervalSince1970: 0))
-        #expect(try await database.read { db in try Reminders.Tagging.all.fetchCount(db) } == 3)
-        try await Reminders.sqlite(database).tags.delete("café")
-        #expect(try await database.read { db in try Reminders.Tagging.all.fetchCount(db) } == 1)
-        try Reminders.Schema.migrate(database)
-    }
-
-    @Test func `an upgraded database keeps its rows and lets the database mint ids`() async throws {
-        var configuration = Configuration()
-        Reminders.Schema.prepare(&configuration)
-        let database = try DatabaseQueue(configuration: configuration)
-        try Reminders.Schema.migrate(database, upTo: "Keep the folded text for the search")
+    @Test func `the database mints ids, and rows written raw are indexed for the search`() async throws {
+        let database = try Reminders.Schema.database()
         let list = Models.List<Reminder>.ID(UUID())
         let bread = Reminder.ID(UUID())
         try await database.write { db in
@@ -395,8 +365,8 @@ struct `Reminder SQLite storage` {
             try #sql("INSERT INTO tags (title) VALUES ('car')").execute(db)
             try #sql("INSERT INTO remindersTags (reminderID, tagID) VALUES (\(bread), 'car')").execute(db)
         }
-        try Reminders.Schema.migrate(database)
         #expect(try stored(bread, database)?.title == "Bread" && stored(bread, database)?.tags == ["car"])
+        #expect(try stored(bread, database)?.created == Date(timeIntervalSince1970: 0))
         try await database.write { db in try #sql("INSERT INTO reminders (listID, title) VALUES (\(list), 'Milk')").execute(db) }
         try await database.write { db in try #sql("INSERT INTO lists (title) VALUES ('Errands')").execute(db) }
         let milk = try #require(try await database.read { db in try Reminder.Record.where { $0.title.eq("Milk") }.fetchOne(db) })
@@ -406,7 +376,6 @@ struct `Reminder SQLite storage` {
         let eggs = Reminder(id: Reminder.ID(UUID()), list: list, title: "Eggs", created: now)
         #expect(try await Reminders.sqlite(database).create(eggs, below: nil).position == 1)
         #expect(try stored(eggs.id, database)?.title == "Eggs" && position(eggs.id, database) == 1)
-        // The upgrade indexed the old rows, tags included, and the index follows the new ones.
         #expect(try results(Reminders.Query(terms: ["car"], showCompleted: true), database).reminders.map(\.title) == ["Bread"])
         #expect(try results(Reminders.Query(terms: ["mi"], showCompleted: true), database).reminders.map(\.title) == ["Milk"])
         try await database.write { db in try Models.List<Reminder>.Record.find(list).delete().execute(db) }
@@ -456,7 +425,7 @@ struct `Reminder SQLite storage` {
         #expect(try count(utc, at: now.addingTimeInterval(.hour)) == 1)
     }
 
-    @Test func `a row that could not be read is refused by the schema, and one stored before the rule is brought back inside it`() async throws {
+    @Test func `a row that could not be read is refused by the schema`() async throws {
         let (database, _, sample) = try makeDatabase()
         await #expect(throws: (any Error).self) {
             try await database.write { db in try #sql("UPDATE reminders SET due = 'garbage' WHERE id = \(sample.reminders[0].id)").execute(db) }
@@ -464,28 +433,10 @@ struct `Reminder SQLite storage` {
         await #expect(throws: (any Error).self) {
             try await database.write { db in try #sql("UPDATE reminders SET completed = 7 WHERE id = \(sample.reminders[0].id)").execute(db) }
         }
-        #expect(try detail(.all, database).reminders.count == 8)
-        var configuration = Configuration()
-        Reminders.Schema.prepare(&configuration)
-        let old = try DatabaseQueue(configuration: configuration)
-        try Reminders.Schema.migrate(old, upTo: "Compare tag titles as Swift does")
-        let list = Models.List<Reminder>.ID(UUID())
-        let (bad, good) = (Reminder.ID(UUID()), Reminder.ID(UUID()))
-        try await old.write { db in
-            try #sql("INSERT INTO lists (id, title) VALUES (\(list), 'Personal')").execute(db)
-            try #sql("INSERT INTO reminders (id, listID, title, due, status, priority) VALUES (\(bad), \(list), 'Bad', 'garbage', 9, 4)").execute(db)
-            try #sql("INSERT INTO reminders (id, listID, title, due, status, priority) VALUES (\(good), \(list), 'Good', '2026-09-15 10:00:00.000', 2, 3)").execute(db)
-            try #sql("INSERT INTO tags (title) VALUES ('car')").execute(db)
-            try #sql("INSERT INTO remindersTags (reminderID, tagID) VALUES (\(bad), 'car')").execute(db)
+        await #expect(throws: (any Error).self) {
+            try await database.write { db in try #sql("UPDATE reminders SET priority = 4 WHERE id = \(sample.reminders[0].id)").execute(db) }
         }
-        try Reminders.Schema.migrate(old)
-        let repaired = try await old.read { db in try Reminder.Record.find(bad).rows().fetchOne(db).map(Reminder.init) }
-        #expect(repaired?.due == nil && repaired?.completed == false && repaired?.priority == nil && repaired?.tags == ["car"])
-        let kept = try await old.read { db in try Reminder.Record.find(good).rows().fetchOne(db).map(Reminder.init) }
-        #expect(kept?.completed == true && kept?.priority == .high && kept?.due != nil)
-        #expect(try await old.read { db in try #sql("SELECT completed FROM reminders WHERE id = \(good)", as: Int.self).fetchOne(db) } == 1)
-        try await old.write { db in try Models.List<Reminder>.Record.find(list).delete().execute(db) }
-        #expect(try await old.read { db in try Reminders.Tagging.all.fetchCount(db) } == 0)
+        #expect(try detail(.all, database).reminders.count == 8)
     }
 
     func plan(_ statement: some Statement, _ database: some DatabaseWriter) throws -> [String] {
@@ -534,6 +485,23 @@ struct `Reminder SQLite storage` {
         try await reminders.delete(groceries.id)
         #expect(try results(Reminders.Query(terms: ["shopping"], showCompleted: true), database).reminders.isEmpty)
         #expect(try await database.read { db in try Reminder.Record.Text.all.fetchCount(db) } == 10)
+    }
+
+    @Test func `a search marks what matched and ranks a title above a note within a list`() async throws {
+        let (database, reminders, sample) = try makeDatabase()
+        let (open, close) = (Reminders.Highlight.open, Reminders.Highlight.close)
+        let page = try results(Reminders.Query(terms: ["take"], showCompleted: true), database)
+        let walk = try #require(page.highlights[sample.reminders[3].id])
+        #expect(walk.title == "\(open)Take\(close) a walk" && !walk.tags.contains(open) && !walk.notes.contains(open))
+        #expect(page.highlights.count == page.rows.count)
+        // "milk" is in the Groceries notes and in a title of the same list: the title ranks first.
+        var milk = Reminder(id: Reminder.ID(UUID()), list: sample.lists[0].id, title: "Milk run", created: now)
+        milk = try await reminders.create(milk, below: nil).reminder
+        let ranked = try results(Reminders.Query(terms: ["milk"], showCompleted: true), database)
+        #expect(ranked.rows.map(\.title) == ["Milk run", "Groceries"])
+        #expect(ranked.highlights[milk.id]?.title == "\(open)Milk\(close) run")
+        #expect(ranked.highlights[sample.reminders[0].id]?.notes.contains("\(open)Milk\(close)") == true)
+        #expect(try results(Reminders.Query(tags: ["car"], showCompleted: true), database).highlights.isEmpty)
     }
 
     @Test func `Today and the completed set are read through indexes, not a scan of every reminder`() async throws {

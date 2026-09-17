@@ -9,12 +9,14 @@ extension Reminders.Search {
         public var total: Int
         public var completedCount: Int
         public var suggestions: [Tag<Reminder>]
+        public var highlights: [Reminder.ID: Reminders.Highlight]
 
-        public init(sections: [Section] = [], total: Int = 0, completedCount: Int = 0, suggestions: [Tag<Reminder>] = []) {
+        public init(sections: [Section] = [], total: Int = 0, completedCount: Int = 0, suggestions: [Tag<Reminder>] = [], highlights: [Reminder.ID: Reminders.Highlight] = [:]) {
             self.sections = sections
             self.total = total
             self.completedCount = completedCount
             self.suggestions = suggestions
+            self.highlights = highlights
         }
     }
 }
@@ -35,7 +37,7 @@ extension Reminders.Search.Contents {
     public var shown: Int { sections.reduce(0) { $0 + $1.rows.count } }
 
     public init(_ page: Reminders.Page?, lists: [Models.List<Reminder>.Entry], suggestions: [Tag<Reminder>]) {
-        self.init(total: page?.total ?? 0, completedCount: page?.completed ?? 0, suggestions: suggestions)
+        self.init(total: page?.total ?? 0, completedCount: page?.completed ?? 0, suggestions: suggestions, highlights: page?.highlights ?? [:])
         for row in page?.rows ?? [] {
             if sections.last?.id == row.list {
                 sections[sections.count - 1].rows.append(row)

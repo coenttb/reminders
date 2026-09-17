@@ -77,18 +77,43 @@ extension Reminders.Read.Search.Request: FetchKeyRequest {
         let matching = Reminder.Record.where { $0.matches(query) }
         let shown = matching.where { if !query.showCompleted { !$0.isCompleted } }
         let total = try shown.fetchCount(db)
-        return Reminders.Page(
-            rows: try shown
+        let completed = try matching.where { $0.isCompleted }.fetchCount(db)
+        // With terms the results come from the index itself: ranked within their list and with the
+        // matched text marked. Without, they are the rows carrying the tags, by due date.
+        guard let pattern = Reminder.Record.Text.pattern(query.terms) else {
+            let rows = try shown
                 .join(Models.List<Reminder>.Record.all) { $0.listID.eq($1.id) }
-                .order { reminders, lists in
-                    (lists.position, reminders.isCompleted, reminders.ordered(by: .dueDate, showCompleted: false))
-                }
+                .order { reminders, lists in (lists.position, reminders.isCompleted, reminders.ordered(by: .dueDate, showCompleted: false)) }
                 .limit(limit ?? total)
                 .select { reminders, _ in Reminder.Record.Row.Columns(reminder: reminders, tags: reminders.tagTitles) }
                 .fetchAll(db)
-                .map(Reminder.init),
+            return Reminders.Page(rows: rows.map(Reminder.init), total: total, completed: completed)
+        }
+        let (open, close) = (Reminders.Highlight.open, Reminders.Highlight.close)
+        let matched = Reminder.Record.Text.where { $0.match(pattern) }
+        let joined = matched
+            .join(shown) { $0.rowid.eq($1.rowid) }
+            .join(Models.List<Reminder>.Record.all) { $1.listID.eq($2.id) }
+        let ranked = joined.order { texts, reminders, lists in
+            (lists.position, reminders.isCompleted, texts.bm25([\.title: 3, \.tags: 2, \.notes: 1]))
+        }
+        let hits = try ranked
+            .limit(limit ?? total)
+            .select { texts, reminders, _ in
+                Reminder.Record.Hit.Columns(
+                    reminder: reminders,
+                    tags: reminders.tagTitles,
+                    title: texts.title.highlight(open, close),
+                    notes: texts.notes.snippet(open, close, "…", 12),
+                    tagLine: texts.tags.highlight(open, close)
+                )
+            }
+            .fetchAll(db)
+        return Reminders.Page(
+            rows: hits.map { Reminder(Reminder.Record.Row(reminder: $0.reminder, tags: $0.tags)) },
             total: total,
-            completed: try matching.where { $0.isCompleted }.fetchCount(db)
+            completed: completed,
+            highlights: Dictionary(uniqueKeysWithValues: hits.map { ($0.reminder.id, Reminders.Highlight(title: $0.title, notes: $0.notes, tags: $0.tagLine)) })
         )
     }
 }
