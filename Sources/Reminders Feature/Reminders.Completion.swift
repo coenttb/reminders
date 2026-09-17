@@ -41,7 +41,7 @@ extension Reminders.Completion {
 
     func finish(_ id: Reminder.ID, completed: Bool) async throws {
         try await store.attempt {
-            try complete(id, completed)
+            try await complete(id, completed)
             try store.modify {
                 $0.grace.removeValue(forKey: id)
                 $0.finished(id, completed: completed)
@@ -50,8 +50,8 @@ extension Reminders.Completion {
     }
 
     // Leaving writes what is still in grace, on the spot.
-    func finish(_ ids: some Sequence<Reminder.ID>) throws {
-        for id in ids { try complete(id, true) }
+    func finish(_ ids: some Sequence<Reminder.ID>) async throws {
+        for id in ids { try await complete(id, true) }
     }
 
     func retrieve(_ id: Reminder.ID) throws -> Reminders.Placement? {
@@ -62,9 +62,9 @@ extension Reminders.Completion {
         }
     }
 
-    private func complete(_ id: Reminder.ID, _ completed: Bool) throws {
+    private func complete(_ id: Reminder.ID, _ completed: Bool) async throws {
         guard var reminder = try retrieve(id)?.reminder, reminder.completed != completed else { return }
         reminder.completed = completed
-        _ = try reminders.update(reminder)
+        _ = try await reminders.update(reminder)
     }
 }

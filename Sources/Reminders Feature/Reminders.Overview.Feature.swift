@@ -47,12 +47,12 @@ extension Reminders.Overview {
                     var ids = state.summary.lists.map(\.id)
                     ids.move(offsets: source, to: destination)
                     store.addTask {
-                        try await store.attempt { try reminders.lists.reorder(ids) }
+                        try await store.attempt { try await reminders.lists.reorder(ids) }
                     }
                 case let .tagDeleted(tag):
                     store.addTask {
                         try await store.attempt {
-                            try reminders.tags.delete(tag)
+                            try await reminders.tags.delete(tag)
                             try store.post(key: Reminders.Feature.TagDeleted.self, value: tag)
                         }
                     }

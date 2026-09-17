@@ -6,10 +6,10 @@ extension Reminders {
     @Interface
     public struct Lists: Lists.Interface {
         public protocol Interface {
-            func create(_ list: Models.List<Reminder>) throws
-            func update(_ list: Models.List<Reminder>) throws
-            func delete(_ id: Models.List<Reminder>.ID, replacement: Models.List<Reminder>.ID) throws
-            func reorder(_ ids: [Models.List<Reminder>.ID]) throws
+            func create(_ list: Models.List<Reminder>) async throws
+            func update(_ list: Models.List<Reminder>) async throws
+            func delete(_ id: Models.List<Reminder>.ID, replacement: Models.List<Reminder>.ID) async throws
+            func reorder(_ ids: [Models.List<Reminder>.ID]) async throws
         }
     }
 }

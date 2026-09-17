@@ -182,7 +182,7 @@ extension Reminders.Feature {
         let replacement = Models.List<Reminder>.ID(uuid())
         store.addTask {
             try await store.attempt {
-                try reminders.lists.delete(id, replacement: replacement)
+                try await reminders.lists.delete(id, replacement: replacement)
                 try store.modify { if $0.listing?.list == id { $0.listing = nil } }
             }
         }

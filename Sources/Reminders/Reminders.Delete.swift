@@ -6,9 +6,9 @@ extension Reminders {
     @Interface
     public struct Delete: Delete.Interface {
         public protocol Interface {
-            func callAsFunction(_ id: Reminder.ID) throws
-            func completed(in filter: Reminders.Filter, today: Date) throws
-            func completed(matching query: Reminders.Query, dueBefore: Date?) throws
+            func callAsFunction(_ id: Reminder.ID) async throws
+            func completed(in filter: Reminders.Filter, today: Date) async throws
+            func completed(matching query: Reminders.Query, dueBefore: Date?) async throws
         }
     }
 }

@@ -56,25 +56,25 @@ import Testing
         )
     }
 
-    @Test func `the root is the reminders resource`() throws {
+    @Test func `the root is the reminders resource`() async throws {
         let reminders = reminders()
 
-        let created = try reminders.create(reminder, below: nil)
+        let created = try await reminders.create(reminder, below: nil)
         let placement = try reminders.read(reminder.id)
-        let updated = try reminders.update(reminder)
-        try reminders.delete(reminder.id)
+        let updated = try await reminders.update(reminder)
+        try await reminders.delete(reminder.id)
 
         let overview = try reminders.read()
         let todayOverview = try reminders.read(today: now)
         let page = try reminders.read(page: .today, today: now, including: nil, limit: nil)
         let results = try reminders.read(search: .init(terms: ["milk"]), today: now, limit: 50)
         let preference = try reminders.read.preference(for: .completed)
-        let continued = try reminders.create(reminder, below: placement)
-        try reminders.update.order(.today, by: .title)
-        try reminders.update.show(completed: true, in: .today)
-        try reminders.update.reorder([reminder.id], in: .today)
-        try reminders.delete.completed(in: .today, today: now)
-        try reminders.delete.completed(matching: .init(terms: ["milk"]), dueBefore: now)
+        let continued = try await reminders.create(reminder, below: placement)
+        try await reminders.update.order(.today, by: .title)
+        try await reminders.update.show(completed: true, in: .today)
+        try await reminders.update.reorder([reminder.id], in: .today)
+        try await reminders.delete.completed(in: .today, today: now)
+        try await reminders.delete.completed(matching: .init(terms: ["milk"]), dueBefore: now)
 
         #expect(created.position == 0 && placement.position == 0 && updated.position == 0 && continued.position == 1)
         #expect(page.rows == [reminder] && results.rows.isEmpty && overview == todayOverview)
@@ -89,17 +89,17 @@ import Testing
         #expect(address == Reminders.Read.Page.Request(page: .today, today: now, including: nil, limit: nil))
     }
 
-    @Test func `the sub-resources hang off the root`() throws {
+    @Test func `the sub-resources hang off the root`() async throws {
         let reminders = reminders()
 
-        try reminders.lists.create(.default(id: list))
-        try reminders.lists.update(.default(id: list))
-        try reminders.lists.delete(list, replacement: list)
-        try reminders[keyPath: \.lists.reorder]([list])
+        try await reminders.lists.create(.default(id: list))
+        try await reminders.lists.update(.default(id: list))
+        try await reminders.lists.delete(list, replacement: list)
+        try await reminders[keyPath: \.lists.reorder]([list])
 
-        let tag = try reminders.tags.create("home")
-        let renamed = try reminders.tags.rename("home", to: "house")
-        try reminders.tags.delete("house")
+        let tag = try await reminders.tags.create("home")
+        let renamed = try await reminders.tags.rename("home", to: "house")
+        try await reminders.tags.delete("house")
         let suggestions = try reminders.tags.suggest(prefix: "ho", excluding: ["home"])
 
         #expect(tag == "home" && renamed == "house" && suggestions.isEmpty)

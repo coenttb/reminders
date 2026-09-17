@@ -65,7 +65,7 @@ extension Reminders.Search {
                     let query = state.field.query
                     let cutoff = months.map { now.subtracting($0.months, in: calendar) ?? now }
                     store.addTask {
-                        try await store.attempt { try reminders.delete.completed(matching: query, dueBefore: cutoff) }
+                        try await store.attempt { try await reminders.delete.completed(matching: query, dueBefore: cutoff) }
                     }
                 case .endReached:
                     guard let matches = state.matches else { break }
@@ -77,7 +77,7 @@ extension Reminders.Search {
                 case let .reminderDeleted(id):
                     state.grace.removeValue(forKey: id)
                     store.addTask {
-                        try await store.attempt { try reminders.delete(id) }
+                        try await store.attempt { try await reminders.delete(id) }
                     }
                 case let .reminderDetailsButtonTapped(id):
                     store.addTask {
@@ -124,7 +124,7 @@ extension Reminders.Search {
             }
             // Leaving writes what is still in grace.
             .onDismount {
-                try completion.finish(store.grace.keys)
+                try await completion.finish(store.grace.keys)
             }
         }
     }
