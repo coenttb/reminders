@@ -1,4 +1,4 @@
-public import Foundation
+import Foundation
 import Models
 public import Reminder
 public import Reminders
@@ -20,15 +20,8 @@ extension Reminder.Record.TableColumns {
             predicate = SQLQueryExpression("\(predicate) AND (\(matches(term)))")
         }
         for tag in query.tags.sorted() {
-            predicate = SQLQueryExpression("\(predicate) AND (\(carries(tag)))")
+            predicate = SQLQueryExpression("\(predicate) AND (\(Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(tag) }.exists()))")
         }
         return predicate
-    }
-
-    public func selected(by selection: Reminders.Page.Query.Selection, today: Range<Date>) -> SQLQueryExpression<Bool> {
-        switch selection {
-        case let .filter(filter): belongs(to: filter, today: today)
-        case let .search(query): matches(query)
-        }
     }
 }

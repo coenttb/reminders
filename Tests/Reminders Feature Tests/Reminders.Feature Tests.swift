@@ -154,7 +154,7 @@ struct `Reminder feature` {
         let adulting = try await database.read { db in try Tag<Reminder>.Record.all.fetchAll(db).count { $0.title.lowercased() == "adulting" } }
         #expect(adulting == 1)
         #expect(restoredFilter == .list(personal))
-        let preference = try await database.read { [personal] db in try Reminders.Preference.Record.preference(for: .list(personal)).fetchOne(db) }
+        let preference = try await database.read { [personal] db in try Reminders.Preference.Record.find(Reminders.Filter.Key(.list(personal))).fetchOne(db) }
         #expect(preference?.ordering == .title && preference?.showCompleted == true)
         }
     }

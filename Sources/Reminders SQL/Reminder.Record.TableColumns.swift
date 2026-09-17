@@ -1,5 +1,5 @@
 public import Foundation
-package import Models
+import Models
 public import Reminder
 public import Reminders
 public import StructuredQueries
@@ -25,9 +25,5 @@ extension Reminder.Record.TableColumns {
         case let .tags(tags): SQLQueryExpression("\(Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.in(Array(tags)) }.exists())")
         case .today: SQLQueryExpression("\(isDue(during: today))")
         }
-    }
-
-    package func carries(_ tag: Tag<Reminder>) -> some QueryExpression<Bool> {
-        Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.eq(tag) }.exists()
     }
 }

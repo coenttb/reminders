@@ -32,14 +32,3 @@ extension Tag<Reminder>.Entry {
         self.init(tag: Tag<Reminder>(entry.tag), count: entry.count)
     }
 }
-
-extension Tag<Reminder>.Record {
-    public static func canonical(_ title: String) -> Select<String, Tag<Reminder>.Record, ()> {
-        Tag<Reminder>.Record.where { $0.title.eq(title) }.select(\.title)
-    }
-
-    public static func delete(_ id: Tag<Reminder>) -> DeleteOf<Tag<Reminder>.Record> {
-        Tag<Reminder>.Record.find(id.rawValue).delete()
-    }
-
-}

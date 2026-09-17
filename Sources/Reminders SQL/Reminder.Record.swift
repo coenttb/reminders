@@ -1,7 +1,6 @@
 public import Foundation
 public import Models
 public import Reminder
-public import Reminders
 public import StructuredQueries
 public import Tagged
 
@@ -54,38 +53,3 @@ extension Reminder {
 }
 
 extension Reminder.Record.Draft: Hashable, Sendable {}
-
-extension Reminder.Record {
-    public static func toggle(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
-        Reminder.Record.find(id).update { $0.completed = !$0.completed }
-    }
-
-    public static func complete(_ id: Reminder.ID, _ completed: Bool = true) -> UpdateOf<Reminder.Record> {
-        Reminder.Record.find(id).update { $0.completed = completed }
-    }
-
-    public static func placeLast(_ id: Reminder.ID) -> UpdateOf<Reminder.Record> {
-        Reminder.Record.find(id).update { $0.position = Reminder.Record.select { ($0.position.max() ?? -1) + 1 } }
-    }
-
-    public static func makeRoom(after position: Int) -> UpdateOf<Reminder.Record> {
-        Reminder.Record.where { $0.position.gt(position) }.update { $0.position += 1 }
-    }
-
-    public static func save(_ draft: Draft) -> InsertOf<Reminder.Record> {
-        Reminder.Record.insert {
-            draft
-        } onConflict: {
-            $0.id
-        } doUpdate: { row, excluded in
-            row.title = excluded.title
-            row.notes = excluded.notes
-            row.dueDate = excluded.dueDate
-            row.hasTime = excluded.hasTime
-            row.flagged = excluded.flagged
-            row.priority = excluded.priority
-            row.listID = excluded.listID
-            row.repeats = excluded.repeats
-        }
-    }
-}

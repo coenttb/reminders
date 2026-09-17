@@ -39,32 +39,3 @@ extension Models.List<Reminder>.Entry {
         self.init(list: Models.List<Reminder>(entry.list), count: entry.count)
     }
 }
-
-extension Models.List<Reminder>.Record {
-    public static func placeLast(_ id: Models.List<Reminder>.ID) -> UpdateOf<Models.List<Reminder>.Record> {
-        Models.List<Reminder>.Record.find(id).update { $0.position = Models.List<Reminder>.Record.select { ($0.position.max() ?? -1) + 1 } }
-    }
-
-    public static func save(_ draft: Draft) -> InsertOf<Models.List<Reminder>.Record> {
-        Models.List<Reminder>.Record.insert {
-            draft
-        } onConflict: {
-            $0.id
-        } doUpdate: { row, excluded in
-            row.title = excluded.title
-            row.color = excluded.color
-        }
-    }
-
-    public static func reorder(_ ids: [Models.List<Reminder>.ID]) -> UpdateOf<Models.List<Reminder>.Record> {
-        Models.List<Reminder>.Record.where { $0.id.in(ids) }.update { row in
-            let places = Array(ids.enumerated())
-            guard let first = places.first else { return }
-            row.position = places.dropFirst()
-                .reduce(Case(row.id).when(first.element, then: first.offset)) { cases, place in
-                    cases.when(place.element, then: place.offset)
-                }
-                .else(row.position)
-        }
-    }
-}

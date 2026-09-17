@@ -16,9 +16,3 @@ extension Reminders {
         }
     }
 }
-
-extension Reminders.Tagging {
-    public static func detach(_ tags: Set<Tag<Reminder>>, from id: Reminder.ID) -> DeleteOf<Reminders.Tagging> {
-        Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.in(tags) }.delete()
-    }
-}

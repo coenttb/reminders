@@ -32,47 +32,4 @@ extension Reminders.Preference.Record {
     public init(_ preference: Reminders.Preference, for filter: Reminders.Filter) {
         self.init(key: Reminders.Filter.Key(filter), ordering: preference.ordering, showCompleted: preference.showCompleted)
     }
-
-    public static func `default`(for filter: Reminders.Filter) -> Self {
-        Self(key: Reminders.Filter.Key(filter), showCompleted: filter == .completed)
-    }
-
-    public static func preference(for filter: Reminders.Filter) -> Where<Self> {
-        Self.find(Reminders.Filter.Key(filter))
-    }
-
-    public static func set(_ preference: Reminders.Preference, for filter: Reminders.Filter) -> InsertOf<Self> {
-        Self.insert {
-            Self(preference, for: filter)
-        } onConflict: {
-            $0.key
-        } doUpdate: { row, excluded in
-            row.ordering = excluded.ordering
-            row.showCompleted = excluded.showCompleted
-        }
-    }
-
-    public static func set(ordering: Reminders.Ordering, for filter: Reminders.Filter) -> InsertOf<Self> {
-        var record = Self.default(for: filter)
-        record.ordering = ordering
-        return Self.insert {
-            record
-        } onConflict: {
-            $0.key
-        } doUpdate: { row, excluded in
-            row.ordering = excluded.ordering
-        }
-    }
-
-    public static func set(showCompleted: Bool, for filter: Reminders.Filter) -> InsertOf<Self> {
-        var record = Self.default(for: filter)
-        record.showCompleted = showCompleted
-        return Self.insert {
-            record
-        } onConflict: {
-            $0.key
-        } doUpdate: { row, excluded in
-            row.showCompleted = excluded.showCompleted
-        }
-    }
 }

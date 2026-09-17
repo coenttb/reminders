@@ -177,6 +177,8 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQL",
                 "Reminders SQLite",
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 "Models",
                 .product(name: "Tagged", package: "swift-tagged"),

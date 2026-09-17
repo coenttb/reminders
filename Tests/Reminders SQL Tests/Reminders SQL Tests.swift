@@ -45,12 +45,6 @@ import Tagged
         #expect(Reminders.Summary.Counts(Reminder.Record.Counts(all: 3, flagged: 1)).all == 3)
     }
 
-    @Test func `filters default to hiding completed reminders except Completed`() {
-        #expect(Reminders.Preference.Record.default(for: .all) == Reminders.Preference.Record(key: Reminders.Filter.Key(.all), ordering: .dueDate, showCompleted: false))
-        #expect(Reminders.Preference.Record.default(for: .list(list)).id == Reminders.Filter.Key(.list(list)))
-        #expect(Reminders.Preference(Reminders.Preference.Record.default(for: .completed)) == Reminders.Preference(ordering: .dueDate, showCompleted: true))
-    }
-
     @Test func `an overview finds its lists and ranks its tags, and a detail knows its ids`() {
         let personal = Models.List<Reminder>(id: list, title: "Personal")
         let overview = Reminders.Summary(
