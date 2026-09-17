@@ -1,46 +1,29 @@
-public struct Reminders: Sendable {
-    public var create: Create
-    public var retrieve: Retrieve
-    public var update: Update
-    public var delete: Delete
-    public var list: List
-    public var reorder: Reorder
-    public var complete: Complete
-    public var reopen: Reopen
-    public var deleteCompleted: DeleteCompleted
+public import Interface_Macro
+public import Models
+public import Reminder
 
-    public var overview: Overview
-    public var lists: Lists
-    public var tags: Tags
-    public var preferences: Preferences
+@Interface
+public struct Reminders: Reminders.`Protocol` {
+    public protocol `Protocol` {
+        associatedtype Lists: Reminders.Lists.`Protocol`
+        associatedtype Tags: Reminders.Tags.`Protocol`
+        associatedtype Preferences: Reminders.Preferences.`Protocol`
 
-    public init(
-        create: Create,
-        retrieve: Retrieve,
-        update: Update,
-        delete: Delete,
-        list: List,
-        reorder: Reorder,
-        complete: Complete,
-        reopen: Reopen,
-        deleteCompleted: DeleteCompleted,
-        overview: Overview,
-        lists: Lists,
-        tags: Tags,
-        preferences: Preferences
-    ) {
-        self.create = create
-        self.retrieve = retrieve
-        self.update = update
-        self.delete = delete
-        self.list = list
-        self.reorder = reorder
-        self.complete = complete
-        self.reopen = reopen
-        self.deleteCompleted = deleteCompleted
-        self.overview = overview
-        self.lists = lists
-        self.tags = tags
-        self.preferences = preferences
+        func create(_ request: Reminders.Create.Request) throws -> Reminders.Placement
+        func retrieve(_ id: Reminder::Reminder.ID) throws -> Reminders.Placement
+        func update(_ reminder: Reminder::Reminder) throws -> Reminders.Placement
+        func delete(_ id: Reminder::Reminder.ID) throws
+        func list(_ request: Reminders.List.Request) throws -> Reminders.List.Result
+        func reorder(_ request: Reminders.Reorder.Request) throws
+        func complete(_ id: Reminder::Reminder.ID) throws
+        func reopen(_ id: Reminder::Reminder.ID) throws
+        func deleteCompleted(_ request: Reminders.DeleteCompleted.Request) throws
+        func overview(_ request: Reminders.Overview.Request) throws -> Reminders.Overview.Result
+
+        var lists: Lists { get }
+        var tags: Tags { get }
+        var preferences: Preferences { get }
     }
 }
+
+extension Reminders: @unchecked Sendable {}

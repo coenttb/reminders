@@ -3,18 +3,6 @@ public import Models
 public import Reminder
 public import Tagged
 
-extension Reminders {
-    public struct Overview: Sendable {
-        public typealias Client = Models.Operation<Request, Result>
-
-        public var client: Client
-
-        public init(client: Client) {
-            self.client = client
-        }
-    }
-}
-
 extension Reminders.Overview {
     public struct Request: Hashable, Sendable {
         public var today: Range<Date>

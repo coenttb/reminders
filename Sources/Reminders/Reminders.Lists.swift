@@ -4,7 +4,7 @@ public import Reminder
 
 extension Reminders {
     @Interface
-    public struct Lists: Lists.`Protocol` {
+    public struct Lists: Reminders.Lists.`Protocol` {
         public protocol `Protocol` {
             func create(_ list: Models.List<Reminder>) throws
             func update(_ list: Models.List<Reminder>) throws

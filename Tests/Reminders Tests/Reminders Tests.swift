@@ -29,16 +29,16 @@ import Tagged
 
     func reminders() -> Reminders {
         Reminders(
-            create: .init(client: .init { request in Reminders.Placement(request.reminder, position: request.below.map { $0.position + 1 } ?? 0) }),
-            retrieve: .init(client: .init { id in Reminders.Placement(reminder, position: 0) }),
-            update: .init(client: .init { reminder in Reminders.Placement(reminder, position: 0) }),
-            delete: .init(client: .init { id in }),
-            list: .init(client: .init { request in .init(selection: request.selection, preference: .default(for: .all)) }),
-            reorder: .init(client: .init { request in }),
-            complete: .init(client: .init { id in }),
-            reopen: .init(client: .init { id in }),
-            deleteCompleted: .init(client: .init { request in }),
-            overview: .init(client: .init { request in .init() }),
+            create: { request in Reminders.Placement(request.reminder, position: request.below.map { $0.position + 1 } ?? 0) },
+            retrieve: { id in Reminders.Placement(reminder, position: 0) },
+            update: { reminder in Reminders.Placement(reminder, position: 0) },
+            delete: { id in },
+            list: { request in .init(selection: request.selection, preference: .default(for: .all)) },
+            reorder: { request in },
+            complete: { id in },
+            reopen: { id in },
+            deleteCompleted: { request in },
+            overview: { request in .init() },
             lists: .init(
                 create: { list in },
                 update: { list in },
@@ -46,13 +46,13 @@ import Tagged
                 reorder: { ids in }
             ),
             tags: .init(
-                create: .init(client: .init { title in Tag(title) }),
-                update: .init(client: .init { request in Tag(request.title) }),
-                delete: .init(client: .init { tag in }),
-                list: .init(client: .init { request in [] })
+                create: { title in Tag(title) },
+                update: { request in Tag(request.title) },
+                delete: { tag in },
+                list: { request in [] }
             ),
             preferences: .init(
-                update: .init(client: .init { request in })
+                update: { request in }
             )
         )
     }
@@ -60,21 +60,21 @@ import Tagged
     @Test func `the root is the reminders resource`() throws {
         let reminders = reminders()
 
-        let created = try reminders.create.client(.init(reminder))
-        let placement = try reminders.retrieve.client(reminder.id)
-        let updated = try reminders.update.client(reminder)
-        try reminders.delete.client(reminder.id)
+        let created = try reminders.create(.init(reminder))
+        let placement = try reminders.retrieve(reminder.id)
+        let updated = try reminders.update(reminder)
+        try reminders.delete(reminder.id)
 
-        let page = try reminders.list.client(.init(selection: .filter(.today), today: today))
-        let page2 = try reminders.list.client(.init(selection: .search(.init(terms: ["milk"])), today: today, including: nil, limit: 50))
-        let continued = try reminders.create.client(.init(reminder, below: placement))
-        try reminders.reorder.client(.init(ids: [reminder.id], in: .today))
-        try reminders.complete.client(reminder.id)
-        try reminders.reopen.client(reminder.id)
-        try reminders.deleteCompleted.client(.filter(.today, today: today))
-        try reminders.deleteCompleted.client(.search(.init(terms: ["milk"]), dueBefore: now))
+        let page = try reminders.list(.init(selection: .filter(.today), today: today))
+        let page2 = try reminders.list(.init(selection: .search(.init(terms: ["milk"])), today: today, including: nil, limit: 50))
+        let continued = try reminders.create(.init(reminder, below: placement))
+        try reminders.reorder(.init(ids: [reminder.id], in: .today))
+        try reminders.complete(reminder.id)
+        try reminders.reopen(reminder.id)
+        try reminders.deleteCompleted(.filter(.today, today: today))
+        try reminders.deleteCompleted(.search(.init(terms: ["milk"]), dueBefore: now))
 
-        let overview = try reminders.overview.client(.init(today: today))
+        let overview = try reminders.overview(.init(today: today))
 
         #expect(created.position == 0 && placement.position == 0 && updated.position == 0 && continued.position == 1)
         #expect(page.selection == .filter(.today) && page2.rows.isEmpty && overview.counts == .init())
@@ -89,13 +89,13 @@ import Tagged
         try reminders[keyPath: \.lists.reorder]([list])
         try reminders.lists.reorder([list])
 
-        let tag = try reminders.tags.create.client("home")
-        let renamed = try reminders.tags.update.client(.init(tag: "home", title: "house"))
-        try reminders.tags.delete.client("house")
-        let suggestions = try reminders.tags.list.client(.init(prefix: "ho", excluding: ["home"]))
+        let tag = try reminders.tags.create("home")
+        let renamed = try reminders.tags.update(.init(tag: "home", title: "house"))
+        try reminders.tags.delete("house")
+        let suggestions = try reminders.tags.list(.init(prefix: "ho", excluding: ["home"]))
 
-        try reminders.preferences.update.client(.init(filter: .today, change: .ordering(.title)))
-        try reminders.preferences.update.client(.init(filter: .today, change: .toggleShowCompleted))
+        try reminders.preferences.update(.init(filter: .today, change: .ordering(.title)))
+        try reminders.preferences.update(.init(filter: .today, change: .toggleShowCompleted))
 
         #expect(tag == "home" && renamed == "house" && suggestions.isEmpty)
     }

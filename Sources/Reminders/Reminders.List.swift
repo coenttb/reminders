@@ -2,18 +2,6 @@ public import Foundation
 public import Models
 public import Reminder
 
-extension Reminders {
-    public struct List: Sendable {
-        public typealias Client = Models.Operation<Request, Result>
-
-        public var client: Client
-
-        public init(client: Client) {
-            self.client = client
-        }
-    }
-}
-
 extension Reminders.List {
     public struct Request: Hashable, Sendable {
         public var selection: Reminders.Selection

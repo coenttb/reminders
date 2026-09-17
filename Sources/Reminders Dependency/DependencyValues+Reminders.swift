@@ -12,16 +12,16 @@ extension DependencyValues {
 extension Reminders: TestDependencyKey {
     public static var testValue: Reminders {
         Self(
-            create: .init(client: .init(unimplemented("\\.reminders.create.client"))),
-            retrieve: .init(client: .init(unimplemented("\\.reminders.retrieve.client"))),
-            update: .init(client: .init(unimplemented("\\.reminders.update.client"))),
-            delete: .init(client: .init(unimplemented("\\.reminders.delete.client"))),
-            list: .init(client: .init(unimplemented("\\.reminders.list.client", placeholder: List.Result(selection: .filter(.all), preference: Preference())))),
-            reorder: .init(client: .init(unimplemented("\\.reminders.reorder.client"))),
-            complete: .init(client: .init(unimplemented("\\.reminders.complete.client"))),
-            reopen: .init(client: .init(unimplemented("\\.reminders.reopen.client"))),
-            deleteCompleted: .init(client: .init(unimplemented("\\.reminders.deleteCompleted.client"))),
-            overview: .init(client: .init(unimplemented("\\.reminders.overview.client", placeholder: Overview.Result()))),
+            create: unimplemented("\\.reminders.create"),
+            retrieve: unimplemented("\\.reminders.retrieve"),
+            update: unimplemented("\\.reminders.update"),
+            delete: unimplemented("\\.reminders.delete"),
+            list: unimplemented("\\.reminders.list", placeholder: List.Result(selection: .filter(.all), preference: Preference())),
+            reorder: unimplemented("\\.reminders.reorder"),
+            complete: unimplemented("\\.reminders.complete"),
+            reopen: unimplemented("\\.reminders.reopen"),
+            deleteCompleted: unimplemented("\\.reminders.deleteCompleted"),
+            overview: unimplemented("\\.reminders.overview", placeholder: Overview.Result()),
             lists: .init(
                 create: unimplemented("\\.reminders.lists.create"),
                 update: unimplemented("\\.reminders.lists.update"),
@@ -29,13 +29,13 @@ extension Reminders: TestDependencyKey {
                 reorder: unimplemented("\\.reminders.lists.reorder")
             ),
             tags: .init(
-                create: .init(client: .init(unimplemented("\\.reminders.tags.create.client"))),
-                update: .init(client: .init(unimplemented("\\.reminders.tags.update.client"))),
-                delete: .init(client: .init(unimplemented("\\.reminders.tags.delete.client"))),
-                list: .init(client: .init(unimplemented("\\.reminders.tags.list.client", placeholder: [])))
+                create: unimplemented("\\.reminders.tags.create"),
+                update: unimplemented("\\.reminders.tags.update"),
+                delete: unimplemented("\\.reminders.tags.delete"),
+                list: unimplemented("\\.reminders.tags.list", placeholder: [])
             ),
             preferences: .init(
-                update: .init(client: .init(unimplemented("\\.reminders.preferences.update.client")))
+                update: unimplemented("\\.reminders.preferences.update")
             )
         )
     }

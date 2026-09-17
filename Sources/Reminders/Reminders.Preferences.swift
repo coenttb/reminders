@@ -1,9 +1,13 @@
-extension Reminders {
-    public struct Preferences: Sendable {
-        public var update: Update
+public import Interface_Macro
+public import Models
 
-        public init(update: Update) {
-            self.update = update
+extension Reminders {
+    @Interface
+    public struct Preferences: Preferences.`Protocol` {
+        public protocol `Protocol` {
+            func update(_ request: Update.Request) throws
         }
     }
 }
+
+extension Reminders.Preferences: @unchecked Sendable {}

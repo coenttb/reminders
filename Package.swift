@@ -55,9 +55,7 @@ let package = Package(
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ],
-            swiftSettings: [
-                .enableExperimentalFeature("Lifetimes"),
-            ]
+            swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
         .target(
             name: "Reminders Dependency",
