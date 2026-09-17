@@ -1,5 +1,5 @@
 {
-  "originHash" : "c7830641f2898e8a998cb454023b981b1b2dbf7883702461d4a8b324efc5b511",
+  "originHash" : "96386e77a83ea55a9b5b7c13bc3d7c7d3eeb6839d60038b9b7410560f00c9cb8",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -65,6 +65,15 @@
       }
     },
     {
+      "identity" : "swift-coproduct",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-coproduct.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "7fb0410f5bfa2239481cc652acfb278d9a04a0ce"
+      }
+    },
+    {
       "identity" : "swift-custom-dump",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-custom-dump",
@@ -110,12 +119,30 @@
       }
     },
     {
+      "identity" : "swift-either",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-either.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3ca99751d2f74512bd4b42779243034b5c179f91"
+      }
+    },
+    {
       "identity" : "swift-identified-collections",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-identified-collections",
       "state" : {
         "revision" : "322d9ffeeba85c9f7c4984b39422ec7cc3c56597",
         "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "swift-interface",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-molecules/swift-interface.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "c393c6b5e8fa95116d7e8802ee40a6f82b237157"
       }
     },
     {
@@ -146,12 +173,39 @@
       }
     },
     {
+      "identity" : "swift-operation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-operation.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a8e885fc27ae16abeb70f9c05e3a0e879421e57e"
+      }
+    },
+    {
+      "identity" : "swift-optic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-optic.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "6543798b672c3886c1c3d4b218cf91d3666d4041"
+      }
+    },
+    {
       "identity" : "swift-perception",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-perception",
       "state" : {
         "revision" : "597afd46249f4a71885b95d26b26cc5b893daf32",
         "version" : "2.0.12"
+      }
+    },
+    {
+      "identity" : "swift-product",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-product.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e0c81345f8774b7169585b24597a0b28fb19ede5"
       }
     },
     {

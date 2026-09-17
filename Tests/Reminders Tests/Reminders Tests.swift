@@ -39,12 +39,12 @@ import Tagged
             reopen: .init(client: .init { id in }),
             deleteCompleted: .init(client: .init { request in }),
             overview: .init(client: .init { request in .init() }),
-            lists: .init(
-                create: .init(client: .init { list in }),
-                update: .init(client: .init { list in }),
-                delete: .init(client: .init { request in }),
-                reorder: .init(client: .init { ids in })
-            ),
+            lists: .init(product: .init(
+                create: { list in },
+                update: { list in },
+                delete: { id, replacement in },
+                reorder: { ids in }
+            )),
             tags: .init(
                 create: .init(client: .init { title in Tag(title) }),
                 update: .init(client: .init { request in Tag(request.title) }),
@@ -83,10 +83,10 @@ import Tagged
     @Test func `the sub-resources hang off the root`() throws {
         let reminders = reminders()
 
-        try reminders.lists.create.client(.default(id: list))
-        try reminders.lists.update.client(.default(id: list))
-        try reminders.lists.delete.client(.init(id: list, replacement: list))
-        try reminders.lists.reorder.client([list])
+        try reminders.lists.product.create(.default(id: list))
+        try reminders.lists.product.update(.default(id: list))
+        try reminders.lists.product.delete(list, replacement: list)
+        try reminders.lists.product.reorder([list])
 
         let tag = try reminders.tags.create.client("home")
         let renamed = try reminders.tags.update.client(.init(tag: "home", title: "house"))

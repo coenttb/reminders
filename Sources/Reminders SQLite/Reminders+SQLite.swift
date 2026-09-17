@@ -62,26 +62,26 @@ extension Reminders {
                 }
             }),
             overview: .init(client: .init { request in try read(request.fetch) }),
-            lists: Lists(
-                create: .init(client: .init { list in
+            lists: Lists(product: .init(
+                create: { list in
                     try write { db in
                         try Models.List<Reminder>.Record.insert { Models.List<Reminder>.Record(list) }.execute(db)
                         try Models.List<Reminder>.Record.placeLast(list.id).execute(db)
                     }
-                }),
-                update: .init(client: .init { list in
+                },
+                update: { list in
                     try write { db in
                         guard try Models.List<Reminder>.Record.find(list.id).fetchCount(db) > 0 else { throw Error.notFound }
                         try Models.List<Reminder>.Record.save(Models.List<Reminder>.Record.Draft(Models.List<Reminder>.Record(list))).execute(db)
                     }
-                }),
-                delete: .init(client: .init { request in
-                    try write { db in try Models.List<Reminder>.Record.delete(request.id, replacement: request.replacement, in: db) }
-                }),
-                reorder: .init(client: .init { ids in
+                },
+                delete: { id, replacement in
+                    try write { db in try Models.List<Reminder>.Record.delete(id, replacement: replacement, in: db) }
+                },
+                reorder: { ids in
                     try write { db in try Models.List<Reminder>.Record.reorder(ids).execute(db) }
-                })
-            ),
+                }
+            )),
             tags: Tags(
                 create: .init(client: .init { title in
                     try write { db in

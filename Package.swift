@@ -26,6 +26,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
         .package(url: "https://github.com/swift-molecules/swift-foundation-extensions.git", branch: "main"),
+        .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main"),
     ],
     targets: [
         .target(
@@ -47,12 +48,14 @@ let package = Package(
             name: "Reminders",
             dependencies: [
                 .product(name: "CasePaths", package: "swift-case-paths"),
+                .product(name: "Interface Macro", package: "swift-interface"),
                 "Reminder",
                 .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 "Models",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
         .target(
             name: "Reminders Dependency",

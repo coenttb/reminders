@@ -22,12 +22,12 @@ extension Reminders: TestDependencyKey {
             reopen: .init(client: .init(unimplemented("\\.reminders.reopen.client"))),
             deleteCompleted: .init(client: .init(unimplemented("\\.reminders.deleteCompleted.client"))),
             overview: .init(client: .init(unimplemented("\\.reminders.overview.client", placeholder: Overview.Result()))),
-            lists: .init(
-                create: .init(client: .init(unimplemented("\\.reminders.lists.create.client"))),
-                update: .init(client: .init(unimplemented("\\.reminders.lists.update.client"))),
-                delete: .init(client: .init(unimplemented("\\.reminders.lists.delete.client"))),
-                reorder: .init(client: .init(unimplemented("\\.reminders.lists.reorder.client")))
-            ),
+            lists: .init(product: .init(
+                create: unimplemented("\\.reminders.lists.create"),
+                update: unimplemented("\\.reminders.lists.update"),
+                delete: unimplemented("\\.reminders.lists.delete"),
+                reorder: unimplemented("\\.reminders.lists.reorder")
+            )),
             tags: .init(
                 create: .init(client: .init(unimplemented("\\.reminders.tags.create.client"))),
                 update: .init(client: .init(unimplemented("\\.reminders.tags.update.client"))),
