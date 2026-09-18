@@ -31,8 +31,8 @@ extension Reminders.Read.Page {
             }
 
             // The draft stands in for its row until the page carries what was written.
-            public var contents: Reminders.Page {
-                var page = observing.value ?? Reminders.Page()
+            public var contents: Reminders.Read.Page.Value {
+                var page = observing.value ?? Reminders.Read.Page.Value()
                 if let editing, let index = page.rows.firstIndex(where: { $0.id == editing.id }) {
                     page.rows[index] = editing.request.reminder
                 }

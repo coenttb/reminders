@@ -11,7 +11,7 @@ One flat package, one host, one workspace. The layers, bottom up:
 |---|---|---|
 | `Models` | Tagged | `List<Element>` and its `Entry` (a list with its open count) |
 | `Reminder` | Models | the `Reminder` value |
-| `Reminders` | Interface Macro | the domain, declared once as `@Interface` protocols: `create`, `read`, `update`, `delete`, `lists`; the values they exchange (`Filter`, `Page`, `Summary`); the typed errors. In `read`, the summary and a page are streams (the UI follows them) and `read(id)` is a value; `update.complete` is its own write |
+| `Reminders` | Interface Macro | the domain, declared once as `@Interface` protocols: `create`, `read`, `update`, `delete`, `lists`; the values they exchange, each under its operation (`Read.Filter`, `Read.Value`, `Read.Page.Value`); the typed errors. An operation's `Value` is what it produces, its `Result` is how the arrow returns it: `read()` and `read(page:)` return streams of their `Value` (the UI follows them), `read(id)` returns the `Reminder` itself; `update.complete` is its own write |
 | `Reminders Dependency` | Dependencies | `DependencyValues.reminders`, the `testValue`, and the `Sendable` boundary |
 | `Reminders SQL` | StructuredQueries | the records and the `Filter` predicate |
 | `Reminders SQLite` | SQLiteData, GRDB | the schema, `Reminders.sqlite(database)`, the read requests resolved and tracked (`ValueObservation`), the bootstrap |

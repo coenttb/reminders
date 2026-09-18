@@ -23,11 +23,11 @@ struct `Reminders SQLite storage` {
     }
 
     // The summary and a page are streams; the first element is the value now.
-    func summary(_ reminders: Reminders) async throws -> Reminders.Read.Summary? {
+    func summary(_ reminders: Reminders) async throws -> Reminders.Read.Value? {
         try await reminders.read().first(where: { _ in true })
     }
 
-    func page(_ reminders: Reminders, _ filter: Reminders.Read.Filter) async throws -> Reminders.Page? {
+    func page(_ reminders: Reminders, _ filter: Reminders.Read.Filter) async throws -> Reminders.Read.Page.Value? {
         try await reminders.read(page: filter).first(where: { _ in true })
     }
 

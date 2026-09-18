@@ -1,7 +1,7 @@
 public import Reminder
 
-extension Reminders {
-    public struct Page: Hashable, Sendable {
+extension Reminders.Read.Page {
+    public struct Value: Hashable, Sendable {
         public var rows: [Reminder]
 
         public init(rows: [Reminder] = []) {
