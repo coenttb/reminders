@@ -1,5 +1,16 @@
 # Parity ledger — Reminders example vs iOS 27 stock Reminders
 
+## Current state (2026-09-18, branch merged to main)
+
+Read this first; the sections below are the dated history.
+
+- **Matches stock (measured):** home tiles and My Lists; list detail rows, inline card and chip menus; More menu and Sort By with directions; completed header and Clear; Details sheet (large, compact cards, full-date value); New Reminder sheet with quick bar; List Info / New List; search page; swipe actions; select mode; empty state; dark mode; Dynamic Type; push/pop and sheet timings; **Today** (overdue + all-day block, Morning/Afternoon/Tonight, add circle), **Scheduled** (Overdue by day, Today, Tomorrow, five days, Rest of month, twelve months), **Completed** (Today, Previous 7 Days, months, newest first, "Completed: when"); dates `16/09/2026` / times `06:05`; Custom → Date & Time sheet; a row dragged onto a section takes its date.
+- **Deliberately different / accepted:** day headers do not pin while scrolling (cost of the drag); Tags card, tag picker and the Flag row have no simulator reference (iCloud); Print and Location are not modelled; smart-group visibility and Add Group in home edit mode are not modelled.
+- **Residuals (≤ 10 pt):** a section's last row → rule 22 pt vs 11; Details calendar rule → month header 47 pt vs 35; Sort By checkmark column alignment (SwiftUI Menu); the tapped list row is not highlighted during the push; dark lists card gray.
+- **Open product decisions:** relaunch while editing (stock never reopens a card; we reopen a blank one); Tags/Flag placement.
+- Evidence lives under `Evidence/Parity/<row>/` and `Evidence/Parity/survey-*/` as stock/ours pairs; geometry in points from 3× captures, colours as sRGB samples.
+
+
 Stock: iPhone 17 simulator (A10F654F, iOS 27.0, 402×874 pt), `com.apple.reminders`.
 Ours: iPhone 17e simulator (E297C542, iOS 27.0, 390×844 pt), `Reminders.app` from the `Reminders` scheme.
 Evidence pairs live under `Evidence/Parity/<row>/{stock,ours}-*.png`; geometry comes from the Xcode device
