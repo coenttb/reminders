@@ -54,7 +54,7 @@ extension Reminders.Read.Page {
                 ComposableArchitecture2.Scope(\.contents) { Observing(reminders.read.page) }
             }
             .calling(reminders, id: \.writes)
-            .ifLet(\.editing, action: \.never) {
+            .ifLet(\.editing) {
                 Reminders.Update.Feature()
             }
         }
