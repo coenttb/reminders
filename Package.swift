@@ -105,6 +105,7 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]
@@ -199,6 +200,7 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQL",
                 "Reminders SQLite",
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]

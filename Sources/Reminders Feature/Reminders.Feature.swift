@@ -13,7 +13,7 @@ extension Reminders {
         public struct State {
             public typealias Feature = Reminders.Feature
 
-            public var overview = Observing<Reminders.Observe.Operations.Summary>.State(request: .init(.init()))
+            public var overview = Observing<Reminders.Read.Operations.Call>.State(request: .init())
             public var listing: Reminders.Read.Page.Feature.State?
             public var destination: Destination.State?
             @StoreTaskID public var writes
@@ -28,7 +28,7 @@ extension Reminders {
             case listDeleted(Models.List<Reminder>.ID)
             case listTapped(Models.List<Reminder>.ID)
             case listing(Reminders.Read.Page.Feature.Action)
-            case overview(Observing<Reminders.Observe.Operations.Summary>.Action)
+            case overview(Observing<Reminders.Read.Operations.Call>.Action)
         }
 
         @Dependency(\.reminders) var reminders
@@ -58,7 +58,7 @@ extension Reminders {
                         break
                     }
                 }
-                ComposableArchitecture2.Scope(\.overview) { Observing(reminders.observe.summary) }
+                ComposableArchitecture2.Scope(\.overview) { Observing(reminders.read.run) }
             }
             .calling(\.call, id: \.writes) { try await reminders($0) }
             .ifLet(\.listing) {

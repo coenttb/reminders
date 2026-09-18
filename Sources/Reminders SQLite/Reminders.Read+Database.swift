@@ -1,3 +1,4 @@
+import GRDB
 public import Models
 public import Reminder
 public import Reminders
@@ -5,7 +6,8 @@ import Reminders_SQL
 public import SQLiteData
 import Tagged
 
-// A read request resolved against one database connection.
+// A read request resolved against one database connection; the streamed ones track their query, so the
+// value arrives now and again after every write it depends on.
 extension Reminders.Read.Request {
     public func fetch(_ db: Database) throws -> Reminders.Summary {
         Reminders.Summary(
@@ -18,6 +20,10 @@ extension Reminders.Read.Request {
                 .map(Models.List<Reminder>.Entry.init)
         )
     }
+
+    public func stream(in database: any DatabaseReader) -> AsyncThrowingStream<Reminders.Summary, any Swift.Error> {
+        Reminders.Read.stream(in: database, fetch)
+    }
 }
 
 extension Reminders.Read.Page.Request {
@@ -29,5 +35,30 @@ extension Reminders.Read.Page.Request {
                 .fetchAll(db)
                 .map(Reminder.init)
         )
+    }
+
+    public func stream(in database: any DatabaseReader) -> AsyncThrowingStream<Reminders.Page, any Swift.Error> {
+        Reminders.Read.stream(in: database, fetch)
+    }
+}
+
+extension Reminders.Read {
+    static func stream<Value: Sendable>(
+        in database: any DatabaseReader,
+        _ fetch: @escaping @Sendable (Database) throws -> Value
+    ) -> AsyncThrowingStream<Value, any Swift.Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    for try await value in ValueObservation.tracking(fetch).values(in: database) {
+                        continuation.yield(value)
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 }

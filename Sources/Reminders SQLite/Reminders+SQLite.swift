@@ -20,30 +20,34 @@ extension Reminders {
                 }
             },
             read: .init(
-                { request in try database.read(request.fetch) },
+                { request in request.stream(in: database) },
                 id: { request in
                     try database.read { db in
                         guard let record = try Reminder.Record.find(request.id).fetchOne(db) else { throw Read.Error.notFound }
                         return Reminder(record)
                     }
                 },
-                page: { request in try database.read(request.fetch) }
-            ),
-            observe: .init(
-                summary: { request in request.stream(in: database) },
                 page: { request in request.stream(in: database) }
             ),
-            update: .init { request in
-                try await database.write { db in
-                    guard try Reminder.Record.find(request.reminder.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
-                    try Reminder.Record.find(request.reminder.id).update {
-                        $0.listID = request.reminder.list
-                        $0.title = request.reminder.title
-                        $0.completed = request.reminder.completed
+            update: .init(
+                { request in
+                    try await database.write { db in
+                        guard try Reminder.Record.find(request.reminder.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
+                        try Reminder.Record.find(request.reminder.id).update {
+                            $0.listID = request.reminder.list
+                            $0.title = request.reminder.title
+                            $0.completed = request.reminder.completed
+                        }
+                        .execute(db)
                     }
-                    .execute(db)
+                },
+                complete: { request in
+                    try await database.write { db in
+                        guard try Reminder.Record.find(request.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
+                        try Reminder.Record.find(request.id).update { $0.completed = request.completed }.execute(db)
+                    }
                 }
-            },
+            ),
             delete: .init { request in
                 try await database.write { db in try Reminder.Record.find(request.id).delete().execute(db) }
             },

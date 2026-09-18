@@ -7,26 +7,27 @@ public import Operation
 public import Reminder
 public import Reminders
 import Reminders_Dependency
+import Standard_Library_Extensions
 public import Tagged
 
 extension Reminders.Read.Page {
-    // One page, `read(page:)` observed, with the row being edited in place. The database is the truth: a new
-    // row is inserted before it is edited, and the draft is written back when its session ends. Calls ride
-    // `writes`.
+    // One page, `read(page:)` followed, with the row being edited in place. The database is the truth: a new
+    // row is inserted before it is edited, and the draft is written back when its session ends. The feature
+    // observes and calls, nothing else; calls ride `writes`.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State {
             public typealias Feature = Reminders.Read.Page.Feature
 
-            public var observing: Observing<Reminders.Observe.Operations.Page>.State
+            public var observing: Observing<Reminders.Read.Operations.Page>.State
             public var editing: Reminders.Update.Feature.State?
             @StoreTaskID public var writes
 
             public init(page filter: Reminders.Read.Filter) {
-                self.observing = .init(request: .init(Request(page: filter)))
+                self.observing = .init(request: Request(page: filter))
             }
 
             public var list: Models.List<Reminder>.ID? {
-                if case let .list(id) = observing.request.page.filter { id } else { nil }
+                if case let .list(id) = observing.request.filter { id } else { nil }
             }
 
             // The draft stands in for its row until the page carries what was written.
@@ -50,8 +51,7 @@ extension Reminders.Read.Page {
             case doneButtonTapped
             case editing(Reminders.Update.Feature.Action)
             case newReminderButtonTapped
-            case observing(Observing<Reminders.Observe.Operations.Page>.Action)
-            case reminderCompleteButtonTapped(Reminder.ID)
+            case observing(Observing<Reminders.Read.Operations.Page>.Action)
             case reminderTapped(Reminder.ID)
         }
 
@@ -82,18 +82,12 @@ extension Reminders.Read.Page {
                         state.editing?.request.reminder.completed.toggle()
                     case .newReminderButtonTapped:
                         if let list = state.list { startNewReminder(in: list, &state) }
-                    case let .reminderCompleteButtonTapped(id):
-                        store.addTask(id: state.writes) {
-                            var reminder = try reminders.read(id)
-                            reminder.completed.toggle()
-                            try await reminders.update(reminder)
-                        }
+                    // Editing starts from the row the page already carries.
                     case let .reminderTapped(id):
-                        guard state.editing?.id != id else { break }
+                        guard state.editing?.id != id, let reminder = state.contents.rows.first(id: id) else { break }
                         let editing = state.editing
                         store.addTask(id: state.writes) {
                             try await commit(editing)
-                            let reminder = try reminders.read(id)
                             try store.modify {
                                 $0.endEditing(editing?.session)
                                 $0.editing = Reminders.Update.Feature.State(reminder, session: uuid())
@@ -101,7 +95,7 @@ extension Reminders.Read.Page {
                         }
                     }
                 }
-                ComposableArchitecture2.Scope(\.observing) { Observing(reminders.observe.page) }
+                ComposableArchitecture2.Scope(\.observing) { Observing(reminders.read.page) }
             }
             .calling(\.call, id: \.writes) { try await reminders($0) }
             .ifLet(\.editing) {

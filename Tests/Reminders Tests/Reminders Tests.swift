@@ -18,18 +18,24 @@ import Testing
         Reminders(
             create: .init { _ in },
             read: .init(
-                { _ in Reminders.Summary(lists: [.init(list: .init(id: list, title: "Personal"), count: 1)]) },
+                { _ in
+                    AsyncThrowingStream {
+                        $0.yield(Reminders.Summary(lists: [.init(list: .init(id: list, title: "Personal"), count: 1)]))
+                        $0.finish()
+                    }
+                },
                 id: { request in
                     guard request.id == reminder.id else { throw Reminders.Read.Error.notFound }
                     return reminder
                 },
-                page: { request in Reminders.Page(rows: request.filter == .list(list) || request.filter == .all ? [reminder] : []) }
+                page: { request in
+                    AsyncThrowingStream {
+                        $0.yield(Reminders.Page(rows: request.filter == .list(list) || request.filter == .all ? [reminder] : []))
+                        $0.finish()
+                    }
+                }
             ),
-            observe: .init(
-                summary: { _ in AsyncThrowingStream { $0.finish() } },
-                page: { _ in AsyncThrowingStream { $0.finish() } }
-            ),
-            update: .init { _ in },
+            update: .init({ _ in }, complete: { _ in }),
             delete: .init { _ in },
             lists: .init(create: { _ in }, delete: { _ in })
         )
@@ -43,15 +49,17 @@ import Testing
         #expect(Reminders.Lists.Call.delete(list, replacement: list) == .delete(list, replacement: list))
         #expect(Reminders.Call.delete(.call(reminder.id)) != .delete(.call(Reminder.ID(UUID()))))
         #expect(Reminders.Read.Operations.Page.Input.self == Reminders.Read.Page.Request.self)
+        #expect(Reminders.Read.Operations.Call.Output.self == AsyncThrowingStream<Reminders.Summary, any Error>.self)
+        try await reminders(.update(.complete(reminder.id, true)))
         await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(.call(Reminder.ID(UUID())))) }
     }
 
-    @Test func `reads are called with the declared labels`() throws {
+    @Test func `reads are called with the declared labels`() async throws {
         let reminders = reminders()
-        #expect(try reminders.read().lists.map(\.count) == [1])
+        #expect(try await reminders.read().first(where: { _ in true })?.lists.map(\.count) == [1])
         #expect(try reminders.read(reminder.id) == reminder)
-        #expect(try reminders.read(page: .list(list)).rows == [reminder])
-        #expect(try reminders.read(page: .list(Models.List<Reminder>.ID(UUID()))).rows.isEmpty)
+        #expect(try await reminders.read(page: .list(list)).first(where: { _ in true })?.rows == [reminder])
+        #expect(try await reminders.read(page: .list(Models.List<Reminder>.ID(UUID()))).first(where: { _ in true })?.rows.isEmpty == true)
         #expect(throws: Reminders.Read.Error.notFound) { try reminders.read(Reminder.ID(UUID())) }
     }
 }
