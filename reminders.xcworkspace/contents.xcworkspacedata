@@ -29,6 +29,6 @@
       location = "group:../swift-institute/swift-atoms/swift-either">
    </FileRef>
    <FileRef
-      location = "group:../pointfreeco/TCA26">
+      location = "absolute:/Users/coen/Developer/pointfreeco/TCA26">
    </FileRef>
 </Workspace>

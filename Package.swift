@@ -116,6 +116,7 @@ let package = Package(
             name: "Reminders SwiftUI",
             dependencies: [
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
+                .product(name: "Operation", package: "swift-operation"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
                 "Models",
@@ -148,6 +149,7 @@ let package = Package(
             name: "Reminders Tests",
             dependencies: [
                 "Models",
+                .product(name: "Operation", package: "swift-operation"),
                 "Reminder",
                 "Reminders",
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -192,6 +194,7 @@ let package = Package(
             name: "Reminders Feature Tests",
             dependencies: [
                 .product(name: "ComposableArchitectureTestSupport", package: "TCA26"),
+                .product(name: "Operation", package: "swift-operation"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
                 "Models",

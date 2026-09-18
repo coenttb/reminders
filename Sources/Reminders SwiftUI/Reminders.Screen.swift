@@ -1,6 +1,7 @@
 public import ComposableArchitecture2
 import Interface_ComposableArchitecture
 import Models
+import Operation
 import Reminder
 public import Reminders
 public import Reminders_Feature
@@ -34,11 +35,11 @@ extension Reminders.Screen: SwiftUI::View {
                     Button("Add List", systemImage: "plus") { store.destination = .init(.init(.init())) }
                 }
             }
-            .navigationDestination(item: $store.scope(\.listing, action: \.self)) { listing in
+            .navigationDestination(item: $store.scope(\.listing)) { listing in
                 Reminders.Read.Page.SwiftUI(store: listing, title: listing.list.flatMap { store.overview.lists?.first(id: $0) }?.list.title ?? "All")
             }
         }
-        .sheet(item: $store.scope(\.destination, action: \.lists)) { form in
+        .sheet(item: $store.scope(\.destination)) { form in
             NavigationStack { Reminders.Lists.Create.SwiftUI(store: form) }
         }
     }

@@ -1,6 +1,7 @@
 public import ComposableArchitecture2
 public import Dependencies
 public import Foundation
+public import Operation
 public import Reminder
 public import Reminders
 import Reminders_Dependency
@@ -36,7 +37,8 @@ extension Reminders.Update {
             public var isSaved: Bool { original?.draft == draft }
         }
 
-        public typealias Action = Reminders.Call
+        // The editor has no actions: its draft is state, and leaving is what writes.
+        public typealias Action = Never
 
         @Dependency(\.reminders) var reminders
 
@@ -48,14 +50,14 @@ extension Reminders.Update {
                 .onDismount {
                     let state = store.state
                     if let original = state.original {
-                        if state.isBlank {
+                        if state.draft.isBlank {
                             try await reminders.delete(original.id)
                         } else if !state.isSaved {
                             do {
                                 try await reminders.update(Reminder(id: original.id, state.draft, created: original.created))
                             } catch Reminders.Update.Error.notFound {}
                         }
-                    } else if !state.isBlank {
+                    } else if !state.draft.isBlank {
                         _ = try await reminders.create(state.draft)
                     }
                 }

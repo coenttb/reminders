@@ -1,5 +1,7 @@
 public import ComposableArchitecture2
+import Interface_ComposableArchitecture
 public import Models
+import Operation
 public import Reminder
 public import Reminders
 public import Reminders_Feature
@@ -26,7 +28,7 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
         SwiftUI::List {
             ForEach(store.rows) { reminder in
                 // The editor is one view that moves between rows; every other row is a plain value.
-                if reminder.id == editing, let editor = store.scope(\.editing, action: \.self) {
+                if reminder.id == editing, let editor = store.scope(\.editing, action: \.never) {
                     Reminders.Update.SwiftUI(store: editor, focus: $focus)
                 } else {
                     Reminder.Row.SwiftUI(
@@ -38,7 +40,7 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
                 }
             }
             // A new row is a draft until its editor leaves.
-            if store.editing?.original == nil, let editor = store.scope(\.editing, action: \.self) {
+            if store.editing?.original == nil, let editor = store.scope(\.editing, action: \.never) {
                 Reminders.Update.SwiftUI(store: editor, focus: $focus)
             }
             if let error = store.writes.taskError {

@@ -3,6 +3,7 @@ public import Dependencies
 public import Foundation
 public import Interface_ComposableArchitecture
 public import Models
+public import Operation
 public import Reminder
 public import Reminders
 import Reminders_Dependency
@@ -10,7 +11,8 @@ public import Tagged
 
 extension Reminders.Read.Page {
     // One page, `read(page:)` followed, with one row being edited in place — an existing row, or a draft that
-    // becomes a row when its editor leaves. The feature observes and calls, nothing else; calls ride `writes`.
+    // becomes a row when its editor leaves. The feature observes and calls, nothing else: its actions are the
+    // domain's calls, each run once here, on `writes`.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State {
             public var observing: Observing<Reminders.Read.Page>.State
@@ -52,7 +54,7 @@ extension Reminders.Read.Page {
                 ComposableArchitecture2.Scope(\.observing, action: \.never) { Observing(reminders.read) }
             }
             .calling(reminders, id: \.writes)
-            .ifLet(\.editing, action: \.self) {
+            .ifLet(\.editing, action: \.never) {
                 Reminders.Update.Feature()
             }
         }

@@ -26,25 +26,31 @@ placeholder, all styling and parity chrome, and the evidence.
 
 ## Interface-type reuse
 
-The `@Operations` macro derives, for every operation, a symbol (`Reminders.Read.Page`; the primary operation is the interface itself, `Reminders.Read`) whose `Input` is its parameters as a value; the `@Interface` macro derives, for every
-interface, a `Call` (the coproduct of its operations' requests, `Hashable` and `Sendable` when the requests are)
-together with an interpreter `reminders(call)`. The layers above the domain reuse those types instead of
-declaring their own:
+`@Operations` derives one symbol per operation (`Reminders.Read.Page`, `Reminders.Lists.Create`; the primary is
+`Run`) whose `Input` is the parameters as a value and which knows how its owner runs it. `@Interface` derives
+the `Call` — the coproduct of the operations' inputs and the children's calls, `Hashable` and `Sendable` when the
+inputs are — with its constructors, its builders and `run(owner, call)`. The layers above the domain write
+against those, not against types of their own:
 
-- **Input as draft.** `Reminders.Update.Feature.State` holds `Reminders.Update.Input` — the very value
-  `update` is called with — and the view binds `$store.request.reminder.title`. The list sheet holds
-  `Reminders.Lists.Create.Input` the same way.
-- **Call as action.** Every feature's `Action` *is* `Reminders.Call` (the sheet's is `Reminders.Lists.Call`,
-  embedded at `\.lists`); there are no bespoke action enums. `.calling(reminders, id: \.writes)` runs each as a
-  task. `store.send(.update.complete(id, done))` and `store.update.complete(id, done)` are sugar over the same
-  call; neither returns nor throws — the outcome is read from `writes`. Everything that is not a call is state
-  the view sets on the store: `store.listing = .init(page: .list(id))`, `store.editing = .init(reminder)`,
-  `store.editing = nil`, `store.dismiss()`. Writing the draft is the editor's `onDismount`.
-- **Observing / Requesting** from `swift-interface-composable-architecture` are the two generic features over an
-  operation symbol: `Observing<Reminders.Read.Operations.Page> { reminders.read($0) }` keeps a request's
-  value current; `Requesting { try await reminders.lists.create($0) }` composes a request and sends it whole.
-  The arrows themselves live in `Reminders.Product` (the `@Product` of the interface's request-typed model);
-  features call the interface's witnesses, never the product.
+- **Input as draft.** `Reminders.Update.Feature.State` edits a `Reminder.Draft` and the sheet a
+  `Reminders.Lists.Create.Input`; a one-field input reads as its field (`$store.request.title`), the editor state
+  as its draft (`$store.title`, `store.completed.toggle()`).
+- **Call as action.** The page's `Action` *is* `Reminders.Call`; the sheet's is `Reminders.Lists.Call`. The root
+  composes them (`case call(Reminders.Call)`, `case listing(...)`, `case destination(...)`) so that every call
+  is run exactly once, by the feature whose task id carries its outcome: `.calling(reminders, id: \.writes)`
+  on the page, `.calling(\.call, reminders, id: \.writes)` at the root.
+- **Sugar over the call.** `.delete(id)`, `.update.complete(id, done)`, `.lists.delete(id)` are the Call's own
+  builders (children are static members); `store.delete(id)`, `store.update.complete(id, done)`,
+  `store.create(store.request)` are the same builders handing the call to `send`. Neither returns nor throws;
+  the outcome is on the task id.
+- **State the view sets.** `store.listing = .init(page: .list(id))`, `store.editing = .init(reminder)`,
+  `store.editing = nil`, `store.destination = .init(.init(.init()))`, `store.dismiss()`. The editor has no
+  actions: leaving is what writes (create a draft, update a changed row, drop a blank one).
+- **Observing / Requesting** (swift-interface-composable-architecture): `Observing<Reminders.Read.Page>(reminders.read)`
+  follows an operation's stream for its request; `Requesting<Reminders.Lists.Create>(\.reminders.lists)`
+  composes an input and sends any call of its interface, dismissing on success. Storage mints identity:
+  `create` takes a `Draft`.
 
 Build and test with the `reminders.xcworkspace` scheme, destination iPhone 17. The workspace resolves
-`swift-interface`, `swift-operation` and `swift-interface-composable-architecture` from sibling checkouts.
+`swift-interface`, `swift-operation`, `swift-product`, `swift-coproduct`, `swift-optic`, `swift-either`,
+`swift-interface-composable-architecture` and `TCA26` (branch `interface-calls`) from sibling checkouts.

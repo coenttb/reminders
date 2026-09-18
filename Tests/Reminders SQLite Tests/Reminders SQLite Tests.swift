@@ -11,7 +11,10 @@ import SQLiteData
 import Tagged
 import Testing
 
-@Suite(.dependencies { $0.date.now = Date(timeIntervalSince1970: 1_234_567_890) })
+@Suite(.dependencies {
+    $0.date.now = Date(timeIntervalSince1970: 1_234_567_890)
+    $0.uuid = .incrementing
+})
 struct `Reminders SQLite storage` {
     @Dependency(\.date.now) var now
 
@@ -76,7 +79,7 @@ struct `Reminders SQLite storage` {
         let personal = sample.lists[0].id
         var pages = reminders.read(page: .list(personal)).makeAsyncIterator()
         #expect(try await pages.next()?.rows.map(\.title) == ["Groceries", "Haircut"])
-        try await reminders.create(Reminder(id: Reminder.ID(UUID()), list: personal, title: "Water plants", created: now))
+        _ = try await reminders.create(Reminder.Draft(list: personal, title: "Water plants"))
         #expect(try await pages.next()?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
     }
 }

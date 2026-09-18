@@ -1,6 +1,7 @@
 public import ComposableArchitecture2
 import Interface_ComposableArchitecture
 import Models
+import Operation
 import Reminder
 public import Reminders
 public import Reminders_Feature
@@ -31,7 +32,7 @@ extension Reminders.Read.SwiftUI: SwiftUI::View {
                 }
                 .foregroundStyle(.primary)
                 .swipeActions {
-                    Button("Delete", systemImage: "trash", role: .destructive) { store.lists.delete(entry.id) }
+                    Button("Delete", systemImage: "trash", role: .destructive) { store.send(.call(.lists.delete(entry.id))) }
                 }
             }
         }

@@ -1,8 +1,10 @@
 public import ComposableArchitecture2
 public import Interface_ComposableArchitecture
 public import Models
+import Operation
 public import Reminder
 public import Reminders
+public import Reminders_Feature
 public import SwiftUI
 
 extension Reminders.Lists.Create {
@@ -31,7 +33,7 @@ extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { store.create(store.request) }
-                    .disabled(store.request.isBlank || store.sending.isRunning)
+                    .disabled(store.request.draft.isBlank || store.sending.isRunning)
             }
         }
     }
