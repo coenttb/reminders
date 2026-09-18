@@ -95,7 +95,7 @@ extension Reminders.Read.Page {
                         }
                     }
                 }
-                ComposableArchitecture2.Scope(\.observing) { Observing(reminders.read.page) }
+                ComposableArchitecture2.Scope(\.observing) { Observing { reminders.read($0) } }
             }
             .calling(\.call, id: \.writes) { try await reminders($0) }
             .ifLet(\.editing) {

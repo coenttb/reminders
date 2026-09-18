@@ -16,9 +16,9 @@ import Testing
 
     func reminders() -> Reminders {
         Reminders(
-            create: .init { _ in },
+            create: .init(run: { _ in }),
             read: .init(
-                { _ in
+                run: { _ in
                     AsyncThrowingStream {
                         $0.yield(Reminders.Read.Summary(lists: [.init(list: .init(id: list, title: "Personal"), count: 1)]))
                         $0.finish()
@@ -35,8 +35,8 @@ import Testing
                     }
                 }
             ),
-            update: .init({ _ in }, complete: { _ in }),
-            delete: .init { _ in },
+            update: .init(run: { _ in }, complete: { _ in }),
+            delete: .init(run: { _ in }),
             lists: .init(create: { _ in }, delete: { _ in })
         )
     }

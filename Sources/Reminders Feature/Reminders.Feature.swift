@@ -58,7 +58,7 @@ extension Reminders {
                         break
                     }
                 }
-                ComposableArchitecture2.Scope(\.overview) { Observing(reminders.read.run) }
+                ComposableArchitecture2.Scope(\.overview) { Observing { reminders.read($0) } }
             }
             .calling(\.call, id: \.writes) { try await reminders($0) }
             .ifLet(\.listing) {

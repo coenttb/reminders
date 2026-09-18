@@ -39,8 +39,10 @@ declaring their own:
   `.call(.delete(.call(id)))`, a completion toggle `.call(.update(.complete(id, completed)))` and a list delete
   `.call(.lists(.delete(id, replacement:)))`.
 - **Observing / Requesting** from `swift-interface-composable-architecture` are the two generic features over an
-  operation symbol: `Observing<Reminders.Read.Operations.Page>(reminders.read.page)` keeps a request's
-  value current; `Requesting(reminders.lists.create)` composes a request and sends it whole.
+  operation symbol: `Observing<Reminders.Read.Operations.Page> { reminders.read($0) }` keeps a request's
+  value current; `Requesting { try await reminders.lists.create($0) }` composes a request and sends it whole.
+  The arrows themselves live in `Reminders.Product` (the `@Product` of the interface's request-typed model);
+  features call the interface's witnesses, never the product.
 
 Build and test with the `reminders.xcworkspace` scheme, destination iPhone 17. The workspace resolves
 `swift-interface`, `swift-operation` and `swift-interface-composable-architecture` from sibling checkouts.

@@ -11,16 +11,16 @@ extension Reminders {
     // The domain over one SQLite database: reads on the caller's thread, each write one transaction.
     public static func sqlite(_ database: any DatabaseWriter) -> Reminders {
         Self(
-            create: .init { request in
+            create: .init(run: { request in
                 try await database.write { db in
                     try Reminder.Record.insert { Reminder.Record.Draft(request.reminder) }.execute(db)
                     try Reminder.Record.find(request.reminder.id)
                         .update { $0.position = Reminder.Record.select { ($0.position.max() ?? -1) + 1 } }
                         .execute(db)
                 }
-            },
+            }),
             read: .init(
-                { request in request.stream(in: database) },
+                run: { request in request.stream(in: database) },
                 id: { request in
                     try database.read { db in
                         guard let record = try Reminder.Record.find(request.id).fetchOne(db) else { throw Read.Error.notFound }
@@ -30,7 +30,7 @@ extension Reminders {
                 page: { request in request.stream(in: database) }
             ),
             update: .init(
-                { request in
+                run: { request in
                     try await database.write { db in
                         guard try Reminder.Record.find(request.reminder.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
                         try Reminder.Record.find(request.reminder.id).update {
@@ -48,9 +48,9 @@ extension Reminders {
                     }
                 }
             ),
-            delete: .init { request in
+            delete: .init(run: { request in
                 try await database.write { db in try Reminder.Record.find(request.id).delete().execute(db) }
-            },
+            }),
             lists: .init(
                 create: { request in
                     try await database.write { db in

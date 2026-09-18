@@ -16,4 +16,13 @@
    <FileRef
       location = "group:../swift-institute/swift-compositions/swift-interface-composable-architecture">
    </FileRef>
+   <FileRef
+      location = "group:../swift-institute/swift-atoms/swift-product">
+   </FileRef>
+   <FileRef
+      location = "group:../swift-institute/swift-atoms/swift-coproduct">
+   </FileRef>
+   <FileRef
+      location = "group:../swift-institute/swift-atoms/swift-optic">
+   </FileRef>
 </Workspace>
