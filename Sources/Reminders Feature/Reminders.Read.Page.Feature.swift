@@ -18,12 +18,12 @@ extension Reminders.Read.Page {
         public struct State {
             public typealias Feature = Reminders.Read.Page.Feature
 
-            public var observing: Observing<Reminders.Read.Operations.Page>.State
+            public var observing: Observing<Reminders.Read.Page>.State
             public var editing: Reminders.Update.Feature.State?
             @StoreTaskID public var writes
 
             public init(page filter: Reminders.Read.Filter) {
-                self.observing = .init(request: Request(page: filter))
+                self.observing = .init(request: Input(page: filter))
             }
 
             public var list: Models.List<Reminder>.ID? {
@@ -51,7 +51,7 @@ extension Reminders.Read.Page {
             case doneButtonTapped
             case editing(Reminders.Update.Feature.Action)
             case newReminderButtonTapped
-            case observing(Observing<Reminders.Read.Operations.Page>.Action)
+            case observing(Observing<Reminders.Read.Page>.Action)
             case reminderTapped(Reminder.ID)
         }
 
@@ -74,7 +74,7 @@ extension Reminders.Read.Page {
                     case .doneButtonTapped, .editing(.titleSubmitted):
                         endEditing(&state)
                     // A deleted row's draft is dropped with it.
-                    case let .call(.delete(.call(application))):
+                    case let .call(.delete(.run(application))):
                         if state.editing?.id == application.input.id { state.editing = nil }
                     case .call, .observing:
                         break

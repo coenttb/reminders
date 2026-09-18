@@ -10,14 +10,14 @@ extension Reminders.Update {
         public struct State: Hashable, Sendable {
             public typealias Feature = Reminders.Update.Feature
 
-            public var request: Reminders.Update.Request
-            public var original: Reminders.Update.Request
+            public var request: Reminders.Update.Run.Input
+            public var original: Reminders.Update.Run.Input
             // Each editing session has its own identity, so a stale task cannot end a newer session.
             public let session: UUID
 
             public init(_ reminder: Reminder, session: UUID) {
-                self.request = Request(reminder)
-                self.original = Request(reminder)
+                self.request = Run.Input(reminder)
+                self.original = Run.Input(reminder)
                 self.session = session
             }
 

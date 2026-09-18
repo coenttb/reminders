@@ -85,7 +85,7 @@ struct `Reminders feature` {
             store.send(.listTapped(personal))
             while store.listing?.observing.value == nil { await Task.yield() }
             let groceries = try #require(store.listing?.observing.value?.rows.first(where: { $0.title == "Groceries" }))
-            store.send(.listing(.call(.delete(.call(groceries.id)))))
+            store.send(.listing(.call(.delete(.run(groceries.id)))))
             try await page(store).writes()
             while store.listing?.observing.value?.rows.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
             #expect(store.listing?.observing.value?.rows.map(\.title) == ["Haircut"])

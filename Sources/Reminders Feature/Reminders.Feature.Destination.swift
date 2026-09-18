@@ -8,7 +8,7 @@ extension Reminders.Feature {
     @ComposableArchitecture2.Feature public enum Destination {
         // The sheet: `lists.create`'s request being composed, sent to whichever `reminders` is current.
         case list(
-            Requesting<Reminders.Lists.Operations.Create> = Requesting {
+            Requesting<Reminders.Lists.Create> = Requesting {
                 try await Dependency(\.reminders).wrappedValue.lists.create($0)
             }
         )

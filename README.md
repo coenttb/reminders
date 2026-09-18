@@ -26,20 +26,20 @@ placeholder, all styling and parity chrome, and the evidence.
 
 ## Interface-type reuse
 
-The `@Interface` macro derives, for every operation, a `Request` (its parameters as a value) and, for every
+The `@Operations` macro derives, for every operation, a symbol (`Reminders.Read.Page`) whose `Input` is its parameters as a value; the `@Interface` macro derives, for every
 interface, a `Call` (the coproduct of its operations' requests, `Hashable` and `Sendable` when the requests are)
 together with an interpreter `reminders(call)`. The layers above the domain reuse those types instead of
 declaring their own:
 
-- **Request as draft.** `Reminders.Update.Feature.State` holds `Reminders.Update.Request` — the very value
+- **Input as draft.** `Reminders.Update.Feature.State` holds `Reminders.Update.Run.Input` — the very value
   `update` is called with — and the view binds `$store.request.reminder.title`. The list sheet holds
-  `Reminders.Lists.Create.Request` the same way.
+  `Reminders.Lists.Create.Input` the same way.
 - **Call as action.** `Reminders.Feature.Action.call(Reminders.Call)` and the page's `.call` carry a domain call;
   `.calling(\.call, id: \.writes) { try await reminders($0) }` runs it as a task, so a swipe-delete is
-  `.call(.delete(.call(id)))`, a completion toggle `.call(.update(.complete(id, completed)))` and a list delete
+  `.call(.delete(.run(id)))`, a completion toggle `.call(.update(.complete(id, completed)))` and a list delete
   `.call(.lists(.delete(id, replacement:)))`.
 - **Observing / Requesting** from `swift-interface-composable-architecture` are the two generic features over an
-  operation symbol: `Observing<Reminders.Read.Operations.Page> { reminders.read($0) }` keeps a request's
+  operation symbol: `Observing<Reminders.Read.Page> { reminders.read($0) }` keeps a request's
   value current; `Requesting { try await reminders.lists.create($0) }` composes a request and sends it whole.
   The arrows themselves live in `Reminders.Product` (the `@Product` of the interface's request-typed model);
   features call the interface's witnesses, never the product.

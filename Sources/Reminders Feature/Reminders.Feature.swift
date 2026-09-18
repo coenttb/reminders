@@ -13,7 +13,7 @@ extension Reminders {
         public struct State {
             public typealias Feature = Reminders.Feature
 
-            public var overview = Observing<Reminders.Read.Operations.Call>.State(request: .init())
+            public var overview = Observing<Reminders.Read.Run>.State(request: .init())
             public var listing: Reminders.Read.Page.Feature.State?
             public var destination: Destination.State?
             @StoreTaskID public var writes
@@ -28,7 +28,7 @@ extension Reminders {
             case listDeleted(Models.List<Reminder>.ID)
             case listTapped(Models.List<Reminder>.ID)
             case listing(Reminders.Read.Page.Feature.Action)
-            case overview(Observing<Reminders.Read.Operations.Call>.Action)
+            case overview(Observing<Reminders.Read.Run>.Action)
         }
 
         @Dependency(\.reminders) var reminders

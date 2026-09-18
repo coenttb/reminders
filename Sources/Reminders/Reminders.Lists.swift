@@ -5,6 +5,7 @@ public import Reminder
 extension Reminders {
     @Interface
     public struct Lists: Lists.Interface {
+        @Operations
         public protocol Interface {
             func create(_ list: Models.List<Reminder>) async throws
             // Deleting the last list installs the default one under the replacement id.
