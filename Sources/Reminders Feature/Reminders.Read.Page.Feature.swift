@@ -19,7 +19,7 @@ extension Reminders.Read.Page {
             public var editing: Reminders.Update.Feature.State?
             @StoreTaskID public var writes
 
-            public init(page filter: Reminders.Read.Filter) {
+            public init(_ filter: Reminders.Read.Filter) {
                 self.contents = .init(filter)
             }
 

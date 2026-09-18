@@ -21,7 +21,7 @@ struct `Reminders views` {
     @Test func `a row is built from a value; the page from a store`() {
         let reminder = Reminder(id: Reminder.ID(UUID()), list: List<Reminder>.ID(UUID()), title: "Milk", created: Date())
         _ = Reminder.Row.SwiftUI(reminder: reminder, complete: {}, delete: {}, edit: {})
-        let store = Store(initialState: Reminders.Read.Page.Feature.State(page: .all)) { Reminders.Read.Page.Feature() }
+        let store = Store(initialState: Reminders.Read.Page.Feature.State(.all)) { Reminders.Read.Page.Feature() }
         _ = Reminders.Read.Page.SwiftUI(store: store, title: "All")
     }
 }
