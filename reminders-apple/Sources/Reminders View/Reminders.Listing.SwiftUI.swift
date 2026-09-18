@@ -40,7 +40,9 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
             complete: { store.send(.reminderCompleteButtonTapped($0)) },
             delete: { store.send(.reminderDeleted($0)) },
             details: { store.send(.reminderDetailsButtonTapped($0)) },
-            edit: store.list.map { _ in { store.send(.reminderTapped($0)) } }
+            // A row edits in place inside its list and inside All; the other smart lists open the details until a
+            // continued row learns to keep the filter it was started in.
+            edit: store.list != nil || store.filter == .all ? { store.send(.reminderTapped($0)) } : nil
         )
         ScrollViewReader { proxy in
         SwiftUI::List {
