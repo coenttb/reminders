@@ -12,6 +12,7 @@ extension Reminders {
         let store: FeatureStore<State, Action>
         let reminders: Reminders
         let clock: any Clock<Duration>
+        let now: Dependencies.DateGenerator
         let uuid: Dependencies.UUIDGenerator
     }
 }
@@ -42,9 +43,10 @@ extension Reminders.Completion {
         state.grace = [:]
     }
 
+    // Completing stamps the moment; reopening clears it.
     func finish(_ id: Reminder.ID, completed: Bool) async throws {
         try await store.attempt {
-            try await complete(id, completed)
+            let completed = try await complete(id, completed)
             try store.modify {
                 $0.grace.removeValue(forKey: id)
                 $0.reopening.remove(id)
@@ -55,7 +57,7 @@ extension Reminders.Completion {
 
     // Leaving writes what is still in grace, on the spot.
     func finish(_ ids: some Sequence<Reminder.ID>) async throws {
-        for id in ids { try await complete(id, true) }
+        for id in ids { _ = try await complete(id, true) }
     }
 
     func retrieve(_ id: Reminder.ID) throws -> Reminders.Placement? {
@@ -66,9 +68,12 @@ extension Reminders.Completion {
         }
     }
 
-    private func complete(_ id: Reminder.ID, _ completed: Bool) async throws {
-        guard var reminder = try retrieve(id)?.reminder, reminder.completed != completed else { return }
-        reminder.completed = completed
+    @discardableResult
+    private func complete(_ id: Reminder.ID, _ completed: Bool) async throws -> Date? {
+        guard var reminder = try retrieve(id)?.reminder else { return nil }
+        guard reminder.isCompleted != completed else { return reminder.completed }
+        reminder.completed = completed ? now() : nil
         _ = try await reminders.update(reminder)
+        return reminder.completed
     }
 }

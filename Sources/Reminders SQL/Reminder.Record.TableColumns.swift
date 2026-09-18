@@ -5,7 +5,7 @@ public import Reminders
 public import StructuredQueries
 
 extension Reminder.Record.TableColumns {
-    public var isCompleted: SQLQueryExpression<Bool> { SQLQueryExpression("\(completed.eq(true))") }
+    public var isCompleted: SQLQueryExpression<Bool> { SQLQueryExpression("\(completed.isNot(nil))") }
 
     public var isScheduled: some QueryExpression<Bool> {
         !isCompleted && dueDate.isNot(nil)

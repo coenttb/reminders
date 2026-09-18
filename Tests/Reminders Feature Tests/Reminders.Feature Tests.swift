@@ -123,11 +123,11 @@ struct `Reminder feature` {
         await store.send(.overview(.listTapped(personal)))?.value
         let grace = await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))
         #expect(await store.state.listing?.grace == [groceries.id: UUID(0)])
-        #expect(try await stored(groceries.id)?.completed == false)
+        #expect(try await stored(groceries.id)?.isCompleted == false)
         await clock.advance(by: .seconds(5))
         await grace?.value
         #expect(await store.state.listing?.grace == [:])
-        #expect(try await stored(groceries.id)?.completed == true)
+        #expect(try await stored(groceries.id)?.isCompleted == true)
         try await store.state.overview.$summary.load()
         await store.send(.newReminderButtonTapped)?.value
         #expect(await form(store)?.isNew == true)
@@ -229,7 +229,7 @@ struct `Reminder feature` {
         let generated = Reminders.Sample.generated(scale, seed: 1, at: now, calendar: calendar)
         try await database.write { db in try generated.replace(in: db) }
         let list = generated.lists[0].id
-        let open = generated.reminders.count { !$0.completed }
+        let open = generated.reminders.count { !$0.isCompleted }
         let step = Listing.paging.step
         #expect(open > step && open < 2 * step)
         let store = try await makeStore()
@@ -397,7 +397,7 @@ struct `Reminder feature` {
         try await block("UPDATE OF completed", on: "reminders", reason: "completion locked")
         await clock.advance(by: .seconds(5))
         await grace?.value
-        #expect(try await stored(groceries.id)?.completed == false)
+        #expect(try await stored(groceries.id)?.isCompleted == false)
         #expect(await store.state.failure == nil)
         try await unblock()
         await store.dismount()
@@ -418,10 +418,10 @@ struct `Reminder feature` {
         #expect(await store.state.listing?.gracing == Set(rows.prefix(3)))
         // The first tap was six seconds ago, the last one four: nothing is written yet.
         await clock.advance(by: .seconds(3))
-        #expect(try await stored(rows[0])?.completed == false)
+        #expect(try await stored(rows[0])?.isCompleted == false)
         await clock.advance(by: .seconds(2))
         try await until(try await page(store)) { $0.rows.count == 1 }
-        for id in rows.prefix(3) { #expect(try await stored(id)?.completed == true) }
+        for id in rows.prefix(3) { #expect(try await stored(id)?.isCompleted == true) }
         #expect(await store.state.listing?.grace == [:])
         await store.dismount()
         }
@@ -437,11 +437,11 @@ struct `Reminder feature` {
         await store.send(.listing(.showCompletedButtonTapped))?.value
         try await until(try await page(store)) { $0.rows.map(\.id).contains(walk.id) == true }
         await store.send(.listing(.reminderCompleteButtonTapped(walk.id)))?.value
-        #expect(try await stored(walk.id)?.completed == false)
+        #expect(try await stored(walk.id)?.isCompleted == false)
         await store.send(.listing(.reminderCompleteButtonTapped(groceries.id)))
         #expect(await store.state.listing?.grace == [groceries.id: UUID(0)])
         await store.dismount()
-        #expect(try await stored(groceries.id)?.completed == true)
+        #expect(try await stored(groceries.id)?.isCompleted == true)
         }
     }
 
@@ -461,7 +461,7 @@ struct `Reminder feature` {
         await clock.advance(by: .seconds(5))
         await grace?.value
         #expect(await store.state.listing?.grace == [:])
-        #expect(try await stored(groceries.id)?.completed == true)
+        #expect(try await stored(groceries.id)?.isCompleted == true)
         let editing = try await editing(store)
         #expect(editing.id == haircut.id && editing.session == UUID(2) && editing.draft == haircutRow.reminder)
         await store.send(.listing(.doneButtonTapped))?.value

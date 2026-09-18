@@ -15,6 +15,8 @@ extension Reminders {
         case allDay, morning, afternoon, tonight
         // Scheduled: today, tomorrow, the five days after, the rest of the month, then months.
         case today, tomorrow, day(Date), restOfMonth, month(Date)
+        // Completed: today, then each of the previous seven days, then months, the newest first.
+        case previous(day: Date), earlier(month: Date)
     }
 }
 
@@ -23,6 +25,7 @@ extension Reminders.Section {
     public static let tonightHour = 18
     public static let daysAfterTomorrow = 5
     public static let monthsAhead = 12
+    public static let previousDays = 7
 
     // The sections a screen lists before any rows are read; the ones that come from the rows (overdue days,
     // months beyond the year) are added by the fold in order.
@@ -35,15 +38,25 @@ extension Reminders.Section {
             let days = (2...(daysAfterTomorrow + 1)).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }.map(Self.day)
             let months = (1...monthsAhead).compactMap { calendar.date(byAdding: .month, value: $0, to: today)?.firstDayOfMonth(in: calendar) }.map(Self.month)
             return [.today, .tomorrow] + days + [.restOfMonth] + months
-        case .all, .completed, .flagged, .list, .tags:
+        case .completed:
+            return [.today]
+        case .all, .flagged, .list, .tags:
             return []
         }
     }
 
     // The section a row belongs to on a screen, by its due date; a screen without date sections keys by list or not at all.
     public static func section(of reminder: Reminder, in filter: Reminders.Filter, at now: Date, calendar: Calendar) -> Self {
-        guard let due = reminder.due else { return filter.groupsByList ? .list(reminder.list) : .rows }
         let today = calendar.startOfDay(for: now)
+        if filter == .completed {
+            guard let completed = reminder.completed else { return .rows }
+            switch today.daysBetween(completed, in: calendar) ?? 0 {
+            case 0...: return .today
+            case (-previousDays)..<0: return .previous(day: calendar.startOfDay(for: completed))
+            default: return .earlier(month: completed.firstDayOfMonth(in: calendar) ?? completed)
+            }
+        }
+        guard let due = reminder.due else { return filter.groupsByList ? .list(reminder.list) : .rows }
         let days = today.daysBetween(due.date, in: calendar) ?? 0
         switch filter {
         case .today:
@@ -65,6 +78,10 @@ extension Reminders.Section {
         }
     }
 
+    public var isPreviousDay: Bool {
+        if case .previous = self { true } else { false }
+    }
+
     // Morning, afternoon, or tonight: the part of the day a moment falls in.
     public static func part(containing date: Date, calendar: Calendar) -> Self {
         let hour = calendar.component(.hour, from: date)
@@ -75,20 +92,23 @@ extension Reminders.Section {
         Self.section(of: reminder, in: filter, at: now, calendar: calendar) == self
     }
 
-    // The order the sections take on a screen: overdue days by day, then the skeleton, months by month.
-    public var order: (Int, Date) {
+    // The order the sections take on a screen: overdue days by day, then the skeleton, days and months by
+    // date; the Completed screen runs backwards, so its days and months are keyed by the time until them.
+    public var order: (Int, TimeInterval) {
         switch self {
-        case .rows, .list: (0, .distantPast)
-        case let .overdue(day): (0, day ?? .distantPast)
-        case .allDay: (1, .distantPast)
-        case .morning: (2, .distantPast)
-        case .afternoon: (3, .distantPast)
-        case .tonight: (4, .distantPast)
-        case .today: (1, .distantPast)
-        case .tomorrow: (2, .distantPast)
-        case let .day(day): (3, day)
-        case .restOfMonth: (4, .distantPast)
-        case let .month(month): (5, month)
+        case .rows, .list: (0, -.infinity)
+        case let .overdue(day): (0, day?.timeIntervalSinceReferenceDate ?? -.infinity)
+        case .allDay: (1, -.infinity)
+        case .morning: (2, -.infinity)
+        case .afternoon: (3, -.infinity)
+        case .tonight: (4, -.infinity)
+        case .today: (1, -.infinity)
+        case .tomorrow: (2, -.infinity)
+        case let .day(day): (3, day.timeIntervalSinceReferenceDate)
+        case .restOfMonth: (4, -.infinity)
+        case let .month(month): (5, month.timeIntervalSinceReferenceDate)
+        case let .previous(day): (6, -day.timeIntervalSinceReferenceDate)
+        case let .earlier(month): (7, -month.timeIntervalSinceReferenceDate)
         }
     }
 
@@ -97,7 +117,7 @@ extension Reminders.Section {
         let today = calendar.startOfDay(for: now)
         func moment(_ hour: Int) -> Reminder.Due? { calendar.date(bySettingHour: hour, minute: 0, second: 0, of: today).map(Reminder.Due.moment) }
         switch self {
-        case .rows, .list, .overdue: return nil
+        case .rows, .list, .overdue, .previous, .earlier: return nil
         case .allDay, .today: return .day(today)
         case .morning: return moment(9)
         case .afternoon: return moment(Self.afternoonHour)

@@ -79,6 +79,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
             // The sections come folded from the read; a row's index across them drives the window.
             let starts: [Int] = contents.sections.reduce(into: [0]) { (starts: inout [Int], section: Reminders.Page.Section) in starts.append(starts[starts.count - 1] + section.rows.count) }
             let sectioned = store.filter.sectionsByDay
+            let completion = store.filter == .completed
             ForEach(Array(contents.sections.enumerated()), id: \.element.id) { offset, section in
                 let key = section.key
                 let header = key.header
@@ -93,14 +94,14 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                         if id == editing, let editor = store.scope(\.editing) {
                             Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
                         } else {
-                            Reminder.Row.SwiftUI(reminder: reminder, list: named ? lists.first(id: reminder.list)?.title : nil, dated: sectioned && key.showsTimeAlone, completed: completed, color: sectioned ? tint : color(reminder.list), now: now, calendar: calendar, actions: actions)
+                            Reminder.Row.SwiftUI(reminder: reminder, list: named ? lists.first(id: reminder.list)?.title : nil, dated: sectioned && key.showsTimeAlone, completion: completion, completed: completed, color: sectioned ? tint : color(reminder.list), now: now, calendar: calendar, actions: actions)
                                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                                 .listRowSeparator(.hidden)
                                 .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }
                         }
                     }
                     .onMove { store.send(.remindersMoved($0, $1)) }
-                    if editing == nil, key.offersAdd(in: contents.sections, at: now, calendar: calendar) {
+                    if editing == nil, key.offersAdd(in: contents.sections, for: store.filter, at: now, calendar: calendar) {
                         Button { store.send(.sectionAddTapped(key)) } label: {
                             Image(systemName: "circle.dotted")
                                 .foregroundStyle(SwiftUI::Color(.systemGray3))
@@ -121,9 +122,9 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
                     } else if header != .none {
                         VStack(alignment: .leading, spacing: 6) {
-                            // Overdue days share one title above the first of them.
-                            if key.isOverdueDay, offset == 0 {
-                                Text("Overdue").font(.title2.weight(.bold)).foregroundStyle(SwiftUI::Color.primary)
+                            // Overdue days and previous days share one title above the first of their run.
+                            if let title = key.groupTitle, offset == 0 || contents.sections[offset - 1].key.groupTitle != title {
+                                Text(title).font(.title2.weight(.bold)).foregroundStyle(SwiftUI::Color.primary)
                             }
                             header.view(month: calendar, now: now, empty: empty)
                         }
@@ -135,7 +136,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                     // A 2 pt rule closes every section; between consecutive days it thins to a dotted line.
                     if sectioned, key != .overdue(day: nil) {
                         let next = offset + 1 < contents.sections.count ? contents.sections[offset + 1].key : nil
-                        let thin = next.map { $0.isDay && (key.isDay || key == .tomorrow) } ?? false
+                        let thin = next.map { $0.isDay && (key.isDay || key == .tomorrow) && $0.groupTitle == key.groupTitle } ?? false
                         Rectangle()
                             .fill(.quaternary)
                             .frame(height: thin ? 1 : 2)

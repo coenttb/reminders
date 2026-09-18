@@ -83,7 +83,7 @@ extension Reminders {
                     list: personal,
                     title: "Take a walk",
                     due: .day(day(-190)),
-                    completed: true,
+                    completed: day(-189),
                     tags: ["car", "kids", "social"],
                     created: day(-200)
                 ),
@@ -110,7 +110,7 @@ extension Reminders {
                     title: "Get laundry",
                     due: .day(day(-2)),
                     priority: .low,
-                    completed: true,
+                    completed: day(-1),
                     created: day(-12)
                 ),
                 .init(
@@ -135,7 +135,7 @@ extension Reminders {
                     title: "Send weekly emails",
                     due: .day(day(-2)),
                     priority: .medium,
-                    completed: true,
+                    completed: day(-2),
                     created: day(-14)
                 ),
                 .init(
@@ -188,7 +188,7 @@ extension Reminders.Sample {
                         due: due,
                         priority: random.chance(1, in: 4) ? Reminder.Priority.allCases[random.next(in: 0..<3)] : nil,
                         flagged: random.chance(1, in: 10),
-                        completed: random.chance(1, in: 5),
+                        completed: random.chance(1, in: 5) ? created.addingTimeInterval(Double(random.next(in: 0..<30 * 24 * 60 * 60))) : nil,
                         tags: tags,
                         created: created
                     )

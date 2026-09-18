@@ -16,7 +16,7 @@ extension Reminder {
         public var hasTime: Bool = false
         public var flagged: Bool = false
         public var priority: Reminder.Priority?
-        public var completed: Bool = false
+        public var completed: Date?
         public var position: Int = 0
         @Column(as: Calendar.RecurrenceRule.JSONRepresentation?.self)
         public var repeats: Calendar.RecurrenceRule?
@@ -31,7 +31,7 @@ extension Reminder {
             hasTime: Bool = false,
             flagged: Bool = false,
             priority: Reminder.Priority? = nil,
-            completed: Bool = false,
+            completed: Date? = nil,
             position: Int = 0,
             repeats: Calendar.RecurrenceRule? = nil,
             created: Date

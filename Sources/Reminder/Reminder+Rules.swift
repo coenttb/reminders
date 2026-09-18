@@ -6,5 +6,5 @@ extension Reminder {
 
     public var isBlank: Bool { Self.isBlank(title: title) }
 
-    public func pastDue(at now: Date, calendar: Calendar) -> Bool { !completed && due?.isPast(at: now, calendar: calendar) ?? false }
+    public func pastDue(at now: Date, calendar: Calendar) -> Bool { !isCompleted && due?.isPast(at: now, calendar: calendar) ?? false }
 }

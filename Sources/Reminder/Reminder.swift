@@ -11,7 +11,8 @@ public struct Reminder: Identifiable, Hashable, Sendable {
     public var repeats: Calendar.RecurrenceRule?
     public var priority: Priority?
     public var flagged: Bool
-    public var completed: Bool
+    // When the reminder was completed; nil while it is open.
+    public var completed: Date?
     public var tags: Set<Tag<Reminder>>
     public var created: Date
 
@@ -24,7 +25,7 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         repeats: Calendar.RecurrenceRule? = nil,
         priority: Priority? = nil,
         flagged: Bool = false,
-        completed: Bool = false,
+        completed: Date? = nil,
         tags: Set<Tag<Reminder>> = [],
         created: Date
     ) {
@@ -40,4 +41,6 @@ public struct Reminder: Identifiable, Hashable, Sendable {
         self.tags = tags
         self.created = created
     }
+
+    public var isCompleted: Bool { completed != nil }
 }

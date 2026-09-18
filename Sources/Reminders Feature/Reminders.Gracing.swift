@@ -11,7 +11,7 @@ public protocol Gracing {
     var reopening: Set<Reminder.ID> { get set }
     var deleting: Set<Reminder.ID> { get set }
     func isCompleted(_ id: Reminder.ID) -> Bool?
-    mutating func finished(_ id: Reminder.ID, completed: Bool)
+    mutating func finished(_ id: Reminder.ID, completed: Date?)
 }
 
 extension Gracing {
@@ -25,6 +25,6 @@ extension Gracing {
     }
 
     public func isShownCompleted(_ reminder: Reminder) -> Bool {
-        grace[reminder.id] != nil || (reminder.completed && !reopening.contains(reminder.id))
+        grace[reminder.id] != nil || (reminder.isCompleted && !reopening.contains(reminder.id))
     }
 }

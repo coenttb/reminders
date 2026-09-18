@@ -17,9 +17,9 @@ import Tagged
     @Test func `only incomplete reminders before today are past due`() {
         var reminder = reminder("Call", due: .day(now.addingTimeInterval(-.day)))
         #expect(reminder.pastDue(at: now, calendar: calendar))
-        reminder.completed = true
+        reminder.completed = now
         #expect(!reminder.pastDue(at: now, calendar: calendar))
-        reminder.completed = false
+        reminder.completed = nil
         reminder.due = .moment(now)
         #expect(!reminder.pastDue(at: now, calendar: calendar))
         #expect(!self.reminder().pastDue(at: now, calendar: calendar))

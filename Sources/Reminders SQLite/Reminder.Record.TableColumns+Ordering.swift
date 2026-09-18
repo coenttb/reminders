@@ -21,7 +21,7 @@ extension Reminder.Record.TableColumns {
         let flagged = placed(flagged, place?.reminder.flagged ?? false, of: place)
         let title = placed(title, place?.reminder.title ?? "", of: place)
         let created = placed(created, place?.reminder.created ?? .distantPast, of: place)
-        let completed = placed(isCompleted, place?.reminder.completed ?? false, of: place)
+        let completed = placed(isCompleted, place?.reminder.isCompleted ?? false, of: place)
         var fragment: QueryFragment = preference.showCompleted ? "\(completed), " : ""
         // A reversed direction turns the key around; rows without a date or priority stay last either way.
         let forward = preference.direction == .forward

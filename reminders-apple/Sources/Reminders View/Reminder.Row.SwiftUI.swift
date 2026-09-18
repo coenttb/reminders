@@ -12,18 +12,21 @@ extension Reminder.Row {
         private var list: String?
         // On a screen that sections by day the row's subtitle names the time alone.
         private var dated: Bool
+        // The Completed screen names when each row was completed.
+        private var completion: Bool
         private var completed: Bool
         private var color: SwiftUI::Color
         private var now: Date
         private var calendar: Calendar
         private var actions: Actions
 
-        public init(reminder: Reminder, highlight: Reminders.Highlight? = nil, list: String? = nil, dated: Bool = false, completed: Bool? = nil, color: SwiftUI::Color, now: Date, calendar: Calendar, actions: Actions) {
+        public init(reminder: Reminder, highlight: Reminders.Highlight? = nil, list: String? = nil, dated: Bool = false, completion: Bool = false, completed: Bool? = nil, color: SwiftUI::Color, now: Date, calendar: Calendar, actions: Actions) {
             self.reminder = reminder
             self.highlight = highlight
             self.list = list
             self.dated = dated
-            self.completed = completed ?? reminder.completed
+            self.completion = completion
+            self.completed = completed ?? reminder.isCompleted
             self.color = color
             self.now = now
             self.calendar = calendar
@@ -63,6 +66,9 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
                                 Text(marked: highlight?.notes ?? reminder.notes).lineLimit(2)
                             }
                             if let subtitle { subtitle }
+                            if completion, let completed = reminder.completed {
+                                Text("Completed: " + Reminder.Due.moment(completed).description(at: now, calendar: calendar))
+                            }
                         }
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -81,7 +87,7 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
 
     private var subtitle: Text? {
         let due = reminder.due.flatMap { due -> Text? in
-            let description = dated ? due.timeDescription(calendar: calendar) : due.description(at: now, calendar: calendar)
+            let description = dated && !completion ? due.timeDescription(calendar: calendar) : due.description(at: now, calendar: calendar)
             return description.map { Text($0).foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI::Color.red : SwiftUI::Color.secondary) }
         }
         let tags = highlight.map { Text(marked: $0.tags.split(separator: " ").map { "#" + $0 }.joined(separator: " ")) } ?? Text(reminder.tagLine)

@@ -17,7 +17,7 @@ extension Reminders.Read.Today.Request: FetchKeyRequest {
                 .group(by: \.id)
                 .order(by: \.position)
                 .leftJoin(Reminder.Record.all) { $0.id.eq($1.listID) }
-                .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.eq(false))) }
+                .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.is(nil))) }
                 .fetchAll(db)
                 .map(Models.List<Reminder>.Entry.init),
             counts: Reminders.Summary.Counts(
@@ -65,6 +65,13 @@ extension Reminders.Read.Page.Request: FetchKeyRequest {
                 .order { reminders, lists in (lists.position, reminders.ordered(by: preference, placing: including)) }
                 .limit(limit ?? total)
                 .select { reminders, _ in Reminder.Record.Row.Columns(reminder: reminders, tags: reminders.tagTitles) }
+                .fetchAll(db)
+        } else if filter == .completed {
+            // The Completed screen runs newest first, as the stock app does.
+            try shown
+                .order { ($0.completed.desc(), $0.ordered(by: preference, placing: including)) }
+                .limit(limit ?? total)
+                .rows()
                 .fetchAll(db)
         } else {
             try shown

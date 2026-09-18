@@ -217,6 +217,8 @@ struct `Reminder chaos` {
             }
             let blank = try Reminder.Record.where { $0.title.eq("") }.select(\.id).fetchAll(db)
             #expect(Set(blank).subtracting(editing.map { [$0.id] } ?? []).isEmpty, "blank rows \(blank)\n\(replay)")
+            let future = try Reminder.Record.where { $0.completed.gt(Date?.some(now)) }.fetchCount(db)
+            #expect(future == 0, "completion in the future\n\(replay)")
             let positions = try Reminder.Record.select(\.position).fetchAll(db)
             #expect(Set(positions).count == positions.count, "duplicate positions\n\(replay)")
             let lists = try Models.List<Reminder>.Record.all.fetchCount(db)

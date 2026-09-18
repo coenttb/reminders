@@ -204,16 +204,16 @@ struct `Reminder SQLite storage` {
     @Test func `an update writes completion and an update of a missing row is refused`() async throws {
         let (database, reminders, sample) = try makeDatabase()
         var groceries = sample.reminders[0]
-        groceries.completed = true
+        groceries.completed = now
         _ = try await reminders.update(groceries)
-        #expect(try stored(groceries.id, database)?.completed == true)
+        #expect(try stored(groceries.id, database)?.isCompleted == true)
         #expect(try overview(database).counts.all == 7)
-        groceries.completed = false
+        groceries.completed = nil
         _ = try await reminders.update(groceries)
         await #expect(throws: Reminders.Update.Error.notFound) {
             try await reminders.update(Reminder(id: Reminder.ID(UUID()), list: groceries.list, created: now))
         }
-        #expect(try stored(groceries.id, database)?.completed == false)
+        #expect(try stored(groceries.id, database)?.isCompleted == false)
         #expect(try overview(database).counts.all == 8)
     }
 
@@ -295,15 +295,16 @@ struct `Reminder SQLite storage` {
         #expect(try results(Reminders.Query(terms: ["payroll"]), database).reminders.map(\.title) == ["Call accountant"])
         #expect(try results(Reminders.Query(tags: ["nothing"]), database).reminders.isEmpty)
         var trash = sample.reminders[7]
-        trash.completed = true
+        trash.completed = now
         _ = try await reminders.update(trash)
         try await reminders.delete.completed(matching: Reminders.Query(terms: ["Take"]), dueBefore: calendar.date(byAdding: .month, value: -12, to: now))
         #expect(try overview(database).counts.all == 7)
         #expect(try count(database) == 11)
         try await reminders.delete.completed(matching: Reminders.Query(terms: ["Take"]), dueBefore: calendar.date(byAdding: .month, value: -1, to: now))
         #expect(try count(database) == 10)
-        #expect(try stored(sample.reminders[7].id, database)?.completed == true)
-        #expect(try detail(.completed, database).reminders.map(\.title) == ["Get laundry", "Send weekly emails", "Take out trash"])
+        #expect(try stored(sample.reminders[7].id, database)?.isCompleted == true)
+        // The Completed screen runs newest first: trash now, laundry a day ago, the emails two days ago.
+        #expect(try detail(.completed, database).reminders.map(\.title) == ["Take out trash", "Get laundry", "Send weekly emails"])
         try await reminders.delete.completed(matching: Reminders.Query(tags: ["nothing"]), dueBefore: nil)
         #expect(try count(database) == 10)
         try await reminders.delete.completed(in: .completed, today: now)
@@ -319,13 +320,13 @@ struct `Reminder SQLite storage` {
             try Reminder.Record.find(id).update { $0.flagged = true; $0.position = 99 }.execute(db)
         }
         groceries.title = "Groceries and more"
-        groceries.completed = true
+        groceries.completed = now
         groceries.tags.insert("fresh")
         groceries.tags.remove("optional")
         #expect(try await reminders.update(groceries).position == 99)
         let stored = try stored(groceries.id, database)
         #expect(stored?.title == "Groceries and more" && stored?.flagged == false && stored?.tags == ["someday", "adulting", "fresh"])
-        #expect(try stored?.completed == true && position(groceries.id, database) == 99)
+        #expect(try stored?.isCompleted == true && position(groceries.id, database) == 99)
         #expect(try self.stored(sample.reminders[1].id, database) == sample.reminders[1])
         let bread = Reminder(id: Reminder.ID(UUID()), list: groceries.list, title: "Bread", tags: ["CAR"], created: now)
         #expect(try await reminders.create(bread, below: nil).position == 100)
@@ -427,7 +428,7 @@ struct `Reminder SQLite storage` {
         let first = try #require(sample.reminders.first)
         #expect(try stored(first.id, database) == first)
         #expect(try overview(database).lists.count == 10)
-        #expect(try overview(database).counts.all == sample.reminders.count { !$0.completed })
+        #expect(try overview(database).counts.all == sample.reminders.count { !$0.isCompleted })
         try await database.write { db in try Reminders.sample(at: now).replace(in: db) }
         #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 11)
     }

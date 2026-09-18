@@ -25,7 +25,8 @@ extension Reminders.Section {
         case .tomorrow: .tomorrow
         case let .day(day): .day(day)
         case .restOfMonth: .restOfMonth
-        case let .month(month): .month(month)
+        case let .month(month), let .earlier(month): .month(month)
+        case let .previous(day): .day(day)
         }
     }
 
@@ -35,7 +36,16 @@ extension Reminders.Section {
     }
 
     public var isDay: Bool {
-        if case .day = self { true } else { isOverdueDay }
+        if case .day = self { true } else { isOverdueDay || isPreviousDay }
+    }
+
+    // The days before today share one title above the first of them, as the overdue days do.
+    public var groupTitle: String? {
+        switch self {
+        case .overdue(day: .some): "Overdue"
+        case .previous: "Previous \(Reminders.Section.previousDays) Days"
+        default: nil
+        }
     }
 
     // A day section shows the time alone; the header-less overdue group on Today keeps its date.
@@ -43,10 +53,10 @@ extension Reminders.Section {
         self != .overdue(day: nil)
     }
 
-    // The sections a row can be started in from the screen itself.
-    public func offersAdd(in sections: [Reminders.Page.Section], at now: Date, calendar: Calendar) -> Bool {
+    // The sections a row can be started in from the screen itself: Scheduled's today and tomorrow, Today's current part.
+    public func offersAdd(in sections: [Reminders.Page.Section], for filter: Reminders.Filter, at now: Date, calendar: Calendar) -> Bool {
         switch self {
-        case .today, .tomorrow: true
+        case .today, .tomorrow: filter == .scheduled
         case .morning, .afternoon, .tonight:
             // The circle follows the last part of the day with rows; with none, the part the clock is in.
             (sections.last { [.morning, .afternoon, .tonight].contains($0.key) && !$0.rows.isEmpty }?.key ?? Reminders.Section.part(containing: now, calendar: calendar)) == self

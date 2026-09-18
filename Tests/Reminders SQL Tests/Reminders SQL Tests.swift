@@ -20,12 +20,12 @@ import Tagged
             repeats: Calendar.RecurrenceRule(calendar: Calendar(identifier: .gregorian), frequency: .weekly),
             priority: .high,
             flagged: true,
-            completed: true,
+            completed: now,
             tags: ["kids", "car"],
             created: now.addingTimeInterval(-86_400)
         )
         let draft = Reminder.Record.Draft(reminder, position: 4)
-        #expect(draft.id == reminder.id && draft.dueDate == now && draft.hasTime && draft.completed)
+        #expect(draft.id == reminder.id && draft.dueDate == now && draft.hasTime && draft.completed == now)
         let record = Reminder.Record(
             id: reminder.id,
             listID: reminder.list,
@@ -35,7 +35,7 @@ import Tagged
             hasTime: true,
             flagged: true,
             priority: .high,
-            completed: true,
+            completed: now,
             position: 4,
             repeats: reminder.repeats,
             created: reminder.created

@@ -97,6 +97,15 @@ extension Reminders.Schema {
                     """#).execute(db)
             }
         }
+        // Completion became a moment: the rows completed so far take the migration's moment, having no other.
+        migrator.registerMigration("Completion is a time") { db in
+            try #sql(#"DROP INDEX "idx_reminders_completed""#).execute(db)
+            try #sql(#"ALTER TABLE "reminders" ADD COLUMN "completedAt" TEXT CHECK ("completedAt" IS NULL OR "completedAt" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]')"#).execute(db)
+            try #sql(#"UPDATE "reminders" SET "completedAt" = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE "completed" = 1"#).execute(db)
+            try #sql(#"ALTER TABLE "reminders" DROP COLUMN "completed""#).execute(db)
+            try #sql(#"ALTER TABLE "reminders" RENAME COLUMN "completedAt" TO "completed""#).execute(db)
+            try #sql(#"CREATE INDEX "idx_reminders_completed" ON "reminders"("completed") WHERE "completed" IS NOT NULL"#).execute(db)
+        }
         try migrator.migrate(database)
     }
 

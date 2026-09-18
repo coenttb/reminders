@@ -57,6 +57,22 @@ import Testing
         #expect(!Reminders.Section.today.contains(reminder(due: .day(try date(19))), in: .scheduled, at: friday, calendar: calendar))
     }
 
+    @Test func `Completed sections by the completion day: today, the previous seven days, then months, newest first`() throws {
+        func section(completed: Date) -> Reminders.Section {
+            var reminder = reminder(due: nil)
+            reminder.completed = completed
+            return Reminders.Section.section(of: reminder, in: .completed, at: friday, calendar: calendar)
+        }
+        #expect(Reminders.Section.sections(for: .completed, at: friday, calendar: calendar) == [.today])
+        #expect(section(completed: friday) == .today)
+        #expect(section(completed: try date(15, hour: 5)) == .previous(day: try date(15)))
+        #expect(section(completed: try date(11)) == .previous(day: try date(11)))
+        #expect(section(completed: try date(10)) == .earlier(month: try date(1)))
+        #expect(section(completed: try date(3, month: 7)) == .earlier(month: try date(1, month: 7)))
+        let keys: [Reminders.Section] = [.earlier(month: try date(1, month: 7)), .previous(day: try date(11)), .today, .previous(day: try date(15)), .earlier(month: try date(1))]
+        #expect(keys.sorted() == [.today, .previous(day: try date(15)), .previous(day: try date(11)), .earlier(month: try date(1)), .earlier(month: try date(1, month: 7))])
+    }
+
     @Test func `a section names the date a row started in it takes`() throws {
         #expect(Reminders.Section.today.due(at: friday, calendar: calendar) == .day(try date(18)))
         #expect(Reminders.Section.tomorrow.due(at: friday, calendar: calendar) == .day(try date(19)))

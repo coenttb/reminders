@@ -49,11 +49,11 @@ extension Reminders.Listing {
             }
 
             public func isCompleted(_ id: Reminder.ID) -> Bool? {
-                if editing?.id == id { return editing?.original.completed }
-                return page.rows.first { $0.id == id }?.completed
+                if editing?.id == id { return editing?.original.isCompleted }
+                return page.rows.first { $0.id == id }?.isCompleted
             }
 
-            public mutating func finished(_ id: Reminder.ID, completed: Bool) {
+            public mutating func finished(_ id: Reminder.ID, completed: Date?) {
                 if editing?.id == id {
                     editing?.draft.completed = completed
                     editing?.original.completed = completed
@@ -89,6 +89,7 @@ extension Reminders.Listing {
 
         @Dependency(\.calendar) var calendar
         @Dependency(\.continuousClock) var clock
+        @Dependency(\.date) var date
         @Dependency(\.date.now) var now
         @Dependency(\.reminders) var reminders
         @Dependency(\.uuid) var uuid
@@ -210,7 +211,7 @@ extension Reminders.Listing.Feature {
     public static let paging: (step: Int, margin: Int) = (300, 60)
 
     private var completion: Reminders.Completion<State, Action> {
-        Reminders.Completion(store: store, reminders: reminders, clock: clock, uuid: uuid)
+        Reminders.Completion(store: store, reminders: reminders, clock: clock, now: date, uuid: uuid)
     }
 
     private func attempt(editing session: UUID?, _ body: () async throws -> Void) async throws {
