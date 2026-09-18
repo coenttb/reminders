@@ -11,20 +11,20 @@ extension DependencyValues {
 extension Reminders: TestDependencyKey {
     public static var testValue: Reminders {
         Self(
-            create: .init(run: unimplemented("\\.reminders.create")),
+            create: .init(unimplemented("\\.reminders.create")),
             read: .init(
-                run: unimplemented("\\.reminders.read", placeholder: AsyncThrowingStream { $0.finish() }),
+                unimplemented("\\.reminders.read", placeholder: AsyncThrowingStream { $0.finish() }),
                 id: unimplemented("\\.reminders.read(id)"),
-                page: .init(run: unimplemented("\\.reminders.read.page", placeholder: AsyncThrowingStream { $0.finish() }))
+                page: .init(unimplemented("\\.reminders.read.page", placeholder: AsyncThrowingStream { $0.finish() }))
             ),
             update: .init(
-                run: unimplemented("\\.reminders.update"),
-                complete: .init(run: unimplemented("\\.reminders.update.complete"))
+                unimplemented("\\.reminders.update"),
+                complete: .init(unimplemented("\\.reminders.update.complete"))
             ),
-            delete: .init(run: unimplemented("\\.reminders.delete")),
+            delete: .init(unimplemented("\\.reminders.delete")),
             lists: .init(
-                create: .init(run: unimplemented("\\.reminders.lists.create")),
-                delete: .init(run: unimplemented("\\.reminders.lists.delete"))
+                create: .init(unimplemented("\\.reminders.lists.create")),
+                delete: .init(unimplemented("\\.reminders.lists.delete"))
             )
         )
     }

@@ -17,9 +17,9 @@ import Testing
 
     func reminders() -> Reminders {
         Reminders(
-            create: .init(run: { request in Reminder(id: reminder.id, request.draft, created: reminder.created) }),
+            create: .init { request in Reminder(id: reminder.id, request.draft, created: reminder.created) },
             read: .init(
-                run: { _ in
+                { _ in
                     AsyncThrowingStream {
                         $0.yield(Reminders.Read.Value(lists: [.init(list: .init(id: list, title: "Personal"), count: 1)]))
                         $0.finish()
@@ -29,16 +29,16 @@ import Testing
                     guard request.id == reminder.id else { throw Reminders.Read.Error.notFound }
                     return reminder
                 },
-                page: .init(run: { request in
+                page: .init { request in
                     AsyncThrowingStream {
                         $0.yield(Reminders.Read.Page.Value(rows: request.filter == .list(list) || request.filter == .all ? [reminder] : []))
                         $0.finish()
                     }
-                })
+                }
             ),
-            update: .init(run: { _ in }, complete: .init(run: { _ in })),
-            delete: .init(run: { _ in }),
-            lists: .init(create: .init(run: { request in List(id: list, request.draft) }), delete: .init(run: { _ in }))
+            update: .init({ _ in }, complete: .init { _ in }),
+            delete: .init { _ in },
+            lists: .init(create: .init { request in List(id: list, request.draft) }, delete: .init { _ in })
         )
     }
 

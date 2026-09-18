@@ -24,7 +24,7 @@ extension Reminders {
                 return reminder
             },
             read: .init(
-                run: { request in request.stream(in: database) },
+                { request in request.stream(in: database) },
                 id: { request in
                     try database.read { db in
                         guard let record = try Reminder.Record.find(request.id).fetchOne(db) else { throw Read.Error.notFound }
@@ -34,7 +34,7 @@ extension Reminders {
                 page: .init { request in request.stream(in: database) }
             ),
             update: .init(
-                run: { request in
+                { request in
                     try await database.write { db in
                         guard try Reminder.Record.find(request.reminder.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
                         try Reminder.Record.find(request.reminder.id).update {
