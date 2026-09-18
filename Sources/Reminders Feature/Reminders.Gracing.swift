@@ -20,7 +20,7 @@ extension Gracing {
     // A destructive swipe takes its row out at once, before the database says so.
     public func shown(_ page: Reminders.Page) -> Reminders.Page {
         var page = page
-        page.rows.removeAll { deleting.contains($0.id) }
+        page.removeAll { deleting.contains($0.id) }
         return page
     }
 

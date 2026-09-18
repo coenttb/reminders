@@ -30,8 +30,8 @@ extension Reminders.Listing {
             // The row being continued is shown beneath its anchor before the page carries it.
             public var contents: Reminders.Page {
                 var page = shown(page)
-                if let editing, !page.rows.contains(where: { $0.id == editing.id }), let anchor = page.rows.firstIndex(where: { $0.id == editing.anchor }) {
-                    page.rows.insert(editing.draft, at: anchor + 1)
+                if let editing, !page.rows.contains(where: { $0.id == editing.id }), let anchor = editing.anchor {
+                    _ = page.insert(editing.draft, after: anchor)
                 }
                 return page
             }
@@ -82,10 +82,12 @@ extension Reminders.Listing {
             case reminderDeleted(Reminder.ID)
             case reminderDetailsButtonTapped(Reminder.ID)
             case reminderTapped(Reminder.ID)
+            case sectionAddTapped(Reminders.Section)
             case remindersMoved(IndexSet, Int)
             case showCompletedButtonTapped
         }
 
+        @Dependency(\.calendar) var calendar
         @Dependency(\.continuousClock) var clock
         @Dependency(\.date.now) var now
         @Dependency(\.reminders) var reminders
@@ -147,6 +149,8 @@ extension Reminders.Listing {
                     }
                 case let .reminderDetailsButtonTapped(id):
                     details(id, &state)
+                case let .sectionAddTapped(section):
+                    startNewReminder(in: state.list, due: section.due(at: now, calendar: calendar), &state)
                 case let .reminderTapped(id):
                     guard state.editing?.id != id else { break }
                     let editing = state.editing
@@ -240,13 +244,15 @@ extension Reminders.Listing.Feature {
         }
     }
 
-    private func startNewReminder(in list: Models.List<Reminder>.ID, _ state: inout State) {
+    // A smart list starts its rows in the default list, the first one, as the stock app does.
+    private func startNewReminder(in list: Models.List<Reminder>.ID?, due: Reminder.Due? = nil, _ state: inout State) {
         let previous = state.editing
         store.addTask {
             try await attempt(editing: previous?.session) {
                 try await commit(previous)
+                guard let list = try list ?? reminders.read().lists.first?.id else { return }
                 let session = uuid()
-                let placement = try await reminders.create(Reminder(id: Reminder.ID(uuid()), list: list, created: now), below: nil)
+                let placement = try await reminders.create(Reminder(id: Reminder.ID(uuid()), list: list, due: due, created: now), below: nil)
                 // The window and the row change together: one page request, one load.
                 try store.modify {
                     $0.window.open(for: $0.filter)

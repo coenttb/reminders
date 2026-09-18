@@ -691,7 +691,7 @@ struct `Reminder feature` {
         let store = try await makeStore(clock: clock)
         #expect(await store.state.today == day.lowerBound)
         await store.send(.overview(.filterTapped(.today)))?.value
-        try await until(try await page(store)) { $0.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets"] }
+        try await until(try await page(store)) { $0.rows.map(\.title) == ["Haircut", "Buy concert tickets", "Doctor appointment"] }
         let untilMidnight = day.upperBound.timeIntervalSince(start)
         let next = try #require(tokyo.day(containing: day.upperBound))
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }

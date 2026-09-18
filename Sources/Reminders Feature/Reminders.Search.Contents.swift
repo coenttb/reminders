@@ -38,12 +38,10 @@ extension Reminders.Search.Contents {
 
     public init(_ page: Reminders.Page?, lists: [Models.List<Reminder>.Entry], suggestions: [Tag<Reminder>]) {
         self.init(total: page?.total ?? 0, completedCount: page?.completed ?? 0, suggestions: suggestions, highlights: page?.highlights ?? [:])
-        for row in page?.rows ?? [] {
-            if sections.last?.id == row.list {
-                sections[sections.count - 1].rows.append(row)
-            } else if let list = lists.first(where: { $0.id == row.list })?.list {
-                sections.append(Section(list: list, rows: [row]))
-            }
+        // The page is already folded list by list; a section whose list is gone is dropped with it.
+        sections = (page?.sections ?? []).compactMap { section in
+            guard case let .list(id) = section.key, let list = lists.first(where: { $0.id == id })?.list else { return nil }
+            return Section(list: list, rows: section.rows)
         }
     }
 }

@@ -73,8 +73,11 @@ extension Reminders.Read.Page.Request: FetchKeyRequest {
                 .rows()
                 .fetchAll(db)
         }
+        let (filter, now) = (self.filter, self.today)
         return Reminders.Page(
-            rows: rows.map(Reminder.init),
+            folding: rows.lazy.map(Reminder.init),
+            into: Reminders.Section.sections(for: filter, at: now, calendar: calendar),
+            by: { Reminders.Section.section(of: $0, in: filter, at: now, calendar: calendar) },
             total: total,
             completed: try matching.where { $0.isCompleted }.fetchCount(db)
         )
@@ -96,7 +99,7 @@ extension Reminders.Read.Search.Request: FetchKeyRequest {
                 .limit(limit ?? total)
                 .select { reminders, _ in Reminder.Record.Row.Columns(reminder: reminders, tags: reminders.tagTitles) }
                 .fetchAll(db)
-            return Reminders.Page(rows: rows.map(Reminder.init), total: total, completed: completed)
+            return Reminders.Page(folding: rows.lazy.map(Reminder.init), into: [], by: { .list($0.list) }, total: total, completed: completed)
         }
         let (open, close) = (Reminders.Highlight.open, Reminders.Highlight.close)
         let matched = Reminder.Record.Text.where { $0.match(pattern) }
@@ -118,12 +121,15 @@ extension Reminders.Read.Search.Request: FetchKeyRequest {
                 )
             }
             .fetchAll(db)
-        return Reminders.Page(
-            rows: hits.map { Reminder(Reminder.Record.Row(reminder: $0.reminder, tags: $0.tags)) },
+        var page = Reminders.Page(
+            folding: hits.lazy.map { Reminder(Reminder.Record.Row(reminder: $0.reminder, tags: $0.tags)) },
+            into: [],
+            by: { .list($0.list) },
             total: total,
-            completed: completed,
-            highlights: Dictionary(uniqueKeysWithValues: hits.map { ($0.reminder.id, Reminders.Highlight(title: $0.title, notes: $0.notes, tags: $0.tagLine)) })
+            completed: completed
         )
+        page.highlights = Dictionary(uniqueKeysWithValues: hits.map { ($0.reminder.id, Reminders.Highlight(title: $0.title, notes: $0.notes, tags: $0.tagLine)) })
+        return page
     }
 }
 

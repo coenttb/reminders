@@ -548,7 +548,7 @@ struct `Reminder SQLite storage` {
         )
         #expect(tags.contains { $0.contains("SEARCH remindersTags USING") && $0.contains("idx_remindersTags_tagID") }, "\(tags)")
         #expect(try overview(database).counts.today == 3)
-        #expect(try detail(.today, database).rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets"])
+        #expect(try detail(.today, database).rows.map(\.title) == ["Haircut", "Buy concert tickets", "Doctor appointment"])
     }
 }
 
