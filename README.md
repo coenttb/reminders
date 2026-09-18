@@ -9,8 +9,8 @@ One flat package, one host, one workspace. The layers, bottom up:
 
 | Target | Depends on | Holds |
 |---|---|---|
-| `Models` | Tagged | `List<Element>` and its `Entry` (a list with its open count) |
-| `Reminder` | Models | the `Reminder` value |
+| `List` | Tagged | `List<Element>` and its `Entry` (a list with its open count) |
+| `Reminder` | List | the `Reminder` value |
 | `Reminders` | Interface Macro | the domain, declared once as `@Interface` protocols: `create`, `read`, `update`, `delete`, `lists`; the values they exchange, each under its operation (`Read.Filter`, `Read.Value`, `Read.Page.Value`); the typed errors. An operation's `Value` is what it produces, its `Result` is how the arrow returns it: `read()` and `read(page:)` return streams of their `Value` (the UI follows them), `read(id)` returns the `Reminder` itself; `update.complete` is its own write |
 | `Reminders Dependency` | Dependencies | `DependencyValues.reminders`, the `testValue`, and the `Sendable` boundary |
 | `Reminders SQL` | StructuredQueries | the records and the `Filter` predicate |
@@ -26,8 +26,8 @@ placeholder, all styling and parity chrome, and the evidence.
 
 ## Interface-type reuse
 
-`@Operations` derives one symbol per operation (`Reminders.Read.Page`, `Reminders.Lists.Create`; the primary is
-`Run`) whose `Input` is the parameters as a value and which knows how its owner runs it. `@Interface` derives
+`@Operations` derives one symbol per operation (`Reminders.Read.Run`, `Reminders.Read.Page.Run`; each operation is
+its own `@Interface`, so its symbol is its `Run`) whose `Input` is the parameters as a value and which knows how its owner runs it. `@Interface` derives
 the `Call` — the coproduct of the operations' inputs and the children's calls, `Hashable` and `Sendable` when the
 inputs are — with its constructors, its builders and `run(owner, call)`. The layers above the domain write
 against those, not against types of their own:
@@ -46,8 +46,8 @@ against those, not against types of their own:
 - **State the view sets.** `store.listing = .init(page: .list(id))`, `store.editing = .init(reminder)`,
   `store.editing = nil`, `store.destination = .init(.init(.init()))`, `store.dismiss()`. The editor has no
   actions: leaving is what writes (create a draft, update a changed row, drop a blank one).
-- **Observing / Requesting** (swift-interface-composable-architecture): `Observing<Reminders.Read.Page>(reminders.read)`
-  follows an operation's stream for its request; `Requesting<Reminders.Lists.Create>(\.reminders.lists)`
+- **Observing / Requesting** (swift-interface-composable-architecture): `Observing<Reminders.Read.Page.Run>(reminders.read.page)`
+  follows an operation's stream for its request; `Requesting<Reminders.Lists.Create.Run>(\.reminders.lists.create)`
   composes an input and sends any call of its interface, dismissing on success. Storage mints identity:
   `create` takes a `Draft`.
 

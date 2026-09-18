@@ -28,9 +28,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Models"
-               BuildableName = "Models"
-               BlueprintName = "Models"
+               BlueprintIdentifier = "List"
+               BuildableName = "List"
+               BlueprintName = "List"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -126,9 +126,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Models Tests"
-               BuildableName = "Models Tests"
-               BlueprintName = "Models Tests"
+               BlueprintIdentifier = "List Tests"
+               BuildableName = "List Tests"
+               BlueprintName = "List Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -256,9 +256,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Models Tests"
-               BuildableName = "Models Tests"
-               BlueprintName = "Models Tests"
+               BlueprintIdentifier = "List Tests"
+               BuildableName = "List Tests"
+               BlueprintName = "List Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

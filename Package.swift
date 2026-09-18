@@ -6,7 +6,7 @@ let package = Package(
     name: "reminders-architecture",
     platforms: [.iOS(.v27), .macOS(.v27)],
     products: [
-        .library(name: "Models", targets: ["Models"]),
+        .library(name: "List", targets: ["List"]),
         .library(name: "Reminder", targets: ["Reminder"]),
         .library(name: "Reminders", targets: ["Reminders"]),
         .library(name: "Reminders Dependency", targets: ["Reminders Dependency"]),
@@ -31,7 +31,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Models",
+            name: "List",
             dependencies: [
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -39,7 +39,7 @@ let package = Package(
         .target(
             name: "Reminder",
             dependencies: [
-                "Models",
+                "List",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -47,7 +47,7 @@ let package = Package(
             name: "Reminders",
             dependencies: [
                 .product(name: "Interface Macro", package: "swift-interface"),
-                "Models",
+                "List",
                 "Reminder",
                 .product(name: "Tagged", package: "swift-tagged"),
             ],
@@ -57,14 +57,14 @@ let package = Package(
             name: "Reminders Dependency",
             dependencies: [
                 .product(name: "Dependencies", package: "swift-dependencies"),
-                "Models",
+                "List",
                 "Reminders",
             ]
         ),
         .target(
             name: "Reminders Sample",
             dependencies: [
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 .product(name: "Tagged", package: "swift-tagged"),
@@ -73,7 +73,7 @@ let package = Package(
         .target(
             name: "Reminders SQL",
             dependencies: [
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 .product(name: "StructuredQueries", package: "swift-structured-queries"),
@@ -85,7 +85,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "GRDB", package: "GRDB.swift"),
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
@@ -102,7 +102,7 @@ let package = Package(
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
-                "Models",
+                "List",
                 .product(name: "Operation", package: "swift-operation"),
                 "Reminder",
                 "Reminders",
@@ -119,7 +119,7 @@ let package = Package(
                 .product(name: "Operation", package: "swift-operation"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 "Reminders Feature",
@@ -131,16 +131,16 @@ let package = Package(
             swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),
         .testTarget(
-            name: "Models Tests",
+            name: "List Tests",
             dependencies: [
-                "Models",
+                "List",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
         .testTarget(
             name: "Reminder Tests",
             dependencies: [
-                "Models",
+                "List",
                 "Reminder",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -148,7 +148,7 @@ let package = Package(
         .testTarget(
             name: "Reminders Tests",
             dependencies: [
-                "Models",
+                "List",
                 .product(name: "Operation", package: "swift-operation"),
                 "Reminder",
                 "Reminders",
@@ -159,7 +159,7 @@ let package = Package(
         .testTarget(
             name: "Reminders Sample Tests",
             dependencies: [
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 "Reminders Sample",
@@ -168,7 +168,7 @@ let package = Package(
         .testTarget(
             name: "Reminders SQL Tests",
             dependencies: [
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 "Reminders SQL",
@@ -180,7 +180,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 "Reminders Sample",
@@ -197,7 +197,7 @@ let package = Package(
                 .product(name: "Operation", package: "swift-operation"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
@@ -216,7 +216,7 @@ let package = Package(
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
-                "Models",
+                "List",
                 "Reminder",
                 "Reminders",
                 "Reminders Feature",

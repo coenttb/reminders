@@ -1,5 +1,5 @@
 public import Dependencies
-import Models
+import List
 import Reminder
 public import Reminders
 import Reminders_Dependency
@@ -14,7 +14,7 @@ extension DependencyValues {
         let database = try Reminders.Schema.database()
         try database.write { db in
             try sample?.initialize(in: db)
-            try Models.List<Reminder>.Record.installDefault(in: db)
+            try List<Reminder>.Record.installDefault(in: db)
         }
         defaultDatabase = database
         reminders = .sqlite(database)

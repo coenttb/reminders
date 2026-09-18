@@ -1,5 +1,5 @@
 public import Foundation
-public import Models
+public import List
 public import Reminder
 public import StructuredQueries
 public import Tagged
@@ -8,13 +8,13 @@ extension Reminder {
     @Table("reminders")
     public struct Record: Identifiable, Hashable, Sendable {
         public let id: Reminder.ID
-        public var listID: Models.List<Reminder>.ID
+        public var listID: List<Reminder>.ID
         public var title: String = ""
         public var completed: Bool = false
         public var position: Int = 0
         public var created: Date
 
-        public init(id: Reminder.ID, listID: Models.List<Reminder>.ID, title: String = "", completed: Bool = false, position: Int = 0, created: Date) {
+        public init(id: Reminder.ID, listID: List<Reminder>.ID, title: String = "", completed: Bool = false, position: Int = 0, created: Date) {
             self.id = id
             self.listID = listID
             self.title = title

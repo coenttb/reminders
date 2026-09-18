@@ -1,15 +1,15 @@
 public import Foundation
-public import Models
+public import List
 public import Reminder
 public import Reminders
 public import Tagged
 
 extension Reminders {
     public struct Sample: Hashable, Sendable {
-        public var lists: [Models.List<Reminder>]
+        public var lists: [List<Reminder>]
         public var reminders: [Reminder]
 
-        public init(lists: [Models.List<Reminder>], reminders: [Reminder] = []) {
+        public init(lists: [List<Reminder>], reminders: [Reminder] = []) {
             self.lists = lists
             self.reminders = reminders
         }
@@ -19,7 +19,7 @@ extension Reminders {
         func id(_ n: Int) -> UUID {
             UUID(uuidString: "00000000-0000-0000-000A-" + String(format: "%012X", n))!
         }
-        let personal = Models.List<Reminder>.ID(id(0)), family = Models.List<Reminder>.ID(id(1))
+        let personal = List<Reminder>.ID(id(0)), family = List<Reminder>.ID(id(1))
         return Sample(
             lists: [
                 .init(id: personal, title: "Personal"),

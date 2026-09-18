@@ -1,7 +1,7 @@
 import Dependencies
 import DependenciesTestSupport
 import Foundation
-import Models
+import List
 import Reminder
 import Reminders
 import Reminders_Sample
@@ -31,7 +31,7 @@ struct `Reminders SQLite storage` {
     }
 
     func page(_ reminders: Reminders, _ filter: Reminders.Read.Filter) async throws -> Reminders.Read.Page.Value? {
-        try await reminders.read(page: filter).first(where: { _ in true })
+        try await reminders.read.page(filter: filter).first(where: { _ in true })
     }
 
     @Test func `the summary counts the open reminders per list in order`() async throws {
@@ -77,7 +77,7 @@ struct `Reminders SQLite storage` {
     @Test func `a page stream follows the writes`() async throws {
         let (reminders, sample) = try makeDatabase()
         let personal = sample.lists[0].id
-        var pages = reminders.read(page: .list(personal)).makeAsyncIterator()
+        var pages = reminders.read.page(filter: .list(personal)).makeAsyncIterator()
         #expect(try await pages.next()?.rows.map(\.title) == ["Groceries", "Haircut"])
         _ = try await reminders.create(Reminder.Draft(list: personal, title: "Water plants"))
         #expect(try await pages.next()?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])

@@ -3,7 +3,7 @@ import Dependencies
 import DependenciesTestSupport
 import Foundation
 import Interface_ComposableArchitecture
-import Models
+import List
 import Reminder
 import Reminders
 import Reminders_SwiftUI

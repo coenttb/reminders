@@ -1,5 +1,5 @@
 import Foundation
-import Models
+import List
 import Reminder
 import Reminders
 import Reminders_SQL
@@ -8,7 +8,7 @@ import Testing
 
 @Suite struct `Reminders SQL` {
     @Test func `a record carries the reminder and its place in the table`() {
-        let list = Models.List<Reminder>.ID(UUID())
+        let list = List<Reminder>.ID(UUID())
         let reminder = Reminder(id: Reminder.ID(UUID()), list: list, title: "Milk", completed: true, created: Date(timeIntervalSince1970: 0))
         let draft = Reminder.Record.Draft(reminder, position: 3)
         #expect(draft.position == 3)

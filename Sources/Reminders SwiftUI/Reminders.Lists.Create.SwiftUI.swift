@@ -1,6 +1,6 @@
 public import ComposableArchitecture2
 public import Interface_ComposableArchitecture
-public import Models
+public import List
 import Operation
 public import Reminder
 public import Reminders
@@ -10,9 +10,9 @@ public import SwiftUI
 extension Reminders.Lists.Create {
     // The sheet: `lists.create`'s request, composed and sent whole.
     public struct SwiftUI {
-        @Bindable private var store: StoreOf<Requesting<Reminders.Lists.Create>>
+        @Bindable private var store: StoreOf<Requesting<Reminders.Lists.Create.Run>>
 
-        public init(store: StoreOf<Requesting<Reminders.Lists.Create>>) {
+        public init(store: StoreOf<Requesting<Reminders.Lists.Create.Run>>) {
             self.store = store
         }
     }
@@ -32,7 +32,7 @@ extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
                 Button("Cancel") { store.dismiss() }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { store.create(store.request) }
+                Button("Done") { store.send(.run(store.request)) }
                     .disabled(store.request.draft.isBlank || store.sending.isRunning)
             }
         }

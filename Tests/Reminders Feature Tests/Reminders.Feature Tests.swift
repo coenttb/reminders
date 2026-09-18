@@ -4,7 +4,7 @@ import Dependencies
 import DependenciesTestSupport
 import Foundation
 import Interface_ComposableArchitecture
-import Models
+import List
 import Operation
 import Reminder
 import Reminders
@@ -26,7 +26,7 @@ struct `Reminders feature` {
     @Dependency(\.reminders) var reminders
 
     let sample = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890))
-    var personal: Models.List<Reminder>.ID { sample.lists[0].id }
+    var personal: List<Reminder>.ID { sample.lists[0].id }
 
     // Opening a page starts its observation, which never ends; a test awaits the page's writes, not the action.
     func page(_ store: TestStore<Reminders.Feature>) throws -> Reminders.Read.Page.Feature.State {
@@ -42,7 +42,7 @@ struct `Reminders feature` {
             store.modify { $0.listing?.editing?.title = "Water plants" }
             // Dismissing the editor creates the row.
             await store.modify { $0.listing?.editing = nil }?.value
-            var pages = reminders.read(page: .list(personal)).makeAsyncIterator()
+            var pages = reminders.read.page(filter: .list(personal)).makeAsyncIterator()
             let page = try await pages.next()
             #expect(page?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
             while store.listing?.observing.rows?.count != 3 { await Task.yield() }
@@ -56,7 +56,7 @@ struct `Reminders feature` {
             store.modify { $0.listing = .init(page: .list(personal)) }
             store.modify { $0.listing?.editing = .init(Reminder.Draft(list: personal)) }
             await store.modify { $0.listing?.editing = nil }?.value
-            var pages = reminders.read(page: .list(personal)).makeAsyncIterator()
+            var pages = reminders.read.page(filter: .list(personal)).makeAsyncIterator()
             let page = try await pages.next()
             #expect(page?.rows.count == 2)
             await store.dismount()

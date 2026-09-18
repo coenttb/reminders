@@ -1,0 +1,14 @@
+public import Interface_Macro
+public import List
+public import Reminder
+
+extension Reminders.Lists {
+    // Storage gives the draft its identity; the created list comes back.
+    @Interface
+    public struct Create: Create.Interface {
+        @Operations
+        public protocol Interface {
+            func callAsFunction(_ draft: List<Reminder>.Draft) async throws -> List<Reminder>
+        }
+    }
+}

@@ -1,5 +1,5 @@
 import Foundation
-import Models
+import List
 import Reminder
 import Reminders
 import Reminders_Sample

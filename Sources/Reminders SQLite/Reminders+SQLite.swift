@@ -1,5 +1,5 @@
 public import Dependencies
-import Models
+import List
 import Reminder
 public import Reminders
 public import Reminders_Dependency
@@ -31,7 +31,7 @@ extension Reminders {
                         return Reminder(record)
                     }
                 },
-                page: { request in request.stream(in: database) }
+                page: .init(run: { request in request.stream(in: database) })
             ),
             update: .init(
                 run: { request in
@@ -45,34 +45,34 @@ extension Reminders {
                         .execute(db)
                     }
                 },
-                complete: { request in
+                complete: .init(run: { request in
                     try await database.write { db in
                         guard try Reminder.Record.find(request.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
                         try Reminder.Record.find(request.id).update { $0.completed = request.completed }.execute(db)
                     }
-                }
+                })
             ),
             delete: .init(run: { request in
                 try await database.write { db in try Reminder.Record.find(request.id).delete().execute(db) }
             }),
             lists: .init(
-                create: { request in
+                create: .init(run: { request in
                     @Dependency(\.uuid) var uuid
-                    let list = Models.List<Reminder>(id: Models.List<Reminder>.ID(uuid()), request.draft)
+                    let list = List<Reminder>(id: List<Reminder>.ID(uuid()), request.draft)
                     try await database.write { db in
-                        try Models.List<Reminder>.Record.insert { Models.List<Reminder>.Record(list) }.execute(db)
-                        try Models.List<Reminder>.Record.find(list.id)
-                            .update { $0.position = Models.List<Reminder>.Record.select { ($0.position.max() ?? -1) + 1 } }
+                        try List<Reminder>.Record.insert { List<Reminder>.Record(list) }.execute(db)
+                        try List<Reminder>.Record.find(list.id)
+                            .update { $0.position = List<Reminder>.Record.select { ($0.position.max() ?? -1) + 1 } }
                             .execute(db)
                     }
                     return list
-                },
-                delete: { request in
+                }),
+                delete: .init(run: { request in
                     try await database.write { db in
-                        try Models.List<Reminder>.Record.find(request.id).delete().execute(db)
-                        try Models.List<Reminder>.Record.installDefault(in: db)
+                        try List<Reminder>.Record.find(request.id).delete().execute(db)
+                        try List<Reminder>.Record.installDefault(in: db)
                     }
-                }
+                })
             )
         )
     }

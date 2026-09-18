@@ -1,5 +1,5 @@
 import GRDB
-public import Models
+public import List
 public import Reminder
 public import Reminders
 import Reminders_SQL
@@ -11,13 +11,13 @@ import Tagged
 extension Reminders.Read.Run.Input {
     public func fetch(_ db: Database) throws -> Reminders.Read.Value {
         Reminders.Read.Value(
-            lists: try Models.List<Reminder>.Record
+            lists: try List<Reminder>.Record
                 .group(by: \.id)
                 .order(by: \.position)
                 .leftJoin(Reminder.Record.all) { $0.id.eq($1.listID) }
-                .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.eq(false))) }
+                .select { List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.eq(false))) }
                 .fetchAll(db)
-                .map(Models.List<Reminder>.Entry.init)
+                .map(List<Reminder>.Entry.init)
         )
     }
 
@@ -26,7 +26,7 @@ extension Reminders.Read.Run.Input {
     }
 }
 
-extension Reminders.Read.Page.Input {
+extension Reminders.Read.Page.Run.Input {
     public func fetch(_ db: Database) throws -> Reminders.Read.Page.Value {
         Reminders.Read.Page.Value(
             rows: try Reminder.Record

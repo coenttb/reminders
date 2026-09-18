@@ -2,7 +2,7 @@ public import CasePaths
 public import ComposableArchitecture2
 public import Dependencies
 public import Interface_ComposableArchitecture
-public import Models
+public import List
 public import Operation
 public import Reminder
 public import Reminders
@@ -20,7 +20,7 @@ extension Reminders {
         public struct State {
             public var overview = Observing<Reminders.Read.Run>.State(.init())
             public var listing: Reminders.Read.Page.Feature.State?
-            public var destination: Requesting<Reminders.Lists.Create>.State?
+            public var destination: Requesting<Reminders.Lists.Create.Run>.State?
             @StoreTaskID public var writes
 
             public init() {}
@@ -28,7 +28,7 @@ extension Reminders {
 
         public enum Action {
             case call(Reminders.Call)
-            case destination(Requesting<Reminders.Lists.Create>.Action)
+            case destination(Requesting<Reminders.Lists.Create.Run>.Action)
             case listing(Reminders.Read.Page.Feature.Action)
             case overview(Observing<Reminders.Read.Run>.Action)
         }
@@ -52,7 +52,7 @@ extension Reminders {
                 Reminders.Read.Page.Feature()
             }
             .ifLet(\.destination) {
-                Requesting(\.reminders.lists)
+                Requesting(\.reminders.lists.create)
             }
         }
     }
