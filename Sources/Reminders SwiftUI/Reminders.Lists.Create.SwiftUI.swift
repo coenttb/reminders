@@ -32,7 +32,7 @@ extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
                 Button("Cancel") { store.dismiss() }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { store.send(.run(store.request)) }
+                Button("Done") { store.send() }
                     .disabled(store.request.draft.isBlank || store.sending.isRunning)
             }
         }

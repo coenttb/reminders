@@ -30,22 +30,22 @@ struct `Reminders feature` {
 
     // Opening a page starts its observation, which never ends; a test awaits the page's writes, not the action.
     func page(_ store: TestStore<Reminders.Feature>) throws -> Reminders.Read.Page.Feature.State {
-        try #require(store.listing)
+        try #require(store.page)
     }
 
     @Test func `a new row is drafted, edited in place, and created when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.modify { $0.listing = .init(page: .list(personal)) }
-            #expect(store.listing?.observing.request.filter == .list(personal))
-            store.modify { $0.listing?.editing = .init(Reminder.Draft(list: personal)) }
-            store.modify { $0.listing?.editing?.title = "Water plants" }
+            store.modify { $0.page = .init(page: .list(personal)) }
+            #expect(store.page?.contents.request.filter == .list(personal))
+            store.modify { $0.page?.editing = .init(Reminder.Draft(list: personal)) }
+            store.modify { $0.page?.editing?.title = "Water plants" }
             // Dismissing the editor creates the row.
-            await store.modify { $0.listing?.editing = nil }?.value
+            await store.modify { $0.page?.editing = nil }?.value
             var pages = reminders.read.page(filter: .list(personal)).makeAsyncIterator()
             let page = try await pages.next()
             #expect(page?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
-            while store.listing?.observing.rows?.count != 3 { await Task.yield() }
+            while store.page?.contents.rows?.count != 3 { await Task.yield() }
             await store.dismount()
         }
     }
@@ -53,9 +53,9 @@ struct `Reminders feature` {
     @Test func `a blank draft is dropped when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.modify { $0.listing = .init(page: .list(personal)) }
-            store.modify { $0.listing?.editing = .init(Reminder.Draft(list: personal)) }
-            await store.modify { $0.listing?.editing = nil }?.value
+            store.modify { $0.page = .init(page: .list(personal)) }
+            store.modify { $0.page?.editing = .init(Reminder.Draft(list: personal)) }
+            await store.modify { $0.page?.editing = nil }?.value
             var pages = reminders.read.page(filter: .list(personal)).makeAsyncIterator()
             let page = try await pages.next()
             #expect(page?.rows.count == 2)
@@ -67,10 +67,10 @@ struct `Reminders feature` {
     @Test func `a failed call is recorded on the page's writes`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.modify { $0.listing = .init(page: .list(personal)) }
-            store.send(.listing(.update.complete(Reminder.ID(UUID()), true)))
+            store.modify { $0.page = .init(page: .list(personal)) }
+            store.send(.page(.update.complete(Reminder.ID(UUID()), true)))
             await #expect(throws: Reminders.Update.Error.notFound) { try await page(store).writes() }
-            #expect(store.listing?.writes.taskError is Reminders.Update.Error)
+            #expect(store.page?.writes.taskError is Reminders.Update.Error)
             await store.dismount()
         }
     }
@@ -79,13 +79,13 @@ struct `Reminders feature` {
     @Test func `a delete call removes the row from the observed page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.modify { $0.listing = .init(page: .list(personal)) }
-            while store.listing?.observing.rows == nil { await Task.yield() }
-            let groceries = try #require(store.listing?.observing.rows?.first(where: { $0.title == "Groceries" }))
-            store.send(.listing(.delete(groceries.id)))
+            store.modify { $0.page = .init(page: .list(personal)) }
+            while store.page?.contents.rows == nil { await Task.yield() }
+            let groceries = try #require(store.page?.contents.rows?.first(where: { $0.title == "Groceries" }))
+            store.send(.page(.delete(groceries.id)))
             try await page(store).writes()
-            while store.listing?.observing.rows?.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
-            #expect(store.listing?.observing.rows?.map(\.title) == ["Haircut"])
+            while store.page?.contents.rows?.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
+            #expect(store.page?.contents.rows?.map(\.title) == ["Haircut"])
             await store.dismount()
         }
     }
@@ -94,11 +94,11 @@ struct `Reminders feature` {
     @Test func `a list delete closes its page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.modify { $0.listing = .init(page: .list(personal)) }
+            store.modify { $0.page = .init(page: .list(personal)) }
             store.send(.call(.lists.delete(personal)))
-            #expect(store.listing == nil)
+            #expect(store.page == nil)
             try await store.writes()
-            while store.overview.lists?.map(\.list.title) != ["Family"] { await Task.yield() }
+            while store.summary.lists?.map(\.list.title) != ["Family"] { await Task.yield() }
             await store.dismount()
         }
     }

@@ -32,14 +32,14 @@ extension Reminders.Screen: SwiftUI::View {
             .navigationTitle("Reminders")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Add List", systemImage: "plus") { store.destination = .init(.init(.init())) }
+                    Button("Add List", systemImage: "plus") { store.newList = .init(.init(.init())) }
                 }
             }
-            .navigationDestination(item: $store.scope(\.listing)) { listing in
-                Reminders.Read.Page.SwiftUI(store: listing, title: listing.list.flatMap { store.overview.lists?.first(id: $0) }?.list.title ?? "All")
+            .navigationDestination(item: $store.scope(\.page)) { page in
+                Reminders.Read.Page.SwiftUI(store: page, title: page.list.flatMap { store.summary.lists?.first(id: $0) }?.list.title ?? "All")
             }
         }
-        .sheet(item: $store.scope(\.destination)) { form in
+        .sheet(item: $store.scope(\.newList)) { form in
             NavigationStack { Reminders.Lists.Create.SwiftUI(store: form) }
         }
     }

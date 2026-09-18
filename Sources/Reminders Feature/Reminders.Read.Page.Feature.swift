@@ -15,21 +15,21 @@ extension Reminders.Read.Page {
     // domain's calls, each run once here, on `writes`.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State {
-            public var observing: Observing<Reminders.Read.Page.Run>.State
+            public var contents: Observing<Reminders.Read.Page.Run>.State
             public var editing: Reminders.Update.Feature.State?
             @StoreTaskID public var writes
 
             public init(page filter: Reminders.Read.Filter) {
-                self.observing = .init(.init(filter: filter))
+                self.contents = .init(.init(filter: filter))
             }
 
             public var list: List<Reminder>.ID? {
-                if case let .list(id) = observing.request.filter { id } else { nil }
+                if case let .list(id) = contents.request.filter { id } else { nil }
             }
 
             // The rows, with the draft of an existing row standing in for it until the page carries what was written.
             public var rows: [Reminder] {
-                var rows = observing.rows ?? []
+                var rows = contents.rows ?? []
                 if let editing, let original = editing.original, let index = rows.firstIndex(where: { $0.id == original.id }) {
                     rows[index] = Reminder(id: original.id, editing.draft, created: original.created)
                 }
@@ -51,7 +51,7 @@ extension Reminders.Read.Page {
                         state.editing = nil
                     }
                 }
-                ComposableArchitecture2.Scope(\.observing, action: \.never) { Observing(reminders.read.page) }
+                ComposableArchitecture2.Scope(\.contents) { Observing(reminders.read.page) }
             }
             .calling(reminders, id: \.writes)
             .ifLet(\.editing, action: \.never) {

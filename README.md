@@ -36,15 +36,15 @@ against those, not against types of their own:
   `Reminders.Lists.Create.Input`; a one-field input reads as its field (`$store.request.title`), the editor state
   as its draft (`$store.title`, `store.completed.toggle()`).
 - **Call as action.** The page's `Action` *is* `Reminders.Call`; the sheet's is `Reminders.Lists.Call`. The root
-  composes them (`case call(Reminders.Call)`, `case listing(...)`, `case destination(...)`) so that every call
+  composes them (`case call(Reminders.Call)`, `case page(...)`, `case newList(...)`; the summary has no actions and no case) so that every call
   is run exactly once, by the feature whose task id carries its outcome: `.calling(reminders, id: \.writes)`
   on the page, `.calling(\.call, reminders, id: \.writes)` at the root.
 - **Sugar over the call.** `.delete(id)`, `.update.complete(id, done)`, `.lists.delete(id)` are the Call's own
   builders (children are static members); `store.delete(id)`, `store.update.complete(id, done)`,
-  `store.create(store.request)` are the same builders handing the call to `send`. Neither returns nor throws;
+  `store.send()` on the sheet are the same builders handing the call to `send`. Neither returns nor throws;
   the outcome is on the task id.
-- **State the view sets.** `store.listing = .init(page: .list(id))`, `store.editing = .init(reminder)`,
-  `store.editing = nil`, `store.destination = .init(.init(.init()))`, `store.dismiss()`. The editor has no
+- **State the view sets.** `store.page = .init(page: .list(id))`, `store.editing = .init(reminder)`,
+  `store.editing = nil`, `store.newList = .init(.init(.init()))`, `store.dismiss()`. The editor has no
   actions: leaving is what writes (create a draft, update a changed row, drop a blank one).
 - **Observing / Requesting** (swift-interface-composable-architecture): `Observing<Reminders.Read.Page.Run>(reminders.read.page)`
   follows an operation's stream for its request; `Requesting<Reminders.Lists.Create.Run>(\.reminders.lists.create)`
