@@ -4,13 +4,12 @@ import Models
 import Reminder
 public import Reminders
 public import Reminders_Feature
-import Reminders_View
 import Standard_Library_Extensions
 public import SwiftUI
 
 extension Reminders {
     // The universal screen tree: the front list, the pushed page, the presented sheet. A platform-specific
-    // app composes the same `Reminders View` views under its own tree beside this one.
+    // app composes the same views under its own tree beside this one.
     public struct Screen {
         @Bindable private var store: StoreOf<Reminders.Feature>
 

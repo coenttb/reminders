@@ -17,8 +17,7 @@ One flat package, one host, one workspace. The layers, bottom up:
 | `Reminders SQLite` | SQLiteData, GRDB | the schema, `Reminders.sqlite(database)`, the read requests resolved and tracked (`ValueObservation`), the bootstrap |
 | `Reminders Sample` | — | two lists, three reminders |
 | `Reminders Feature` | TCA26, Interface ComposableArchitecture | `Reminders.Feature` (root), `Read.Page.Feature` (one page, a row edited in place), `Update.Feature` (the draft). The front screen and the page's contents are `Observing` the domain's `observe` operations; the sheet is `Requesting` `lists.create`; writes are `Reminders.Call`s carried by actions. No storage import; failures live on `@StoreTaskID`s |
-| `Reminders View` | SwiftUI | one universal view per feature (`Reminders.Read.SwiftUI`, …), one row view built from a value; nothing platform- or host-specific |
-| `Reminders App` | | the universal app: `Reminders.Screen` (the navigation tree) and the live store. A platform-specific app is another target beside this one composing the same views |
+| `Reminders SwiftUI` | SwiftUI | one universal view per feature (`Reminders.Read.SwiftUI`, …), one row view built from a value, `Reminders.Screen` (the navigation tree) and the live store. A platform-specific app is another target beside this one composing the same views |
 | `Hosts/Reminders` | | `@main` |
 
 What was cut: due dates, priorities, flags, notes, tags, search, smart lists, ordering and preferences, paging,

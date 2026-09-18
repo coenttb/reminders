@@ -1,6 +1,6 @@
 import ComposableArchitecture2
 import Reminders
-import Reminders_App
+import Reminders_SwiftUI
 import Reminders_Feature
 import SwiftUI
 

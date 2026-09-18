@@ -14,8 +14,7 @@ let package = Package(
         .library(name: "Reminders SQL", targets: ["Reminders SQL"]),
         .library(name: "Reminders SQLite", targets: ["Reminders SQLite"]),
         .library(name: "Reminders Feature", targets: ["Reminders Feature"]),
-        .library(name: "Reminders View", targets: ["Reminders View"]),
-        .library(name: "Reminders App", targets: ["Reminders App"]),
+        .library(name: "Reminders SwiftUI", targets: ["Reminders SwiftUI"]),
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/TCA26.git", branch: "main", traits: ["Dependencies", "Clocks"]),
@@ -111,20 +110,7 @@ let package = Package(
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
         .target(
-            name: "Reminders View",
-            dependencies: [
-                .product(name: "ComposableArchitecture2", package: "TCA26"),
-                .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
-                "Models",
-                "Reminder",
-                "Reminders",
-                "Reminders Feature",
-                .product(name: "Tagged", package: "swift-tagged"),
-            ],
-            swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
-        ),
-        .target(
-            name: "Reminders App",
+            name: "Reminders SwiftUI",
             dependencies: [
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
@@ -135,8 +121,8 @@ let package = Package(
                 "Reminders Feature",
                 "Reminders Sample",
                 "Reminders SQLite",
-                "Reminders View",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
+                .product(name: "Tagged", package: "swift-tagged"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),
@@ -218,34 +204,19 @@ let package = Package(
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
         .testTarget(
-            name: "Reminders View Tests",
+            name: "Reminders SwiftUI Tests",
             dependencies: [
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
-                "Models",
-                "Reminder",
-                "Reminders",
-                "Reminders Feature",
-                "Reminders Sample",
-                "Reminders SQLite",
-                "Reminders View",
-                .product(name: "Tagged", package: "swift-tagged"),
-            ],
-            swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
-        ),
-        .testTarget(
-            name: "Reminders App Tests",
-            dependencies: [
-                .product(name: "ComposableArchitecture2", package: "TCA26"),
-                "Models",
-                "Reminder",
-                .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
-                "Reminders",
-                "Reminders App",
-                "Reminders Feature",
-                "Reminders Sample",
-                "Reminders SQLite",
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
+                "Models",
+                "Reminder",
+                "Reminders",
+                "Reminders Feature",
+                "Reminders Sample",
+                "Reminders SQLite",
+                "Reminders SwiftUI",
+                .product(name: "Tagged", package: "swift-tagged"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),

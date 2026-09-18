@@ -224,23 +224,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders View"
-               BuildableName = "Reminders View"
-               BlueprintName = "Reminders View"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders App"
-               BuildableName = "Reminders App"
-               BlueprintName = "Reminders App"
+               BlueprintIdentifier = "Reminders SwiftUI"
+               BuildableName = "Reminders SwiftUI"
+               BlueprintName = "Reminders SwiftUI"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -252,23 +238,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders View Tests"
-               BuildableName = "Reminders View Tests"
-               BlueprintName = "Reminders View Tests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "NO"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders App Tests"
-               BuildableName = "Reminders App Tests"
-               BlueprintName = "Reminders App Tests"
+               BlueprintIdentifier = "Reminders SwiftUI Tests"
+               BuildableName = "Reminders SwiftUI Tests"
+               BlueprintName = "Reminders SwiftUI Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -354,19 +326,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders View Tests"
-               BuildableName = "Reminders View Tests"
-               BlueprintName = "Reminders View Tests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Reminders App Tests"
-               BuildableName = "Reminders App Tests"
-               BlueprintName = "Reminders App Tests"
+               BlueprintIdentifier = "Reminders SwiftUI Tests"
+               BuildableName = "Reminders SwiftUI Tests"
+               BlueprintName = "Reminders SwiftUI Tests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
