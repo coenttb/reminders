@@ -11,7 +11,7 @@ extension Reminders {
     // The domain over one SQLite database: reads on the caller's thread, each write one transaction.
     public static func sqlite(_ database: any DatabaseWriter) -> Reminders {
         Self(
-            create: .init(run: { request in
+            create: .init { request in
                 @Dependency(\.uuid) var uuid
                 @Dependency(\.date.now) var now
                 let reminder = Reminder(id: Reminder.ID(uuid()), request.draft, created: now)
@@ -22,7 +22,7 @@ extension Reminders {
                         .execute(db)
                 }
                 return reminder
-            }),
+            },
             read: .init(
                 run: { request in request.stream(in: database) },
                 id: { request in
@@ -31,7 +31,7 @@ extension Reminders {
                         return Reminder(record)
                     }
                 },
-                page: .init(run: { request in request.stream(in: database) })
+                page: .init { request in request.stream(in: database) }
             ),
             update: .init(
                 run: { request in
@@ -45,18 +45,18 @@ extension Reminders {
                         .execute(db)
                     }
                 },
-                complete: .init(run: { request in
+                complete: .init { request in
                     try await database.write { db in
                         guard try Reminder.Record.find(request.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
                         try Reminder.Record.find(request.id).update { $0.completed = request.completed }.execute(db)
                     }
-                })
+                }
             ),
-            delete: .init(run: { request in
+            delete: .init { request in
                 try await database.write { db in try Reminder.Record.find(request.id).delete().execute(db) }
-            }),
+            },
             lists: .init(
-                create: .init(run: { request in
+                create: .init { request in
                     @Dependency(\.uuid) var uuid
                     let list = List<Reminder>(id: List<Reminder>.ID(uuid()), request.draft)
                     try await database.write { db in
@@ -66,13 +66,13 @@ extension Reminders {
                             .execute(db)
                     }
                     return list
-                }),
-                delete: .init(run: { request in
+                },
+                delete: .init { request in
                     try await database.write { db in
                         try List<Reminder>.Record.find(request.id).delete().execute(db)
                         try List<Reminder>.Record.installDefault(in: db)
                     }
-                })
+                }
             )
         )
     }
