@@ -48,17 +48,17 @@ extension Reminders.Update {
             ComposableArchitecture2.EmptyFeature()
                 // Leaving writes: a row that is gone stays gone.
                 .onDismount {
-                    let state = store.state
-                    if let original = state.original {
-                        if state.draft.isBlank {
-                            try await reminders.delete(original.id)
-                        } else if !state.isSaved {
-                            do {
-                                try await reminders.update(Reminder(id: original.id, state.draft, created: original.created))
-                            } catch Reminders.Update.Error.notFound {}
-                        }
-                    } else if !state.draft.isBlank {
-                        _ = try await reminders.create(state.draft)
+                    switch (store.original, store.draft.isBlank) {
+                    case let (original?, true):
+                        try await reminders.delete(original.id)
+                    case let (original?, false) where !store.isSaved:
+                        do {
+                            try await reminders.update(Reminder(id: original.id, store.draft, created: original.created))
+                        } catch Reminders.Update.Error.notFound {}
+                    case (nil, false):
+                        _ = try await reminders.create(store.draft)
+                    case (_?, false), (nil, true):
+                        break
                     }
                 }
         }

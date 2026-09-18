@@ -24,11 +24,10 @@ extension Reminders.Read.Page {
 
 extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
-        let editing = store.editing?.id
         SwiftUI::List {
             ForEach(store.rows) { reminder in
                 // The editor is one view that moves between rows; every other row is a plain value.
-                if reminder.id == editing, let editor = store.scope(\.editing) {
+                if reminder.id == store.editing?.id, let editor = store.scope(\.editing) {
                     Reminders.Update.SwiftUI(store: editor, focus: $focus)
                 } else {
                     Reminder.Row.SwiftUI(

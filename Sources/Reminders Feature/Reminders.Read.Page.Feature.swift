@@ -29,11 +29,13 @@ extension Reminders.Read.Page {
 
             // The rows, with the draft of an existing row standing in for it until the page carries what was written.
             public var rows: [Reminder] {
-                var rows = contents.rows ?? []
-                if let editing, let original = editing.original, let index = rows.firstIndex(where: { $0.id == original.id }) {
-                    rows[index] = Reminder(id: original.id, editing.draft, created: original.created)
+                (contents.rows ?? []).map { row in
+                    if let editing, editing.id == row.id {
+                        Reminder(id: row.id, editing.draft, created: row.created)
+                    } else {
+                        row
+                    }
                 }
-                return rows
             }
         }
 
