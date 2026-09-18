@@ -34,7 +34,9 @@ import Testing
         let tomorrow = try #require(Date(year: 2026, month: 9, day: 16, in: calendar))
         #expect(Reminder.Editor.Preset.today.date(at: now, calendar: calendar) == calendar.startOfDay(for: now))
         #expect(Reminder.Editor.Preset.date(for: .tomorrow, at: now, calendar: calendar) == tomorrow)
-        #expect(calendar.component(.weekday, from: Reminder.Editor.Preset.thisWeekend.date(at: now, calendar: calendar)) == 7)
+        #expect(calendar.component(.weekday, from: Reminder.Editor.Preset.nextWeekend.date(at: now, calendar: calendar)) == 7)
+        let friday = try #require(Date(year: 2026, month: 9, day: 18, hour: 8, in: calendar))
+        #expect(Reminder.Editor.Preset.nextWeekend.date(at: friday, calendar: calendar) == Date(year: 2026, month: 9, day: 26, in: calendar))
         #expect(calendar.component(.weekday, from: Reminder.Editor.Preset.nextWeek.date(at: now, calendar: calendar)) == 2)
         #expect(Reminder.Editor.Preset.Time.allCases.map(\.hour) == [9, 12, 15, 18, 21])
         var due: Reminder.Due? = nil

@@ -11,8 +11,9 @@ extension Reminder.Record.TableColumns {
         !isCompleted && dueDate.isNot(nil)
     }
 
-    public func isDue(during day: Range<Date>) -> some QueryExpression<Bool> {
-        !isCompleted && dueDate.isNot(nil) && dueDate.gte(Date?.some(day.lowerBound)) && dueDate.lt(Date?.some(day.upperBound))
+    // Due today or overdue: the stock Today list carries every open reminder due before tomorrow.
+    public func isDue(by day: Range<Date>) -> some QueryExpression<Bool> {
+        !isCompleted && dueDate.isNot(nil) && dueDate.lt(Date?.some(day.upperBound))
     }
 
     public func belongs(to filter: Reminders.Filter, today: Range<Date>) -> SQLQueryExpression<Bool> {
@@ -23,7 +24,7 @@ extension Reminder.Record.TableColumns {
         case let .list(id): SQLQueryExpression("\(listID.eq(id))")
         case .scheduled: SQLQueryExpression("\(isScheduled)")
         case let .tags(tags): SQLQueryExpression("\(Reminders.Tagging.where { $0.reminderID.eq(id) && $0.tagID.in(Array(tags)) }.exists())")
-        case .today: SQLQueryExpression("\(isDue(during: today))")
+        case .today: SQLQueryExpression("\(isDue(by: today))")
         }
     }
 }

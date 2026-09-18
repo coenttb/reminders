@@ -20,7 +20,7 @@ import Testing
         #expect(Reminder.Priority.allCases.map(\.marks) == ["!", "!!", "!!!"])
         #expect(Reminder.repeatOptions.map(\.title) == ["Daily", "Weekly", "Monthly", "Yearly"])
         #expect(Calendar.RecurrenceRule(calendar: Calendar(identifier: .gregorian), frequency: .weekly).title == "Weekly")
-        #expect(Reminder.Editor.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "This Weekend", "Next Week"])
+        #expect(Reminder.Editor.Preset.allCases.map(\.title) == ["Today", "Tomorrow", "Next Weekend", "Next Week"])
         #expect(Reminder.Editor.Preset.Time.allCases.map(\.title) == ["Morning", "Midday", "Afternoon", "Evening", "Night"])
     }
 
@@ -49,27 +49,28 @@ import Testing
         let calendar = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "UTC")!)
         let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9, minute: 20)))
         let evening = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 18)))
-        let style = Date.FormatStyle(date: .omitted, time: .shortened, calendar: calendar, timeZone: calendar.timeZone)
+        let style = Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone).hour(.conversationalTwoDigits(amPM: .abbreviated)).minute(.twoDigits)
         #expect(Reminder.Editor.Preset.Time.evening.description(on: now, calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.moment(evening).timeDescription(calendar: calendar) == evening.formatted(style))
         #expect(Reminder.Due.day(evening).timeDescription(calendar: calendar) == nil)
     }
 
-    @Test func `the due date reads as a day, a weekday, or a date, with the time only when it matters`() throws {
+    @Test func `the due date reads as a day word or a numeric date, with the time only when it matters`() throws {
         let calendar = Calendar(identifier: .gregorian, timeZone: TimeZone(identifier: "UTC")!)
         let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 14, hour: 9)))
         let style = Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone)
         func due(_ days: Int) throws -> Date { try #require(calendar.date(byAdding: .day, value: days, to: now)) }
         func worded(_ due: Reminder.Due) -> String { due.description(at: now, calendar: calendar) }
-        let short = Date.FormatStyle(date: .abbreviated, time: .omitted, calendar: calendar, timeZone: calendar.timeZone)
-        let time = Date.FormatStyle(date: .omitted, time: .shortened, calendar: calendar, timeZone: calendar.timeZone)
+        let short = style.day(.twoDigits).month(.twoDigits).year()
+        let time = style.hour(.conversationalTwoDigits(amPM: .abbreviated)).minute(.twoDigits)
         let in1 = try due(1), in3 = try due(3), in6 = try due(6), in7 = try due(7), in30 = try due(30), ago1 = try due(-1), ago2 = try due(-2)
         #expect(worded(.day(now)) == "Today")
         #expect(worded(.day(in1)) == "Tomorrow")
-        #expect(worded(.day(in3)) == in3.formatted(style.weekday(.wide)))
+        #expect(worded(.day(in3)) == in3.formatted(short))
         #expect(worded(.day(in30)) == in30.formatted(short))
         #expect(worded(.moment(in30)).hasSuffix(in30.formatted(time)))
-        #expect(worded(.day(in6)) == in6.formatted(style.weekday(.wide)))
+        #expect(worded(.day(in6)) == in6.formatted(short))
+        #expect(Reminder.Due.day(in6).dayDescription(at: now, calendar: calendar, otherwise: .complete) == in6.formatted(Date.FormatStyle(date: .complete, time: .omitted, calendar: calendar, timeZone: calendar.timeZone)))
         #expect(worded(.day(in7)) == in7.formatted(short))
         #expect(worded(.day(ago1)) == "Yesterday")
         #expect(worded(.day(ago2)) == ago2.formatted(short))

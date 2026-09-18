@@ -5,7 +5,7 @@ import FoundationInternationalization_Extensions
 
 extension Reminder.Editor {
     public enum Preset: CaseIterable, Hashable, Sendable {
-        case today, tomorrow, thisWeekend, nextWeek
+        case today, tomorrow, nextWeekend, nextWeek
     }
 }
 
@@ -15,7 +15,8 @@ extension Reminder.Editor.Preset {
         let day: Date? = switch preset {
         case .today: today
         case .tomorrow: calendar.day(containing: now)?.upperBound
-        case .thisWeekend: today.next(.saturday, in: calendar)
+        // The stock menu skips a Saturday that is already tomorrow.
+        case .nextWeekend: (calendar.day(containing: now)?.upperBound ?? today).next(.saturday, in: calendar)
         case .nextWeek: today.next(.monday, in: calendar)
         }
         return day ?? today

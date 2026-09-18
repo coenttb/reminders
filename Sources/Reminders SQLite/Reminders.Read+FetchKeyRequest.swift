@@ -26,7 +26,7 @@ extension Reminders.Read.Today.Request: FetchKeyRequest {
                         all: $0.id.count(filter: !$0.isCompleted),
                         flagged: $0.id.count(filter: $0.flagged && !$0.isCompleted),
                         scheduled: $0.id.count(filter: $0.isScheduled),
-                        today: $0.id.count(filter: $0.isDue(during: today))
+                        today: $0.id.count(filter: $0.isDue(by: today))
                     )
                 }
                 .fetchOne(db) ?? Reminder.Record.Counts()

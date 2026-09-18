@@ -93,7 +93,7 @@ extension Reminders.Screen: SwiftUI::View {
                     .navigationTitle(form.isNew ? "New Reminder" : "Details")
             }
             .interactiveDismissDisabled(form.isDirty)
-            .presentationDetents(form.isNew ? [.large] : [.fraction(0.715), .large])
+            .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
             .presentationBackground(SwiftUI.Color(.systemGroupedBackground))
         }

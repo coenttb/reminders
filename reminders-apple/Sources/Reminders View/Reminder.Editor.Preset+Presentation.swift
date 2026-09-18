@@ -7,7 +7,7 @@ extension Reminder.Editor.Preset {
         switch self {
         case .today: "Today"
         case .tomorrow: "Tomorrow"
-        case .thisWeekend: "This Weekend"
+        case .nextWeekend: "Next Weekend"
         case .nextWeek: "Next Week"
         }
     }

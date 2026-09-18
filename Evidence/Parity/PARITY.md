@@ -84,3 +84,7 @@ Ranked by how often a user sees it. Effort S = an hour, M = a session, L = more 
 Unchanged from the earlier rows and still open: Sort By checkmark column alignment; Creation Date verified; row highlight during push; dark lists card gray; select-mode circles; smart-group visibility/Add Group; relaunch-while-editing product decision.
 
 Withdrawn today: "stock reverses the chip menu when it opens upward" (it does not — see row 8); "Details opens at content height" (it is a large detent — see row 3).
+
+### S-batch landed (2026-09-18, after the survey)
+
+Rows 1 (predicate only), 3, 4, 5, 7, 8, 10 implemented; 87/88 (the one red stays the accepted upstream TCA26 cached-state case). After-pairs: `survey-list-detail/ours-personal-after.png` (16/09/2026, 06:05, notes on their own lines, Today tile 3), `survey-details/ours-details-dated-after.png` (large sheet, 10 pt card gaps, "Wednesday, 16 September 2026"), `survey-details/ours-details-calendar-after.png` (rule → month header 47 pt vs stock 35 — the picker's own top padding; horizontal inset kept at 22 pt). Rows 2, 6, 9, 11–14 remain open; rows 1b/2/9 sections ruled yes 2026-09-18 and follow in their own commits.

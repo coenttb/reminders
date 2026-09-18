@@ -16,6 +16,6 @@ extension Reminder.Editor.Preset.Time {
     }
 
     public func description(on day: Date, calendar: Calendar) -> String? {
-        calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day)?.formatted(Reminder.Due.style(date: .omitted, time: .shortened, calendar: calendar))
+        calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day).flatMap { Reminder.Due.timeDescription(of: .moment($0), calendar: calendar) }
     }
 }

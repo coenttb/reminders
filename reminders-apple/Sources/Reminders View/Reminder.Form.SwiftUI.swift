@@ -48,13 +48,14 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             .listSectionMargins(.top, 6)
             Section("Date & Time") {
                 Toggle(isOn: $store.draft.dueOn(now, calendar: calendar).animation()) {
-                    row("Date", systemImage: "calendar", subtitle: draft.due?.dayDescription(at: now, calendar: calendar)) {
+                    row("Date", systemImage: "calendar", subtitle: draft.due?.dayDescription(at: now, calendar: calendar, otherwise: .complete)) {
                         if draft.due != nil { expanded = expanded == .date ? nil : .date }
                     }
                 }
                 if expanded == .date, let due = draft.due {
                     DatePicker("Date", selection: $store.draft.date(or: due.date), displayedComponents: .date)
                         .datePickerStyle(.graphical)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 22, bottom: 0, trailing: 22))
                 }
                 Toggle(isOn: $store.draft.timeOn(now, calendar: calendar).animation()) {
                     row("Time", systemImage: "clock", subtitle: draft.due?.timeDescription(calendar: calendar)) {
@@ -77,6 +78,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                         Label("Repeat", systemImage: "repeat").foregroundStyle(.primary, .secondary)
                     }
                 }
+                .listSectionSpacing(10)
             }
             if let failure = store.failure {
                 Section { Text(failure).foregroundStyle(.red) } header: { Text("Not saved") }
@@ -94,11 +96,12 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                 }
             } else {
                 Section("Organisation") { listPicker }
-                Section { priorityPicker }
+                Section { priorityPicker }.listSectionSpacing(10)
                 Section {
                     tagsRow
                     flagToggle
                 }
+                .listSectionSpacing(10)
             }
         }
         .scrollDismissesKeyboard(.interactively)

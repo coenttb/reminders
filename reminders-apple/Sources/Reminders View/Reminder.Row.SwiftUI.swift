@@ -57,7 +57,7 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
                     if subtitle != nil || !reminder.notes.isEmpty {
                         VStack(alignment: .leading, spacing: 2) {
                             if !reminder.notes.isEmpty {
-                                Text(marked: (highlight?.notes ?? reminder.notes).replacingOccurrences(of: "\n", with: " ")).lineLimit(2)
+                                Text(marked: highlight?.notes ?? reminder.notes).lineLimit(2)
                             }
                             if let subtitle { subtitle }
                         }

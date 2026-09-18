@@ -159,7 +159,7 @@ struct `Reminder feature` {
         let store = try await makeStore()
         try await store.state.overview.$summary.load()
         #expect(await store.state.overview.summary.lists.map(\.list.title) == ["Personal", "Family", "Business"])
-        #expect(await store.state.overview.summary.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
+        #expect(await store.state.overview.summary.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 3))
         await store.send(.overview(.listTapped(personal)))?.value
         #expect(await store.state.listing?.page.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets", "Groceries"])
         try await database.write { [groceries] db in try Reminder.Record.find(groceries.id).delete().execute(db) }
@@ -691,7 +691,7 @@ struct `Reminder feature` {
         let store = try await makeStore(clock: clock)
         #expect(await store.state.today == day.lowerBound)
         await store.send(.overview(.filterTapped(.today)))?.value
-        try await until(try await page(store)) { $0.rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"] }
+        try await until(try await page(store)) { $0.rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets"] }
         let untilMidnight = day.upperBound.timeIntervalSince(start)
         let next = try #require(tokyo.day(containing: day.upperBound))
         Self.tokyoDate.withLock { $0 = day.upperBound.addingTimeInterval(1) }
@@ -700,8 +700,9 @@ struct `Reminder feature` {
         #expect(await store.state.listing?.today == next.lowerBound)
         #expect(await store.state.overview.today == next.lowerBound)
         @Fetch(Reminders.Read.Today.Request(today: next.lowerBound)) var overview = Reminders.Summary()
-        try await until($overview) { $0.counts.today == 0 }
-        try await until(try await page(store)) { $0.rows.isEmpty == true }
+        // Yesterday's rows are overdue now, so Today keeps them; the day boundary shows in the state above.
+        try await until($overview) { $0.counts.today == 3 }
+        try await until(try await page(store)) { $0.rows.count == 3 }
         let later = start.addingTimeInterval(2.days)
         Self.tokyoDate.withLock { $0 = later }
         await store.send(.appActivated) { $0.today = tokyo.startOfDay(for: later) }

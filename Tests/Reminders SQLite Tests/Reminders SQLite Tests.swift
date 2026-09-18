@@ -79,7 +79,7 @@ struct `Reminder SQLite storage` {
             try sample.initialize(in: db)
             try sample.initialize(in: db)
         }
-        #expect(try overview(database).counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
+        #expect(try overview(database).counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 3))
         try await database.write { db in try Reminder.Record.find(sample.reminders[0].id).delete().execute(db) }
         try await database.write { db in try sample.initialize(in: db) }
         #expect(try overview(database).counts.all == 7)
@@ -94,7 +94,7 @@ struct `Reminder SQLite storage` {
     @Test func `the home counts open reminders only and lists the tags in use`() async throws {
         let (database, _, sample) = try makeDatabase()
         let overview = try overview(database)
-        #expect(overview.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 2))
+        #expect(overview.counts == Reminders.Summary.Counts(all: 8, flagged: 2, scheduled: 7, today: 3))
         #expect(overview.lists.map(\.list.title) == ["Personal", "Family", "Business"])
         #expect(overview.lists.map(\.count) == [4, 2, 2])
         #expect(Set(overview.tags.filter { $0.count > 0 }.map(\.tag.rawValue)) == ["adulting", "car", "kids", "night", "optional", "social", "someday"])
@@ -148,7 +148,7 @@ struct `Reminder SQLite storage` {
         detail = try self.detail(personal, database)
         #expect(try preference(personal, database).showCompleted && detail.reminders.map(\.title).last == "Take a walk")
         #expect(try self.detail(.completed, database).reminders.count == 3)
-        #expect(try self.detail(.today, database).reminders.count == 2)
+        #expect(try self.detail(.today, database).reminders.count == 3)
         #expect(try self.detail(.scheduled, database).reminders.count == 7)
         #expect(try self.detail(.flagged, database).reminders.map(\.title) == ["Haircut", "Pick up kids from school"])
         #expect(try self.detail(.tags(["social"]), database).reminders.map(\.title) == ["Buy concert tickets", "Prepare for WWDC"])
@@ -538,7 +538,7 @@ struct `Reminder SQLite storage` {
 
     @Test func `Today and the completed set are read through indexes, not a scan of every reminder`() async throws {
         let (database, _, _) = try makeDatabase()
-        let today = try plan(Reminder.Record.where { $0.isDue(during: self.today) }.rows(), database)
+        let today = try plan(Reminder.Record.where { $0.isDue(by: self.today) }.rows(), database)
         #expect(today.contains { $0.contains("idx_reminders_due") }, "\(today)")
         let completed = try plan(Reminder.Record.where { $0.isCompleted }.select(\.id), database)
         #expect(completed.contains { $0.contains("idx_reminders_completed") }, "\(completed)")
@@ -547,8 +547,8 @@ struct `Reminder SQLite storage` {
             database
         )
         #expect(tags.contains { $0.contains("SEARCH remindersTags USING") && $0.contains("idx_remindersTags_tagID") }, "\(tags)")
-        #expect(try overview(database).counts.today == 2)
-        #expect(try detail(.today, database).rows.map(\.title) == ["Doctor appointment", "Buy concert tickets"])
+        #expect(try overview(database).counts.today == 3)
+        #expect(try detail(.today, database).rows.map(\.title) == ["Haircut", "Doctor appointment", "Buy concert tickets"])
     }
 }
 
