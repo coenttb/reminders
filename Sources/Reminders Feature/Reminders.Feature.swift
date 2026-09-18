@@ -10,8 +10,6 @@ import Reminders_Dependency
 public import Tagged
 
 // The interface's Calls are the features' actions.
-extension Reminders.Call: CasePathable {}
-extension Reminders.Lists.Call: CasePathable {}
 
 extension Reminders {
     // The app: the front screen (`read()` followed), the open page, and the sheet. The root's own actions are
