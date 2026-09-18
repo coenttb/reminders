@@ -20,7 +20,7 @@ extension Reminders.Update {
 extension Reminders.Update.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         HStack(spacing: 12) {
-            Button { store.send(.completeButtonTapped) } label: {
+            Button { store.completed.toggle() } label: {
                 Image(systemName: store.completed ? "circle.inset.filled" : "circle")
                     .foregroundStyle(store.completed ? SwiftUI::Color.accentColor : SwiftUI::Color.secondary)
                     .font(.title2)
@@ -29,7 +29,7 @@ extension Reminders.Update.SwiftUI: SwiftUI::View {
             TextField("New Reminder", text: $store.title)
                 .textFieldStyle(.plain)
                 .focused(focus, equals: store.id)
-                .onSubmit { store.send(.titleSubmitted) }
+                .onSubmit { store.dismiss() }
         }
     }
 }

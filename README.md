@@ -16,7 +16,7 @@ One flat package, one host, one workspace. The layers, bottom up:
 | `Reminders SQL` | StructuredQueries | the records and the `Filter` predicate |
 | `Reminders SQLite` | SQLiteData, GRDB | the schema, `Reminders.sqlite(database)`, the read requests resolved and tracked (`ValueObservation`), the bootstrap |
 | `Reminders Sample` | — | two lists, three reminders |
-| `Reminders Feature` | TCA26, Interface ComposableArchitecture | `Reminders.Feature` (root), `Read.Page.Feature` (one page, a row edited in place), `Update.Feature` (the draft). Features observe reads and send calls, no point reads: the front screen and a page's contents are `Observing` `read()` / `read(page:)`; the sheet is `Requesting` `lists.create`; writes (delete, complete, list delete) are `Reminders.Call`s carried by actions. No storage import; failures live on `@StoreTaskID`s |
+| `Reminders Feature` | TCA26, Interface ComposableArchitecture | `Reminders.Feature` (root), `Read.Page.Feature` (one page, a row edited in place), `Update.Feature` (the draft, written when the editor leaves). Features observe reads and send calls, no point reads: the front screen and a page's contents are `Observing` `read()` / `read(page:)`; the sheet is `Requesting` `lists.create`; writes (delete, complete, list delete) are `Reminders.Call`s carried by actions. No storage import; failures live on `@StoreTaskID`s |
 | `Reminders SwiftUI` | SwiftUI | one universal view per feature (`Reminders.Read.SwiftUI`, …), one row view built from a value, `Reminders.Screen` (the navigation tree) and the live store. A platform-specific app is another target beside this one composing the same views |
 | `Hosts/Reminders` | | `@main` |
 
@@ -34,12 +34,12 @@ declaring their own:
 - **Request as draft.** `Reminders.Update.Feature.State` holds `Reminders.Update.Request` — the very value
   `update` is called with — and the view binds `$store.request.reminder.title`. The list sheet holds
   `Reminders.Lists.Create.Request` the same way.
-- **Call as action.** `Reminders.Feature.Action.call(Reminders.Call)` and the page's `.call` carry a domain call;
-  `.calling(\.call, reminders, id: \.writes)` runs it as a task. `.call(…)` is the canonical form; two layers of
-  sugar sit on it and mean exactly the same thing: `store.send(.update.complete(id, done))` (the Action embeds the
-  interface's shape) and `store.update.complete(id, done)` (the store forwards to `send`). Neither returns nor
-  throws — the outcome is read from `writes`, which is what tells a sugared call apart from the live
-  `try await reminders.update.complete(id, done)`.
+- **Call as action.** Every feature's `Action` *is* `Reminders.Call` (the sheet's is `Reminders.Lists.Call`,
+  embedded at `\.lists`); there are no bespoke action enums. `.calling(reminders, id: \.writes)` runs each as a
+  task. `store.send(.update.complete(id, done))` and `store.update.complete(id, done)` are sugar over the same
+  call; neither returns nor throws — the outcome is read from `writes`. Everything that is not a call is state
+  the view sets on the store: `store.listing = .init(page: .list(id))`, `store.editing = .init(reminder)`,
+  `store.editing = nil`, `store.dismiss()`. Writing the draft is the editor's `onDismount`.
 - **Observing / Requesting** from `swift-interface-composable-architecture` are the two generic features over an
   operation symbol: `Observing<Reminders.Read.Operations.Page> { reminders.read($0) }` keeps a request's
   value current; `Requesting { try await reminders.lists.create($0) }` composes a request and sends it whole.

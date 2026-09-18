@@ -27,10 +27,10 @@ extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
         .navigationTitle("New List")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { store.send(.cancelButtonTapped) }
+                Button("Cancel") { store.dismiss() }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { store.send(.sendButtonTapped) }
+                Button("Done") { store.create(store.request) }
                     .disabled(store.request.isBlank || store.sending.isRunning)
             }
         }

@@ -8,58 +8,41 @@ import Reminders_Dependency
 public import Tagged
 
 extension Reminders {
-    // The app: the front screen (`read()` observed), the open page, and the sheet. Calls ride `writes`.
+    // The app: the front screen (`read()` followed), the open page, and the sheet. Every action is a call on
+    // the domain; navigation and presentation are state the views set. Calls ride `writes`.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State {
             public var overview = Observing<Reminders.Read>.State()
             public var listing: Reminders.Read.Page.Feature.State?
-            public var destination: Destination.State?
+            public var destination: Requesting<Reminders.Lists.Create>.State?
             @StoreTaskID public var writes
 
             public init() {}
         }
 
-        public enum Action {
-            case addListButtonTapped
-            // `.lists.delete(…)` is sugar over `.call(.lists.delete(…))`.
-            case call(Reminders.Call)
-            case destination(Destination.Action)
-            case listTapped(Models.List<Reminder>.ID)
-            case listing(Reminders.Read.Page.Feature.Action)
-            case overview(Observing<Reminders.Read>.Action)
-        }
+        // The page's calls are this feature's calls; the sheet's are the `lists` child's.
+        public typealias Action = Reminders.Call
 
         @Dependency(\.reminders) var reminders
-        @Dependency(\.uuid) var uuid
 
         public init() {}
 
         public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
             ComposableArchitecture2.Features {
                 ComposableArchitecture2.Update { state, action in
-                    switch action {
-                    case .addListButtonTapped:
-                        let list = Models.List<Reminder>(id: Models.List<Reminder>.ID(uuid()))
-                        state.destination = .list(.init(list))
-                    case .destination(.list(.cancelButtonTapped)):
-                        state.destination = nil
                     // The page showing a deleted list is gone before the call runs.
-                    case let .call(.lists.delete(request)):
-                        if state.listing?.list == request.id { state.listing = nil }
-                    case let .listTapped(id):
-                        state.listing = Reminders.Read.Page.Feature.State(page: .list(id))
-                    case .call, .destination, .listing, .overview:
-                        break
+                    if case let .lists.delete(request) = action, state.listing?.list == request.id {
+                        state.listing = nil
                     }
                 }
                 ComposableArchitecture2.Scope(\.overview) { Observing(reminders.read) }
             }
-            .calling(\.call, reminders, id: \.writes)
-            .ifLet(\.listing) {
+            .calling(reminders, id: \.writes)
+            .ifLet(\.listing, action: \.self) {
                 Reminders.Read.Page.Feature()
             }
-            .ifLet(\.destination) {
-                Destination.body
+            .ifLet(\.destination, action: \.lists) {
+                Requesting(\.reminders.lists.create)
             }
         }
     }

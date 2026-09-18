@@ -32,60 +32,60 @@ struct `Reminders feature` {
         try #require(store.listing)
     }
 
-    @Test func `a new row is inserted, edited in place, and written when the session ends`() async throws {
+    @Test func `a new row is inserted, edited in place, and written when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.listTapped(personal))
+            store.modify { $0.listing = .init(page: .list(personal)) }
             #expect(store.listing?.observing.request.filter == .list(personal))
-            store.send(.listing(.newReminderButtonTapped))
+            let reminder = Reminder(id: Reminder.ID(UUID()), list: personal, created: Date(timeIntervalSince1970: 1_234_567_890))
+            store.send(.create(reminder))
+            store.modify { $0.listing?.editing = .init(reminder) }
             try await page(store).writes()
-            let editing = try #require(store.listing?.editing)
-            #expect(try reminders.read(editing.id).isBlank)
+            #expect(try reminders.read(reminder.id).isBlank)
             store.modify { $0.listing?.editing?.title = "Water plants" }
-            store.send(.listing(.doneButtonTapped))
-            try await page(store).writes()
-            #expect(store.listing?.editing == nil)
-            #expect(try reminders.read(editing.id).title == "Water plants")
+            // Dismissing the editor writes the draft.
+            await store.modify { $0.listing?.editing = nil }?.value
+            #expect(try reminders.read(reminder.id).title == "Water plants")
             while store.listing?.observing.rows?.count != 3 { await Task.yield() }
             #expect(store.listing?.observing.rows?.map(\.title) == ["Groceries", "Haircut", "Water plants"])
             await store.dismount()
         }
     }
 
-    @Test func `a blank row is dropped when the session ends`() async throws {
+    @Test func `a blank row is dropped when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.listTapped(personal))
-            store.send(.listing(.newReminderButtonTapped))
+            store.modify { $0.listing = .init(page: .list(personal)) }
+            let reminder = Reminder(id: Reminder.ID(UUID()), list: personal, created: Date(timeIntervalSince1970: 1_234_567_890))
+            store.send(.create(reminder))
+            store.modify { $0.listing?.editing = .init(reminder) }
             try await page(store).writes()
-            let editing = try #require(store.listing?.editing)
-            store.send(.listing(.backgroundTapped))
-            try await page(store).writes()
-            #expect(throws: Reminders.Read.Error.notFound) { try reminders.read(editing.id) }
+            await store.modify { $0.listing?.editing = nil }?.value
+            #expect(throws: Reminders.Read.Error.notFound) { try reminders.read(reminder.id) }
             await store.dismount()
         }
     }
 
-    // A failed write is recorded on the page's task id, where the view reads it.
-    @Test func `a failed write is recorded on the page's writes`() async throws {
+    // A failed call is recorded on the task id it rode, where the view reads it.
+    @Test func `a failed call is recorded on the page's writes`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.listTapped(personal))
-            store.send(.listing(.update.complete(Reminder.ID(UUID()), true)))
+            store.modify { $0.listing = .init(page: .list(personal)) }
+            store.send(.update.complete(Reminder.ID(UUID()), true))
             await #expect(throws: Reminders.Update.Error.notFound) { try await page(store).writes() }
             #expect(store.listing?.writes.taskError is Reminders.Update.Error)
             await store.dismount()
         }
     }
 
-    // A delete is a call carried by an action; the observed page follows.
+    // A delete is a call; the observed page follows.
     @Test func `a delete call removes the row from the observed page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.listTapped(personal))
+            store.modify { $0.listing = .init(page: .list(personal)) }
             while store.listing?.observing.rows == nil { await Task.yield() }
             let groceries = try #require(store.listing?.observing.rows?.first(where: { $0.title == "Groceries" }))
-            store.send(.listing(.delete(groceries.id)))
+            store.send(.delete(groceries.id))
             try await page(store).writes()
             while store.listing?.observing.rows?.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
             #expect(store.listing?.observing.rows?.map(\.title) == ["Haircut"])
@@ -97,7 +97,7 @@ struct `Reminders feature` {
     @Test func `a list delete closes its page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.listTapped(personal))
+            store.modify { $0.listing = .init(page: .list(personal)) }
             store.send(.lists.delete(personal))
             #expect(store.listing == nil)
             try await store.writes()

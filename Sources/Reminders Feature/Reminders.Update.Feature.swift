@@ -1,24 +1,23 @@
 public import ComposableArchitecture2
+public import Dependencies
 public import Foundation
 public import Reminder
 public import Reminders
+import Reminders_Dependency
 
 extension Reminders.Update {
-    // One row being edited in place: `update`'s request, drafted. The page it belongs to commits it when the
-    // session ends.
+    // One row being edited in place: `update`'s request, drafted. The editor is presented for as long as the
+    // row is being edited and writes the draft when it is dismissed; a blank row is dropped instead.
     @ComposableArchitecture2.Feature public struct Feature {
         // The state reads as the request it drafts: `state.title`, `state.completed`.
         @dynamicMemberLookup
         public struct State: Hashable, Sendable {
             public var request: Reminders.Update.Request
             public var original: Reminders.Update.Request
-            // Each editing session has its own identity, so a stale task cannot end a newer session.
-            public let session: UUID
 
-            public init(_ reminder: Reminder, session: UUID) {
+            public init(_ reminder: Reminder) {
                 self.request = Request(reminder)
                 self.original = Request(reminder)
-                self.session = session
             }
 
             public subscript<Member>(dynamicMember keyPath: WritableKeyPath<Reminders.Update.Request, Member>) -> Member {
@@ -31,20 +30,24 @@ extension Reminders.Update {
             public var isSaved: Bool { request == original }
         }
 
-        public enum Action {
-            case completeButtonTapped
-            case titleSubmitted
-        }
+        public typealias Action = Reminders.Call
+
+        @Dependency(\.reminders) var reminders
 
         public init() {}
 
         public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
-            ComposableArchitecture2.Update { _, action in
-                switch action {
-                case .completeButtonTapped, .titleSubmitted:
-                    break
+            ComposableArchitecture2.EmptyFeature()
+                // Leaving writes the draft whole; a blank row is dropped; a row that is gone stays gone.
+                .onDismount {
+                    if store.isBlank {
+                        try await reminders.delete(store.id)
+                    } else if !store.isSaved {
+                        do {
+                            try await reminders.update(store.request)
+                        } catch Reminders.Update.Error.notFound {}
+                    }
                 }
-            }
         }
     }
 }
