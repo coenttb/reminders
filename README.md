@@ -26,14 +26,14 @@ placeholder, all styling and parity chrome, and the evidence.
 
 ## Interface-type reuse
 
-The `@Interface` macro derives, for every operation, a `Request` (its parameters as a value) and, for every
+The `@Operations` macro derives, for every operation, a symbol (`Reminders.Read.Page`; the primary operation is the interface itself, `Reminders.Read`) whose `Input` is its parameters as a value; the `@Interface` macro derives, for every
 interface, a `Call` (the coproduct of its operations' requests, `Hashable` and `Sendable` when the requests are)
 together with an interpreter `reminders(call)`. The layers above the domain reuse those types instead of
 declaring their own:
 
-- **Request as draft.** `Reminders.Update.Feature.State` holds `Reminders.Update.Request` — the very value
+- **Input as draft.** `Reminders.Update.Feature.State` holds `Reminders.Update.Input` — the very value
   `update` is called with — and the view binds `$store.request.reminder.title`. The list sheet holds
-  `Reminders.Lists.Create.Request` the same way.
+  `Reminders.Lists.Create.Input` the same way.
 - **Call as action.** Every feature's `Action` *is* `Reminders.Call` (the sheet's is `Reminders.Lists.Call`,
   embedded at `\.lists`); there are no bespoke action enums. `.calling(reminders, id: \.writes)` runs each as a
   task. `store.send(.update.complete(id, done))` and `store.update.complete(id, done)` are sugar over the same

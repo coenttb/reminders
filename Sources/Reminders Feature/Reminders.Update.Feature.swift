@@ -12,15 +12,15 @@ extension Reminders.Update {
         // The state reads as the request it drafts: `state.title`, `state.completed`.
         @dynamicMemberLookup
         public struct State: Hashable, Sendable {
-            public var request: Reminders.Update.Request
-            public var original: Reminders.Update.Request
+            public var request: Reminders.Update.Input
+            public var original: Reminders.Update.Input
 
             public init(_ reminder: Reminder) {
-                self.request = Request(reminder)
-                self.original = Request(reminder)
+                self.request = Input(reminder)
+                self.original = Input(reminder)
             }
 
-            public subscript<Member>(dynamicMember keyPath: WritableKeyPath<Reminders.Update.Request, Member>) -> Member {
+            public subscript<Member>(dynamicMember keyPath: WritableKeyPath<Reminders.Update.Input, Member>) -> Member {
                 get { request[keyPath: keyPath] }
                 set { request[keyPath: keyPath] = newValue }
             }

@@ -8,7 +8,7 @@ import Tagged
 
 // A read request resolved against one database connection; the streamed ones track their query, so the
 // value arrives now and again after every write it depends on.
-extension Reminders.Read.Request {
+extension Reminders.Read.Run.Input {
     public func fetch(_ db: Database) throws -> Reminders.Read.Value {
         Reminders.Read.Value(
             lists: try Models.List<Reminder>.Record
@@ -26,7 +26,7 @@ extension Reminders.Read.Request {
     }
 }
 
-extension Reminders.Read.Page.Request {
+extension Reminders.Read.Page.Input {
     public func fetch(_ db: Database) throws -> Reminders.Read.Page.Value {
         Reminders.Read.Page.Value(
             rows: try Reminder.Record

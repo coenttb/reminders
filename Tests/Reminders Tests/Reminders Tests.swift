@@ -48,7 +48,7 @@ import Testing
         try await reminders(.read(page: .all))
         #expect(Reminders.Lists.Call.delete(list) == .delete(list))
         #expect(Reminders.Call.delete(reminder.id) != .delete(Reminder.ID(UUID())))
-        #expect(Reminders.Read.Page.Input.self == Reminders.Read.Page.Request.self)
+        #expect(Reminders.Read.Page.Input(page: .all).filter == .all)
         #expect(Reminders.Read.Output.self == AsyncThrowingStream<Reminders.Read.Value, any Error>.self)
         try await reminders(.update(.complete(reminder.id, true)))
         await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(Reminder.ID(UUID()))) }

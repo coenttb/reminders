@@ -8,6 +8,7 @@ extension Reminders {
     // the UI genuinely follows is declared as one.
     @Interface
     public struct Read: Read.Interface {
+        @Operations
         public protocol Interface {
             func callAsFunction() -> AsyncThrowingStream<Reminders.Read.Value, any Swift.Error>
             func callAsFunction(_ id: Reminder.ID) throws -> Reminder
