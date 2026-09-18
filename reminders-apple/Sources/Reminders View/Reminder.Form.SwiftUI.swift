@@ -99,13 +99,11 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                     }
                 }
             } else {
+                // Tags and Flag follow the date cards, as in the shipping app; then the list and its priority.
+                Section { tagsRow }.listSectionSpacing(10)
+                Section { flagToggle }.listSectionSpacing(10)
                 Section("Organisation") { listPicker }
                 Section { priorityPicker }.listSectionSpacing(10)
-                Section {
-                    tagsRow
-                    flagToggle
-                }
-                .listSectionSpacing(10)
             }
         }
         .scrollDismissesKeyboard(.interactively)
