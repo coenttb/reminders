@@ -29,7 +29,7 @@ extension Reminders {
         // The root's own calls, and the calls of the children that run their own: the page's on its `writes`, the
         // new-list sheet's on its `sending`. A child's call is that child's, not the root's, so the cases are the
         // feature tree, not the interface. The summary has no actions and needs no case.
-        public enum Action {
+        public enum Action: Calls {
             case call(Reminders.Call)
             case page(Reminders.Read.Page.Feature.Action)
             case newList(Requesting<Reminders.Lists.Create.Run>.Action)
