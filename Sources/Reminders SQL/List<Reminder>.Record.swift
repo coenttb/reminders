@@ -1,3 +1,4 @@
+public import Foundation
 public import Models
 public import Reminder
 public import StructuredQueries
@@ -10,12 +11,15 @@ extension Models.List<Reminder> {
         public var title: String = ""
         public var color: Color.Hex = Color.Hex(Color.default)
         public var position: Int = 0
+        // A deleted list waits in Recently Deleted with its reminders, until one of them is recovered or thirty days pass.
+        public var deleted: Date?
 
-        public init(id: Models.List<Reminder>.ID, title: String = "", color: Color.Hex = Color.Hex(Color.default), position: Int = 0) {
+        public init(id: Models.List<Reminder>.ID, title: String = "", color: Color.Hex = Color.Hex(Color.default), position: Int = 0, deleted: Date? = nil) {
             self.id = id
             self.title = title
             self.color = color
             self.position = position
+            self.deleted = deleted
         }
     }
 }

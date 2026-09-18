@@ -109,6 +109,7 @@ extension Reminders.Schema {
         migrator.registerMigration("Deleted reminders are kept for thirty days") { db in
             try #sql(#"ALTER TABLE "reminders" ADD COLUMN "deleted" TEXT CHECK ("deleted" IS NULL OR "deleted" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]')"#).execute(db)
             try #sql(#"CREATE INDEX "idx_reminders_deleted" ON "reminders"("deleted") WHERE "deleted" IS NOT NULL"#).execute(db)
+            try #sql(#"ALTER TABLE "lists" ADD COLUMN "deleted" TEXT CHECK ("deleted" IS NULL OR "deleted" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]')"#).execute(db)
         }
         try migrator.migrate(database)
     }

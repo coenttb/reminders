@@ -21,6 +21,6 @@ extension Reminders.Filter {
 
 extension Reminders.Filter.Screen: SwiftUI::View {
     public var body: some SwiftUI::View {
-        Reminders.Listing.SwiftUI(store: listing, lists: store.overview.summary.lists.map(\.list))
+        Reminders.Listing.SwiftUI(store: listing, lists: store.overview.summary.lists.map(\.list) + store.overview.summary.trash)
     }
 }

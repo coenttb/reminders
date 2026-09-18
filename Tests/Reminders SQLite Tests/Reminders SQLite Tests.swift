@@ -222,6 +222,16 @@ struct `Reminder SQLite storage` {
         let (database, reminders, sample) = try makeDatabase()
         let business = sample.lists[2].id
         try await reminders.lists.delete(business, replacement: Models.List<Reminder>.ID(UUID()))
+        // The list and its reminders wait in Recently Deleted; recovering one reminder brings the list back.
+        #expect(try await database.read { db in try Reminder.Record.where { $0.listID.eq(business) && $0.isKept }.fetchCount(db) } == 0)
+        let trashed = try overview(database)
+        #expect(trashed.trash.map(\.id) == [business] && trashed.counts.deleted == 3)
+        #expect(try detail(.recentlyDeleted, database).reminders.map(\.list) == [business, business, business])
+        try await reminders.update.recover(sample.reminders[8].id)
+        let recovered = try overview(database)
+        #expect(recovered.lists.map(\.id).contains(business) && recovered.trash.isEmpty)
+        try await reminders.lists.delete(business, replacement: Models.List<Reminder>.ID(UUID()))
+        try await reminders.delete.expired(before: now.addingTimeInterval(1))
         #expect(try await database.read { db in try Reminder.Record.where { $0.listID.eq(business) }.fetchCount(db) } == 0)
         #expect(try await database.read { db in try Reminders.Tagging.all.fetchCount(db) } == sample.reminders.filter { $0.list != business }.reduce(0) { $0 + $1.tags.count })
         let replacement = Models.List<Reminder>.ID(UUID())

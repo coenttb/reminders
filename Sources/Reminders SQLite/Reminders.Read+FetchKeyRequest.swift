@@ -14,12 +14,14 @@ extension Reminders.Read.Today.Request: FetchKeyRequest {
         let today = calendar.day(containing: self.today)
         return Reminders.Summary(
             lists: try Models.List<Reminder>.Record
+                .where { $0.deleted.is(nil) }
                 .group(by: \.id)
                 .order(by: \.position)
                 .leftJoin(Reminder.Record.all) { $0.id.eq($1.listID) }
                 .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.is(nil) && $1.deleted.is(nil))) }
                 .fetchAll(db)
                 .map(Models.List<Reminder>.Entry.init),
+            trash: try Models.List<Reminder>.Record.where { $0.deleted.isNot(nil) }.order(by: \.position).fetchAll(db).map(Models.List<Reminder>.init),
             counts: Reminders.Summary.Counts(
                 try Reminder.Record.select {
                     Reminder.Record.Counts.Columns(

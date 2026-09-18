@@ -84,8 +84,10 @@ extension Reminders {
                 },
                 recover: { request in
                     try await database.write { db in
-                        guard try Reminder.Record.find(request.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
+                        guard let listID = try Reminder.Record.find(request.id).select(\.listID).fetchOne(db) else { throw Update.Error.notFound }
                         try Reminder.Record.find(request.id).update { $0.deleted = #bind(nil) }.execute(db)
+                        // Recovering a reminder brings its list back with it.
+                        try Models.List<Reminder>.Record.find(listID).update { $0.deleted = #bind(nil) }.execute(db)
                     }
                 },
                 order: { request in
@@ -150,7 +152,12 @@ extension Reminders {
                 // A delete keeps the row for thirty days in Recently Deleted; only the permanent delete and the purge drop it.
                 { request in try await database.write { db in try Reminder.Record.find(request.id).update { $0.deleted = #bind(now) }.execute(db) } },
                 permanently: { request in try await database.write { db in try Reminder.Record.find(request.id).delete().execute(db) } },
-                expired: { request in try await database.write { db in try Reminder.Record.where { $0.deleted.lt(Date?.some(request.cutoff)) }.delete().execute(db) } },
+                expired: { request in
+                    try await database.write { db in
+                        try Reminder.Record.where { $0.deleted.lt(Date?.some(request.cutoff)) }.delete().execute(db)
+                        try Models.List<Reminder>.Record.where { $0.deleted.lt(Date?.some(request.cutoff)) }.delete().execute(db)
+                    }
+                },
                 completed: .init(
                     in: { request in
                         let today = calendar.day(containing: request.today)
@@ -190,8 +197,7 @@ extension Reminders {
                 },
                 delete: { request in
                     try await database.write { db in
-                        try Models.List<Reminder>.Record.find(request.id).delete().execute(db)
-                        try Models.List<Reminder>.Record.installDefault(request.replacement, in: db)
+                        try Models.List<Reminder>.Record.delete(request.id, replacement: request.replacement, at: now, in: db)
                     }
                 },
                 reorder: { request in
