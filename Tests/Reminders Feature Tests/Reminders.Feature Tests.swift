@@ -3,6 +3,7 @@ import ComposableArchitectureTestSupport
 import Dependencies
 import DependenciesTestSupport
 import Foundation
+import Interface_ComposableArchitecture
 import Models
 import Reminder
 import Reminders
@@ -34,18 +35,20 @@ struct `Reminders feature` {
     @Test func `a new row is inserted, edited in place, and written when the session ends`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.overview(.listTapped(personal)))
-            #expect(store.listing?.request.filter == .list(personal))
+            store.send(.listTapped(personal))
+            #expect(store.listing?.observing.request.page.filter == .list(personal))
             store.send(.listing(.newReminderButtonTapped))
             try await page(store).writes()
             let editing = try #require(store.listing?.editing)
             #expect(try reminders.read(editing.id).isBlank)
-            store.modify { $0.listing?.editing?.draft.title = "Water plants" }
+            store.modify { $0.listing?.editing?.request.reminder.title = "Water plants" }
             store.send(.listing(.doneButtonTapped))
             try await page(store).writes()
             #expect(store.listing?.editing == nil)
             #expect(try reminders.read(editing.id).title == "Water plants")
             #expect(try reminders.read(page: .list(personal)).rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
+            while store.listing?.observing.value?.rows.count != 3 { await Task.yield() }
+            #expect(store.listing?.observing.value?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
             await store.dismount()
         }
     }
@@ -53,7 +56,7 @@ struct `Reminders feature` {
     @Test func `a blank row is dropped when the session ends`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.overview(.listTapped(personal)))
+            store.send(.listTapped(personal))
             store.send(.listing(.newReminderButtonTapped))
             try await page(store).writes()
             let editing = try #require(store.listing?.editing)
@@ -68,10 +71,38 @@ struct `Reminders feature` {
     @Test func `a failed write is recorded on the page's writes`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
-            store.send(.overview(.listTapped(personal)))
+            store.send(.listTapped(personal))
             store.send(.listing(.reminderCompleteButtonTapped(Reminder.ID(UUID()))))
             await #expect(throws: Reminders.Read.Error.notFound) { try await page(store).writes() }
             #expect(store.listing?.writes.taskError is Reminders.Read.Error)
+            await store.dismount()
+        }
+    }
+
+    // A delete is a call carried by an action; the observed page follows.
+    @Test func `a delete call removes the row from the observed page`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+            let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+            store.send(.listTapped(personal))
+            while store.listing?.observing.value == nil { await Task.yield() }
+            let groceries = try #require(store.listing?.observing.value?.rows.first(where: { $0.title == "Groceries" }))
+            store.send(.listing(.call(.delete(.call(groceries.id)))))
+            try await page(store).writes()
+            while store.listing?.observing.value?.rows.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
+            #expect(store.listing?.observing.value?.rows.map(\.title) == ["Haircut"])
+            await store.dismount()
+        }
+    }
+
+    // Deleting a list is a call minted at the root; the page showing that list is gone.
+    @Test func `a list delete closes its page`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+            let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+            store.send(.listTapped(personal))
+            store.send(.listDeleted(personal))
+            #expect(store.listing == nil)
+            try await store.writes()
+            while store.overview.value?.lists.map(\.list.title) != ["Family"] { await Task.yield() }
             await store.dismount()
         }
     }

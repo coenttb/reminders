@@ -1,4 +1,5 @@
 public import ComposableArchitecture2
+import Interface_ComposableArchitecture
 import Models
 import Reminder
 public import Reminders
@@ -23,7 +24,7 @@ extension Reminders.Screen: SwiftUI::View {
     public var body: some SwiftUI::View {
         NavigationStack {
             SwiftUI::List {
-                Reminders.Read.SwiftUI(store: store.scope(\.overview))
+                Reminders.Read.SwiftUI(store: store)
                 if let error = store.writes.taskError {
                     Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
                 }
@@ -35,7 +36,7 @@ extension Reminders.Screen: SwiftUI::View {
                 }
             }
             .navigationDestination(item: $store.scope(\.listing)) { listing in
-                Reminders.Read.Page.SwiftUI(store: listing, title: listing.list.flatMap { store.overview.summary.lists.first(id: $0) }?.list.title ?? "All")
+                Reminders.Read.Page.SwiftUI(store: listing, title: listing.list.flatMap { store.overview.value?.lists.first(id: $0) }?.list.title ?? "All")
             }
         }
         .sheet(item: $store.scope(\.destination).list) { form in

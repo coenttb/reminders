@@ -4,26 +4,28 @@ public import Reminder
 public import Reminders
 
 extension Reminders.Update {
-    // One row being edited in place: the draft that `update` will be called with. The page it belongs to
-    // commits it when the session ends.
+    // One row being edited in place: `update`'s request, drafted. The page it belongs to commits it when the
+    // session ends.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Hashable, Sendable {
             public typealias Feature = Reminders.Update.Feature
 
-            public var draft: Reminder
-            public var original: Reminder
+            public var request: Reminders.Update.Request
+            public var original: Reminders.Update.Request
             // Each editing session has its own identity, so a stale task cannot end a newer session.
             public let session: UUID
 
             public init(_ reminder: Reminder, session: UUID) {
-                self.draft = reminder
-                self.original = reminder
+                self.request = Request(reminder)
+                self.original = Request(reminder)
                 self.session = session
             }
 
-            public var id: Reminder.ID { original.id }
+            public var id: Reminder.ID { original.reminder.id }
 
-            public var isSaved: Bool { draft == original }
+            public var isBlank: Bool { request.reminder.isBlank }
+
+            public var isSaved: Bool { request == original }
         }
 
         public enum Action {

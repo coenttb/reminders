@@ -35,6 +35,17 @@ import Testing
         )
     }
 
+    // A call is a value: built with the declared labels, compared, and interpreted by the interface.
+    @Test func `calls are values the interface interprets`() async throws {
+        let reminders = reminders()
+        try await reminders(.lists(.delete(list, replacement: list)))
+        try await reminders(.read(.call(page: .all)))
+        #expect(Reminders.Lists.Call.delete(list, replacement: list) == .delete(list, replacement: list))
+        #expect(Reminders.Call.delete(.call(reminder.id)) != .delete(.call(Reminder.ID(UUID()))))
+        #expect(Reminders.Read.Operations.Page.Input.self == Reminders.Read.Page.Request.self)
+        await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(.call(Reminder.ID(UUID())))) }
+    }
+
     @Test func `reads are called with the declared labels`() throws {
         let reminders = reminders()
         #expect(try reminders.read().lists.map(\.count) == [1])

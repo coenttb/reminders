@@ -7,4 +7,13 @@
    <FileRef
       location = "group:.">
    </FileRef>
+   <FileRef
+      location = "group:../swift-institute/swift-molecules/swift-interface">
+   </FileRef>
+   <FileRef
+      location = "group:../swift-institute/swift-atoms/swift-operation">
+   </FileRef>
+   <FileRef
+      location = "group:../swift-institute/swift-compositions/swift-interface-composable-architecture">
+   </FileRef>
 </Workspace>

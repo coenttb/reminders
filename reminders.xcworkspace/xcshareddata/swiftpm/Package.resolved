@@ -1,5 +1,5 @@
 {
-  "originHash" : "3bb0b03365fea715d561ae216b0c72fe033c1bad1a5601e022ca9d75ce122c18",
+  "originHash" : "8c77eb1b651377ad280d52e2693a417bbcf80773a34c29e34e6e1888839c5180",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -119,15 +119,6 @@
       }
     },
     {
-      "identity" : "swift-interface",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-molecules/swift-interface.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "08ec6d33f8ce474e310b2d236207c9b91126b487"
-      }
-    },
-    {
       "identity" : "swift-issue-reporting",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-issue-reporting",
@@ -143,15 +134,6 @@
       "state" : {
         "branch" : "case-paths-2",
         "revision" : "c4344194c0f9abace6782c349bab48f513ade8e4"
-      }
-    },
-    {
-      "identity" : "swift-operation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swift-atoms/swift-operation.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "a8e885fc27ae16abeb70f9c05e3a0e879421e57e"
       }
     },
     {

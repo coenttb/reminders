@@ -31,7 +31,7 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
                     Reminder.Row.SwiftUI(
                         reminder: reminder,
                         complete: { store.send(.reminderCompleteButtonTapped(reminder.id)) },
-                        delete: { store.send(.reminderDeleted(reminder.id)) },
+                        delete: { store.send(.call(.delete(.call(reminder.id)))) },
                         edit: { store.send(.reminderTapped(reminder.id)) }
                     )
                 }

@@ -2,6 +2,7 @@ import ComposableArchitecture2
 import Dependencies
 import DependenciesTestSupport
 import Foundation
+import Interface_ComposableArchitecture
 import Models
 import Reminder
 import Reminders
@@ -19,7 +20,7 @@ struct `Reminders root` {
     @Test func `the screen observes the database through its store`() async throws {
         let store = Store(initialState: Reminders.Feature.State()) { Reminders.Feature() }
         _ = Reminders.Screen(store: store)
-        while store.overview.summary.lists.isEmpty { await Task.yield() }
-        #expect(store.overview.summary.lists.map(\.list.title) == ["Personal", "Family"])
+        while store.overview.value == nil { await Task.yield() }
+        #expect(store.overview.value?.lists.map(\.list.title) == ["Personal", "Family"])
     }
 }

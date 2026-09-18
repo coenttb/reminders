@@ -23,7 +23,9 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.39.1", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
+        .package(url: "https://github.com/swift-atoms/swift-operation.git", branch: "main"),
         .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main"),
+        .package(url: "https://github.com/swift-compositions/swift-interface-composable-architecture.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.6.0"),
     ],
@@ -98,30 +100,35 @@ let package = Package(
             dependencies: [
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
                 "Models",
+                .product(name: "Operation", package: "swift-operation"),
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
                 .product(name: "Tagged", package: "swift-tagged"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
         .target(
             name: "Reminders View",
             dependencies: [
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
+                .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
                 "Models",
                 "Reminder",
                 "Reminders",
                 "Reminders Feature",
                 .product(name: "Tagged", package: "swift-tagged"),
             ],
-            swiftSettings: [.defaultIsolation(MainActor.self)]
+            swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),
         .target(
             name: "Reminders App",
             dependencies: [
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
                 "Models",
                 "Reminder",
                 "Reminders",
@@ -131,7 +138,7 @@ let package = Package(
                 "Reminders View",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
             ],
-            swiftSettings: [.defaultIsolation(MainActor.self)]
+            swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),
         .testTarget(
             name: "Models Tests",
@@ -155,7 +162,8 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 .product(name: "Tagged", package: "swift-tagged"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
         .testTarget(
             name: "Reminders Sample Tests",
@@ -196,6 +204,7 @@ let package = Package(
             dependencies: [
                 .product(name: "ComposableArchitectureTestSupport", package: "TCA26"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+                .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
                 "Models",
                 "Reminder",
                 "Reminders",
@@ -205,7 +214,8 @@ let package = Package(
                 "Reminders SQL",
                 "Reminders SQLite",
                 .product(name: "Tagged", package: "swift-tagged"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
         .testTarget(
             name: "Reminders View Tests",
@@ -221,7 +231,7 @@ let package = Package(
                 "Reminders View",
                 .product(name: "Tagged", package: "swift-tagged"),
             ],
-            swiftSettings: [.defaultIsolation(MainActor.self)]
+            swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),
         .testTarget(
             name: "Reminders App Tests",
@@ -235,8 +245,9 @@ let package = Package(
                 "Reminders Feature",
                 "Reminders Sample",
                 "Reminders SQLite",
+                .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
             ],
-            swiftSettings: [.defaultIsolation(MainActor.self)]
+            swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),
     ],
     swiftLanguageModes: [.v6]
