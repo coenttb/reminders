@@ -83,6 +83,7 @@ extension Reminders.Listing {
             case reminderCompleteButtonTapped(Reminder.ID)
             case reminderDeleted(Reminder.ID)
             case reminderDetailsButtonTapped(Reminder.ID)
+            case reminderRecovered(Reminder.ID)
             case reminderDropped(Reminder.ID, into: Reminders.Section)
             case reminderTapped(Reminder.ID)
             case sectionAddTapped(Reminders.Section)
@@ -142,10 +143,12 @@ extension Reminders.Listing {
                 case let .reminderDeleted(id):
                     state.grace.removeValue(forKey: id)
                     state.deleting.insert(id)
+                    // On Recently Deleted a delete is for good; elsewhere the row moves there.
+                    let permanently = state.filter == .recentlyDeleted
                     store.addTask {
                         for id in store.deleting where store.deleting.contains(id) {
                             try await store.attempt {
-                                try await reminders.delete(id)
+                                if permanently { try await reminders.delete.permanently(id) } else { try await reminders.delete(id) }
                                 try store.modify {
                                     $0.deleting.remove(id)
                                     if $0.editing?.id == id { $0.editing = nil }
@@ -155,6 +158,14 @@ extension Reminders.Listing {
                     }
                 case let .reminderDetailsButtonTapped(id):
                     details(id, &state)
+                case let .reminderRecovered(id):
+                    state.deleting.insert(id)
+                    store.addTask {
+                        try await store.attempt {
+                            try await reminders.update.recover(id)
+                            try store.modify { $0.deleting.remove(id) }
+                        }
+                    }
                 case let .reminderDropped(id, section):
                     // A row dragged onto a day or a part of the day takes that date; the row being edited moves with its draft.
                     guard state.editing?.id != id else { break }
@@ -322,7 +333,7 @@ extension Reminders.Listing.Feature {
     private func commit(_ editing: Reminder.Editor.Feature.State?) async throws {
         guard let editing else { return }
         if editing.draft.isBlank {
-            try await reminders.delete(editing.id)
+            try await reminders.delete.permanently(editing.id)
         } else if !editing.isSaved {
             do {
                 _ = try await reminders.update(editing.draft)

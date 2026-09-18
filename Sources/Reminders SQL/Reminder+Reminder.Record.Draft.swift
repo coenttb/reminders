@@ -12,6 +12,7 @@ extension Reminder.Record.Draft {
             flagged: reminder.flagged,
             priority: reminder.priority,
             completed: reminder.completed,
+            deleted: reminder.deleted,
             position: position,
             repeats: reminder.repeats,
             created: reminder.created

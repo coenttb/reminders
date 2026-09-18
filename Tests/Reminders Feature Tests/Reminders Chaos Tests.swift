@@ -212,7 +212,7 @@ struct `Reminder chaos` {
         }
         try await database.read { db in
             if settled {
-                let survivors = try Reminder.Record.where { $0.id.in(deleted) }.fetchCount(db)
+                let survivors = try Reminder.Record.where { $0.id.in(deleted) && $0.isKept }.fetchCount(db)
                 #expect(survivors == 0, "\(survivors) deleted rows survive\n\(replay)")
             }
             let blank = try Reminder.Record.where { $0.title.eq("") }.select(\.id).fetchAll(db)

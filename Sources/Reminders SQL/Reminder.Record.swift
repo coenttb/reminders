@@ -17,6 +17,7 @@ extension Reminder {
         public var flagged: Bool = false
         public var priority: Reminder.Priority?
         public var completed: Date?
+        public var deleted: Date?
         public var position: Int = 0
         @Column(as: Calendar.RecurrenceRule.JSONRepresentation?.self)
         public var repeats: Calendar.RecurrenceRule?
@@ -32,6 +33,7 @@ extension Reminder {
             flagged: Bool = false,
             priority: Reminder.Priority? = nil,
             completed: Date? = nil,
+            deleted: Date? = nil,
             position: Int = 0,
             repeats: Calendar.RecurrenceRule? = nil,
             created: Date
@@ -45,6 +47,7 @@ extension Reminder {
             self.flagged = flagged
             self.priority = priority
             self.completed = completed
+            self.deleted = deleted
             self.position = position
             self.repeats = repeats
             self.created = created

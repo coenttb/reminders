@@ -7,6 +7,7 @@ extension Reminders.Summary.Counts {
         case .flagged: flagged
         case .scheduled: scheduled
         case .today: today
+        case .recentlyDeleted: deleted
         case .completed, .list, .tags: nil
         }
     }

@@ -103,6 +103,9 @@ extension Reminders {
                         state.destination = .list(Models.List<Reminder>.Form.Feature.State(draft: Models.List<Reminder>(id: Models.List<Reminder>.ID(uuid())), original: nil))
                     case .appActivated:
                         state.today = calendar.startOfDay(for: now)
+                        // Recently Deleted keeps a reminder for thirty days.
+                        let cutoff = now.addingTimeInterval(-Reminder.retention)
+                        store.addTask { try await store.attempt { try await reminders.delete.expired(before: cutoff) } }
                     case .appBackgrounded:
                         let listing = state.listing != nil
                         store.addTask {

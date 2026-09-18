@@ -540,6 +540,35 @@ struct `Reminder feature` {
         }
     }
 
+    @Test func `a deleted reminder waits in Recently Deleted, where it is recovered or deleted for good, and goes after thirty days`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+        let store = try await makeStore()
+        try await store.state.overview.$summary.load()
+        #expect(await store.state.overview.summary.counts.deleted == 0)
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.reminderDeleted(groceries.id)))?.value
+        try await until(store.state.overview.$summary) { $0.counts.deleted == 1 && $0.counts.all == 7 }
+        #expect(try await stored(groceries.id)?.deleted == now)
+        await store.send(.overview(.filterTapped(.recentlyDeleted)))?.value
+        try await until(try await page(store)) { $0.rows.map(\.id) == [groceries.id] }
+        await store.send(.listing(.reminderRecovered(groceries.id)))?.value
+        try await until(try await page(store)) { $0.rows.isEmpty }
+        #expect(try await stored(groceries.id)?.isDeleted == false)
+        try await database.write { db in try Reminder.Record.find(groceries.id).update { $0.deleted = #bind(now) }.execute(db) }
+        try await until(try await page(store)) { $0.rows.map(\.id) == [groceries.id] }
+        await store.send(.listing(.reminderDeleted(groceries.id)))?.value
+        try await until(try await page(store)) { $0.rows.isEmpty }
+        #expect(try await stored(groceries.id) == nil)
+        // The purge on activation drops what was deleted more than thirty days ago.
+        let haircut = sample.reminders[1]
+        try await database.write { db in try Reminder.Record.find(haircut.id).update { $0.deleted = #bind(now.addingTimeInterval(-Reminder.retention - 1)) }.execute(db) }
+        await store.send(.appActivated)?.value
+        try await until(store.state.overview.$summary) { $0.counts.deleted == 0 }
+        #expect(try await stored(haircut.id) == nil)
+        await store.dismount()
+        }
+    }
+
     @Test func `deleting the last list leaves a default one and closes its detail`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
@@ -644,7 +673,7 @@ struct `Reminder feature` {
         #expect(await store.state.search.field.tokens == [.tag("car")])
         await store.send(.search(.completedButtonTapped))?.value
         await store.send(.search(.deleteCompletedButtonTapped(olderThanMonths: nil)))?.value
-        #expect(try await database.read { db in try Reminder.Record.all.fetchCount(db) } == 10)
+        #expect(try await database.read { db in try Reminder.Record.where { $0.isKept }.fetchCount(db) } == 10)
         await store.modify { $0.search.field.tokens = [] }?.value
         #expect(await store.state.search.field.showCompleted == false)
         await store.send(.overview(.tagTapped("car")))?.value

@@ -38,6 +38,8 @@ extension Reminders.Filter.Style {
             self.init(title: title, tint: .blue, fill: .all, symbol: "list.bullet")
         case .today:
             self.init(title: "Today", tint: .blue, fill: .today, symbol: "\(day).calendar")
+        case .recentlyDeleted:
+            self.init(title: "Recently Deleted", tint: .gray, fill: .completed, symbol: "trash")
         }
     }
 

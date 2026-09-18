@@ -17,16 +17,17 @@ extension Reminders.Read.Today.Request: FetchKeyRequest {
                 .group(by: \.id)
                 .order(by: \.position)
                 .leftJoin(Reminder.Record.all) { $0.id.eq($1.listID) }
-                .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.is(nil))) }
+                .select { Models.List<Reminder>.Record.Entry.Columns(list: $0, count: $1.id.count(filter: $1.completed.is(nil) && $1.deleted.is(nil))) }
                 .fetchAll(db)
                 .map(Models.List<Reminder>.Entry.init),
             counts: Reminders.Summary.Counts(
                 try Reminder.Record.select {
                     Reminder.Record.Counts.Columns(
-                        all: $0.id.count(filter: !$0.isCompleted),
-                        flagged: $0.id.count(filter: $0.flagged && !$0.isCompleted),
+                        all: $0.id.count(filter: $0.isOpen),
+                        flagged: $0.id.count(filter: $0.flagged && $0.isOpen),
                         scheduled: $0.id.count(filter: $0.isScheduled),
-                        today: $0.id.count(filter: $0.isDue(by: today))
+                        today: $0.id.count(filter: $0.isDue(by: today)),
+                        deleted: $0.id.count(filter: $0.isDeleted)
                     )
                 }
                 .fetchOne(db) ?? Reminder.Record.Counts()
@@ -47,7 +48,7 @@ extension Reminders.Read.Today.Request: FetchKeyRequest {
 extension Reminders.Read.Preference.Request: FetchKeyRequest {
     public func fetch(_ db: Database) throws -> Reminders.Preference {
         try Reminders.Preference.Record.find(Reminders.Filter.Key(filter)).fetchOne(db).map(Reminders.Preference.init)
-            ?? Reminders.Preference(ordering: .dueDate, showCompleted: filter == .completed)
+            ?? Reminders.Preference(ordering: .dueDate, showCompleted: filter.showsCompleted)
     }
 }
 
@@ -65,6 +66,12 @@ extension Reminders.Read.Page.Request: FetchKeyRequest {
                 .order { reminders, lists in (lists.position, reminders.ordered(by: preference, placing: including)) }
                 .limit(limit ?? total)
                 .select { reminders, _ in Reminder.Record.Row.Columns(reminder: reminders, tags: reminders.tagTitles) }
+                .fetchAll(db)
+        } else if filter == .recentlyDeleted {
+            try shown
+                .order { ($0.deleted.desc(), $0.ordered(by: preference, placing: including)) }
+                .limit(limit ?? total)
+                .rows()
                 .fetchAll(db)
         } else if filter == .completed {
             // The Completed screen runs newest first, as the stock app does.

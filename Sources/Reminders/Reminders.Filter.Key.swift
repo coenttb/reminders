@@ -23,6 +23,7 @@ extension Reminders.Filter.Key {
         case .flagged: "flagged"
         case .scheduled: "scheduled"
         case .today: "today"
+        case .recentlyDeleted: "recentlyDeleted"
         case let .list(id): "list_\(id.rawValue.uuidString)"
         case let .tags(tags): "tags_" + tags.sorted().map(\.rawValue).joined(separator: String(Self.separator))
         }
@@ -37,6 +38,7 @@ extension Reminders.Filter {
         case "flagged": self = .flagged
         case "scheduled": self = .scheduled
         case "today": self = .today
+        case "recentlyDeleted": self = .recentlyDeleted
         case let raw where raw.hasPrefix("list_"):
             guard let uuid = UUID(uuidString: String(raw.dropFirst("list_".count))) else { return nil }
             self = .list(Models.List<Reminder>.ID(uuid))

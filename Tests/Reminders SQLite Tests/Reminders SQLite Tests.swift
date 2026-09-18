@@ -56,8 +56,9 @@ struct `Reminder SQLite storage` {
         try database.read { db in try Reminder.Record.find(id).select(\.position).fetchOne(db) }
     }
 
+    // The rows a screen can still reach; a deleted row stays in Recently Deleted for thirty days.
     func count(_ database: some DatabaseWriter) throws -> Int {
-        try database.read { db in try Reminder.Record.all.fetchCount(db) }
+        try database.read { db in try Reminder.Record.where { $0.isKept }.fetchCount(db) }
     }
 
     @Test func `an empty database is installed with one list, and installing again changes nothing`() async throws {
@@ -333,6 +334,10 @@ struct `Reminder SQLite storage` {
         #expect(try self.stored(bread.id, database)?.tags == ["car"] && position(bread.id, database) == 100)
         try await reminders.delete(bread.id)
         await #expect(throws: Reminders.Update.Error.notFound) { try await reminders.update(bread) }
+        #expect(try self.stored(bread.id, database)?.isDeleted == true)
+        try await reminders.update.recover(bread.id)
+        #expect(try self.stored(bread.id, database)?.isDeleted == false)
+        try await reminders.delete.permanently(bread.id)
         #expect(try self.stored(bread.id, database) == nil)
     }
 
@@ -517,6 +522,7 @@ struct `Reminder SQLite storage` {
         #expect(try results(Reminders.Query(terms: ["child"], showCompleted: true), database).reminders.count == 2)
         try await reminders.delete(groceries.id)
         #expect(try results(Reminders.Query(terms: ["shopping"], showCompleted: true), database).reminders.isEmpty)
+        try await reminders.delete.permanently(groceries.id)
         #expect(try await database.read { db in try Reminder.Record.Text.all.fetchCount(db) } == 10)
     }
 

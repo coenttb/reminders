@@ -40,7 +40,7 @@ extension Reminders.Section {
             return [.today, .tomorrow] + days + [.restOfMonth] + months
         case .completed:
             return [.today]
-        case .all, .flagged, .list, .tags:
+        case .all, .flagged, .list, .recentlyDeleted, .tags:
             return []
         }
     }
@@ -73,7 +73,7 @@ extension Reminders.Section {
             }
         case .all, .flagged, .tags:
             return .list(reminder.list)
-        case .completed, .list:
+        case .completed, .list, .recentlyDeleted:
             return .rows
         }
     }

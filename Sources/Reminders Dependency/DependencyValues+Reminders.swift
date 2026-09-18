@@ -22,6 +22,7 @@ extension Reminders: TestDependencyKey {
             ),
             update: .init(
                 unimplemented("\\.reminders.update"),
+                recover: unimplemented("\\.reminders.update.recover"),
                 order: unimplemented("\\.reminders.update.order"),
                 turn: unimplemented("\\.reminders.update.turn"),
                 show: unimplemented("\\.reminders.update.show"),
@@ -29,6 +30,8 @@ extension Reminders: TestDependencyKey {
             ),
             delete: .init(
                 unimplemented("\\.reminders.delete"),
+                permanently: unimplemented("\\.reminders.delete.permanently"),
+                expired: unimplemented("\\.reminders.delete.expired"),
                 completed: .init(
                     in: unimplemented("\\.reminders.delete.completed(in:)"),
                     matching: unimplemented("\\.reminders.delete.completed(matching:)")

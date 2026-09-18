@@ -45,6 +45,7 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
                     .frame(width: 26, height: 20)
             }
             .buttonStyle(.borderless)
+            .disabled(actions.recover != nil)
             .accessibilityLabel(completed ? "Completed" : "Complete")
             Button { (actions.edit ?? actions.details)(reminder.id) } label: {
                 VStack(alignment: .leading, spacing: 4) {
@@ -81,7 +82,11 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
         .frame(minHeight: 22)
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive) { actions.delete(reminder.id) }
-            Button("Details", systemImage: "info") { actions.details(reminder.id) }.tint(.gray)
+            if let recover = actions.recover {
+                Button("Recover", systemImage: "arrow.uturn.backward") { recover(reminder.id) }.tint(.blue)
+            } else {
+                Button("Details", systemImage: "info") { actions.details(reminder.id) }.tint(.gray)
+            }
         }
     }
 

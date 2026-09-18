@@ -8,7 +8,7 @@ public import SQLiteData
 extension Reminder.Record.TableColumns {
     // The rows whose text matches the terms, through the full-text index, and that carry the tags.
     public func matches(_ query: Reminders.Query) -> SQLQueryExpression<Bool> {
-        var predicate = SQLQueryExpression<Bool>("1")
+        var predicate = SQLQueryExpression<Bool>("\(isKept)")
         if let pattern = Reminder.Record.Text.pattern(query.terms) {
             predicate = SQLQueryExpression("\(predicate) AND (\(rowid.in(Reminder.Record.Text.where { $0.match(pattern) }.select(\.rowid))))")
         }

@@ -33,6 +33,7 @@ import Testing
             ),
             update: .init(
                 { request in Reminders.Placement(request.reminder, position: 0) },
+                recover: { _ in },
                 order: { _ in },
                 turn: { _ in },
                 show: { _ in },
@@ -40,6 +41,8 @@ import Testing
             ),
             delete: .init(
                 { _ in },
+                permanently: { _ in },
+                expired: { _ in },
                 completed: .init(in: { _ in }, matching: { _ in })
             ),
             lists: .init(
@@ -108,7 +111,7 @@ import Testing
 
     @Test func `filters round-trip through their keys`() {
         let id = Models.List<Reminder>.ID(UUID())
-        for filter in [Reminders.Filter.all, .completed, .flagged, .list(id), .scheduled, .tags(["a", "b, c"]), .today] {
+        for filter in [Reminders.Filter.all, .completed, .flagged, .list(id), .recentlyDeleted, .scheduled, .tags(["a", "b, c"]), .today] {
             #expect(Reminders.Filter(key: Reminders.Filter.Key(filter)) == filter)
         }
         #expect(Reminders.Filter.Key(.tags(["b", "a"])) == Reminders.Filter.Key(.tags(["a", "b"])))

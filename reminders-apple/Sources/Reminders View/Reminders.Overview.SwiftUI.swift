@@ -65,6 +65,26 @@ extension Reminders.Read.SwiftUI: SwiftUI::View {
             .onDelete { offsets in
                 for offset in offsets { store.send(.listDeleted(contents.lists[offset].id)) }
             }
+            // Recently Deleted closes My Lists while it holds anything; it cannot be deleted, moved, or edited.
+            if counts.deleted > 0 {
+                Button { store.send(.filterTapped(.recentlyDeleted)) } label: {
+                    HStack(spacing: 16) {
+                        Reminders.Filter.Style.badge(for: .recentlyDeleted, day: day)
+                        Text("Recently Deleted")
+                        Spacer()
+                        if editMode?.wrappedValue.isEditing != true {
+                            HStack(spacing: 10) {
+                                Text("\(counts.deleted)").foregroundStyle(.secondary).monospacedDigit()
+                                Image(systemName: "chevron.forward").foregroundStyle(.tertiary).font(.body.weight(.semibold))
+                            }
+                        }
+                    }
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.primary)
+                .moveDisabled(true)
+                .deleteDisabled(true)
+            }
         } header: {
             header("My Lists")
         }

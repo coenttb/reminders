@@ -36,13 +36,15 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
         let editing = store.editing?.id
         // Today, Scheduled, and Completed gather rows from every list and name the list in each row, as the stock app does.
         let named = store.list == nil && !store.filter.groupsByList
+        let deleted = store.filter == .recentlyDeleted
         let actions = Reminder.Row.Actions(
             complete: { store.send(.reminderCompleteButtonTapped($0)) },
             delete: { store.send(.reminderDeleted($0)) },
-            details: { store.send(.reminderDetailsButtonTapped($0)) },
+            details: { if !deleted { store.send(.reminderDetailsButtonTapped($0)) } },
             // A row edits in place inside its list and inside All; the other smart lists open the details until a
             // continued row learns to keep the filter it was started in.
-            edit: store.list != nil || store.filter == .all ? { store.send(.reminderTapped($0)) } : nil
+            edit: store.list != nil || store.filter == .all ? { store.send(.reminderTapped($0)) } : nil,
+            recover: deleted ? { store.send(.reminderRecovered($0)) } : nil
         )
         ScrollViewReader { proxy in
         SwiftUI::List {
@@ -55,7 +57,13 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
             .frame(height: 48)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-            if preference.showCompleted {
+            if deleted {
+                Text("Reminders are permanently deleted after \(Int(Reminder.retention / 86_400)) days.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 12, trailing: 16))
+                    .listRowSeparator(.hidden)
+            } else if preference.showCompleted {
                 let count = contents.completed
                 VStack(spacing: 0) {
                     HStack(spacing: 6) {
@@ -211,6 +219,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                         Button("Show List Info", systemImage: "info.circle") { store.send(.listInfoButtonTapped) }
                     }
                     Button("Select Reminders", systemImage: "checkmark.circle") { withAnimation { editMode = .active } }
+                    if !deleted {
                     Menu {
                         ForEach(Reminders.Ordering.allCases, id: \.self) { ordering in
                             Button { store.send(.orderingSelected(ordering)) } label: {
@@ -241,6 +250,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                     Button { store.send(.showCompletedButtonTapped) } label: {
                         Text(preference.showCompleted ? "Hide Completed" : "Show Completed")
                         Image(systemName: preference.showCompleted ? "eye.slash" : "eye")
+                    }
                     }
                     if store.list != nil {
                         Button("Delete List", systemImage: "trash", role: .destructive) { store.send(.listDeleteButtonTapped) }

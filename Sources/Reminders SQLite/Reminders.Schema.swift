@@ -106,6 +106,10 @@ extension Reminders.Schema {
             try #sql(#"ALTER TABLE "reminders" RENAME COLUMN "completedAt" TO "completed""#).execute(db)
             try #sql(#"CREATE INDEX "idx_reminders_completed" ON "reminders"("completed") WHERE "completed" IS NOT NULL"#).execute(db)
         }
+        migrator.registerMigration("Deleted reminders are kept for thirty days") { db in
+            try #sql(#"ALTER TABLE "reminders" ADD COLUMN "deleted" TEXT CHECK ("deleted" IS NULL OR "deleted" GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]')"#).execute(db)
+            try #sql(#"CREATE INDEX "idx_reminders_deleted" ON "reminders"("deleted") WHERE "deleted" IS NOT NULL"#).execute(db)
+        }
         try migrator.migrate(database)
     }
 

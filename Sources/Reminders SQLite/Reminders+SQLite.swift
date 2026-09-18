@@ -55,7 +55,7 @@ extension Reminders {
                 { request in
                     try await database.write { db in
                         let reminder = request.reminder
-                        guard try Reminder.Record.find(reminder.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
+                        guard try Reminder.Record.find(reminder.id).where { $0.isKept }.fetchCount(db) > 0 else { throw Update.Error.notFound }
                         // The form writes its own columns; position belongs to the order and completion to the timer.
                         try Reminder.Record.insert {
                             Reminder.Record.Draft(reminder)
@@ -82,11 +82,17 @@ extension Reminders {
                         return try placement(reminder.id, in: db)
                     }
                 },
+                recover: { request in
+                    try await database.write { db in
+                        guard try Reminder.Record.find(request.id).fetchCount(db) > 0 else { throw Update.Error.notFound }
+                        try Reminder.Record.find(request.id).update { $0.deleted = #bind(nil) }.execute(db)
+                    }
+                },
                 order: { request in
                     try await database.write { db in
                         // A newly chosen ordering starts in its own direction, as the stock app does.
                         try Preference.Record.insert {
-                            Preference.Record(key: Filter.Key(request.filter), ordering: request.ordering, showCompleted: request.filter == .completed)
+                            Preference.Record(key: Filter.Key(request.filter), ordering: request.ordering, showCompleted: request.filter.showsCompleted)
                         } onConflict: {
                             $0.key
                         } doUpdate: { row, excluded in
@@ -99,7 +105,7 @@ extension Reminders {
                 turn: { request in
                     try await database.write { db in
                         try Preference.Record.insert {
-                            Preference.Record(key: Filter.Key(request.filter), direction: request.direction, showCompleted: request.filter == .completed)
+                            Preference.Record(key: Filter.Key(request.filter), direction: request.direction, showCompleted: request.filter.showsCompleted)
                         } onConflict: {
                             $0.key
                         } doUpdate: { row, excluded in
@@ -130,7 +136,7 @@ extension Reminders {
                             try Reminder.Record.find(id).update { $0.position = position }.execute(db)
                         }
                         try Preference.Record.insert {
-                            Preference.Record(key: Filter.Key(request.filter), ordering: .manual, showCompleted: request.filter == .completed)
+                            Preference.Record(key: Filter.Key(request.filter), ordering: .manual, showCompleted: request.filter.showsCompleted)
                         } onConflict: {
                             $0.key
                         } doUpdate: { row, excluded in
@@ -141,12 +147,15 @@ extension Reminders {
                 }
             ),
             delete: .init(
-                { request in try await database.write { db in try Reminder.Record.find(request.id).delete().execute(db) } },
+                // A delete keeps the row for thirty days in Recently Deleted; only the permanent delete and the purge drop it.
+                { request in try await database.write { db in try Reminder.Record.find(request.id).update { $0.deleted = #bind(now) }.execute(db) } },
+                permanently: { request in try await database.write { db in try Reminder.Record.find(request.id).delete().execute(db) } },
+                expired: { request in try await database.write { db in try Reminder.Record.where { $0.deleted.lt(Date?.some(request.cutoff)) }.delete().execute(db) } },
                 completed: .init(
                     in: { request in
                         let today = calendar.day(containing: request.today)
                         try await database.write { db in
-                            try Reminder.Record.where { $0.isCompleted && $0.belongs(to: request.filter, today: today) }.delete().execute(db)
+                            try Reminder.Record.where { $0.isCompleted && $0.belongs(to: request.filter, today: today) }.update { $0.deleted = #bind(now) }.execute(db)
                         }
                     },
                     matching: { request in
@@ -154,7 +163,7 @@ extension Reminders {
                             try Reminder.Record
                                 .where { $0.isCompleted && $0.matches(request.query) }
                                 .where { if let cutoff = request.dueBefore { $0.dueDate.lt(Date?.some(cutoff)) } }
-                                .delete()
+                                .update { $0.deleted = #bind(now) }
                                 .execute(db)
                         }
                     }

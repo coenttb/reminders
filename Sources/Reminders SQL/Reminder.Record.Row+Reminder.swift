@@ -14,6 +14,7 @@ extension Reminder {
             priority: row.reminder.priority,
             flagged: row.reminder.flagged,
             completed: row.reminder.completed,
+            deleted: row.reminder.deleted,
             tags: Set(row.tags.map { Tag<Reminder>($0) }),
             created: row.reminder.created
         )
