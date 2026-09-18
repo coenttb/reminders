@@ -44,6 +44,8 @@ extension Reminders.Read.Page {
 
         public enum Action {
             case backgroundTapped
+            // `.call(…)` is the canonical form; `.update.complete(…)`, `.delete(…)` and `store.update.complete(…)`
+            // are sugar over it — the same action, the same task on `writes`, no result.
             case call(Reminders.Call)
             case doneButtonTapped
             case editing(Reminders.Update.Feature.Action)

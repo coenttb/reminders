@@ -21,6 +21,7 @@ extension Reminders {
 
         public enum Action {
             case addListButtonTapped
+            // `.lists.delete(…)` is sugar over `.call(.lists.delete(…))`.
             case call(Reminders.Call)
             case destination(Destination.Action)
             case listDeleted(Models.List<Reminder>.ID)
@@ -48,7 +49,7 @@ extension Reminders {
                         if state.listing?.list == id { state.listing = nil }
                         let replacement = Models.List<Reminder>.ID(uuid())
                         store.addTask(id: state.writes) {
-                            await try store.send(.call(.lists.delete(id, replacement: replacement)))?.value
+                            await try store.send(.lists.delete(id, replacement: replacement))?.value
                         }
                     case let .listTapped(id):
                         state.listing = Reminders.Read.Page.Feature.State(page: .list(id))

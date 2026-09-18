@@ -71,7 +71,7 @@ struct `Reminders feature` {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
             store.send(.listTapped(personal))
-            store.send(.listing(.call(.update.complete(Reminder.ID(UUID()), true))))
+            store.send(.listing(.update.complete(Reminder.ID(UUID()), true)))
             await #expect(throws: Reminders.Update.Error.notFound) { try await page(store).writes() }
             #expect(store.listing?.writes.taskError is Reminders.Update.Error)
             await store.dismount()
@@ -85,7 +85,7 @@ struct `Reminders feature` {
             store.send(.listTapped(personal))
             while store.listing?.observing.rows == nil { await Task.yield() }
             let groceries = try #require(store.listing?.observing.rows?.first(where: { $0.title == "Groceries" }))
-            store.send(.listing(.call(.delete(groceries.id))))
+            store.send(.listing(.delete(groceries.id)))
             try await page(store).writes()
             while store.listing?.observing.rows?.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
             #expect(store.listing?.observing.rows?.map(\.title) == ["Haircut"])

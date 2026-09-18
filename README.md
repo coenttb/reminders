@@ -35,9 +35,11 @@ declaring their own:
   `update` is called with — and the view binds `$store.request.reminder.title`. The list sheet holds
   `Reminders.Lists.Create.Request` the same way.
 - **Call as action.** `Reminders.Feature.Action.call(Reminders.Call)` and the page's `.call` carry a domain call;
-  `.calling(\.call, id: \.writes) { try await reminders($0) }` runs it as a task, so a swipe-delete is
-  `.call(.delete(.call(id)))`, a completion toggle `.call(.update(.complete(id, completed)))` and a list delete
-  `.call(.lists(.delete(id, replacement:)))`.
+  `.calling(\.call, reminders, id: \.writes)` runs it as a task. `.call(…)` is the canonical form; two layers of
+  sugar sit on it and mean exactly the same thing: `store.send(.update.complete(id, done))` (the Action embeds the
+  interface's shape) and `store.update.complete(id, done)` (the store forwards to `send`). Neither returns nor
+  throws — the outcome is read from `writes`, which is what tells a sugared call apart from the live
+  `try await reminders.update.complete(id, done)`.
 - **Observing / Requesting** from `swift-interface-composable-architecture` are the two generic features over an
   operation symbol: `Observing<Reminders.Read.Operations.Page> { reminders.read($0) }` keeps a request's
   value current; `Requesting { try await reminders.lists.create($0) }` composes a request and sends it whole.

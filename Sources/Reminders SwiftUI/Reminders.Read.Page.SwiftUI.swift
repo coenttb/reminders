@@ -30,8 +30,8 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
                 } else {
                     Reminder.Row.SwiftUI(
                         reminder: reminder,
-                        complete: { store.send(.call(.update.complete(reminder.id, !reminder.completed))) },
-                        delete: { store.send(.call(.delete(reminder.id))) },
+                        complete: { store.update.complete(reminder.id, !reminder.completed) },
+                        delete: { store.delete(reminder.id) },
                         edit: { store.send(.reminderTapped(reminder.id)) }
                     )
                 }
