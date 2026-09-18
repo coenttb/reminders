@@ -146,7 +146,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                         .fill(.quaternary)
                         .frame(height: thin ? 1 : 2)
                         .opacity(thin ? 0.6 : 1)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 0, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: -5, leading: 16, bottom: 0, trailing: 16))
                         .listRowSeparator(.hidden)
                     }
             }
@@ -221,26 +221,18 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                     Button("Select Reminders", systemImage: "checkmark.circle") { withAnimation { editMode = .active } }
                     if !deleted {
                     Menu {
-                        ForEach(Reminders.Ordering.allCases, id: \.self) { ordering in
-                            Button { store.send(.orderingSelected(ordering)) } label: {
-                                if ordering == preference.ordering {
-                                    Label(ordering.title, systemImage: "checkmark")
-                                } else {
-                                    Text(ordering.title)
-                                }
-                            }
+                        // Pickers in a menu draw the stock checkmark column.
+                        Picker("Sort By", selection: $store.ordering) {
+                            ForEach(Reminders.Ordering.allCases, id: \.self) { Text($0.title).tag($0) }
                         }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
                         if preference.ordering != .manual {
-                            Divider()
-                            ForEach([SortOrder.forward, .reverse], id: \.self) { direction in
-                                Button { store.send(.directionSelected(direction)) } label: {
-                                    if direction == preference.direction {
-                                        Label(preference.ordering.title(direction) ?? "", systemImage: "checkmark")
-                                    } else {
-                                        Text(preference.ordering.title(direction) ?? "")
-                                    }
-                                }
+                            Picker("Direction", selection: $store.direction) {
+                                ForEach([SortOrder.forward, .reverse], id: \.self) { Text(preference.ordering.title($0) ?? "").tag($0) }
                             }
+                            .pickerStyle(.inline)
+                            .labelsHidden()
                         }
                     } label: {
                         Text("Sort By")

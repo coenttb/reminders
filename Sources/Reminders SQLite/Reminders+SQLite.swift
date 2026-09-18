@@ -158,6 +158,8 @@ extension Reminders {
                         try Models.List<Reminder>.Record.where { $0.deleted.lt(Date?.some(request.cutoff)) }.delete().execute(db)
                     }
                 },
+                // A blank row is a draft that was never written; a launch finds none in use.
+                blank: { _ in try await database.write { db in try Reminder.Record.where { $0.title.eq("") }.delete().execute(db) } },
                 completed: .init(
                     in: { request in
                         let today = calendar.day(containing: request.today)

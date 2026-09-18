@@ -231,7 +231,5 @@ struct `Reminder chaos` {
                 #expect(try Reminder.Record.find(editing.id).fetchCount(db) == 1, "editing a row that is gone\n\(replay)")
             }
         }
-        @Shared(.appStorage(Reminders.Listing.Feature.editingKey)) var restored: String?
-        #expect(restored == editing?.id.rawValue.uuidString, "app storage \(restored ?? "nil") vs \(editing?.id.rawValue.uuidString ?? "nil")\n\(replay)")
     }
 }

@@ -38,8 +38,9 @@ extension Reminders.Listing {
                 return page
             }
             @DebugSnapshotIgnored @Fetch public var preference = Reminders.Preference(ordering: .dueDate, showCompleted: false)
-            // The row being edited survives a relaunch.
-            @DebugSnapshotIgnored @Shared(.appStorage(Feature.editingKey)) public var editingID: String? = nil
+            // The Sort By pickers bind here; the stored preference follows through the feature, and leads it back.
+            public var ordering: Reminders.Ordering = .dueDate
+            public var direction: SortOrder = .forward
 
             public init(filter: Reminders.Filter, today: Date) {
                 self.filter = filter
@@ -133,11 +134,9 @@ extension Reminders.Listing {
                 case .newReminderButtonTapped:
                     if let list = state.list { startNewReminder(in: list, &state) }
                 case let .orderingSelected(ordering):
-                    let filter = state.filter
-                    perform { try await reminders.update.order(filter, by: ordering) }
+                    state.ordering = ordering
                 case let .directionSelected(direction):
-                    let filter = state.filter
-                    perform { try await reminders.update.turn(filter, direction) }
+                    state.direction = direction
                 case let .reminderCompleteButtonTapped(id):
                     completion.tapped(id, &state)
                 case let .reminderDeleted(id):
@@ -203,8 +202,19 @@ extension Reminders.Listing {
             .ifLet(\.editing) {
                 Reminder.Editor.Feature()
             }
-            .onChange(of: store.editing?.id) { _, id, state in
-                state.$editingID.withLock { $0 = id?.rawValue.uuidString }
+            .onChange(of: store.preference, initial: true) { _, preference, state in
+                state.ordering = preference.ordering
+                state.direction = preference.direction
+            }
+            .onChange(of: store.ordering) { _, ordering, state in
+                guard ordering != state.preference.ordering else { return }
+                let filter = state.filter
+                perform { try await reminders.update.order(filter, by: ordering) }
+            }
+            .onChange(of: store.direction) { _, direction, state in
+                guard direction != state.preference.direction else { return }
+                let filter = state.filter
+                perform { try await reminders.update.turn(filter, direction) }
             }
             .onChange(of: Reminders.Read.Preference.Request(for: store.filter), initial: true) { _, request, state in
                 let preference = state.$preference
@@ -231,7 +241,6 @@ extension Reminders.Listing {
 }
 
 extension Reminders.Listing.Feature {
-    public static let editingKey = "remindersEditing"
     public static var grace: Duration { Reminders.Completion<State, Action>.grace }
     public static let paging: (step: Int, margin: Int) = (300, 60)
 

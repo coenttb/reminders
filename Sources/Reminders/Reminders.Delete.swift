@@ -9,6 +9,7 @@ extension Reminders {
             func callAsFunction(_ id: Reminder.ID) async throws
             func permanently(_ id: Reminder.ID) async throws
             func expired(before cutoff: Date) async throws
+            func blank() async throws
             func completed(in filter: Reminders.Filter, today: Date) async throws
             func completed(matching query: Reminders.Query, dueBefore: Date?) async throws
         }

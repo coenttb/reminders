@@ -47,7 +47,8 @@ extension Reminders.Read.SwiftUI: SwiftUI::View {
                 .listRowInsets(EdgeInsets())
             }
         }
-        .listSectionMargins(.top, 0)
+        // The tiles sit 22 pt under the bar, as the stock tiles do.
+        .listSectionMargins(.top, 6)
         Section {
             ForEach(contents.lists) { entry in
                 Button { store.send(.listTapped(entry.id)) } label: {

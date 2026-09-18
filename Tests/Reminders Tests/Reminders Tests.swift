@@ -43,6 +43,7 @@ import Testing
                 { _ in },
                 permanently: { _ in },
                 expired: { _ in },
+                blank: { _ in },
                 completed: .init(in: { _ in }, matching: { _ in })
             ),
             lists: .init(

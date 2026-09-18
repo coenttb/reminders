@@ -57,7 +57,7 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                 if expanded == .date, let due = draft.due {
                     DatePicker("Date", selection: $store.draft.date(or: due.date), displayedComponents: .date)
                         .datePickerStyle(.graphical)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 22, bottom: 0, trailing: 22))
+                        .listRowInsets(EdgeInsets(top: -12, leading: 22, bottom: -6, trailing: 22))
                 }
                 Toggle(isOn: $store.draft.timeOn(now, calendar: calendar).animation()) {
                     row("Time", systemImage: "clock", subtitle: draft.due?.timeDescription(calendar: calendar)) {

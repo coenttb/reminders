@@ -59,11 +59,6 @@ struct `Reminder feature` {
         return store
     }
 
-    // The restoration state the app keeps in app storage; read here as the next launch would.
-    var restoredEditing: Reminder.ID? {
-        @Shared(.appStorage(Listing.editingKey)) var editing: String?
-        return editing.flatMap(UUID.init(uuidString:)).map { Reminder.ID($0) }
-    }
 
     var restoredFilter: Reminders.Filter? {
         @Shared(.appStorage(Reminders.Feature.filterKey)) var filter: Reminders.Filter.Key?
@@ -197,29 +192,32 @@ struct `Reminder feature` {
         await store.send(.listing(.doneButtonTapped))?.value
         #expect(await store.state.listing?.editing == nil)
         #expect(try await stored(second) == nil)
-        #expect(restoredEditing == nil)
         await store.dismount()
         }
     }
 
-    @Test func `a relaunch reopens the row that was being edited`() async throws {
+    @Test func `a relaunch never reopens a card: a blank draft left by a kill is dropped, a written one is a plain row`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()
         await store.send(.overview(.listTapped(personal)))?.value
         await store.send(.listing(.newReminderButtonTapped))?.value
-        let row = try await editing(store).id
-        #expect(restoredEditing == row)
-        // A relaunch is a new store over the same app storage; the first process is gone without a dismount.
-        let revived = try await makeStore(restoring: .list(personal), editing: Editor.State(try await self.row(row), session: UUID(2)))
-        let editing = try await editing(revived)
-        #expect(editing.id == row && editing.draft.isBlank && editing.isSaved && editing.session == UUID(2))
-        await store.dismount()
-        await revived.modify { $0.listing = nil }?.value
-        #expect(restoredEditing == nil)
-        await revived.send(.overview(.filterTapped(.today)))?.value
-        #expect(await revived.state.listing?.filter == .today)
+        let blank = try await editing(store).id
+        // A relaunch is a new store over the same database; the first process is gone without a dismount.
+        let revived = try await makeStore(restoring: .list(personal))
         #expect(await revived.state.listing?.editing == nil)
+        try await until(try await page(revived)) { !$0.rows.contains { $0.id == blank } }
+        #expect(try await stored(blank) == nil)
+        await revived.send(.listing(.newReminderButtonTapped))?.value
+        await revived.modify { $0.listing?.editing?.draft.title = "Kept" }?.value
+        let kept = try await editing(revived).id
+        await revived.send(.listing(.doneButtonTapped))?.value
+        try await until(try await page(revived)) { $0.rows.contains { $0.id == kept && $0.title == "Kept" } }
+        await store.dismount()
         await revived.dismount()
+        let relaunched = try await makeStore(restoring: .list(personal))
+        #expect(await relaunched.state.listing?.editing == nil)
+        #expect(try await stored(kept)?.title == "Kept")
+        await relaunched.dismount()
         }
     }
 
@@ -489,7 +487,7 @@ struct `Reminder feature` {
         // Popping the listing dismounts it; the draft is written on the way out.
         await store.modify { $0.listing = nil }?.value
         #expect(try await stored(row)?.notes == "Rye")
-        #expect(restoredEditing == nil && restoredFilter == nil)
+        #expect(restoredFilter == nil)
         await store.dismount()
         }
     }
@@ -517,7 +515,6 @@ struct `Reminder feature` {
         let doctorRow = Editor.State(try await row(doctor.id), session: UUID(2))
         #expect(try await editing(store) == doctorRow)
         await store.send(.listing(.reminderTapped(doctor.id)))?.value
-        #expect(restoredEditing == doctor.id)
         await store.dismount()
         }
     }
@@ -778,22 +775,15 @@ struct `Reminder feature` {
         }
     }
 
-    @Test func `a launch restores the open filter and the row being edited from app storage, and forgets a row that is gone`() async throws {
+    @Test func `a launch restores the open filter from app storage and forgets a list that is gone`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         @Shared(.appStorage(Reminders.Feature.filterKey)) var filter: Reminders.Filter.Key?
-        @Shared(.appStorage(Listing.editingKey)) var editing: String?
         $filter.withLock { $0 = Reminders.Filter.Key(.list(personal)) }
-        $editing.withLock { $0 = groceries.id.rawValue.uuidString }
-        let groceriesRow = try await row(groceries.id)
-        let store = try await makeStore(restoring: .list(personal), editing: Editor.State(groceriesRow, session: UUID(0)))
-        #expect(try await self.editing(store) == Editor.State(groceriesRow, session: UUID(0)))
+        let store = try await makeStore(restoring: .list(personal))
+        #expect(await store.state.listing?.editing == nil)
+        #expect(await store.state.failure == nil)
+        #expect(restoredFilter == .list(personal))
         await store.dismount()
-        try await database.write { [id = groceries.id] db in try Reminder.Record.find(id).delete().execute(db) }
-        let revived = try await makeStore(restoring: .list(personal))
-        #expect(await revived.state.listing?.editing == nil)
-        #expect(await revived.state.failure == nil)
-        #expect(restoredEditing == nil && restoredFilter == .list(personal))
-        await revived.dismount()
         // A list that is gone takes the launch back to the front screen and forgets the filter.
         $filter.withLock { $0 = Reminders.Filter.Key(.list(Models.List<Reminder>.ID(UUID()))) }
         let fronted = try await makeStore()

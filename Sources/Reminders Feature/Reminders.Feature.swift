@@ -23,16 +23,14 @@ extension Reminders {
             public var failure: String?
 
             @DebugSnapshotIgnored @Shared(.appStorage(Feature.filterKey)) public var filterKey: Reminders.Filter.Key? = nil
-            @DebugSnapshotIgnored @Shared(.appStorage(Reminders.Listing.Feature.editingKey)) public var editingID: String? = nil
 
-            // The initial state is the restored one: the open filter and the row being edited come back from app storage.
+            // The initial state is the restored one: the open filter comes back from app storage. A row that was being
+            // edited does not, as in the stock app: backgrounding wrote it, a kill drops the blank draft.
             public init() {
                 @Dependency(\.calendar) var calendar
                 @Dependency(\.date.now) var now
                 @Dependency(\.reminders) var reminders
-                @Dependency(\.uuid) var uuid
                 @Shared(.appStorage(Feature.filterKey)) var filterKey: Reminders.Filter.Key?
-                @Shared(.appStorage(Reminders.Listing.Feature.editingKey)) var editingID: String?
                 let today = calendar.startOfDay(for: now)
                 var listing: Reminders.Listing.Feature.State?
                 var failure: String?
@@ -53,15 +51,6 @@ extension Reminders {
                 if !known { $filterKey.withLock { $0 = nil } }
                 if known, let filter = filterKey.flatMap(Reminders.Filter.init(key:)) {
                     listing = Reminders.Listing.Feature.State(filter: filter, today: today)
-                    if let stored = editingID.flatMap(UUID.init(uuidString:)) {
-                        do {
-                            listing?.editing = Reminder.Editor.Feature.State(try reminders.read(Reminder.ID(stored)), session: uuid())
-                        } catch Reminders.Read.Error.notFound {
-                        } catch {
-                            failure = error.localizedDescription
-                        }
-                    }
-                    $editingID.withLock { $0 = listing?.editing?.id.rawValue.uuidString }
                 }
                 self.today = today
                 self.overview = Reminders.Read.Feature.State(today: today)
@@ -180,7 +169,10 @@ extension Reminders {
             }
             .onChange(of: store.listing?.filter) { _, filter, state in
                 state.$filterKey.withLock { $0 = filter.map(Reminders.Filter.Key.init) }
-                if filter == nil { state.$editingID.withLock { $0 = nil } }
+            }
+            // A launch finds no row in use, so a blank draft left by a kill is dropped.
+            .onMount { _ in
+                store.addTask { try await store.attempt { try await reminders.delete.blank() } }
             }
         }
     }

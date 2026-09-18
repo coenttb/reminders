@@ -36,8 +36,6 @@ extension Reminders.Sample {
         @Dependency(\.defaultDatabase) var database
         @Dependency(\.uuid) var uuid
         @Dependency(\.withRandomNumberGenerator) var withRandomNumberGenerator
-        // A replaced database has no row to restore.
-        @Shared(.appStorage(Reminders.Listing.Feature.editingKey)) var editingID: String?
 
         let replaced: () -> Void
 
@@ -56,7 +54,6 @@ extension Reminders.Sample {
                             try write { db in
                                 try sample.replace(in: db)
                             }
-                            $editingID.withLock { $0 = nil }
                             replaced()
                         }
                     }
@@ -70,7 +67,6 @@ extension Reminders.Sample {
                             try await database.write { db in
                                 try sample.replace(in: db)
                             }
-                            $editingID.withLock { $0 = nil }
                             replaced()
                         }
                     }
@@ -83,7 +79,6 @@ extension Reminders.Sample {
                                 try Reminders.Sample(lists: []).replace(in: db)
                                 try Models.List<Reminder>.Record.installDefault(replacement, in: db)
                             }
-                            $editingID.withLock { $0 = nil }
                             replaced()
                         }
                     }
