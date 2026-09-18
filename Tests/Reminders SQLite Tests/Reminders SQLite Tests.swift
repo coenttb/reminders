@@ -39,8 +39,8 @@ struct `Reminders SQLite storage` {
     @Test func `a reminder is created, read, updated, and deleted`() async throws {
         let (reminders, sample) = try makeDatabase()
         let personal = sample.lists[0].id
-        var reminder = Reminder(id: Reminder.ID(UUID()), list: personal, title: "Water plants", created: now)
-        try await reminders.create(reminder)
+        var reminder = try await reminders.create(Reminder.Draft(list: personal, title: "Water plants"))
+        #expect(reminder.created == now)
         #expect(try await page(reminders, .list(personal))?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
         reminder.completed = true
         try await reminders.update(reminder)

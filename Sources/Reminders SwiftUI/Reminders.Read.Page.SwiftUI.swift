@@ -1,5 +1,4 @@
 public import ComposableArchitecture2
-import Dependencies
 public import Models
 public import Reminder
 public import Reminders
@@ -11,10 +10,8 @@ extension Reminders.Read.Page {
     public struct SwiftUI {
         @Bindable private var store: StoreOf<Reminders.Read.Page.Feature>
         private var title: String
-        @FocusState private var focus: Reminder.ID?
-        // A new row's identity and creation time are the caller's; the row is created before it is edited.
-        @Dependency(\.uuid) private var uuid
-        @Dependency(\.date.now) private var now
+        // The editor is the only text field on the page: focus is on it or nowhere.
+        @FocusState private var focus: Bool
 
         public init(store: StoreOf<Reminders.Read.Page.Feature>, title: String) {
             self.store = store
@@ -27,9 +24,9 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         let editing = store.editing?.id
         SwiftUI::List {
-            ForEach(store.contents.rows) { reminder in
+            ForEach(store.rows) { reminder in
                 // The editor is one view that moves between rows; every other row is a plain value.
-                if reminder.id == editing, let editor = store.scope(\.editing) {
+                if reminder.id == editing, let editor = store.scope(\.editing, action: \.self) {
                     Reminders.Update.SwiftUI(store: editor, focus: $focus)
                 } else {
                     Reminder.Row.SwiftUI(
@@ -39,6 +36,10 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
                         edit: { store.editing = .init(reminder) }
                     )
                 }
+            }
+            // A new row is a draft until its editor leaves.
+            if store.editing?.original == nil, let editor = store.scope(\.editing, action: \.self) {
+                Reminders.Update.SwiftUI(store: editor, focus: $focus)
             }
             if let error = store.writes.taskError {
                 Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
@@ -51,9 +52,9 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
         }
         .listStyle(.plain)
         .navigationTitle(title)
-        .onChange(of: editing) { _, editing in focus = editing }
+        .onChange(of: store.editing == nil) { _, ended in focus = !ended }
         .toolbar {
-            if editing != nil {
+            if store.editing != nil {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { store.editing = nil }
                 }
@@ -66,11 +67,8 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
 }
 
 extension Reminders.Read.Page.SwiftUI {
-    // Insert, then edit: the row exists before its editor does, so the editor only ever updates.
     private func startNewReminder() {
         guard let list = store.list else { return }
-        let reminder = Reminder(id: Reminder.ID(uuid()), list: list, created: now)
-        store.create(reminder)
-        store.editing = .init(reminder)
+        store.editing = .init(Reminder.Draft(list: list))
     }
 }

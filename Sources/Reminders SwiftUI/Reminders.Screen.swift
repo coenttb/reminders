@@ -1,5 +1,4 @@
 public import ComposableArchitecture2
-import Dependencies
 import Interface_ComposableArchitecture
 import Models
 import Reminder
@@ -13,8 +12,6 @@ extension Reminders {
     // app composes the same views under its own tree beside this one.
     public struct Screen {
         @Bindable private var store: StoreOf<Reminders.Feature>
-        // A new list's identity is the caller's: the sheet opens on a list that already has one.
-        @Dependency(\.uuid) private var uuid
 
         public init(store: StoreOf<Reminders.Feature>) {
             self.store = store
@@ -34,14 +31,14 @@ extension Reminders.Screen: SwiftUI::View {
             .navigationTitle("Reminders")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Add List", systemImage: "plus") { store.destination = .init(Models.List(id: .init(uuid()))) }
+                    Button("Add List", systemImage: "plus") { store.destination = .init(.init(.init())) }
                 }
             }
-            .navigationDestination(item: $store.scope(\.listing)) { listing in
+            .navigationDestination(item: $store.scope(\.listing, action: \.self)) { listing in
                 Reminders.Read.Page.SwiftUI(store: listing, title: listing.list.flatMap { store.overview.lists?.first(id: $0) }?.list.title ?? "All")
             }
         }
-        .sheet(item: $store.scope(\.destination)) { form in
+        .sheet(item: $store.scope(\.destination, action: \.lists)) { form in
             NavigationStack { Reminders.Lists.Create.SwiftUI(store: form) }
         }
     }

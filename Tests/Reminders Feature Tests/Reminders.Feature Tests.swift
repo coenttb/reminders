@@ -32,36 +32,28 @@ struct `Reminders feature` {
         try #require(store.listing)
     }
 
-    @Test func `a new row is inserted, edited in place, and written when the editor leaves`() async throws {
+    @Test func `a new row is drafted, edited in place, and created when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
             store.modify { $0.listing = .init(page: .list(personal)) }
             #expect(store.listing?.observing.request.filter == .list(personal))
-            let reminder = Reminder(id: Reminder.ID(UUID()), list: personal, created: Date(timeIntervalSince1970: 1_234_567_890))
-            store.send(.create(reminder))
-            store.modify { $0.listing?.editing = .init(reminder) }
-            try await page(store).writes()
-            #expect(try reminders.read(reminder.id).isBlank)
+            store.modify { $0.listing?.editing = .init(Reminder.Draft(list: personal)) }
             store.modify { $0.listing?.editing?.title = "Water plants" }
-            // Dismissing the editor writes the draft.
+            // Dismissing the editor creates the row.
             await store.modify { $0.listing?.editing = nil }?.value
-            #expect(try reminders.read(reminder.id).title == "Water plants")
+            #expect(try await reminders.read(page: .list(personal)).first(where: { _ in true })?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
             while store.listing?.observing.rows?.count != 3 { await Task.yield() }
-            #expect(store.listing?.observing.rows?.map(\.title) == ["Groceries", "Haircut", "Water plants"])
             await store.dismount()
         }
     }
 
-    @Test func `a blank row is dropped when the editor leaves`() async throws {
+    @Test func `a blank draft is dropped when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
             store.modify { $0.listing = .init(page: .list(personal)) }
-            let reminder = Reminder(id: Reminder.ID(UUID()), list: personal, created: Date(timeIntervalSince1970: 1_234_567_890))
-            store.send(.create(reminder))
-            store.modify { $0.listing?.editing = .init(reminder) }
-            try await page(store).writes()
+            store.modify { $0.listing?.editing = .init(Reminder.Draft(list: personal)) }
             await store.modify { $0.listing?.editing = nil }?.value
-            #expect(throws: Reminders.Read.Error.notFound) { try reminders.read(reminder.id) }
+            #expect(try await reminders.read(page: .list(personal)).first(where: { _ in true })?.rows.count == 2)
             await store.dismount()
         }
     }

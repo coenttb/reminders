@@ -12,6 +12,23 @@ public struct List<Element>: Identifiable, Hashable, Sendable {
 }
 
 extension List {
+    // A list before it has an identity: what `create` is called with; storage mints the id.
+    public struct Draft: Hashable, Sendable {
+        public var title: String
+
+        public init(title: String = "") {
+            self.title = title
+        }
+
+        public var isBlank: Bool { title.allSatisfy(\.isWhitespace) }
+    }
+
+    public init(id: ID, _ draft: Draft) {
+        self.init(id: id, title: draft.title)
+    }
+
+    public var draft: Draft { Draft(title: title) }
+
     public static func `default`(id: ID) -> Self {
         List(id: id, title: "Personal")
     }

@@ -9,9 +9,8 @@ import Reminders_Dependency
 public import Tagged
 
 extension Reminders.Read.Page {
-    // One page, `read(page:)` followed, with the row being edited in place. The database is the truth: a new
-    // row is inserted before it is edited, and the editor writes its draft back when it leaves. The feature
-    // observes and calls, nothing else; calls ride `writes`.
+    // One page, `read(page:)` followed, with one row being edited in place — an existing row, or a draft that
+    // becomes a row when its editor leaves. The feature observes and calls, nothing else; calls ride `writes`.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State {
             public var observing: Observing<Reminders.Read.Page>.State
@@ -19,20 +18,20 @@ extension Reminders.Read.Page {
             @StoreTaskID public var writes
 
             public init(page filter: Reminders.Read.Filter) {
-                self.observing = .init(page: filter)
+                self.observing = .init(.init(page: filter))
             }
 
             public var list: Models.List<Reminder>.ID? {
                 if case let .list(id) = observing.request.filter { id } else { nil }
             }
 
-            // The draft stands in for its row until the page carries what was written.
-            public var contents: Value {
-                var page = observing.value ?? Value()
-                if let editing, let index = page.rows.firstIndex(where: { $0.id == editing.id }) {
-                    page.rows[index] = editing.reminder
+            // The rows, with the draft of an existing row standing in for it until the page carries what was written.
+            public var rows: [Reminder] {
+                var rows = observing.rows ?? []
+                if let editing, let original = editing.original, let index = rows.firstIndex(where: { $0.id == original.id }) {
+                    rows[index] = Reminder(id: original.id, editing.draft, created: original.created)
                 }
-                return page
+                return rows
             }
         }
 
@@ -42,16 +41,20 @@ extension Reminders.Read.Page {
 
         public init() {}
 
-        public var body: some FeatureProtocol<State, Action> {
-            ComposableArchitecture2.Update { state, action in
-                // A deleted row's draft is dropped with it.
-                if case let .delete(request) = action, state.editing?.id == request.id {
-                    state.editing = nil
+        public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
+            ComposableArchitecture2.Features {
+                ComposableArchitecture2.Update { state, action in
+                    // A deleted row's draft is dropped with it.
+                    if case let .delete(request) = action, state.editing?.id == request.id {
+                        state.editing = nil
+                    }
                 }
+                ComposableArchitecture2.Scope(\.observing, action: \.never) { Observing(reminders.read) }
             }
             .calling(reminders, id: \.writes)
-            .ifLet(\.editing) { Reminders.Update.Feature() }
-            Scope(\.observing) { Observing(reminders.read) }
+            .ifLet(\.editing, action: \.self) {
+                Reminders.Update.Feature()
+            }
         }
     }
 }

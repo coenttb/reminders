@@ -12,12 +12,16 @@ extension Reminders {
     public static func sqlite(_ database: any DatabaseWriter) -> Reminders {
         Self(
             create: .init(run: { request in
+                @Dependency(\.uuid) var uuid
+                @Dependency(\.date.now) var now
+                let reminder = Reminder(id: Reminder.ID(uuid()), request.draft, created: now)
                 try await database.write { db in
-                    try Reminder.Record.insert { Reminder.Record.Draft(request.reminder) }.execute(db)
-                    try Reminder.Record.find(request.reminder.id)
+                    try Reminder.Record.insert { Reminder.Record.Draft(reminder) }.execute(db)
+                    try Reminder.Record.find(reminder.id)
                         .update { $0.position = Reminder.Record.select { ($0.position.max() ?? -1) + 1 } }
                         .execute(db)
                 }
+                return reminder
             }),
             read: .init(
                 run: { request in request.stream(in: database) },
@@ -53,12 +57,15 @@ extension Reminders {
             }),
             lists: .init(
                 create: { request in
+                    @Dependency(\.uuid) var uuid
+                    let list = Models.List<Reminder>(id: Models.List<Reminder>.ID(uuid()), request.draft)
                     try await database.write { db in
-                        try Models.List<Reminder>.Record.insert { Models.List<Reminder>.Record(request.list) }.execute(db)
-                        try Models.List<Reminder>.Record.find(request.list.id)
+                        try Models.List<Reminder>.Record.insert { Models.List<Reminder>.Record(list) }.execute(db)
+                        try Models.List<Reminder>.Record.find(list.id)
                             .update { $0.position = Models.List<Reminder>.Record.select { ($0.position.max() ?? -1) + 1 } }
                             .execute(db)
                     }
+                    return list
                 },
                 delete: { request in
                     try await database.write { db in

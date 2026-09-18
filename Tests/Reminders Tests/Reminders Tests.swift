@@ -16,7 +16,7 @@ import Testing
 
     func reminders() -> Reminders {
         Reminders(
-            create: .init(run: { _ in }),
+            create: .init(run: { request in Reminder(id: reminder.id, request.draft, created: reminder.created) }),
             read: .init(
                 run: { _ in
                     AsyncThrowingStream {
@@ -37,7 +37,7 @@ import Testing
             ),
             update: .init(run: { _ in }, complete: { _ in }),
             delete: .init(run: { _ in }),
-            lists: .init(create: { _ in }, delete: { _ in })
+            lists: .init(create: { request in Models.List(id: list, request.draft) }, delete: { _ in })
         )
     }
 

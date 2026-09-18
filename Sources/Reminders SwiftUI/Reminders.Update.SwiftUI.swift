@@ -8,9 +8,9 @@ public import Tagged
 extension Reminders.Update {
     public struct SwiftUI {
         @Bindable private var store: StoreOf<Reminders.Update.Feature>
-        private var focus: FocusState<Reminder.ID?>.Binding
+        private var focus: FocusState<Bool>.Binding
 
-        public init(store: StoreOf<Reminders.Update.Feature>, focus: FocusState<Reminder.ID?>.Binding) {
+        public init(store: StoreOf<Reminders.Update.Feature>, focus: FocusState<Bool>.Binding) {
             self.store = store
             self.focus = focus
         }
@@ -28,7 +28,7 @@ extension Reminders.Update.SwiftUI: SwiftUI::View {
             .buttonStyle(.borderless)
             TextField("New Reminder", text: $store.title)
                 .textFieldStyle(.plain)
-                .focused(focus, equals: store.id)
+                .focused(focus)
                 .onSubmit { store.dismiss() }
         }
     }

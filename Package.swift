@@ -23,6 +23,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/swift-atoms/swift-operation.git", branch: "main"),
+        .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "protocol-case-paths"),
         .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main"),
         .package(url: "https://github.com/swift-compositions/swift-interface-composable-architecture.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
@@ -97,6 +98,7 @@ let package = Package(
         .target(
             name: "Reminders Feature",
             dependencies: [
+                .product(name: "CasePaths", package: "swift-case-paths"),
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
