@@ -20,7 +20,7 @@ import Testing
             read: .init(
                 { _ in
                     AsyncThrowingStream {
-                        $0.yield(Reminders.Summary(lists: [.init(list: .init(id: list, title: "Personal"), count: 1)]))
+                        $0.yield(Reminders.Read.Summary(lists: [.init(list: .init(id: list, title: "Personal"), count: 1)]))
                         $0.finish()
                     }
                 },
@@ -49,7 +49,7 @@ import Testing
         #expect(Reminders.Lists.Call.delete(list, replacement: list) == .delete(list, replacement: list))
         #expect(Reminders.Call.delete(.call(reminder.id)) != .delete(.call(Reminder.ID(UUID()))))
         #expect(Reminders.Read.Operations.Page.Input.self == Reminders.Read.Page.Request.self)
-        #expect(Reminders.Read.Operations.Call.Output.self == AsyncThrowingStream<Reminders.Summary, any Error>.self)
+        #expect(Reminders.Read.Operations.Call.Output.self == AsyncThrowingStream<Reminders.Read.Summary, any Error>.self)
         try await reminders(.update(.complete(reminder.id, true)))
         await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(.call(Reminder.ID(UUID())))) }
     }

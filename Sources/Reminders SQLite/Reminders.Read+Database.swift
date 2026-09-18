@@ -9,8 +9,8 @@ import Tagged
 // A read request resolved against one database connection; the streamed ones track their query, so the
 // value arrives now and again after every write it depends on.
 extension Reminders.Read.Request {
-    public func fetch(_ db: Database) throws -> Reminders.Summary {
-        Reminders.Summary(
+    public func fetch(_ db: Database) throws -> Reminders.Read.Summary {
+        Reminders.Read.Summary(
             lists: try Models.List<Reminder>.Record
                 .group(by: \.id)
                 .order(by: \.position)
@@ -21,7 +21,7 @@ extension Reminders.Read.Request {
         )
     }
 
-    public func stream(in database: any DatabaseReader) -> AsyncThrowingStream<Reminders.Summary, any Swift.Error> {
+    public func stream(in database: any DatabaseReader) -> AsyncThrowingStream<Reminders.Read.Summary, any Swift.Error> {
         Reminders.Read.stream(in: database, fetch)
     }
 }

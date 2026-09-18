@@ -9,7 +9,7 @@ extension Reminders {
     @Interface
     public struct Read: Read.Interface {
         public protocol Interface {
-            func callAsFunction() -> AsyncThrowingStream<Reminders.Summary, any Swift.Error>
+            func callAsFunction() -> AsyncThrowingStream<Reminders.Read.Summary, any Swift.Error>
             func callAsFunction(_ id: Reminder.ID) throws -> Reminder
             func callAsFunction(page filter: Reminders.Read.Filter) -> AsyncThrowingStream<Reminders.Page, any Swift.Error>
         }
