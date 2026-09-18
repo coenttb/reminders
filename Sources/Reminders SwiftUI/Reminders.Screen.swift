@@ -32,7 +32,7 @@ extension Reminders.Screen: SwiftUI::View {
             .navigationTitle("Reminders")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Add List", systemImage: "plus") { store.newList = .init(.init(.init())) }
+                    Button("Add List", systemImage: "plus") { store.newList = .init(List<Reminder>.Draft()) }
                 }
             }
             .navigationDestination(item: $store.scope(\.page)) { page in

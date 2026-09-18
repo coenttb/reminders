@@ -20,7 +20,7 @@ extension Reminders.Read.Page {
             @StoreTaskID public var writes
 
             public init(page filter: Reminders.Read.Filter) {
-                self.contents = .init(.init(filter: filter))
+                self.contents = .init(filter)
             }
 
             public var list: List<Reminder>.ID? {
