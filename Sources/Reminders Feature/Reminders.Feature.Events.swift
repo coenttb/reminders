@@ -14,6 +14,10 @@ extension Reminders.Feature {
         public typealias Value = Reminder
     }
 
+    public enum ReminderDatesRequested: FeatureEventKey {
+        public typealias Value = Reminder
+    }
+
     public enum ListDeleted: FeatureEventKey {
         public typealias Value = Models.List<Reminder>.ID
     }

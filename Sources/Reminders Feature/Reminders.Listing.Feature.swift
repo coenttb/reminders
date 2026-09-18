@@ -32,6 +32,8 @@ extension Reminders.Listing {
                 var page = shown(page)
                 if let editing, !page.rows.contains(where: { $0.id == editing.id }), let anchor = editing.anchor {
                     _ = page.insert(editing.draft, after: anchor)
+                } else if let editing, editing.anchor == nil, editing.original.isBlank, preference.showCompleted {
+                    page.moveToEnd(editing.id)
                 }
                 return page
             }
@@ -81,6 +83,7 @@ extension Reminders.Listing {
             case reminderCompleteButtonTapped(Reminder.ID)
             case reminderDeleted(Reminder.ID)
             case reminderDetailsButtonTapped(Reminder.ID)
+            case reminderDropped(Reminder.ID, into: Reminders.Section)
             case reminderTapped(Reminder.ID)
             case sectionAddTapped(Reminders.Section)
             case remindersMoved(IndexSet, Int)
@@ -112,6 +115,8 @@ extension Reminders.Listing {
                     endEditing(&state)
                 case .editing(.completeButtonTapped):
                     if let id = state.editing?.id { completion.tapped(id, &state) }
+                case .editing(.customDateTapped):
+                    if let id = state.editing?.id { details(id, part: .dates, &state) }
                 case .editing(.detailsButtonTapped):
                     if let id = state.editing?.id { details(id, &state) }
                 case .editing(.titleSubmitted):
@@ -150,6 +155,15 @@ extension Reminders.Listing {
                     }
                 case let .reminderDetailsButtonTapped(id):
                     details(id, &state)
+                case let .reminderDropped(id, section):
+                    // A row dragged onto a day or a part of the day takes that date; the row being edited moves with its draft.
+                    guard state.editing?.id != id else { break }
+                    let (now, calendar) = (now, calendar)
+                    perform {
+                        guard var reminder = try completion.retrieve(id)?.reminder, let due = section.due(moving: reminder.due, at: now, calendar: calendar) else { return }
+                        reminder.due = due
+                        _ = try await reminders.update(reminder)
+                    }
                 case let .sectionAddTapped(section):
                     startNewReminder(in: state.list, due: section.due(at: now, calendar: calendar), &state)
                 case let .reminderTapped(id):
@@ -233,14 +247,18 @@ extension Reminders.Listing.Feature {
         }
     }
 
-    private func details(_ id: Reminder.ID, _ state: inout State) {
+    private func details(_ id: Reminder.ID, part: Reminder.Form.Feature.State.Part = .all, _ state: inout State) {
         let editing = state.editing
         store.addTask {
             try await attempt(editing: editing?.session) {
                 try await commit(editing)
                 let stored = try completion.retrieve(id)?.reminder
                 try store.modify { $0.endEditing(editing?.session) }
-                if let stored { try store.post(key: Reminders.Feature.ReminderDetailsRequested.self, value: stored) }
+                guard let stored else { return }
+                switch part {
+                case .all: try store.post(key: Reminders.Feature.ReminderDetailsRequested.self, value: stored)
+                case .dates: try store.post(key: Reminders.Feature.ReminderDatesRequested.self, value: stored)
+                }
             }
         }
     }

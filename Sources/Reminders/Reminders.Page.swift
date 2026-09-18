@@ -65,6 +65,16 @@ extension Reminders.Page {
         return false
     }
 
+    // A row moves to the end of its section while it is the new card, as the stock card sits under the completed rows.
+    public mutating func moveToEnd(_ id: Reminder.ID) {
+        for index in sections.indices {
+            if let at = sections[index].rows.firstIndex(where: { $0.id == id }) {
+                sections[index].rows.append(sections[index].rows.remove(at: at))
+                return
+            }
+        }
+    }
+
     public mutating func removeAll(where shouldRemove: (Reminder) -> Bool) {
         for index in sections.indices { sections[index].rows.removeAll(where: shouldRemove) }
     }

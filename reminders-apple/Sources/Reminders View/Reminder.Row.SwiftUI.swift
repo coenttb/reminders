@@ -81,7 +81,7 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
         .frame(minHeight: 22)
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive) { actions.delete(reminder.id) }
-            Button("Details", systemImage: "info.circle") { actions.details(reminder.id) }.tint(.gray)
+            Button("Details", systemImage: "info") { actions.details(reminder.id) }.tint(.gray)
         }
     }
 

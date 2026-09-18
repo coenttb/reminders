@@ -73,6 +73,17 @@ import Testing
         #expect(keys.sorted() == [.today, .previous(day: try date(15)), .previous(day: try date(11)), .earlier(month: try date(1)), .earlier(month: try date(1, month: 7))])
     }
 
+    @Test func `a row dropped on a day keeps its time of day, a part of the day sets the hour, and the rest take no drops`() throws {
+        let timed = Reminder.Due.moment(try date(16, hour: 15))
+        #expect(Reminders.Section.tomorrow.due(moving: timed, at: friday, calendar: calendar) == .moment(try date(19, hour: 15)))
+        #expect(Reminders.Section.tomorrow.due(moving: .day(try date(16)), at: friday, calendar: calendar) == .day(try date(19)))
+        #expect(Reminders.Section.day(try date(21)).due(moving: nil, at: friday, calendar: calendar) == .day(try date(21)))
+        #expect(Reminders.Section.afternoon.due(moving: timed, at: friday, calendar: calendar) == .moment(try date(18, hour: 12)))
+        #expect(Reminders.Section.allDay.due(moving: timed, at: friday, calendar: calendar) == .moment(try date(18, hour: 15)))
+        #expect(Reminders.Section.overdue(day: try date(16)).due(moving: timed, at: friday, calendar: calendar) == nil)
+        #expect(Reminders.Section.restOfMonth.acceptsDrops == false && Reminders.Section.morning.acceptsDrops)
+    }
+
     @Test func `a section names the date a row started in it takes`() throws {
         #expect(Reminders.Section.today.due(at: friday, calendar: calendar) == .day(try date(18)))
         #expect(Reminders.Section.tomorrow.due(at: friday, calendar: calendar) == .day(try date(19)))

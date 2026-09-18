@@ -38,6 +38,7 @@ extension Reminder.Editor {
 
         public enum Action {
             case completeButtonTapped
+            case customDateTapped
             case datePresetSelected(Reminder.Editor.Preset?)
             case detailsButtonTapped
             case notesFocused
@@ -54,11 +55,16 @@ extension Reminder.Editor {
         public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
             ComposableArchitecture2.Update { state, action in
                 switch action {
-                case .completeButtonTapped, .detailsButtonTapped, .titleSubmitted:
+                case .completeButtonTapped, .titleSubmitted:
                     break
                 case let .datePresetSelected(preset):
                     state.draft.set(datePreset: preset, at: now, calendar: calendar)
-                case .notesFocused:
+                // Opening a sheet or the notes on a blank row names it, as the stock app does, so the row is kept.
+                case .customDateTapped:
+                    if state.draft.isBlank { state.draft.title = "New Reminder" }
+                    // The Date & Time sheet opens with today chosen when the row has no date yet.
+                    if state.draft.due == nil { state.draft.set(datePreset: .today, at: now, calendar: calendar) }
+                case .detailsButtonTapped, .notesFocused:
                     if state.draft.isBlank { state.draft.title = "New Reminder" }
                 case let .repeatSelected(frequency):
                     state.draft.repeats = frequency.map { Calendar.RecurrenceRule(calendar: calendar, frequency: $0) }

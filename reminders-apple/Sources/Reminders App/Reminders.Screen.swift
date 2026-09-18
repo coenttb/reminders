@@ -90,7 +90,7 @@ extension Reminders.Screen: SwiftUI::View {
         .sheet(item: $store.scope(\.destination).reminder) { form in
             NavigationStack {
                 Reminder.Form.SwiftUI(store: form, lists: store.overview.summary.lists.map(\.list), available: store.overview.summary.rankedTags)
-                    .navigationTitle(form.isNew ? "New Reminder" : "Details")
+                    .navigationTitle(form.isNew ? "New Reminder" : form.part == .dates ? "Date & Time" : "Details")
             }
             .interactiveDismissDisabled(form.isDirty)
             .presentationDetents([.large])

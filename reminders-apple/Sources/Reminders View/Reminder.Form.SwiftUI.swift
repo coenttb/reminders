@@ -36,16 +36,18 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         let draft = store.draft
         SwiftUI::Form {
-            Section {
-                TextField("Title", text: $store.draft.title, axis: .vertical)
-                    .font(.title2)
-                    .focused($titleFocused)
-                    .listRowSeparator(.hidden)
-                TextField("Notes", text: $store.draft.notes, axis: .vertical)
-                    .lineLimit(1...6)
-                    .focused($notesFocused)
+            if store.part == .all {
+                Section {
+                    TextField("Title", text: $store.draft.title, axis: .vertical)
+                        .font(.title2)
+                        .focused($titleFocused)
+                        .listRowSeparator(.hidden)
+                    TextField("Notes", text: $store.draft.notes, axis: .vertical)
+                        .lineLimit(1...6)
+                        .focused($notesFocused)
+                }
+                .listSectionMargins(.top, 6)
             }
-            .listSectionMargins(.top, 6)
             Section("Date & Time") {
                 Toggle(isOn: $store.draft.dueOn(now, calendar: calendar).animation()) {
                     row("Date", systemImage: "calendar", subtitle: draft.due?.dayDescription(at: now, calendar: calendar, otherwise: .complete)) {
@@ -83,7 +85,9 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
             if let failure = store.failure {
                 Section { Text(failure).foregroundStyle(.red) } header: { Text("Not saved") }
             }
-            if store.isNew {
+            if store.part == .dates {
+                EmptyView()
+            } else if store.isNew {
                 Section("More Options") { listPicker }
                 Section {
                     NavigationLink {
@@ -122,7 +126,11 @@ extension Reminder.Form.SwiftUI: SwiftUI::View {
                     .disabled(draft.isBlank)
             }
         }
-        .onAppear { titleFocused = store.isNew }
+        .onAppear {
+            titleFocused = store.isNew
+            // The Date & Time sheet opens on the calendar, as the stock one does.
+            if store.part == .dates { expanded = store.draft.due?.hasTime == true ? .time : .date }
+        }
         .onChange(of: draft.due != nil) { _, on in
             expanded = on ? .date : nil
             titleFocused = false

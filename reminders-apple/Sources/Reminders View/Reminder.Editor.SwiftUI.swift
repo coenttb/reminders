@@ -91,7 +91,7 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
                     Label(preset.title, systemImage: current ? "checkmark" : "\(calendar.component(.day, from: date)).calendar")
                 }
             }
-            Button("Custom", systemImage: "ellipsis") { store.send(.detailsButtonTapped) }
+            Button("Custom", systemImage: "ellipsis") { store.send(.customDateTapped) }
         } label: {
             chip(tinted: draft.due != nil) {
                 if let day = draft.due?.dayDescription(at: now, calendar: calendar) {
@@ -118,7 +118,7 @@ extension Reminder.Editor.SwiftUI: SwiftUI::View {
                     Image(systemName: current ? "checkmark" : "clock")
                 }
             }
-            Button("Custom", systemImage: "ellipsis") { store.send(.detailsButtonTapped) }
+            Button("Custom", systemImage: "ellipsis") { store.send(.customDateTapped) }
         } label: {
             chip(tinted: draft.due?.hasTime == true) {
                 if let time = draft.due?.timeDescription(calendar: calendar) {

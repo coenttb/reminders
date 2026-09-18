@@ -128,6 +128,27 @@ extension Reminders.Section {
         }
     }
 
+    // The date a row dropped onto this section takes: its day, keeping the row's time of day; a part of the
+    // day sets the hour. Sections that are not a date (overdue, months, lists) take no drops.
+    public func due(moving due: Reminder.Due?, at now: Date, calendar: Calendar) -> Reminder.Due? {
+        guard let target = self.due(at: now, calendar: calendar) else { return nil }
+        switch self {
+        case .morning, .afternoon, .tonight:
+            return target
+        default:
+            guard let due, due.hasTime else { return target }
+            let time = calendar.dateComponents([.hour, .minute], from: due.date)
+            return calendar.date(bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: 0, of: target.date).map(Reminder.Due.moment) ?? target
+        }
+    }
+
+    public var acceptsDrops: Bool {
+        switch self {
+        case .allDay, .morning, .afternoon, .tonight, .today, .tomorrow, .day: true
+        case .rows, .list, .overdue, .restOfMonth, .month, .previous, .earlier: false
+        }
+    }
+
     public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.order.0 != rhs.order.0 ? lhs.order.0 < rhs.order.0 : lhs.order.1 < rhs.order.1
     }

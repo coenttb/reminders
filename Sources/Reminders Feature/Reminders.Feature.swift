@@ -154,6 +154,9 @@ extension Reminders {
             .onEvent(ReminderDetailsRequested.self) { reminder, state in
                 state.destination = .reminder(Reminder.Form.Feature.State(draft: reminder, original: reminder))
             }
+            .onEvent(ReminderDatesRequested.self) { reminder, state in
+                state.destination = .reminder(Reminder.Form.Feature.State(draft: reminder, original: reminder, part: .dates))
+            }
             .onEvent(TagDeleted.self) { tag, state in
                 guard let listing = state.listing else { return }
                 if let filter = listing.filter.removing(tag: tag) {

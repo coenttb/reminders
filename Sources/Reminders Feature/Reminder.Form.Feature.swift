@@ -15,6 +15,8 @@ extension Reminder.Form {
 
             public var draft: Reminder
             public let original: Reminder?
+            // The whole form, or the Date & Time rows alone (the Custom sheet from a row's chips).
+            public let part: Part
             public var failure: String?
             public var isSaving = false
             // Pending tag intents: the tasks of one action replace each other, so a restarted task works
@@ -23,10 +25,13 @@ extension Reminder.Form {
             public var deletingTags: [Tag<Reminder>] = []
             public var renamingTags: [(Tag<Reminder>, String)] = []
 
-            public init(draft: Reminder, original: Reminder?) {
+            public init(draft: Reminder, original: Reminder?, part: Part = .all) {
                 self.draft = draft
                 self.original = original
+                self.part = part
             }
+
+            public enum Part: Hashable, Sendable { case all, dates }
 
             public var isNew: Bool { original == nil }
 

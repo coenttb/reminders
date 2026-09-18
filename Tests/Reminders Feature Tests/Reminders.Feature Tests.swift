@@ -522,6 +522,24 @@ struct `Reminder feature` {
         }
     }
 
+    @Test func `Custom on a blank row names it, dates it today, and opens the Date & Time sheet; a drop onto a section dates the row`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+        let store = try await makeStore()
+        await store.send(.overview(.listTapped(personal)))?.value
+        await store.send(.listing(.backgroundTapped))?.value
+        let row = try #require(await store.state.listing?.editing?.id)
+        await store.send(.listing(.editing(.customDateTapped)))?.value
+        #expect(await form(store)?.part == .dates)
+        #expect(await form(store)?.draft.title == "New Reminder")
+        #expect(await form(store)?.draft.due == .day(calendar.startOfDay(for: now)))
+        #expect(try await stored(row)?.title == "New Reminder")
+        await store.send(.destination(.reminder(.cancelButtonTapped)))?.value
+        await store.send(.listing(.reminderDropped(row, into: .tomorrow)))?.value
+        try await until(try await page(store)) { $0.rows.first { $0.id == row }?.due == .day(calendar.startOfDay(for: now).addingTimeInterval(.day)) }
+        await store.dismount()
+        }
+    }
+
     @Test func `deleting the last list leaves a default one and closes its detail`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
         let store = try await makeStore()

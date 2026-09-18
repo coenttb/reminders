@@ -60,7 +60,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                 VStack(spacing: 0) {
                     HStack(spacing: 6) {
                         Text("\(count) Completed")
-                        Text("•").font(.caption2)
+                        Text("•").font(.footnote)
                         Button("Clear") { store.send(.clearCompletedButtonTapped) }
                             .disabled(count == 0)
                             .foregroundStyle(count == 0 ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
@@ -72,80 +72,87 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                     .padding(.bottom, 14)
                     Divider()
                 }
-                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 12, trailing: 16))
+                .listRowInsets(EdgeInsets(top: 15, leading: 16, bottom: 6, trailing: 16))
                 .listRowSeparator(.hidden)
             }
             let (shown, total) = (contents.rows.count, contents.total)
-            // The sections come folded from the read; a row's index across them drives the window.
-            let starts: [Int] = contents.sections.reduce(into: [0]) { (starts: inout [Int], section: Reminders.Page.Section) in starts.append(starts[starts.count - 1] + section.rows.count) }
             let sectioned = store.filter.sectionsByDay
             let completion = store.filter == .completed
-            ForEach(Array(contents.sections.enumerated()), id: \.element.id) { offset, section in
-                let key = section.key
-                let header = key.header
-                let empty = section.rows.isEmpty
-                let keyed: [Reminder.Keyed] = section.rows.enumerated().map { Reminder.Keyed(index: starts[offset] + $0, reminder: $1, key: $1.key(editing)) }
-                Section {
+            // One flat run of items, so a long-press drag reorders across sections: a row dropped under another
+            // section's header takes that section's date.
+            let items = Item.items(of: contents.sections, editing: editing, sectioned: sectioned, filter: store.filter, now: now, calendar: calendar)
+            ForEach(items) { item in
+                let key = contents.sections[item.section].key
+                switch item.kind {
+                case let .row(index, reminder):
+                    let id = reminder.id
+                    let completed = store.state.isShownCompleted(reminder)
                     // The editing card is one view that moves between rows, so the keyboard stays with it across a Return.
-                    ForEach(keyed, id: \.key) { keyed in
-                        let (index, reminder) = (keyed.index, keyed.reminder)
-                        let id = reminder.id
-                        let completed = store.state.isShownCompleted(reminder)
-                        if id == editing, let editor = store.scope(\.editing) {
-                            Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
-                        } else {
-                            Reminder.Row.SwiftUI(reminder: reminder, list: named ? lists.first(id: reminder.list)?.title : nil, dated: sectioned && key.showsTimeAlone, completion: completion, completed: completed, color: sectioned ? tint : color(reminder.list), now: now, calendar: calendar, actions: actions)
-                                .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                                .listRowSeparator(.hidden)
-                                .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }
-                        }
-                    }
-                    .onMove { store.send(.remindersMoved($0, $1)) }
-                    if editing == nil, key.offersAdd(in: contents.sections, for: store.filter, at: now, calendar: calendar) {
-                        Button { store.send(.sectionAddTapped(key)) } label: {
-                            Image(systemName: "circle.dotted")
-                                .foregroundStyle(SwiftUI::Color(.systemGray3))
-                                .font(.title2)
-                                .frame(width: 26, height: 20)
-                        }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel("New Reminder")
-                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                        .listRowSeparator(.hidden)
-                    }
-                } header: {
-                    if case let .list(id) = key, let list = lists.first(id: id) {
-                        Text(list.title)
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(SwiftUI::Color(list.color))
-                            .textCase(nil)
-                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
-                    } else if header != .none {
-                        VStack(alignment: .leading, spacing: 6) {
-                            // Overdue days and previous days share one title above the first of their run.
-                            if let title = key.groupTitle, offset == 0 || contents.sections[offset - 1].key.groupTitle != title {
-                                Text(title).font(.title2.weight(.bold)).foregroundStyle(SwiftUI::Color.primary)
-                            }
-                            header.view(month: calendar, now: now, empty: empty)
-                        }
-                        .textCase(nil)
-                        .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 2, trailing: 16))
-                        .listRowSeparator(.hidden)
-                    }
-                } footer: {
-                    // A 2 pt rule closes every section; between consecutive days it thins to a dotted line.
-                    if sectioned, key != .overdue(day: nil) {
-                        let next = offset + 1 < contents.sections.count ? contents.sections[offset + 1].key : nil
-                        let thin = next.map { $0.isDay && (key.isDay || key == .tomorrow) && $0.groupTitle == key.groupTitle } ?? false
-                        Rectangle()
-                            .fill(.quaternary)
-                            .frame(height: thin ? 1 : 2)
-                            .opacity(thin ? 0.6 : 1)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 0, trailing: 16))
+                    if id == editing, let editor = store.scope(\.editing) {
+                        Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
+                    } else {
+                        Reminder.Row.SwiftUI(reminder: reminder, list: named ? lists.first(id: reminder.list)?.title : nil, dated: sectioned && key.showsTimeAlone, completion: completion, completed: completed, color: sectioned ? tint : color(reminder.list), now: now, calendar: calendar, actions: actions)
+                            .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                             .listRowSeparator(.hidden)
+                            .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }
                     }
+                case .add:
+                    Button { store.send(.sectionAddTapped(key)) } label: {
+                        Image(systemName: "circle.dotted")
+                            .foregroundStyle(SwiftUI::Color(.systemGray3))
+                            .font(.title2)
+                            .frame(width: 26, height: 20)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("New Reminder")
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    .listRowSeparator(.hidden)
+                case .landing:
+                    // A section without rows keeps a landing row, so a drag can settle in it.
+                    SwiftUI::Color.clear
+                        .frame(height: 12)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                    case let .header(titled):
+                    Group {
+                        if case let .list(id) = key, let list = lists.first(id: id) {
+                            Text(list.title)
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(SwiftUI::Color(list.color))
+                        } else {
+                            VStack(alignment: .leading, spacing: 6) {
+                                // Overdue days and previous days share one title above the first of their run.
+                                if titled, let title = key.groupTitle {
+                                    Text(title).font(.title2.weight(.bold)).foregroundStyle(SwiftUI::Color.primary)
+                                }
+                                key.header.view(month: calendar, now: now, empty: contents.sections[item.section].rows.isEmpty)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 2, trailing: 16))
+                    .listRowSeparator(.hidden)
+                case let .rule(thin):
+                    // A 2 pt rule closes every section; between consecutive days it thins to a dotted line.
+                    Rectangle()
+                        .fill(.quaternary)
+                        .frame(height: thin ? 1 : 2)
+                        .opacity(thin ? 0.6 : 1)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 0, trailing: 16))
+                        .listRowSeparator(.hidden)
+                    }
+            }
+            .onMove { source, destination in
+                guard let from = source.first, case let .row(index, reminder) = items[from].kind else { return }
+                // The item the row lands before names its section; landing before a section's header means the end of the one above.
+                let landing = destination < items.count ? items[destination] : items[items.count - 1]
+                let target = landing.kind.isHeader && destination > 0 ? items[destination - 1].section : landing.section
+                if target != items[from].section {
+                    store.send(.reminderDropped(reminder.id, into: contents.sections[target].key))
+                } else if !sectioned {
+                    let to = items[..<min(destination, items.count)].count { $0.kind.isRow }
+                    store.send(.remindersMoved(IndexSet(integer: index), to))
                 }
-                .listSectionMargins(.all, 0)
             }
             SwiftUI::Color.clear
                 .frame(height: 320)
@@ -267,7 +274,7 @@ extension Reminders.Listing.SwiftUI {
     private func focusEditing(_ proxy: ScrollViewProxy) {
         guard let editing = store.editing?.id, focus == nil, store.contents.rows.contains(where: { $0.id == editing }) else { return }
         focus = .title
-        withAnimation { proxy.scrollTo(Reminder.Key.editor, anchor: .center) }
+        withAnimation { proxy.scrollTo(Item.ID.row(.editor), anchor: .center) }
     }
 }
 
@@ -281,10 +288,56 @@ extension Reminder {
     func key(_ editing: Reminder.ID?) -> Key {
         id == editing ? .editor : .row(id)
     }
+}
 
-    struct Keyed {
-        let index: Int
-        let reminder: Reminder
-        let key: Key
+extension Reminders.Listing.SwiftUI {
+    // What the list draws, in order: a section's header, its rows, an add circle or a landing row, and its rule.
+    struct Item: Identifiable {
+        enum Kind {
+            case header(titled: Bool)
+            case row(Int, Reminder)
+            case add
+            case landing
+            case rule(thin: Bool)
+
+            var isHeader: Bool { if case .header = self { true } else { false } }
+            var isRow: Bool { if case .row = self { true } else { false } }
+        }
+
+        let id: ID
+        let section: Int
+        let kind: Kind
+
+        enum ID: Hashable {
+            case header(Reminders.Section), row(Reminder.Key), add(Reminders.Section), landing(Reminders.Section), rule(Reminders.Section)
+        }
+
+        static func items(of sections: [Reminders.Page.Section], editing: Reminder.ID?, sectioned: Bool, filter: Reminders.Filter, now: Date, calendar: Calendar) -> [Item] {
+            var items: [Item] = []
+            var index = 0
+            for (offset, section) in sections.enumerated() {
+                let key = section.key
+                let list: Bool = { if case .list = key { true } else { false } }()
+                if list || key.header != .none {
+                    let titled = key.groupTitle != nil && (offset == 0 || sections[offset - 1].key.groupTitle != key.groupTitle)
+                    items.append(Item(id: .header(key), section: offset, kind: .header(titled: titled)))
+                }
+                for reminder in section.rows {
+                    items.append(Item(id: .row(reminder.key(editing)), section: offset, kind: .row(index, reminder)))
+                    index += 1
+                }
+                if editing == nil, key.offersAdd(in: sections, for: filter, at: now, calendar: calendar) {
+                    items.append(Item(id: .add(key), section: offset, kind: .add))
+                } else if sectioned, key.acceptsDrops, section.rows.isEmpty {
+                    items.append(Item(id: .landing(key), section: offset, kind: .landing))
+                }
+                if sectioned, key != .overdue(day: nil) {
+                    let next = offset + 1 < sections.count ? sections[offset + 1].key : nil
+                    let thin = next.map { $0.isDay && (key.isDay || key == .tomorrow) && $0.groupTitle == key.groupTitle } ?? false
+                    items.append(Item(id: .rule(key), section: offset, kind: .rule(thin: thin)))
+                }
+            }
+            return items
+        }
     }
 }
