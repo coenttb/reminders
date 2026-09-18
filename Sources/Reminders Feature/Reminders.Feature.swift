@@ -27,23 +27,17 @@ extension Reminders {
 
         public init() {}
 
-        public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
-            ComposableArchitecture2.Features {
-                ComposableArchitecture2.Update { state, action in
-                    // The page showing a deleted list is gone before the call runs.
-                    if case let .lists.delete(request) = action, state.listing?.list == request.id {
-                        state.listing = nil
-                    }
+        public var body: some FeatureProtocol<State, Action> {
+            ComposableArchitecture2.Update { state, action in
+                // The page showing a deleted list is gone before the call runs.
+                if case let .lists.delete(request) = action, state.listing?.list == request.id {
+                    state.listing = nil
                 }
-                ComposableArchitecture2.Scope(\.overview) { Observing(reminders.read) }
             }
             .calling(reminders, id: \.writes)
-            .ifLet(\.listing, action: \.self) {
-                Reminders.Read.Page.Feature()
-            }
-            .ifLet(\.destination, action: \.lists) {
-                Requesting(\.reminders.lists.create)
-            }
+            .ifLet(\.listing) { Reminders.Read.Page.Feature() }
+            .ifLet(\.destination, action: \.lists) { Requesting(\.reminders.lists.create) }
+            Scope(\.overview) { Observing(reminders.read) }
         }
     }
 }

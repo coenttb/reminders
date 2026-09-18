@@ -36,8 +36,8 @@ extension Reminders.Update {
 
         public init() {}
 
-        public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
-            ComposableArchitecture2.EmptyFeature()
+        public var body: some FeatureProtocol<State, Action> {
+            EmptyFeature()
                 // Leaving writes the draft whole; a blank row is dropped; a row that is gone stays gone.
                 .onDismount {
                     if store.isBlank {

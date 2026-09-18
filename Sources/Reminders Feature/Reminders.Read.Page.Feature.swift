@@ -42,20 +42,16 @@ extension Reminders.Read.Page {
 
         public init() {}
 
-        public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
-            ComposableArchitecture2.Features {
-                ComposableArchitecture2.Update { state, action in
-                    // A deleted row's draft is dropped with it.
-                    if case let .delete(request) = action, state.editing?.id == request.id {
-                        state.editing = nil
-                    }
+        public var body: some FeatureProtocol<State, Action> {
+            ComposableArchitecture2.Update { state, action in
+                // A deleted row's draft is dropped with it.
+                if case let .delete(request) = action, state.editing?.id == request.id {
+                    state.editing = nil
                 }
-                ComposableArchitecture2.Scope(\.observing) { Observing(reminders.read) }
             }
             .calling(reminders, id: \.writes)
-            .ifLet(\.editing, action: \.self) {
-                Reminders.Update.Feature()
-            }
+            .ifLet(\.editing) { Reminders.Update.Feature() }
+            Scope(\.observing) { Observing(reminders.read) }
         }
     }
 }
