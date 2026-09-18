@@ -8,7 +8,7 @@ extension Reminders {
         public protocol Interface {
             func callAsFunction() throws -> Reminders.Summary
             func callAsFunction(_ id: Reminder.ID) throws -> Reminder
-            func callAsFunction(page filter: Reminders.Filter) throws -> Reminders.Page
+            func callAsFunction(page filter: Reminders.Read.Filter) throws -> Reminders.Page
         }
     }
 }

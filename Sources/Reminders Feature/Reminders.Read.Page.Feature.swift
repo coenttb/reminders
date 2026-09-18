@@ -21,7 +21,7 @@ extension Reminders.Read.Page {
             public var editing: Reminders.Update.Feature.State?
             @StoreTaskID public var writes
 
-            public init(page filter: Reminders.Filter) {
+            public init(page filter: Reminders.Read.Filter) {
                 self.observing = .init(request: .init(Request(page: filter)))
             }
 
