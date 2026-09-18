@@ -24,16 +24,18 @@ extension Reminders.Read.Page {
             }
 
             public var list: List<Reminder>.ID? {
-                if case let .list(id) = contents.request.filter { id } else { nil }
+                switch contents.request.filter {
+                case let .list(id): id
+                case .all: nil
+                }
             }
 
             // The rows, with the draft of an existing row standing in for it until the page carries what was written.
             public var rows: [Reminder] {
                 (contents.rows ?? []).map { row in
-                    if let editing, editing.id == row.id {
-                        Reminder(id: row.id, editing.draft, created: row.created)
-                    } else {
-                        row
+                    switch editing {
+                    case let editing? where editing.id == row.id: Reminder(id: row.id, editing.draft, created: row.created)
+                    case _: row
                     }
                 }
             }
