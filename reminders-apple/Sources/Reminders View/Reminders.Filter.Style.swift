@@ -26,13 +26,13 @@ extension Reminders.Filter.Style {
         case .all:
             self.init(title: "All", tint: .primary, fill: .all, symbol: "tray.fill")
         case .completed:
-            self.init(title: "Completed", tint: .gray, fill: .completed, symbol: "checkmark")
+            self.init(title: "Completed", tint: Self.completedTint, fill: .completed, symbol: "checkmark")
         case .flagged:
             self.init(title: "Flagged", tint: .orange, fill: .flagged, symbol: "flag.fill")
         case .list:
             self.init(title: list?.title, tint: list.map { SwiftUI.Color($0.color) } ?? .blue, fill: .all, symbol: "list.bullet")
         case .scheduled:
-            self.init(title: "Scheduled", tint: .red, fill: .scheduled, symbol: "calendar")
+            self.init(title: "Scheduled", tint: Self.scheduledTint, fill: .scheduled, symbol: "calendar")
         case let .tags(tags):
             let title = tags.count == 1 ? tags.first.map(Tag<Reminder>.hashtag) : tags.isEmpty ? "Tags" : "\(tags.count) tags"
             self.init(title: title, tint: .blue, fill: .all, symbol: "list.bullet")
@@ -40,6 +40,10 @@ extension Reminders.Filter.Style {
             self.init(title: "Today", tint: .blue, fill: .today, symbol: "\(day).calendar")
         }
     }
+
+    // Sampled from the stock titles: Scheduled is the system red, Completed a slate gray.
+    public static let scheduledTint = SwiftUI.Color(red: 255 / 255, green: 56 / 255, blue: 60 / 255)
+    public static let completedTint = SwiftUI.Color(red: 88 / 255, green: 103 / 255, blue: 113 / 255)
 
     public static func smart(flagged: Bool) -> [Reminders.Filter] {
         flagged ? [.today, .scheduled, .all, .flagged, .completed] : [.today, .scheduled, .all, .completed]

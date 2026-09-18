@@ -10,16 +10,19 @@ extension Reminder.Row {
         private var highlight: Reminders.Highlight?
         // The list's name, on a screen that gathers rows from every list without naming them above.
         private var list: String?
+        // On a screen that sections by day the row's subtitle names the time alone.
+        private var dated: Bool
         private var completed: Bool
         private var color: SwiftUI::Color
         private var now: Date
         private var calendar: Calendar
         private var actions: Actions
 
-        public init(reminder: Reminder, highlight: Reminders.Highlight? = nil, list: String? = nil, completed: Bool? = nil, color: SwiftUI::Color, now: Date, calendar: Calendar, actions: Actions) {
+        public init(reminder: Reminder, highlight: Reminders.Highlight? = nil, list: String? = nil, dated: Bool = false, completed: Bool? = nil, color: SwiftUI::Color, now: Date, calendar: Calendar, actions: Actions) {
             self.reminder = reminder
             self.highlight = highlight
             self.list = list
+            self.dated = dated
             self.completed = completed ?? reminder.completed
             self.color = color
             self.now = now
@@ -69,6 +72,7 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
             }
             .buttonStyle(.plain)
         }
+        .frame(minHeight: 22)
         .swipeActions {
             Button("Delete", systemImage: "trash", role: .destructive) { actions.delete(reminder.id) }
             Button("Details", systemImage: "info.circle") { actions.details(reminder.id) }.tint(.gray)
@@ -76,9 +80,9 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
     }
 
     private var subtitle: Text? {
-        let due = reminder.due.map { due in
-            Text(due.description(at: now, calendar: calendar))
-                .foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI::Color.red : SwiftUI::Color.secondary)
+        let due = reminder.due.flatMap { due -> Text? in
+            let description = dated ? due.timeDescription(calendar: calendar) : due.description(at: now, calendar: calendar)
+            return description.map { Text($0).foregroundStyle(reminder.pastDue(at: now, calendar: calendar) ? SwiftUI::Color.red : SwiftUI::Color.secondary) }
         }
         let tags = highlight.map { Text(marked: $0.tags.split(separator: " ").map { "#" + $0 }.joined(separator: " ")) } ?? Text(reminder.tagLine)
         let parts = [list.map { Text($0) }, due, reminder.tagLine.isEmpty ? nil : tags].compactMap { $0 }

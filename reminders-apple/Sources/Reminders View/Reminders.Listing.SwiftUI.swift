@@ -76,35 +76,72 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                 .listRowSeparator(.hidden)
             }
             let (shown, total) = (contents.rows.count, contents.total)
-            let keyed = contents.rows.enumerated().map { Reminder.Keyed(index: $0, reminder: $1, key: $1.key(editing)) }
-            // A smart list shows its rows list by list under the list's name; a list shows them plainly.
-            let groups = !store.filter.groupsByList ? [keyed] : keyed.reduce(into: [[Reminder.Keyed]]()) { groups, row in
-                if groups.last?.last?.reminder.list == row.reminder.list { groups[groups.count - 1].append(row) } else { groups.append([row]) }
-            }
-            ForEach(groups, id: \.first?.reminder.list) { group in
+            // The sections come folded from the read; a row's index across them drives the window.
+            let starts: [Int] = contents.sections.reduce(into: [0]) { (starts: inout [Int], section: Reminders.Page.Section) in starts.append(starts[starts.count - 1] + section.rows.count) }
+            let sectioned = store.filter.sectionsByDay
+            ForEach(Array(contents.sections.enumerated()), id: \.element.id) { offset, section in
+                let key = section.key
+                let header = key.header
+                let empty = section.rows.isEmpty
+                let keyed: [Reminder.Keyed] = section.rows.enumerated().map { Reminder.Keyed(index: starts[offset] + $0, reminder: $1, key: $1.key(editing)) }
                 Section {
                     // The editing card is one view that moves between rows, so the keyboard stays with it across a Return.
-                    ForEach(group, id: \.key) { keyed in
+                    ForEach(keyed, id: \.key) { keyed in
                         let (index, reminder) = (keyed.index, keyed.reminder)
                         let id = reminder.id
                         let completed = store.state.isShownCompleted(reminder)
                         if id == editing, let editor = store.scope(\.editing) {
                             Reminder.Editor.SwiftUI(store: editor, completed: completed, color: color(reminder.list), now: now, calendar: calendar, focus: $focus)
                         } else {
-                            Reminder.Row.SwiftUI(reminder: reminder, list: named ? lists.first(id: reminder.list)?.title : nil, completed: completed, color: color(reminder.list), now: now, calendar: calendar, actions: actions)
+                            Reminder.Row.SwiftUI(reminder: reminder, list: named ? lists.first(id: reminder.list)?.title : nil, dated: sectioned && key.showsTimeAlone, completed: completed, color: sectioned ? tint : color(reminder.list), now: now, calendar: calendar, actions: actions)
                                 .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                                 .listRowSeparator(.hidden)
                                 .onAppear { if store.window.nearsEnd(index, of: shown, total: total) { store.send(.endReached) } }
                         }
                     }
                     .onMove { store.send(.remindersMoved($0, $1)) }
+                    if editing == nil, key.offersAdd(in: contents.sections, at: now, calendar: calendar) {
+                        Button { store.send(.sectionAddTapped(key)) } label: {
+                            Image(systemName: "circle.dotted")
+                                .foregroundStyle(SwiftUI::Color(.systemGray3))
+                                .font(.title2)
+                                .frame(width: 26, height: 20)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("New Reminder")
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                        .listRowSeparator(.hidden)
+                    }
                 } header: {
-                    if store.filter.groupsByList, let list = group.first.flatMap({ lists.first(id: $0.reminder.list) }) {
+                    if case let .list(id) = key, let list = lists.first(id: id) {
                         Text(list.title)
                             .font(.title2.weight(.bold))
                             .foregroundStyle(SwiftUI::Color(list.color))
                             .textCase(nil)
                             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
+                    } else if header != .none {
+                        VStack(alignment: .leading, spacing: 6) {
+                            // Overdue days share one title above the first of them.
+                            if key.isOverdueDay, offset == 0 {
+                                Text("Overdue").font(.title2.weight(.bold)).foregroundStyle(SwiftUI::Color.primary)
+                            }
+                            header.view(month: calendar, now: now, empty: empty)
+                        }
+                        .textCase(nil)
+                        .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 2, trailing: 16))
+                        .listRowSeparator(.hidden)
+                    }
+                } footer: {
+                    // A 2 pt rule closes every section; between consecutive days it thins to a dotted line.
+                    if sectioned, key != .overdue(day: nil) {
+                        let next = offset + 1 < contents.sections.count ? contents.sections[offset + 1].key : nil
+                        let thin = next.map { $0.isDay && (key.isDay || key == .tomorrow) } ?? false
+                        Rectangle()
+                            .fill(.quaternary)
+                            .frame(height: thin ? 1 : 2)
+                            .opacity(thin ? 0.6 : 1)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 0, trailing: 16))
+                            .listRowSeparator(.hidden)
                     }
                 }
                 .listSectionMargins(.all, 0)
@@ -118,7 +155,8 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                 .listRowBackground(SwiftUI::Color.clear)
         }
         .listStyle(.plain)
-        .environment(\.defaultMinListRowHeight, 42)
+        // Rows are 42 pt by their own insets; the section headers and rules take only the height they draw.
+        .environment(\.defaultMinListRowHeight, 1)
         .animation(.default, value: contents.rows.map(\.id))
         .onChange(of: editing, initial: true) { _, editing in
             guard editing != nil else { return focus = nil }
