@@ -63,7 +63,7 @@ extension Reminders {
                 delete: { request in
                     try await database.write { db in
                         try Models.List<Reminder>.Record.find(request.id).delete().execute(db)
-                        try Models.List<Reminder>.Record.installDefault(request.replacement, in: db)
+                        try Models.List<Reminder>.Record.installDefault(in: db)
                     }
                 }
             )

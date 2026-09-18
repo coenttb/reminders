@@ -14,7 +14,7 @@ extension DependencyValues {
         let database = try Reminders.Schema.database()
         try database.write { db in
             try sample?.initialize(in: db)
-            try Models.List<Reminder>.Record.installDefault(Models.List<Reminder>.ID(uuid()), in: db)
+            try Models.List<Reminder>.Record.installDefault(in: db)
         }
         defaultDatabase = database
         reminders = .sqlite(database)

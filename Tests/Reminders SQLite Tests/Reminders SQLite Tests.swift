@@ -63,9 +63,10 @@ struct `Reminders SQLite storage` {
 
     @Test func `deleting the last list installs the default one`() async throws {
         let (reminders, sample) = try makeDatabase()
-        let replacement = Models.List<Reminder>.ID(UUID())
-        for list in sample.lists { try await reminders.lists.delete(list.id, replacement: replacement) }
-        #expect(try await summary(reminders)?.lists.map(\.list) == [.default(id: replacement)])
+        for list in sample.lists { try await reminders.lists.delete(list.id) }
+        let lists = try await summary(reminders)?.lists.map(\.list)
+        #expect(lists?.count == 1)
+        #expect(lists?.first.map { $0 == .default(id: $0.id) } == true)
         #expect(try await page(reminders, .all)?.rows.isEmpty == true)
     }
 

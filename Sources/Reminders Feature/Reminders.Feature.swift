@@ -24,7 +24,6 @@ extension Reminders {
             // `.lists.delete(…)` is sugar over `.call(.lists.delete(…))`.
             case call(Reminders.Call)
             case destination(Destination.Action)
-            case listDeleted(Models.List<Reminder>.ID)
             case listTapped(Models.List<Reminder>.ID)
             case listing(Reminders.Read.Page.Feature.Action)
             case overview(Observing<Reminders.Read>.Action)
@@ -44,13 +43,9 @@ extension Reminders {
                         state.destination = .list(.init(list))
                     case .destination(.list(.cancelButtonTapped)):
                         state.destination = nil
-                    case let .listDeleted(id):
-                        // Deleting a list is a call; the page showing it is gone before the call runs.
-                        if state.listing?.list == id { state.listing = nil }
-                        let replacement = Models.List<Reminder>.ID(uuid())
-                        store.addTask(id: state.writes) {
-                            await try store.send(.lists.delete(id, replacement: replacement))?.value
-                        }
+                    // The page showing a deleted list is gone before the call runs.
+                    case let .call(.lists.delete(request)):
+                        if state.listing?.list == request.id { state.listing = nil }
                     case let .listTapped(id):
                         state.listing = Reminders.Read.Page.Feature.State(page: .list(id))
                     case .call, .destination, .listing, .overview:

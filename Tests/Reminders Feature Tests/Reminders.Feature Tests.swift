@@ -93,12 +93,12 @@ struct `Reminders feature` {
         }
     }
 
-    // Deleting a list is a call minted at the root; the page showing that list is gone.
+    // Deleting a list is a call; the page showing that list is gone.
     @Test func `a list delete closes its page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
             store.send(.listTapped(personal))
-            store.send(.listDeleted(personal))
+            store.send(.lists.delete(personal))
             #expect(store.listing == nil)
             try await store.writes()
             while store.overview.lists?.map(\.list.title) != ["Family"] { await Task.yield() }

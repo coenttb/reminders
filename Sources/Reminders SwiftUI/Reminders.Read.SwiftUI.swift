@@ -31,7 +31,7 @@ extension Reminders.Read.SwiftUI: SwiftUI::View {
                 }
                 .foregroundStyle(.primary)
                 .swipeActions {
-                    Button("Delete", systemImage: "trash", role: .destructive) { store.send(.listDeleted(entry.id)) }
+                    Button("Delete", systemImage: "trash", role: .destructive) { store.lists.delete(entry.id) }
                 }
             }
         }

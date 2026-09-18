@@ -7,8 +7,8 @@ extension Reminders {
     public struct Lists: Lists.Interface {
         public protocol Interface {
             func create(_ list: Models.List<Reminder>) async throws
-            // Deleting the last list installs the default one under the replacement id.
-            func delete(_ id: Models.List<Reminder>.ID, replacement: Models.List<Reminder>.ID) async throws
+            // There is always a list: deleting the last one installs the default list.
+            func delete(_ id: Models.List<Reminder>.ID) async throws
         }
     }
 }
