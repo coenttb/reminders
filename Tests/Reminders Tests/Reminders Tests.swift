@@ -44,14 +44,14 @@ import Testing
     // A call is a value: built with the declared labels, compared, and interpreted by the interface.
     @Test func `calls are values the interface interprets`() async throws {
         let reminders = reminders()
-        try await reminders(.lists(.delete(list, replacement: list)))
-        try await reminders(.read(.call(page: .all)))
+        try await reminders(.lists.delete(list, replacement: list))
+        try await reminders(.read(page: .all))
         #expect(Reminders.Lists.Call.delete(list, replacement: list) == .delete(list, replacement: list))
-        #expect(Reminders.Call.delete(.call(reminder.id)) != .delete(.call(Reminder.ID(UUID()))))
-        #expect(Reminders.Read.Operations.Page.Input.self == Reminders.Read.Page.Request.self)
-        #expect(Reminders.Read.Operations.Call.Output.self == AsyncThrowingStream<Reminders.Read.Value, any Error>.self)
+        #expect(Reminders.Call.delete(reminder.id) != .delete(Reminder.ID(UUID())))
+        #expect(Reminders.Read.Page.Input.self == Reminders.Read.Page.Request.self)
+        #expect(Reminders.Read.Output.self == AsyncThrowingStream<Reminders.Read.Value, any Error>.self)
         try await reminders(.update(.complete(reminder.id, true)))
-        await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(.call(Reminder.ID(UUID())))) }
+        await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(Reminder.ID(UUID()))) }
     }
 
     @Test func `reads are called with the declared labels`() async throws {

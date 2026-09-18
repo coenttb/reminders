@@ -41,13 +41,13 @@ struct `Reminders feature` {
             try await page(store).writes()
             let editing = try #require(store.listing?.editing)
             #expect(try reminders.read(editing.id).isBlank)
-            store.modify { $0.listing?.editing?.request.reminder.title = "Water plants" }
+            store.modify { $0.listing?.editing?.title = "Water plants" }
             store.send(.listing(.doneButtonTapped))
             try await page(store).writes()
             #expect(store.listing?.editing == nil)
             #expect(try reminders.read(editing.id).title == "Water plants")
-            while store.listing?.observing.value?.rows.count != 3 { await Task.yield() }
-            #expect(store.listing?.observing.value?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
+            while store.listing?.observing.rows?.count != 3 { await Task.yield() }
+            #expect(store.listing?.observing.rows?.map(\.title) == ["Groceries", "Haircut", "Water plants"])
             await store.dismount()
         }
     }
@@ -71,7 +71,7 @@ struct `Reminders feature` {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
             store.send(.listTapped(personal))
-            store.send(.listing(.call(.update(.complete(Reminder.ID(UUID()), true)))))
+            store.send(.listing(.call(.update.complete(Reminder.ID(UUID()), true))))
             await #expect(throws: Reminders.Update.Error.notFound) { try await page(store).writes() }
             #expect(store.listing?.writes.taskError is Reminders.Update.Error)
             await store.dismount()
@@ -83,12 +83,12 @@ struct `Reminders feature` {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
             store.send(.listTapped(personal))
-            while store.listing?.observing.value == nil { await Task.yield() }
-            let groceries = try #require(store.listing?.observing.value?.rows.first(where: { $0.title == "Groceries" }))
-            store.send(.listing(.call(.delete(.call(groceries.id)))))
+            while store.listing?.observing.rows == nil { await Task.yield() }
+            let groceries = try #require(store.listing?.observing.rows?.first(where: { $0.title == "Groceries" }))
+            store.send(.listing(.call(.delete(groceries.id))))
             try await page(store).writes()
-            while store.listing?.observing.value?.rows.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
-            #expect(store.listing?.observing.value?.rows.map(\.title) == ["Haircut"])
+            while store.listing?.observing.rows?.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
+            #expect(store.listing?.observing.rows?.map(\.title) == ["Haircut"])
             await store.dismount()
         }
     }
@@ -101,7 +101,7 @@ struct `Reminders feature` {
             store.send(.listDeleted(personal))
             #expect(store.listing == nil)
             try await store.writes()
-            while store.overview.value?.lists.map(\.list.title) != ["Family"] { await Task.yield() }
+            while store.overview.lists?.map(\.list.title) != ["Family"] { await Task.yield() }
             await store.dismount()
         }
     }

@@ -11,9 +11,7 @@ extension Reminders {
     // The app: the front screen (`read()` observed), the open page, and the sheet. Calls ride `writes`.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State {
-            public typealias Feature = Reminders.Feature
-
-            public var overview = Observing<Reminders.Read.Operations.Call>.State(request: .init())
+            public var overview = Observing<Reminders.Read>.State()
             public var listing: Reminders.Read.Page.Feature.State?
             public var destination: Destination.State?
             @StoreTaskID public var writes
@@ -28,7 +26,7 @@ extension Reminders {
             case listDeleted(Models.List<Reminder>.ID)
             case listTapped(Models.List<Reminder>.ID)
             case listing(Reminders.Read.Page.Feature.Action)
-            case overview(Observing<Reminders.Read.Operations.Call>.Action)
+            case overview(Observing<Reminders.Read>.Action)
         }
 
         @Dependency(\.reminders) var reminders
@@ -42,7 +40,7 @@ extension Reminders {
                     switch action {
                     case .addListButtonTapped:
                         let list = Models.List<Reminder>(id: Models.List<Reminder>.ID(uuid()))
-                        state.destination = .list(.init(request: .init(list)))
+                        state.destination = .list(.init(list))
                     case .destination(.list(.cancelButtonTapped)):
                         state.destination = nil
                     case let .listDeleted(id):
@@ -50,7 +48,7 @@ extension Reminders {
                         if state.listing?.list == id { state.listing = nil }
                         let replacement = Models.List<Reminder>.ID(uuid())
                         store.addTask(id: state.writes) {
-                            await try store.send(.call(.lists(.delete(id, replacement: replacement))))?.value
+                            await try store.send(.call(.lists.delete(id, replacement: replacement)))?.value
                         }
                     case let .listTapped(id):
                         state.listing = Reminders.Read.Page.Feature.State(page: .list(id))
@@ -58,9 +56,9 @@ extension Reminders {
                         break
                     }
                 }
-                ComposableArchitecture2.Scope(\.overview) { Observing { reminders.read($0) } }
+                ComposableArchitecture2.Scope(\.overview) { Observing(reminders.read) }
             }
-            .calling(\.call, id: \.writes) { try await reminders($0) }
+            .calling(\.call, reminders, id: \.writes)
             .ifLet(\.listing) {
                 Reminders.Read.Page.Feature()
             }

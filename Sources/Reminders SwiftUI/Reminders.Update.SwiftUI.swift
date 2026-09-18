@@ -21,14 +21,14 @@ extension Reminders.Update.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         HStack(spacing: 12) {
             Button { store.send(.completeButtonTapped) } label: {
-                Image(systemName: store.request.reminder.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(store.request.reminder.completed ? SwiftUI::Color.accentColor : SwiftUI::Color.secondary)
+                Image(systemName: store.completed ? "circle.inset.filled" : "circle")
+                    .foregroundStyle(store.completed ? SwiftUI::Color.accentColor : SwiftUI::Color.secondary)
                     .font(.title2)
             }
             .buttonStyle(.borderless)
-            TextField("New Reminder", text: $store.request.reminder.title)
+            TextField("New Reminder", text: $store.title)
                 .textFieldStyle(.plain)
-                .focused(focus, equals: store.state.id)
+                .focused(focus, equals: store.id)
                 .onSubmit { store.send(.titleSubmitted) }
         }
     }

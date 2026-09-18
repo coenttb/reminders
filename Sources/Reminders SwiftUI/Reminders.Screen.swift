@@ -35,7 +35,7 @@ extension Reminders.Screen: SwiftUI::View {
                 }
             }
             .navigationDestination(item: $store.scope(\.listing)) { listing in
-                Reminders.Read.Page.SwiftUI(store: listing, title: listing.list.flatMap { store.overview.value?.lists.first(id: $0) }?.list.title ?? "All")
+                Reminders.Read.Page.SwiftUI(store: listing, title: listing.list.flatMap { store.overview.lists?.first(id: $0) }?.list.title ?? "All")
             }
         }
         .sheet(item: $store.scope(\.destination).list) { form in

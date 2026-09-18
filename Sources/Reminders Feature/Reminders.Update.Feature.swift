@@ -7,9 +7,9 @@ extension Reminders.Update {
     // One row being edited in place: `update`'s request, drafted. The page it belongs to commits it when the
     // session ends.
     @ComposableArchitecture2.Feature public struct Feature {
+        // The state reads as the request it drafts: `state.title`, `state.completed`.
+        @dynamicMemberLookup
         public struct State: Hashable, Sendable {
-            public typealias Feature = Reminders.Update.Feature
-
             public var request: Reminders.Update.Request
             public var original: Reminders.Update.Request
             // Each editing session has its own identity, so a stale task cannot end a newer session.
@@ -21,9 +21,12 @@ extension Reminders.Update {
                 self.session = session
             }
 
-            public var id: Reminder.ID { original.reminder.id }
+            public subscript<Member>(dynamicMember keyPath: WritableKeyPath<Reminders.Update.Request, Member>) -> Member {
+                get { request[keyPath: keyPath] }
+                set { request[keyPath: keyPath] = newValue }
+            }
 
-            public var isBlank: Bool { request.reminder.isBlank }
+            public var id: Reminder.ID { original.id }
 
             public var isSaved: Bool { request == original }
         }

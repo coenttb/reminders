@@ -8,9 +8,9 @@ public import SwiftUI
 extension Reminders.Lists.Create {
     // The sheet: `lists.create`'s request, composed and sent whole.
     public struct SwiftUI {
-        @Bindable private var store: StoreOf<Requesting<Reminders.Lists.Operations.Create>>
+        @Bindable private var store: StoreOf<Requesting<Reminders.Lists.Create>>
 
-        public init(store: StoreOf<Requesting<Reminders.Lists.Operations.Create>>) {
+        public init(store: StoreOf<Requesting<Reminders.Lists.Create>>) {
             self.store = store
         }
     }
@@ -19,7 +19,7 @@ extension Reminders.Lists.Create {
 extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         SwiftUI::Form {
-            TextField("List Name", text: $store.request.list.title)
+            TextField("List Name", text: $store.request.title)
             if let error = store.sending.taskError {
                 Section("Not saved") { Text(error.localizedDescription).foregroundStyle(.red) }
             }
@@ -31,7 +31,7 @@ extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { store.send(.sendButtonTapped) }
-                    .disabled(store.request.list.isBlank || store.sending.isRunning)
+                    .disabled(store.request.isBlank || store.sending.isRunning)
             }
         }
     }
