@@ -18,5 +18,13 @@ extension Reminders {
             case .completed, .scheduled, .today, .list: false
             }
         }
+
+        // Today and Scheduled section their rows by day and by time of day, as the stock app does.
+        public var sectionsByDay: Bool {
+            switch self {
+            case .scheduled, .today: true
+            case .all, .completed, .flagged, .list, .tags: false
+            }
+        }
     }
 }

@@ -47,6 +47,7 @@ let package = Package(
         .target(
             name: "Reminders",
             dependencies: [
+                .product(name: "FoundationEssentials Extensions", package: "swift-foundation-extensions"),
                 .product(name: "Interface Macro", package: "swift-interface"),
                 "Models",
                 "Reminder",
