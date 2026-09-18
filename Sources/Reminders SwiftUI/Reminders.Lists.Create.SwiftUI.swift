@@ -21,7 +21,7 @@ extension Reminders.Lists.Create {
 extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         SwiftUI::Form {
-            TextField("List Name", text: $store.request.title)
+            TextField("List Name", text: $store.title)
             if let error = store.sending.taskError {
                 Section("Not saved") { Text(error.localizedDescription).foregroundStyle(.red) }
             }
@@ -33,7 +33,7 @@ extension Reminders.Lists.Create.SwiftUI: SwiftUI::View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { store.send() }
-                    .disabled(store.request.draft.isBlank || store.sending.isRunning)
+                    .disabled(store.isBlank || store.sending.isRunning)
             }
         }
     }
