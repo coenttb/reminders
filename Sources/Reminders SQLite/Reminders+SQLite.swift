@@ -29,6 +29,10 @@ extension Reminders {
                 },
                 page: { request in try database.read(request.fetch) }
             ),
+            observe: .init(
+                summary: { request in request.stream(in: database) },
+                page: { request in request.stream(in: database) }
+            ),
             update: .init { request in
                 try await database.write { db in
                     guard try Reminder.Record.find(request.reminder.id).fetchCount(db) > 0 else { throw Update.Error.notFound }

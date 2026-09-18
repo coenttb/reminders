@@ -5,8 +5,8 @@ import Reminders_SQL
 public import SQLiteData
 import Tagged
 
-// The read requests are the fetch keys: a feature observes a domain address and SQLite resolves it.
-extension Reminders.Read.Request: FetchKeyRequest {
+// A read request resolved against one database connection.
+extension Reminders.Read.Request {
     public func fetch(_ db: Database) throws -> Reminders.Summary {
         Reminders.Summary(
             lists: try Models.List<Reminder>.Record
@@ -20,7 +20,7 @@ extension Reminders.Read.Request: FetchKeyRequest {
     }
 }
 
-extension Reminders.Read.Page.Request: FetchKeyRequest {
+extension Reminders.Read.Page.Request {
     public func fetch(_ db: Database) throws -> Reminders.Page {
         Reminders.Page(
             rows: try Reminder.Record

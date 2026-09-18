@@ -24,6 +24,8 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main"),
+        .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
+        .package(url: "https://github.com/groue/GRDB.swift", from: "7.6.0"),
     ],
     targets: [
         .target(
@@ -80,6 +82,7 @@ let package = Package(
             name: "Reminders SQLite",
             dependencies: [
                 .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "GRDB", package: "GRDB.swift"),
                 "Models",
                 "Reminder",
                 "Reminders",
@@ -99,8 +102,6 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Dependency",
-                "Reminders SQLite",
-                .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -128,6 +129,7 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQLite",
                 "Reminders View",
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
@@ -227,7 +229,6 @@ let package = Package(
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 "Models",
                 "Reminder",
-                .product(name: "SQLiteData", package: "sqlite-data"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 "Reminders",
                 "Reminders App",

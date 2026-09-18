@@ -1,5 +1,5 @@
 {
-  "originHash" : "f58991913172bbd957e59effb2ec9fd335fe13e24144bc79cf118240b64a565a",
+  "originHash" : "3bb0b03365fea715d561ae216b0c72fe033c1bad1a5601e022ca9d75ce122c18",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -197,6 +197,15 @@
       "state" : {
         "revision" : "98ba2e1a302c405dd8752e9fcacef0d5f500cac9",
         "version" : "1.19.5"
+      }
+    },
+    {
+      "identity" : "swift-standard-library-extensions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-standard-library-extensions.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "17d58ed862f83e1846ab1b09acd6d59acfe7a657"
       }
     },
     {

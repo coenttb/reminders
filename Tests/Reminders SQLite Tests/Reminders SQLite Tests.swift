@@ -49,4 +49,14 @@ struct `Reminders SQLite storage` {
         #expect(try reminders.read().lists.map(\.list) == [.default(id: replacement)])
         #expect(try reminders.read(page: .all).rows.isEmpty)
     }
+
+    // Observing a request yields the value now and again after every write it depends on.
+    @Test func `an observed page follows the writes`() async throws {
+        let (reminders, sample) = try makeDatabase()
+        let personal = sample.lists[0].id
+        var pages = reminders.observe(Reminders.Read.Page.Request(page: .list(personal))).makeAsyncIterator()
+        #expect(try await pages.next()?.rows.map(\.title) == ["Groceries", "Haircut"])
+        try await reminders.create(Reminder(id: Reminder.ID(UUID()), list: personal, title: "Water plants", created: now))
+        #expect(try await pages.next()?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
+    }
 }

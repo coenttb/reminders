@@ -1,12 +1,14 @@
 public import ComposableArchitecture2
 public import Foundation
 public import Reminder
+public import Reminders
 
-extension Reminder.Editor {
-    // One row being edited in place. The draft is bound to directly; the parent listing commits it.
+extension Reminders.Update {
+    // One row being edited in place: the draft that `update` will be called with. The page it belongs to
+    // commits it when the session ends.
     @ComposableArchitecture2.Feature public struct Feature {
         public struct State: Hashable, Sendable {
-            public typealias Feature = Reminder.Editor.Feature
+            public typealias Feature = Reminders.Update.Feature
 
             public var draft: Reminder
             public var original: Reminder

@@ -25,6 +25,10 @@ import Testing
                 },
                 page: { request in Reminders.Page(rows: request.filter == .list(list) || request.filter == .all ? [reminder] : []) }
             ),
+            observe: .init(
+                summary: { _ in AsyncThrowingStream { $0.finish() } },
+                page: { _ in AsyncThrowingStream { $0.finish() } }
+            ),
             update: .init { _ in },
             delete: .init { _ in },
             lists: .init(create: { _ in }, delete: { _ in })

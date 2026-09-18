@@ -4,28 +4,29 @@ public import Reminder
 public import Reminders
 public import Reminders_Feature
 public import SwiftUI
+public import Tagged
 
-extension Reminders.Listing {
+extension Reminders.Read.Page {
     public struct SwiftUI {
-        private var store: StoreOf<Reminders.Listing.Feature>
+        private var store: StoreOf<Reminders.Read.Page.Feature>
         private var title: String
         @FocusState private var focus: Reminder.ID?
 
-        public init(store: StoreOf<Reminders.Listing.Feature>, title: String) {
+        public init(store: StoreOf<Reminders.Read.Page.Feature>, title: String) {
             self.store = store
             self.title = title
         }
     }
 }
 
-extension Reminders.Listing.SwiftUI: SwiftUI::View {
+extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         let editing = store.editing?.id
         SwiftUI::List {
             ForEach(store.contents.rows) { reminder in
                 // The editor is one view that moves between rows; every other row is a plain value.
                 if reminder.id == editing, let editor = store.scope(\.editing) {
-                    Reminder.Editor.SwiftUI(store: editor, focus: $focus)
+                    Reminders.Update.SwiftUI(store: editor, focus: $focus)
                 } else {
                     Reminder.Row.SwiftUI(
                         reminder: reminder,
@@ -34,6 +35,9 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                         edit: { store.send(.reminderTapped(reminder.id)) }
                     )
                 }
+            }
+            if let error = store.writes.taskError {
+                Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
             }
             SwiftUI::Color.clear
                 .frame(height: 200)
@@ -50,7 +54,7 @@ extension Reminders.Listing.SwiftUI: SwiftUI::View {
                     Button("Done") { store.send(.doneButtonTapped) }
                 }
             }
-            ToolbarItem(placement: .bottomBar) {
+            ToolbarItem(placement: .primaryAction) {
                 Button("New Reminder", systemImage: "plus") { store.send(.newReminderButtonTapped) }
             }
         }

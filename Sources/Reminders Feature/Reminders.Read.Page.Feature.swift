@@ -5,27 +5,26 @@ public import Models
 public import Reminder
 public import Reminders
 import Reminders_Dependency
-import Reminders_SQLite
-public import SQLiteData
 public import Tagged
 
-extension Reminders.Listing {
-    // One filter's rows, `read(page:)` observed, with the row being edited in place. The database is the
-    // truth: a new row is inserted before it is edited, and the draft is written back when its session ends.
+extension Reminders.Read.Page {
+    // One page, `read(page:)` observed, with the row being edited in place. The database is the truth: a new
+    // row is inserted before it is edited, and the draft is written back when its session ends.
     @ComposableArchitecture2.Feature public struct Feature {
-        public struct State: Sendable {
-            public typealias Feature = Reminders.Listing.Feature
+        public struct State {
+            public typealias Feature = Reminders.Read.Page.Feature
 
-            public var filter: Reminders.Filter
-            public var editing: Reminder.Editor.Feature.State?
-            @DebugSnapshotIgnored @Fetch public var page = Reminders.Page()
+            public var request: Request
+            public var page = Reminders.Page()
+            public var editing: Reminders.Update.Feature.State?
+            @StoreTaskID public var writes
 
-            public init(filter: Reminders.Filter) {
-                self.filter = filter
+            public init(page filter: Reminders.Filter) {
+                self.request = Request(page: filter)
             }
 
             public var list: Models.List<Reminder>.ID? {
-                if case let .list(id) = filter { id } else { nil }
+                if case let .list(id) = request.filter { id } else { nil }
             }
 
             // The draft stands in for its row until the page carries what was written.
@@ -46,7 +45,7 @@ extension Reminders.Listing {
         public enum Action {
             case backgroundTapped
             case doneButtonTapped
-            case editing(Reminder.Editor.Feature.Action)
+            case editing(Reminders.Update.Feature.Action)
             case newReminderButtonTapped
             case reminderCompleteButtonTapped(Reminder.ID)
             case reminderDeleted(Reminder.ID)
@@ -75,42 +74,37 @@ extension Reminders.Listing {
                 case .newReminderButtonTapped:
                     if let list = state.list { startNewReminder(in: list, &state) }
                 case let .reminderCompleteButtonTapped(id):
-                    store.addTask {
-                        try await store.attempt {
-                            var reminder = try reminders.read(id)
-                            reminder.completed.toggle()
-                            try await reminders.update(reminder)
-                        }
+                    store.addTask(id: state.writes) {
+                        var reminder = try reminders.read(id)
+                        reminder.completed.toggle()
+                        try await reminders.update(reminder)
                     }
                 case let .reminderDeleted(id):
-                    store.addTask {
-                        try await store.attempt {
-                            try await reminders.delete(id)
-                            try store.modify { if $0.editing?.id == id { $0.editing = nil } }
-                        }
+                    store.addTask(id: state.writes) {
+                        try await reminders.delete(id)
+                        try store.modify { if $0.editing?.id == id { $0.editing = nil } }
                     }
                 case let .reminderTapped(id):
                     guard state.editing?.id != id else { break }
                     let editing = state.editing
-                    store.addTask {
-                        try await store.attempt {
-                            try await commit(editing)
-                            let reminder = try reminders.read(id)
-                            try store.modify {
-                                $0.endEditing(editing?.session)
-                                $0.editing = Reminder.Editor.Feature.State(reminder, session: uuid())
-                            }
+                    store.addTask(id: state.writes) {
+                        try await commit(editing)
+                        let reminder = try reminders.read(id)
+                        try store.modify {
+                            $0.endEditing(editing?.session)
+                            $0.editing = Reminders.Update.Feature.State(reminder, session: uuid())
                         }
                     }
                 }
             }
             .ifLet(\.editing) {
-                Reminder.Editor.Feature()
+                Reminders.Update.Feature()
             }
-            .onChange(of: Reminders.Read.Page.Request(page: store.filter), initial: true) { _, request, state in
-                let page = state.$page
+            .onChange(of: store.request, initial: true) { _, request, _ in
                 store.addTask {
-                    try await store.attempt { try await page.load(request) }
+                    for try await page in reminders.observe(request) {
+                        try store.modify { $0.page = page }
+                    }
                 }
             }
             // Leaving writes the draft.
@@ -121,34 +115,30 @@ extension Reminders.Listing {
     }
 }
 
-extension Reminders.Listing.Feature {
+extension Reminders.Read.Page.Feature {
     private func startNewReminder(in list: Models.List<Reminder>.ID, _ state: inout State) {
         let previous = state.editing
-        store.addTask {
-            try await store.attempt {
-                try await commit(previous)
-                let reminder = Reminder(id: Reminder.ID(uuid()), list: list, created: now)
-                try await reminders.create(reminder)
-                try store.modify {
-                    $0.endEditing(previous?.session)
-                    $0.editing = Reminder.Editor.Feature.State(reminder, session: uuid())
-                }
+        store.addTask(id: state.writes) {
+            try await commit(previous)
+            let reminder = Reminder(id: Reminder.ID(uuid()), list: list, created: now)
+            try await reminders.create(reminder)
+            try store.modify {
+                $0.endEditing(previous?.session)
+                $0.editing = Reminders.Update.Feature.State(reminder, session: uuid())
             }
         }
     }
 
     private func endEditing(_ state: inout State) {
         guard let editing = state.editing else { return }
-        store.addTask {
-            try await store.attempt {
-                try await commit(editing)
-                try store.modify { $0.endEditing(editing.session) }
-            }
+        store.addTask(id: state.writes) {
+            try await commit(editing)
+            try store.modify { $0.endEditing(editing.session) }
         }
     }
 
     // A draft is written whole when its session ends; a blank row is dropped; a row that is gone stays gone.
-    private func commit(_ editing: Reminder.Editor.Feature.State?) async throws {
+    private func commit(_ editing: Reminders.Update.Feature.State?) async throws {
         guard let editing else { return }
         if editing.draft.isBlank {
             try await reminders.delete(editing.id)

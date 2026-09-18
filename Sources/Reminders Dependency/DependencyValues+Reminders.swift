@@ -17,6 +17,10 @@ extension Reminders: TestDependencyKey {
                 id: unimplemented("\\.reminders.read(id)"),
                 page: unimplemented("\\.reminders.read(page:)", placeholder: Page())
             ),
+            observe: .init(
+                summary: unimplemented("\\.reminders.observe(summary)", placeholder: AsyncThrowingStream { $0.finish() }),
+                page: unimplemented("\\.reminders.observe(page)", placeholder: AsyncThrowingStream { $0.finish() })
+            ),
             update: .init(unimplemented("\\.reminders.update")),
             delete: .init(unimplemented("\\.reminders.delete")),
             lists: .init(
@@ -32,6 +36,7 @@ extension Reminders: TestDependencyKey {
 extension Reminders: @unchecked Sendable {}
 extension Reminders.Create: @unchecked Sendable {}
 extension Reminders.Read: @unchecked Sendable {}
+extension Reminders.Observe: @unchecked Sendable {}
 extension Reminders.Update: @unchecked Sendable {}
 extension Reminders.Delete: @unchecked Sendable {}
 extension Reminders.Lists: @unchecked Sendable {}

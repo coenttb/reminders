@@ -26,7 +26,7 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
         HStack(spacing: 12) {
             Button(action: complete) {
                 Image(systemName: reminder.completed ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(reminder.completed ? SwiftUI::Color.accentColor : SwiftUI::Color(.systemGray3))
+                    .foregroundStyle(reminder.completed ? SwiftUI::Color.accentColor : SwiftUI::Color.secondary)
                     .font(.title2)
             }
             .buttonStyle(.borderless)

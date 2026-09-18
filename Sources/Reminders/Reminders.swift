@@ -7,6 +7,7 @@ public struct Reminders: Reminders.Interface {
     public protocol Interface {
         var create: Reminders.Create { get }
         var read: Reminders.Read { get }
+        var observe: Reminders.Observe { get }
         var update: Reminders.Update { get }
         var delete: Reminders.Delete { get }
         var lists: Reminders.Lists { get }
