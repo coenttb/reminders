@@ -1,7 +1,7 @@
 public import ComposableArchitecture2
-import Interface_ComposableArchitecture
+public import Interface_ComposableArchitecture
 import List
-import Operation
+public import Operation
 import Reminder
 public import Reminders
 public import Reminders_Feature
@@ -10,12 +10,12 @@ import Tagged
 
 extension Reminders.Read.Page {
     public struct SwiftUI {
-        @Bindable private var store: StoreOf<Reminders.Read.Page.Feature>
+        @Bindable private var store: StoreOf<Reminders.Page>
         private var title: String
         // The editor is the only text field on the page: focus is on it or nowhere.
         @FocusState private var focus: Bool
 
-        public init(store: StoreOf<Reminders.Read.Page.Feature>, title: String) {
+        public init(store: StoreOf<Reminders.Page>, title: String) {
             self.store = store
             self.title = title
         }

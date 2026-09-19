@@ -38,7 +38,14 @@ extension Reminder {
         self.init(id: id, list: draft.list, title: draft.title, completed: draft.completed, created: created)
     }
 
-    public var draft: Draft { Draft(list: list, title: title, completed: completed) }
+    public var draft: Draft {
+        get { Draft(list: list, title: title, completed: completed) }
+        set {
+            list = newValue.list
+            title = newValue.title
+            completed = newValue.completed
+        }
+    }
 
     public var isBlank: Bool { title.allSatisfy(\.isWhitespace) }
 }

@@ -12,9 +12,9 @@ extension Reminders {
     // The universal screen tree: the front list, the pushed page, the presented sheet. A platform-specific
     // app composes the same views under its own tree beside this one.
     public struct Screen {
-        @Bindable private var store: StoreOf<Reminders.Feature>
+        @Bindable private var store: StoreOf<Reminders>
 
-        public init(store: StoreOf<Reminders.Feature>) {
+        public init(store: StoreOf<Reminders>) {
             self.store = store
         }
     }

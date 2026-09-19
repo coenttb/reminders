@@ -100,13 +100,11 @@ let package = Package(
             dependencies: [
                 .product(name: "CasePaths", package: "swift-case-paths"),
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
-                .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),
                 "List",
                 .product(name: "Operation", package: "swift-operation"),
                 "Reminder",
                 "Reminders",
-                "Reminders Dependency",
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ],
@@ -122,6 +120,7 @@ let package = Package(
                 "List",
                 "Reminder",
                 "Reminders",
+                "Reminders Dependency",
                 "Reminders Feature",
                 "Reminders Sample",
                 "Reminders SQLite",
@@ -178,7 +177,6 @@ let package = Package(
         .testTarget(
             name: "Reminders SQLite Tests",
             dependencies: [
-                .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 "List",
                 "Reminder",
@@ -219,6 +217,7 @@ let package = Package(
                 "List",
                 "Reminder",
                 "Reminders",
+                "Reminders Dependency",
                 "Reminders Feature",
                 "Reminders Sample",
                 "Reminders SQLite",

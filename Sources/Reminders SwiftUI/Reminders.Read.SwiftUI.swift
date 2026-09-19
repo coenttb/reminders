@@ -10,9 +10,9 @@ public import SwiftUI
 extension Reminders.Read {
     // The front screen's lists: the observed summary, with the intents that act on lists as a whole.
     public struct SwiftUI {
-        private var store: StoreOf<Reminders.Feature>
+        private var store: StoreOf<Reminders>
 
-        public init(store: StoreOf<Reminders.Feature>) {
+        public init(store: StoreOf<Reminders>) {
             self.store = store
         }
     }

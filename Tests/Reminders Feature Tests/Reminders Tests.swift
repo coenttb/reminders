@@ -1,4 +1,5 @@
 import ComposableArchitecture2
+import CustomDump
 import ComposableArchitectureTestSupport
 import Dependencies
 import DependenciesTestSupport
@@ -29,13 +30,13 @@ struct `Reminders feature` {
     var personal: List<Reminder>.ID { sample.lists[0].id }
 
     // Opening a page starts its observation, which never ends; a test awaits the page's writes, not the action.
-    func page(_ store: TestStore<Reminders.Feature>) throws -> Reminders.Read.Page.Feature.State {
+    func page(_ store: TestStore<Reminders>) throws -> Reminders.Page.State {
         try #require(store.page)
     }
 
     @Test func `a new row is drafted, edited in place, and created when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+            let store = TestStore(initialState: Reminders.State()) { reminders }
             store.modify { $0.page = .init(.list(personal)) }
             #expect(store.page?.contents.request.filter == .list(personal))
             store.modify { $0.page?.editing = .init(Reminder.Draft(list: personal)) }
@@ -52,7 +53,7 @@ struct `Reminders feature` {
 
     @Test func `a blank draft is dropped when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+            let store = TestStore(initialState: Reminders.State()) { reminders }
             store.modify { $0.page = .init(.list(personal)) }
             store.modify { $0.page?.editing = .init(Reminder.Draft(list: personal)) }
             await store.modify { $0.page?.editing = nil }?.value
@@ -66,7 +67,7 @@ struct `Reminders feature` {
     // A failed call is recorded on the task id it rode, where the view reads it.
     @Test func `a failed call is recorded on the page's writes`() async throws {
         await TestExhaustivity.$current.withValue(.off) {
-            let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+            let store = TestStore(initialState: Reminders.State()) { reminders }
             store.modify { $0.page = .init(.list(personal)) }
             store.send(.page(.update.complete(Reminder.ID(UUID()), true)))
             await #expect(throws: Reminders.Update.Error.notFound) { try await page(store).writes() }
@@ -78,7 +79,7 @@ struct `Reminders feature` {
     // A delete is a call; the observed page follows.
     @Test func `a delete call removes the row from the observed page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+            let store = TestStore(initialState: Reminders.State()) { reminders }
             store.modify { $0.page = .init(.list(personal)) }
             while store.page?.contents.rows == nil { await Task.yield() }
             let groceries = try #require(store.page?.contents.rows?.first(where: { $0.title == "Groceries" }))
@@ -93,7 +94,7 @@ struct `Reminders feature` {
     // Deleting a list is a call; the page showing that list is gone.
     @Test func `a list delete closes its page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
-            let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
+            let store = TestStore(initialState: Reminders.State()) { reminders }
             store.modify { $0.page = .init(.list(personal)) }
             store.send(.call(.lists.delete(personal)))
             #expect(store.page == nil)
@@ -102,4 +103,26 @@ struct `Reminders feature` {
             await store.dismount()
         }
     }
+
+    @Test func `editing overlays the observed record then saves its final draft`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+            let store = TestStore(initialState: Reminders.State()) { reminders }
+            store.modify { $0.page = .init(.list(personal)) }
+            while store.page?.contents.rows == nil { await Task.yield() }
+            let original = try #require(store.page?.rows.first)
+            store.modify { $0.page?.editing = .init(original) }
+            store.modify { $0.page?.editing?.title = "Edited title" }
+            let overlay = try #require(store.page?.rows.first(where: { $0.id == original.id }))
+            expectNoDifference(overlay.title, "Edited title")
+            expectNoDifference(overlay.created, original.created)
+            expectNoDifference(try reminders.read(original.id), original)
+            await store.modify { $0.page?.editing = nil }?.value
+            let saved = try reminders.read(original.id)
+            expectNoDifference(saved.title, "Edited title")
+            expectNoDifference(saved.id, original.id)
+            expectNoDifference(saved.created, original.created)
+            await store.dismount()
+        }
+    }
+
 }
