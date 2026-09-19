@@ -19,9 +19,7 @@ extension Reminders {
             read.page,
             commands: self,
             editing: editing,
-            deleting: { call in
-                if case let .delete(request) = call { request.id } else { nil }
-            }
+            deleting: \.delete?.id
         )
     }
 

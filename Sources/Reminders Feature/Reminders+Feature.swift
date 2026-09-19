@@ -1,3 +1,4 @@
+import Optic
 public import CasePaths
 public import ComposableArchitecture2
 public import Interface_ComposableArchitecture
@@ -29,7 +30,7 @@ extension Reminders: FeatureProtocol {
         Features {
             ComposableArchitecture2.Update { state, action in
                 // The page showing a deleted list is gone before the call runs.
-                if case let .call(.lists(.delete(request))) = action, state.page?.list == request.id {
+                if let id = action.call?.lists?.delete?.id, state.page?.list == id {
                     state.page = nil
                 }
             }
