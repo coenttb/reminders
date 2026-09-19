@@ -1,9 +1,12 @@
-// Aspirational syntax; see FEATURE-SYNTAX.md. Bridge support is not implemented.
+import Optic
+import DebugSnapshots
+import CasePaths
+public import ComposableArchitecture2
 public import Interface_ComposableArchitecture
 public import Reminders
 
-@Feature
-extension Reminders.Lists {
+@Interface_ComposableArchitecture.Feature
+extension Reminders.Lists: FeatureProtocol {
     public var body: some Feature {
         Presenting(\.create)
     }

@@ -1,9 +1,10 @@
-// Aspirational syntax; see FEATURE-SYNTAX.md. Bridge support is not implemented.
+import Optic
+public import ComposableArchitecture2
 public import Interface_ComposableArchitecture
 public import Reminders
 
-@Feature
-extension Reminders.Read.Page {
+@Interface_ComposableArchitecture.Feature
+extension Reminders.Read.Page: FeatureProtocol {
     public var body: some Feature {
         Listing(
             self,

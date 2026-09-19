@@ -1,9 +1,9 @@
-// Aspirational syntax; see FEATURE-SYNTAX.md. Bridge support is not implemented.
+public import ComposableArchitecture2
 public import Interface_ComposableArchitecture
 public import Reminders
 
-@Feature
-extension Reminders.Update {
+@Interface_ComposableArchitecture.Feature
+extension Reminders.Update: FeatureProtocol {
     public var body: some Feature {
         Editing(in: Reminders.self, \.editing)
     }

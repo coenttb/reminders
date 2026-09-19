@@ -49,8 +49,8 @@ against those, not against types of their own:
 - **State the view sets.** `store.read.page = .init(.list(id))`, `store.editing = .init(reminder)`,
   `store.editing = nil`, `store.lists.create = .init(List<Reminder>.Draft())`, `store.dismiss()`. The editor has no
   actions: leaving is what writes (create a draft, update a changed row, drop a blank one).
-- **Observing / Requesting** (swift-interface-composable-architecture): `Observing<Reminders.Read.Page.Run>(reminders.read.page)`
-  follows an operation's stream for its request; `Requesting<Reminders.Lists.Create.Run>(reminders.lists.create)`
+- **Observing / Requesting** (swift-interface-composable-architecture): `Observing(reminders.read.page)`
+  follows an operation's stream for its request; `Requesting(reminders.lists.create)`
   composes an input and sends any call of its interface, dismissing on success. Storage mints identity:
   `create` takes a `Draft`.
 
@@ -74,8 +74,8 @@ are unlabeled, including when sibling operations or children follow them.
 
 `Observing` retains an operation's stream and follows its values. `Requesting` executes a
 request, exposes its task outcome, and dismisses on success. Sending a Call does not
-subscribe to a returned stream. Framework-specific CasePathable adoption remains in the
-integration module; the domain macro does not import the UI framework.
+subscribe to a returned stream. Canonical calls need no consumer CasePathable adoption;
+the domain macro does not import the UI framework.
 
 The generated embedding represents `Call -> Result`; child navigation composes a child
 injection with that function. It is emitted beside the coproduct, with a type alias under
@@ -85,98 +85,71 @@ remains part of the declaration; macros cannot announce that arbitrary nested co
 
 ## Derived interpretations and explicit policies
 
-The domain keeps its original operation types. `Reminders.Read.Page`, `Reminders.Lists.Create`,
-and `Reminders.Update` adopt FeatureProtocol in the integration target, aliasing the existing
-Listing, Requesting, and Editing state. There are no additional Page or Editing domain types.
-
-`@Interface` emits canonical typed child projections under `Structure`. The bridge's
-`@FeatureComposition` selects required children, optional presentations, and observation:
+The existing domain types receive their interpretations in separate source files. No handwritten
+State, Action, operation-symbol, or structural-descriptor declarations are needed:
 
 ```swift
-@FeatureComposition(
-    .required(Reminders.Structure.read.self),
-    .required(Reminders.Structure.lists.self),
-    calls: Reminders.Call.self
-)
-extension Reminders {}
+@Interface_ComposableArchitecture.Feature
+extension Reminders: FeatureProtocol {
+    public var body: some Feature {
+        Features {
+            Child(\.read)
+            Child(\.lists)
+        }
+        .dismiss(\.read.page, matching: \.filter.list, before: \.lists?.delete?.id)
+    }
+}
 ```
 
-It derives State as the product of selected child states and Action as their routed sum,
-reusing canonical calls. State and Action are aliases to the generated interpretation;
-there are no handwritten copies. Read owns its optional page; Lists owns optional Create.
-Required children project as scoped stores, so `store.lists.delete(id)` and
-`store.lists.create = .init(...)` share the existing child state and lifetime.
+Read composes `Observing(self)` and `Presenting(\.page)`. Lists presents its create form;
+that form uses `Requesting(self)`. The page selects its rows, ancestor commands, editing
+policy and deletion prism through `Listing`. Update reuses the ancestor's editing policy.
+Required children project as scoped stores sharing their existing state and task lifetime.
+
+`@EditingPolicy` derives the draft coordinate from the selected `\.draft` lens. Neither
+Reminder nor the page result adopts a bridge-specific marker conformance. The editing
+policy returns `some EditingFeature`, retaining the capabilities that a listing needs
+without exposing a concrete implementation. Create/update/delete receive the existing
+operation values. Blank handling and ignored update failures remain explicit choices.
 
 | Interpretation | Canonical algebra consumed | Policy |
 |---|---|---|
-| `InterfaceFeature<Call>` | Existing coproduct and interpreter | Execute commands, record task outcome |
-| `Executing<Symbol>` | Indexed Input and Output | Execute a request, retain the last successful output |
-| `Observing<Symbol>` | Sequence-valued operation | Follow values; replace observation when the request changes |
-| `Requesting<Symbol>` | Canonical input and calls | Submit, stay on failure, dismiss on success |
-| `Editing<Record>` | Writable draft projection and supplied operation arrows | Apply explicit blank and update-failure policies on dismount |
-| `Listing<Symbol, Call>` | Query result rows, canonical calls, draft lens | Observe rows, overlay an edit, route writes, present editing |
+| InterfaceFeature | Existing call coproduct and interpreter | Execute commands, record task outcome |
+| Executing | Indexed input and output | Execute a request, retain its result |
+| Observing | Sequence-valued operation | Follow values; replace observation when the request changes |
+| Requesting | Canonical input and calls | Submit, stay on failure, dismiss on success |
+| Editing | Selected writable draft lens and operation arrows | Commit on dismount, with explicit blank/error policies |
+| Listing | Selected rows projection, canonical calls, editing capability | Observe rows, overlay an edit, execute writes and present editing |
 
-Any existing interface Call can be interpreted with `Reminders.Call.feature(reminders)`.
-Any eligible operation can use `Symbol.executing(owner)`, `.observing(owner)`, or
-`.requesting(owner)`. These interpreters do not need a bespoke feature or another domain
-model. The generic parameters retain the input/output/call types; no Any payload schema
-or handwritten command enum is introduced.
+Compositions bind the actual domain instance in the feature environment. A standalone page
+or editor receives it with `.interface(reminders)`; there is no global lookup. Root and
+scoped deletion share the same matching rule but retain their original task/error ownership.
+The domain module still imports no TCA or SwiftUI framework.
 
-Reminders declares its remaining meaning in `Reminders+Interpretations.swift`:
-
-- `Reminder.draft` is a writable projection preserving identity and creation time.
-  `EditableRecord` supplies that witness to the editing interpreter. Its lens laws are tested.
-- A page query's existing Value projects `rows` through `ListingValue`.
-- Create, update, and delete are the existing callable operations, passed directly.
-- Blank new drafts are discarded; blank existing rows are deleted. This is an explicit
-  application policy, not a mathematical consequence of an operation signature.
-- Only update's notFound error is ignored, for the disappearance race.
-- The canonical delete case identifies which displayed edit to dismiss.
-
-The root's custom body is in a separate source conformance extension. Separating it from
-the composition declaration avoids Swift 6.4's macro lookup cycle for a source body's
-inherited feature builder. Its remaining custom policy closes a list's page before deletion.
-
-The composition macro attaches TCA's @Feature to its generated implementation. Generated
-types declare conformances directly, while attached macros derive their witnesses; no
-conformance relies on nested extension-macro lowering. Task identifiers and scopes belong
-to this interpretation, not the domain. Compositions publish their actual owner in the
-feature environment; WithInterface lets the page reuse its ancestor's editing capabilities
-without obtaining another implementation from a global dependency.
-
-Views retain their existing names and `store.update.complete(...)`, `store.delete(...)`,
-and `store.send()` syntax. The operation namespace still requires qualifying TCA's Update
-inside the root. The domain module imports no TCA or SwiftUI framework.
+See [FEATURE-SYNTAX.md](FEATURE-SYNTAX.md) for the file-by-file implementation, algebraic
+responsibilities, and compiler-backed deviations from the aspirational syntax at b689cff.
 
 ### Derivation boundary
 
-A default executable feature follows from the existing operation algebra. An arbitrary
-polished UI does not follow from it: field editors, initial input values, display semantics,
-and navigation choices need witnesses or policy. No renderer is inferred from parameter
-names, and no generic form for an arbitrary Swift type is promised. The reminders UI is
-one explicit rendering of the shared interpretations.
+Product, sum, and lens relationships support these generic interpretations. They do not
+choose navigation, blank-value handling, field renderers, or initial inputs. Those remain
+explicit domain or application decisions. Stateful TCA interpretations require Copyable
+inputs even though the underlying operation algebra supports wider ownership semantics.
+The operation runtime erases thrown errors, and the Reminders update signature itself is
+untyped: selecting `Update.Error.notFound` does not hide other storage errors.
 
-`Operation.Operable.run` currently erases the static throws sort to `any Error`; execution
-retains the concrete error in StoreTaskID, but does not falsely advertise an indexed failure
-value that this runtime contract cannot guarantee. Noncopyable input execution in TCA state
-is unsupported: these stateful interpretations require Copyable, while the underlying
-operation algebra retains its wider ownership support.
+## Validation
 
-A root macro cannot attach arbitrary conformances to imported child types, and Swift 6.4
-cannot lower nested extension macros emitted inside another macro's extension output.
-Existing domain types therefore receive their feature interpretations in explicit source
-extensions. Generated types declare their own conformances and attach the owning macros
-for member derivation. No global state or unsafe conformance simulates extension storage.
+Open **reminders-architecture.xcworkspace**. All relevant local packages are included;
+package manifests use URL dependencies and all workspace package minimums are 27.
+MemberImportVisibility is enforced as a hard error for the integration consumers.
 
-## Current validation
+Validated with Xcode 27.0 and Swift 6.4 through this exact workspace:
 
-The exact **Reminders Architecture** workspace scheme builds and passes **108 tests
-across 11 targets on macOS 27**, with no failures, skips, or runtime warnings. This
-includes nested presentation and dismissal, scoped property sending and error ownership,
-root versus child execution routes, actionless observation, editing policies, and the
-domain's compiled macro consumers. The workspace's **Feature Macro Tests** scheme also
-passes **52 TCA macro tests**, including explicit-conformance generation.
-MemberImportVisibility remains a hard error. All affected packages resolve through the
-workspace, and package manifests use URL dependencies exclusively.
+- Reminders Architecture: 122 tests, 123 executions, all passed.
+- Feature Runtime Tests: 13 focused scope/lifetime tests passed.
+- Feature Macro Tests: 52 derivation tests passed.
+- iOS simulator app: built for arm64 and x86_64, both with minimum OS 27.0.
 
-The same workspace builds the app for iOS 27 Simulator.
+The test runs reported no failures, skips, or runtime warnings. See
+[VALIDATION.md](VALIDATION.md) for commands, result bundles, and the integration audit.

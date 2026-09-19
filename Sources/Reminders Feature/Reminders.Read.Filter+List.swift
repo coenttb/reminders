@@ -1,4 +1,3 @@
-// Aspirational syntax; see FEATURE-SYNTAX.md. Bridge support is not implemented.
 public import List
 public import Reminder
 public import Reminders

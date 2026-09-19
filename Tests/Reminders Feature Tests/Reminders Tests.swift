@@ -136,3 +136,41 @@ struct `Reminders feature` {
     }
 
 }
+
+private enum DeletionFailure: Error, Equatable { case refused }
+
+extension `Reminders feature` {
+    @Test(arguments: [false, true])
+    func `failed list deletion closes only its matching page and keeps route ownership`(scoped: Bool) async throws {
+        await TestExhaustivity.$current.withValue(.off) {
+            let domain = Reminders(
+                create: reminders.create, read: reminders.read, update: reminders.update, delete: reminders.delete,
+                lists: .init(create: reminders.lists.create, delete: .init { _ in throw DeletionFailure.refused })
+            )
+            let store = TestStore(initialState: Reminders.State()) { domain }
+            store.modify { $0.read.page = .init(.list(personal)) }
+            if scoped { store.send(.lists(.call(.delete(personal)))) }
+            else { store.send(.call(.lists.delete(personal))) }
+            #expect(store.read.page == nil)
+            let task = scoped ? store.lists.writes : store.writes
+            await #expect(throws: DeletionFailure.refused) { try await task() }
+            #expect(store.read.page == nil)
+            if scoped { #expect(store.writes.taskError == nil) }
+            else { #expect(store.lists.writes.taskError == nil) }
+            await store.dismount()
+        }
+    }
+
+    @Test func `deleting a different list preserves the open page`() async throws {
+        try await TestExhaustivity.$current.withValue(.off) {
+            let store = TestStore(initialState: Reminders.State()) { reminders }
+            store.modify { $0.read.page = .init(.list(personal)) }
+            let other = sample.lists[1].id
+            store.send(.lists(.call(.delete(other))))
+            #expect(store.read.page?.filter.list == personal)
+            try await store.lists.writes()
+            #expect(store.read.page?.filter.list == personal)
+            await store.dismount()
+        }
+    }
+}
