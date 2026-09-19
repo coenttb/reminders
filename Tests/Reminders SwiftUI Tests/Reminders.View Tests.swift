@@ -24,7 +24,7 @@ struct `Reminders root` {
 
     @Test func `the screen observes the database through its store`() async throws {
         let store = Store(initialState: Reminders.State()) { reminders }
-        _ = Reminders.Screen(store: store)
+        _ = Reminders.View(store: store)
         while store.read.lists == nil { await Task.yield() }
         #expect(store.read.lists?.map(\.list.title) == ["Personal", "Family"])
     }

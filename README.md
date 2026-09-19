@@ -20,7 +20,7 @@ One flat package, one host, one workspace. The layers, bottom up:
 | `Reminders SQLite` | SQLiteData, GRDB | the schema, `Reminders.sqlite(database)`, the read requests resolved and tracked (`ValueObservation`), the bootstrap |
 | `Reminders Sample` | — | two lists, three reminders |
 | `Reminders Feature` | TCA26, Interface ComposableArchitecture | the root `Reminders` conformance and relationship declarations for generic `Listing` and `Editing` interpretations. Features observe reads and send calls, no point reads: the front screen and a page's contents are `Observing` `read()` / `read(page:)`; the sheet is `Requesting` `lists.create`; writes (delete, complete, list delete) are `Reminders.Call`s carried by actions. No storage import; failures live on `@StoreTaskID`s |
-| `Reminders SwiftUI` | SwiftUI | one universal view per feature (`Reminders.Read.SwiftUI`, …), one row view built from a value, `Reminders.Screen` (the navigation tree) and the live store. A platform-specific app is another target beside this one composing the same views |
+| `Reminders SwiftUI` | SwiftUI | one universal view per feature (`Reminders.Read.View`, …), one row view built from a value, `Reminders.View` (the navigation tree) and the live store. A platform-specific app is another target beside this one composing the same views |
 | `Hosts/Reminders` | | `@main` |
 
 What was cut: due dates, priorities, flags, notes, tags, search, smart lists, ordering and preferences, paging,
@@ -157,9 +157,10 @@ Open **reminders-architecture.xcworkspace**. All relevant local packages are inc
 package manifests use URL dependencies and all workspace package minimums are 27.
 MemberImportVisibility is enforced as a hard error for the integration consumers.
 
-The SwiftUI implementation's macOS workspace suite passes 128 tests (129 executions)
-with no failures, skips, or runtime warnings. The user also validated the current code on their iPhone. The simulator UI-test target
-builds, but its flow has not run successfully. Details are recorded in
+The SwiftUI implementation's macOS workspace suite passes 129 tests (130 executions)
+with no failures, skips, or runtime warnings. The iOS 27 simulator UI suite also passes, including editing, persistence after
+relaunch, and deletion. The user’s earlier iPhone validation applies to the preceding
+checkpoint. Current results, the naming rule and screenshots are recorded in
 [SWIFTUI-SYNTAX.md](SWIFTUI-SYNTAX.md).
 
 The preceding Feature checkpoint's validation—including the focused TCA runtime and
