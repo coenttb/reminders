@@ -15,6 +15,11 @@ public struct Lists: Lists.Interface {
 }
 ```
 
+The app on `main` aims at parity with the shipping Reminders. The same repository carries a reduced cut of it,
+one flat package that keeps only the architecture, on the `reference/*` branches: `reference/essence` is the
+reduced app, `reference/call-site-syntax` the aspirational call sites it is measured against, and
+`reference/call-site-syntax-implementation` the version that compiles them.
+
 From that one declaration the macro derives a value you construct from closures and call as methods, with the
 labels intact:
 
