@@ -21,6 +21,8 @@ extension Reminders.Update.SwiftUI: SwiftUI::View {
                     .font(.title2)
             }
             .buttonStyle(.borderless)
+            .accessibilityLabel(store.completed ? "Mark incomplete" : "Mark complete")
+            .accessibilityValue(store.title)
             TextField("New Reminder", text: $store.title)
                 .textFieldStyle(.plain)
                 .focusOnPresentation()

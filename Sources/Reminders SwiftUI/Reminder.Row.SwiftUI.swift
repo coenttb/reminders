@@ -13,7 +13,6 @@ extension Reminder.Row {
         private var complete: () -> Void
         private var delete: () -> Void
         private var edit: () -> Void
-
     }
 }
 
@@ -26,6 +25,8 @@ extension Reminder.Row.SwiftUI: SwiftUI::View {
                     .font(.title2)
             }
             .buttonStyle(.borderless)
+            .accessibilityLabel(reminder.completed ? "Mark incomplete" : "Mark complete")
+            .accessibilityValue(reminder.title)
             Button(action: edit) {
                 Text(reminder.title)
                     .foregroundStyle(reminder.completed ? .secondary : .primary)

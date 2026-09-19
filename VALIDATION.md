@@ -1,4 +1,7 @@
-# Domain-first implementation validation
+# Feature implementation checkpoint validation
+
+These results describe the Feature checkpoint `5d82f3e`. The subsequent SwiftUI
+implementation is recorded in [SWIFTUI-SYNTAX.md](SWIFTUI-SYNTAX.md).
 
 Validated September 19–20, 2026 with Xcode 27.0 (27A266a), Apple Swift 6.4
 (swiftlang-6.4.0.34.1), and macOS 27.0. The complete static refactor preceded

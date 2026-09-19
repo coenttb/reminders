@@ -86,3 +86,50 @@ completion, deletion and dismissal, recording screenshots and observations.
 Record implementation results, compiler-backed deviations, exact validation and final
 commit identifiers below after implementation. This checkpoint is a design, not a
 successful-build assertion.
+
+## Implemented result
+
+The design checkpoint is `335364a`. All seven file entries above are implemented with
+the proposed syntax. No compiler-driven call-site deviation has been necessary.
+`@View` remains solely an input derivation; the existing source View conformances
+continue to express which types render UI. The macro uses the existing bridge plugin.
+
+`ViewStore<Domain>` retains the injected store reference and exposes `ViewBindings`.
+The existing composition derivation emits a typed `Bindings` coordinate map beside
+its store projection, consuming the same required/presented selections. These maps
+store only the original store reference and delegate to TCA scopes; no domain state,
+call representation, or navigation state is duplicated. Writable fields use SwiftUI's
+bindable key-path projection, not get/set closure bindings.
+
+`EditingRows` uses the canonical listing and actionless editor. Row identity decides
+substitution. It retains the original list's ordering and renders a new draft once.
+`focusOnPresentation` owns its local FocusState and activates when its field appears.
+The completion buttons now state their accessible action and reminder title explicitly;
+this improves accessibility while retaining their visual appearance.
+
+The live composition root retains its database bootstrap, debug-seeding and failure
+policy. These are actual environment choices and cannot be inferred from a type's
+product/sum/lens structure. Existing labels, layout, navigation style, draft defaults,
+error placement and submission conditions remain explicit for the same reason.
+
+## Validation evidence
+
+The final macOS run passed 128 tests (129 executions), with zero failures,
+skips or runtime warnings: `Test-Reminders Architecture-2026.09.20_00-20-19-+0200.xcresult`
+under `/tmp/institute-reminders-derived/Logs/Test`. Coverage includes nested presentation
+bindings, canonical request submission, independent presentation dismissal, ordinary
+field writes, supplied input construction and escaping closures. Compiler fixtures
+also verify diagnostics for unsupported property-wrapper inputs and competing initializers.
+
+The exact workspace also contains the `Reminders UI Tests` scheme and native UI test
+target. Its end-to-end flow exercises real navigation, cancel/submit, creation, completion,
+editing and Return submission, blank draft discard, switching editor identity, relaunch
+persistence and deletion. The test is configured to retain screenshot and accessibility hierarchy attachments.
+The simulator test target compiled successfully, but its UI flow did not execute: the
+existing simulator was unresponsive and the isolated replacement was still booting.
+No successful simulator interaction or screenshot validation is claimed.
+
+On September 20, 2026, the user validated the current code on their iPhone and instructed
+that it be considered working and committed as a checkpoint. That device confirmation
+is the accepted runtime validation for this checkpoint; further simulator work was
+stopped. The reusable UI-test scheme remains available for a later simulator run.

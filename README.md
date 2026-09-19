@@ -138,18 +138,30 @@ inputs even though the underlying operation algebra supports wider ownership sem
 The operation runtime erases thrown errors, and the Reminders update signature itself is
 untyped: selecting `Update.Error.notFound` does not hide other storage errors.
 
+## SwiftUI interpretations
+
+The views declare their domain once with `@View(Domain.self)`. The bridge derives
+store injection and input construction. Presentation binds directly to existing child
+coordinates: `$store.read.page` and `$store.lists.create`. `EditingRows(store)` renders
+canonical listing rows with their selected editor; `.focusOnPresentation()` keeps focus
+local to the field. Layout, labels, draft defaults, navigation style, and submission
+policies remain explicit.
+
+See [SWIFTUI-SYNTAX.md](SWIFTUI-SYNTAX.md) for the design checkpoint, implementation
+inventory and validation. The **Reminders UI Tests** scheme in the same workspace runs
+the simulator flow and retains screenshot/accessibility evidence.
+
 ## Validation
 
 Open **reminders-architecture.xcworkspace**. All relevant local packages are included;
 package manifests use URL dependencies and all workspace package minimums are 27.
 MemberImportVisibility is enforced as a hard error for the integration consumers.
 
-Validated with Xcode 27.0 and Swift 6.4 through this exact workspace:
+The SwiftUI implementation's macOS workspace suite passes 128 tests (129 executions)
+with no failures, skips, or runtime warnings. The user also validated the current code on their iPhone. The simulator UI-test target
+builds, but its flow has not run successfully. Details are recorded in
+[SWIFTUI-SYNTAX.md](SWIFTUI-SYNTAX.md).
 
-- Reminders Architecture: 122 tests, 123 executions, all passed.
-- Feature Runtime Tests: 13 focused scope/lifetime tests passed.
-- Feature Macro Tests: 52 derivation tests passed.
-- iOS simulator app: built for arm64 and x86_64, both with minimum OS 27.0.
-
-The test runs reported no failures, skips, or runtime warnings. See
-[VALIDATION.md](VALIDATION.md) for commands, result bundles, and the integration audit.
+The preceding Feature checkpoint's validation—including the focused TCA runtime and
+macro suites and both simulator architectures—is preserved in
+[VALIDATION.md](VALIDATION.md).

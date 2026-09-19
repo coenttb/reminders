@@ -13,6 +13,7 @@ import Reminders_Feature
 import Reminders_Sample
 import Reminders_SQLite
 import Testing
+import SwiftUI
 
 @Suite(.dependencies {
     $0.uuid = .incrementing
@@ -49,6 +50,28 @@ struct `Reminders root` {
         try await sending()
         #expect(store.state.lists.create == nil)
         while store.read.lists?.contains(where: { $0.list.title == "Work" }) != true { await Task.yield() }
+    }
+
+    @Test func `derived navigation bindings share canonical nested presentation state`() async throws {
+        let personal = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).lists[0].id
+        let store = Store(initialState: Reminders.State()) { reminders }
+        @ViewStore<Reminders> var viewStore = store
+        let page: Binding<StoreOf<Reminders.Read.Page>?> = $viewStore.read.page
+        let create: Binding<StoreOf<Reminders.Lists.Create>?> = $viewStore.lists.create
+        #expect(page.wrappedValue == nil)
+        #expect(create.wrappedValue == nil)
+        store.read.page = .init(.list(personal))
+        #expect(page.wrappedValue?.list == personal)
+        store.lists.create = .init(List<Reminder>.Draft())
+        let form = try #require(create.wrappedValue)
+        @ViewStore<Reminders.Lists.Create> var formStore = form
+        $formStore.title.wrappedValue = "Travel"
+        #expect(store.state.lists.create?.request.title == "Travel")
+        create.wrappedValue = nil
+        #expect(store.state.lists.create == nil)
+        #expect(store.state.read.page != nil)
+        page.wrappedValue = nil
+        #expect(store.state.read.page == nil)
     }
 
 }
