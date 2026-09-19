@@ -3,7 +3,7 @@ public import List
 public import Reminder
 public import Reminders_SQL
 public import SQLiteData
-public import Tagged
+import Tagged
 
 extension List<Reminder>.Record {
     // There is always a list to put a reminder in; its identity is storage's to mint.

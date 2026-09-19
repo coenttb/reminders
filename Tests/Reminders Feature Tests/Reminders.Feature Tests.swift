@@ -65,7 +65,7 @@ struct `Reminders feature` {
 
     // A failed call is recorded on the task id it rode, where the view reads it.
     @Test func `a failed call is recorded on the page's writes`() async throws {
-        try await TestExhaustivity.$current.withValue(.off) {
+        await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.Feature.State()) { Reminders.Feature() }
             store.modify { $0.page = .init(.list(personal)) }
             store.send(.page(.update.complete(Reminder.ID(UUID()), true)))

@@ -26,7 +26,7 @@ placeholder, all styling and parity chrome, and the evidence.
 
 ## Interface-type reuse
 
-`@Operations` derives one symbol per operation (`Reminders.Read.Run`, `Reminders.Read.Page.Run`; each operation is
+`@Interface` attaches `@Operations`, which derives one symbol per operation (`Reminders.Read.Run`, `Reminders.Read.Page.Run`; each operation is
 its own `@Interface`, so its symbol is its `Run`) whose `Input` is the parameters as a value and which knows how its owner runs it. `@Interface` derives
 the `Call` — the coproduct of the operations' inputs and the children's calls, `Hashable` and `Sendable` when the
 inputs are — with its constructors, its builders and `run(owner, call)`. The layers above the domain write
@@ -51,6 +51,37 @@ against those, not against types of their own:
   composes an input and sends any call of its interface, dismissing on success. Storage mints identity:
   `create` takes a `Draft`.
 
-Build and test with the `reminders.xcworkspace` scheme, destination iPhone 17. The workspace resolves
+Build and test with the **Reminders Architecture** scheme in `reminders-architecture.xcworkspace`,
+on macOS 27 or an iOS 27 simulator. The workspace resolves
 `swift-interface`, `swift-operation`, `swift-product`, `swift-coproduct`, `swift-optic`, `swift-either`,
 `swift-interface-composable-architecture` and `TCA26` (branch `interface-calls`) from sibling checkouts.
+
+
+## Interface integration
+
+Open `reminders-architecture.xcworkspace` and select **Reminders Architecture**. The shared
+scheme builds the app, all eight experiment test targets, Interface and Product macro tests,
+and the TCA bridge tests. Institute packages resolve from workspace references; manifests retain URLs.
+
+Declare `@Interface` once on each domain. It attaches `@Operations` to the semantic
+protocol and composes the product, coproduct, structural capabilities, optics, and
+elimination macros. Child inclusion maps are properties so both `.update.complete(...)`
+and `store.update.complete(...)` use the canonical Call. Primary implementation closures
+are unlabeled, including when sibling operations or children follow them.
+
+`Observing` retains an operation's stream and follows its values. `Requesting` executes a
+request, exposes its task outcome, and dismisses on success. Sending a Call does not
+subscribe to a returned stream. Framework-specific CasePathable adoption remains in the
+integration module; the domain macro does not import the UI framework.
+
+The generated embedding represents `Call -> Result`; child navigation composes a child
+injection with that function. It is emitted beside the coproduct, with a type alias under
+`Call`, so Swift 6.4 can lower each attached extension macro on its own type. It does not
+add another action representation. Explicit conformance to the nested semantic protocol
+remains part of the declaration; macros cannot announce that arbitrary nested conformance.
+
+Validation on 19 September 2026: the shared workspace scheme passed **84 tests across 11
+test targets** on macOS 27, including the app layers, private-domain sending, name hygiene,
+structural capabilities, and both direct and wrapped Store actions. Consumer compilation
+treats MemberImportVisibility diagnostics as errors. The same workspace also builds the
+app for iOS 27 Simulator on arm64 and x86_64.

@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Workspace version="1.0">
+   <FileRef location="container:Reminders.xcodeproj" />
+   <FileRef location="container:." />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-algebra" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-bifunctor" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-coproduct" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-either" />
+   <FileRef location="container:../swift-institute/swift-molecules/swift-interface" />
+   <FileRef location="container:../swift-institute/swift-compositions/swift-interface-composable-architecture" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-operation" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-optic" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-pair" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-product" />
+   <FileRef location="container:../swift-institute/swift-atoms/swift-standard-library-extensions" />
+   <FileRef location="absolute:/Users/coen/Developer/pointfreeco/TCA26" />
+</Workspace>

@@ -7,7 +7,6 @@ extension Reminders {
     // one tracked query; over the network it is a subscription, so only what the UI genuinely follows is one.
     @Interface
     public struct Read: Read.Interface {
-        @Operations
         public protocol Interface {
             func callAsFunction() -> AsyncThrowingStream<Reminders.Read.Value, any Swift.Error>
             func callAsFunction(_ id: Reminder.ID) throws -> Reminder

@@ -2,7 +2,7 @@ public import Foundation
 public import List
 public import Reminder
 public import Reminders
-public import Tagged
+import Tagged
 
 extension Reminders {
     public struct Sample: Hashable, Sendable {
@@ -17,7 +17,9 @@ extension Reminders {
 
     public static func sample(at now: Date) -> Sample {
         func id(_ n: Int) -> UUID {
-            UUID(uuidString: "00000000-0000-0000-000A-" + String(format: "%012X", n))!
+            let hex = String(n, radix: 16, uppercase: true)
+            precondition(n >= 0 && hex.count <= 12)
+            return UUID(uuidString: "00000000-0000-0000-000A-" + String(repeating: "0", count: 12 - hex.count) + hex)!
         }
         let personal = List<Reminder>.ID(id(0)), family = List<Reminder>.ID(id(1))
         return Sample(

@@ -1,8 +1,8 @@
 public import ComposableArchitecture2
 public import Interface_ComposableArchitecture
-public import List
+import List
 import Operation
-public import Reminder
+import Reminder
 public import Reminders
 public import Reminders_Feature
 public import SwiftUI

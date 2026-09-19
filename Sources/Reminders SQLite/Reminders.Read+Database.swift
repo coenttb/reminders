@@ -1,6 +1,6 @@
 import GRDB
-public import List
-public import Reminder
+import List
+import Reminder
 public import Reminders
 import Reminders_SQL
 public import SQLiteData

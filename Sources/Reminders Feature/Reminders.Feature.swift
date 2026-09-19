@@ -2,12 +2,12 @@ public import CasePaths
 public import ComposableArchitecture2
 public import Dependencies
 public import Interface_ComposableArchitecture
-public import List
+import List
 public import Operation
-public import Reminder
+import Reminder
 public import Reminders
 import Reminders_Dependency
-public import Tagged
+import Tagged
 
 // The interface's Calls are the features' actions.
 
@@ -39,15 +39,15 @@ extension Reminders {
 
         public init() {}
 
-        public var body: some ComposableArchitecture2.FeatureProtocol<State, Action> {
-            ComposableArchitecture2.Features {
+        public var body: some FeatureProtocol<State, Action> {
+            Features {
                 ComposableArchitecture2.Update { state, action in
                     // The page showing a deleted list is gone before the call runs.
                     if case let .call(.lists(.delete(request))) = action, state.page?.list == request.id {
                         state.page = nil
                     }
                 }
-                ComposableArchitecture2.Scope(\.summary) { Observing(reminders.read) }
+                Scope(\.summary) { Observing(reminders.read) }
             }
             .calling(\.call, reminders, id: \.writes)
             .ifLet(\.page) {

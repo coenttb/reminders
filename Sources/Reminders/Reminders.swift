@@ -4,7 +4,6 @@ public import Interface_Macro
 // the value the app calls and the closures the storage fills in.
 @Interface
 public struct Reminders: Reminders.Interface {
-    @Operations
     public protocol Interface {
         var create: Reminders.Create { get }
         var read: Reminders.Read { get }

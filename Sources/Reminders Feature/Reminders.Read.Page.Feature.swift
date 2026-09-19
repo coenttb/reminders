@@ -1,9 +1,9 @@
 public import ComposableArchitecture2
 public import Dependencies
-public import Foundation
+import Foundation
 public import Interface_ComposableArchitecture
 public import List
-public import Operation
+import Operation
 public import Reminder
 public import Reminders
 import Reminders_Dependency

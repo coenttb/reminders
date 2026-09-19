@@ -1,12 +1,12 @@
 public import ComposableArchitecture2
 import Interface_ComposableArchitecture
-public import List
+import List
 import Operation
-public import Reminder
+import Reminder
 public import Reminders
 public import Reminders_Feature
 public import SwiftUI
-public import Tagged
+import Tagged
 
 extension Reminders.Read.Page {
     public struct SwiftUI {

@@ -1,9 +1,9 @@
 public import ComposableArchitecture2
-public import Reminder
+import Reminder
 public import Reminders
 public import Reminders_Feature
 public import SwiftUI
-public import Tagged
+import Tagged
 
 extension Reminders.Update {
     public struct SwiftUI {
