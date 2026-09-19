@@ -1,4 +1,4 @@
-public import Interface_ComposableArchitecture
-public import Reminder
+// Aspirational syntax; see FEATURE-SYNTAX.md. Bridge support is not implemented.
 
-extension Reminder: EditableRecord {}
+// No declaration required. Editing selects the existing writable \.draft lens.
+// Record identity comes from Identifiable; no bridge marker conformance is needed.

@@ -1,4 +1,4 @@
-public import Interface_ComposableArchitecture
-public import Reminders
+// Aspirational syntax; see FEATURE-SYNTAX.md. Bridge support is not implemented.
 
-extension Reminders.Read.Page.Value: ListingValue {}
+// No declaration required. Listing selects the existing \.rows projection.
+// The domain value does not need a bridge-specific ListingValue conformance.

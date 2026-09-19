@@ -1,13 +1,11 @@
-import Optic
-import DebugSnapshots
-import CasePaths
-public import ComposableArchitecture2
+// Aspirational syntax; see FEATURE-SYNTAX.md. Bridge support is not implemented.
 public import Interface_ComposableArchitecture
 public import Reminders
-import Operation
 
-@FeatureComposition(
-    .observing(Reminders.Read.Run.self),
-    .presented(Reminders.Read.Structure.page.self)
-)
-extension Reminders.Read: FeatureProtocol {}
+@Feature
+extension Reminders.Read {
+    public var body: some Feature {
+        Observing(self)
+        Presenting(\.page)
+    }
+}
