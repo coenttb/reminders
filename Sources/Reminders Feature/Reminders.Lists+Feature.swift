@@ -7,7 +7,7 @@ public import Reminders
 import Operation
 
 @FeatureComposition(
-    .observing(Reminders.Read.Run.self),
-    .presented(Reminders.Read.Structure.page.self)
+    .presented(Reminders.Lists.Structure.create.self),
+    calls: Reminders.Lists.Call.self
 )
-extension Reminders.Read: FeatureProtocol {}
+extension Reminders.Lists: FeatureProtocol {}
