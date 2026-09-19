@@ -17,6 +17,7 @@ let package = Package(
         .library(name: "Reminders SwiftUI", targets: ["Reminders SwiftUI"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-debug-snapshots", from: "0.4.0"),
         .package(url: "https://github.com/pointfreeco/TCA26.git", branch: "main", traits: ["Dependencies", "Clocks"]),
         .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0", traits: ["Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.39.1", traits: ["Tagged"]),
@@ -98,6 +99,7 @@ let package = Package(
         .target(
             name: "Reminders Feature",
             dependencies: [
+                .product(name: "DebugSnapshots", package: "swift-debug-snapshots"),
                 .product(name: "CasePaths", package: "swift-case-paths"),
                 .product(name: "ComposableArchitecture2", package: "TCA26"),
                 .product(name: "Interface ComposableArchitecture", package: "swift-interface-composable-architecture"),

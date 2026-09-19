@@ -3,7 +3,7 @@ public import Interface_ComposableArchitecture
 public import List
 public import Reminder
 public import Reminders
-public import Operation
+import Operation
 public import Tagged
 
 // Relationships between existing values, not new domain types or operation signatures.
@@ -11,20 +11,8 @@ extension Reminder: EditableRecord {}
 extension Reminders.Read.Page.Value: ListingValue {}
 
 extension Reminders {
-    public typealias Page = Listing<Read.Page.Run, Call>
-    public typealias Editing = Interface_ComposableArchitecture.Editing<Reminder>
-
-    public var page: Page {
-        Page(
-            read.page,
-            commands: self,
-            editing: editing,
-            deleting: \.delete?.id
-        )
-    }
-
-    public var editing: Editing {
-        Editing(
+    public var editing: Interface_ComposableArchitecture.Editing<Reminder> {
+        Interface_ComposableArchitecture.Editing(
             create: create.callAsFunction,
             update: update.callAsFunction,
             delete: delete.callAsFunction,

@@ -35,19 +35,19 @@ the `Call` — the coproduct of the operations' inputs and the children's calls,
 inputs are — with its constructors, its builders and `run(owner, call)`. The layers above the domain write
 against those, not against types of their own:
 
-- **Input as draft.** `Reminders.Editing.State` edits a `Reminder.Draft` and the sheet a
+- **Input as draft.** `Reminders.Update.State` edits a `Reminder.Draft` and the sheet a
   `Reminders.Lists.Create.Input`; a one-field input reads as its field (`$store.request.title`), the editor state
   as its draft (`$store.title`, `store.completed.toggle()`).
 - **Call as action.** The page's `Action` *is* `Reminders.Call`; the sheet's is `Reminders.Lists.Create.Call`. The root
-  composes them (`case call(Reminders.Call)`, `case page(...)`, `case newList(...)`; the summary has no actions and no case) so that every call
-  is run exactly once, by the feature whose task id carries its outcome: `.calling(self, id: \.writes)`
-  on the page, `.calling(\.call, self, id: \.writes)` at the root.
+  derives routes through `read.page` and `lists.create`; observation contributes no actions.
+  Every call is run exactly once, by the selected feature's task lifetime. A scoped list
+  command and a form submission retain their own outcomes rather than becoming root calls.
 - **Sugar over the call.** `.delete(id)`, `.update.complete(id, done)`, `.lists.delete(id)` are the Call's own
   builders (children are static members); `store.delete(id)`, `store.update.complete(id, done)`,
   `store.send()` on the sheet are the same builders handing the call to `send`. Neither returns nor throws;
   the outcome is on the task id.
-- **State the view sets.** `store.page = .init(.list(id))`, `store.editing = .init(reminder)`,
-  `store.editing = nil`, `store.newList = .init(List<Reminder>.Draft())`, `store.dismiss()`. The editor has no
+- **State the view sets.** `store.read.page = .init(.list(id))`, `store.editing = .init(reminder)`,
+  `store.editing = nil`, `store.lists.create = .init(List<Reminder>.Draft())`, `store.dismiss()`. The editor has no
   actions: leaving is what writes (create a draft, update a changed row, drop a blank one).
 - **Observing / Requesting** (swift-interface-composable-architecture): `Observing<Reminders.Read.Page.Run>(reminders.read.page)`
   follows an operation's stream for its request; `Requesting<Reminders.Lists.Create.Run>(reminders.lists.create)`
@@ -83,17 +83,29 @@ injection with that function. It is emitted beside the coproduct, with a type al
 add another action representation. Explicit conformance to the nested semantic protocol
 remains part of the declaration; macros cannot announce that arbitrary nested conformance.
 
-Previous checkpoint validation, on 19 September 2026: the shared workspace scheme passed **84 tests across 11
-test targets** on macOS 27, including the app layers, private-domain sending, name hygiene,
-structural capabilities, and both direct and wrapped Store actions. Consumer compilation
-treats MemberImportVisibility diagnostics as errors. The same workspace also builds the
-app for iOS 27 Simulator on arm64 and x86_64.
-
 ## Derived interpretations and explicit policies
 
-The domain keeps its original operation types. There are no new Page or Editing domain
-interfaces and no hand-written page/editor feature types. In the integration target,
-`Reminders.Page` and `Reminders.Editing` are only aliases for reusable bridge interpretations.
+The domain keeps its original operation types. `Reminders.Read.Page`, `Reminders.Lists.Create`,
+and `Reminders.Update` adopt FeatureProtocol in the integration target, aliasing the existing
+Listing, Requesting, and Editing state. There are no additional Page or Editing domain types.
+
+`@Interface` emits canonical typed child projections under `Structure`. The bridge's
+`@FeatureComposition` selects required children, optional presentations, and observation:
+
+```swift
+@FeatureComposition(
+    .required(Reminders.Structure.read.self),
+    .required(Reminders.Structure.lists.self),
+    calls: Reminders.Call.self
+)
+extension Reminders {}
+```
+
+It derives State as the product of selected child states and Action as their routed sum,
+reusing canonical calls. State and Action are aliases to the generated interpretation;
+there are no handwritten copies. Read owns its optional page; Lists owns optional Create.
+Required children project as scoped stores, so `store.lists.delete(id)` and
+`store.lists.create = .init(...)` share the existing child state and lifetime.
 
 | Interpretation | Canonical algebra consumed | Policy |
 |---|---|---|
@@ -121,11 +133,16 @@ Reminders declares its remaining meaning in `Reminders+Interpretations.swift`:
 - Only update's notFound error is ignored, for the disappearance race.
 - The canonical delete case identifies which displayed edit to dismiss.
 
-The root extends `Reminders` directly using TCA's `@FeatureExtension`. That macro uses
-TCA's existing derivation implementation for source-extension state and scopes; it does
-not synthesize stored FeatureStore machinery on the domain. Feature state stays in stores.
-It composes `self.page`, the generic listing, and a requesting interpretation for the sheet.
-The root's remaining custom code is its navigation policy: deleting a list closes its page.
+The root's custom body is in a separate source conformance extension. Separating it from
+the composition declaration avoids Swift 6.4's macro lookup cycle for a source body's
+inherited feature builder. Its remaining custom policy closes a list's page before deletion.
+
+The composition macro attaches TCA's @Feature to its generated implementation. Generated
+types declare conformances directly, while attached macros derive their witnesses; no
+conformance relies on nested extension-macro lowering. Task identifiers and scopes belong
+to this interpretation, not the domain. Compositions publish their actual owner in the
+feature environment; WithInterface lets the page reuse its ancestor's editing capabilities
+without obtaining another implementation from a global dependency.
 
 Views retain their existing names and `store.update.complete(...)`, `store.delete(...)`,
 and `store.send()` syntax. The operation namespace still requires qualifying TCA's Update
@@ -147,16 +164,19 @@ operation algebra retains its wider ownership support.
 
 A root macro cannot attach arbitrary conformances to imported child types, and Swift 6.4
 cannot lower nested extension macros emitted inside another macro's extension output.
-Generic interpreters avoid needing those conformances. The optional direct root conformance
-uses an explicit source extension. No global state or unsafe conformance is introduced to
-simulate extension storage.
+Existing domain types therefore receive their feature interpretations in explicit source
+extensions. Generated types declare their own conformances and attach the owning macros
+for member derivation. No global state or unsafe conformance simulates extension storage.
 
 ## Current validation
 
-The exact **Reminders Architecture** workspace scheme builds and passes **96 tests across
-11 targets on macOS 27**, with zero failures or skips. This includes the database and view
-consumers, typed execution, default command interpretation, source-extension feature scopes,
-editing policies, draft-lens laws, and cancellation of replaced live observations.
-MemberImportVisibility remains a hard error. The same workspace also builds the app for
-iOS 27 Simulator on arm64 and x86_64. The earlier 84-test count describes the previous
-checkpoint.
+The exact **Reminders Architecture** workspace scheme builds and passes **108 tests
+across 11 targets on macOS 27**, with no failures, skips, or runtime warnings. This
+includes nested presentation and dismissal, scoped property sending and error ownership,
+root versus child execution routes, actionless observation, editing policies, and the
+domain's compiled macro consumers. The workspace's **Feature Macro Tests** scheme also
+passes **52 TCA macro tests**, including explicit-conformance generation.
+MemberImportVisibility remains a hard error. All affected packages resolve through the
+workspace, and package manifests use URL dependencies exclusively.
+
+The same workspace builds the app for iOS 27 Simulator.

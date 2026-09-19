@@ -31,23 +31,23 @@ struct `Reminders feature` {
     var personal: List<Reminder>.ID { sample.lists[0].id }
 
     // Opening a page starts its observation, which never ends; a test awaits the page's writes, not the action.
-    func page(_ store: TestStore<Reminders>) throws -> Reminders.Page.State {
-        try #require(store.page)
+    func page(_ store: TestStore<Reminders>) throws -> Reminders.Read.Page.State {
+        try #require(store.read.page)
     }
 
     @Test func `a new row is drafted, edited in place, and created when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
-            store.modify { $0.page = .init(.list(personal)) }
-            #expect(store.page?.contents.request.filter == .list(personal))
-            store.modify { $0.page?.editing = .init(Reminder.Draft(list: personal)) }
-            store.modify { $0.page?.editing?.title = "Water plants" }
+            store.modify { $0.read.page = .init(.list(personal)) }
+            #expect(store.read.page?.contents.request.filter == .list(personal))
+            store.modify { $0.read.page?.editing = .init(Reminder.Draft(list: personal)) }
+            store.modify { $0.read.page?.editing?.title = "Water plants" }
             // Dismissing the editor creates the row.
-            await store.modify { $0.page?.editing = nil }?.value
+            await store.modify { $0.read.page?.editing = nil }?.value
             var pages = reminders.read.page(filter: .list(personal)).makeAsyncIterator()
             let page = try await pages.next()
             #expect(page?.rows.map(\.title) == ["Groceries", "Haircut", "Water plants"])
-            while store.page?.contents.rows?.count != 3 { await Task.yield() }
+            while store.read.page?.contents.rows?.count != 3 { await Task.yield() }
             await store.dismount()
         }
     }
@@ -55,9 +55,9 @@ struct `Reminders feature` {
     @Test func `a blank draft is dropped when the editor leaves`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
-            store.modify { $0.page = .init(.list(personal)) }
-            store.modify { $0.page?.editing = .init(Reminder.Draft(list: personal)) }
-            await store.modify { $0.page?.editing = nil }?.value
+            store.modify { $0.read.page = .init(.list(personal)) }
+            store.modify { $0.read.page?.editing = .init(Reminder.Draft(list: personal)) }
+            await store.modify { $0.read.page?.editing = nil }?.value
             var pages = reminders.read.page(filter: .list(personal)).makeAsyncIterator()
             let page = try await pages.next()
             #expect(page?.rows.count == 2)
@@ -69,10 +69,10 @@ struct `Reminders feature` {
     @Test func `a failed call is recorded on the page's writes`() async throws {
         await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
-            store.modify { $0.page = .init(.list(personal)) }
-            store.send(.page(.update.complete(Reminder.ID(UUID()), true)))
+            store.modify { $0.read.page = .init(.list(personal)) }
+            store.send(.read(.page(.update.complete(Reminder.ID(UUID()), true))))
             await #expect(throws: Reminders.Update.Error.notFound) { try await page(store).writes() }
-            #expect(store.page?.writes.taskError is Reminders.Update.Error)
+            #expect(store.read.page?.writes.taskError is Reminders.Update.Error)
             await store.dismount()
         }
     }
@@ -81,15 +81,15 @@ struct `Reminders feature` {
     @Test func `a delete call closes its editor and removes the row from the observed page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
-            store.modify { $0.page = .init(.list(personal)) }
-            while store.page?.contents.rows == nil { await Task.yield() }
-            let groceries = try #require(store.page?.contents.rows?.first(where: { $0.title == "Groceries" }))
-            store.modify { $0.page?.editing = .init(groceries) }
-            store.send(.page(.delete(groceries.id)))
-            #expect(store.page?.editing == nil)
+            store.modify { $0.read.page = .init(.list(personal)) }
+            while store.read.page?.contents.rows == nil { await Task.yield() }
+            let groceries = try #require(store.read.page?.contents.rows?.first(where: { $0.title == "Groceries" }))
+            store.modify { $0.read.page?.editing = .init(groceries) }
+            store.send(.read(.page(.delete(groceries.id))))
+            #expect(store.read.page?.editing == nil)
             try await page(store).writes()
-            while store.page?.contents.rows?.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
-            #expect(store.page?.contents.rows?.map(\.title) == ["Haircut"])
+            while store.read.page?.contents.rows?.contains(where: { $0.id == groceries.id }) == true { await Task.yield() }
+            #expect(store.read.page?.contents.rows?.map(\.title) == ["Haircut"])
             await store.dismount()
         }
     }
@@ -98,18 +98,18 @@ struct `Reminders feature` {
         let deleting: (Reminders.Action) -> List<Reminder>.ID? = \.call?.lists?.delete?.id
         expectNoDifference(deleting(.call(.lists.delete(personal))), personal)
         #expect(deleting(.call(.delete(sample.reminders[0].id))) == nil)
-        #expect(deleting(.page(.lists.delete(personal))) == nil)
+        #expect(deleting(.read(.page(.lists.delete(personal)))) == nil)
     }
 
     // Deleting a list is a call; the page showing that list is gone.
     @Test func `a list delete closes its page`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
-            store.modify { $0.page = .init(.list(personal)) }
+            store.modify { $0.read.page = .init(.list(personal)) }
             store.send(.call(.lists.delete(personal)))
-            #expect(store.page == nil)
+            #expect(store.read.page == nil)
             try await store.writes()
-            while store.summary.lists?.map(\.list.title) != ["Family"] { await Task.yield() }
+            while store.read.lists?.map(\.list.title) != ["Family"] { await Task.yield() }
             await store.dismount()
         }
     }
@@ -117,16 +117,16 @@ struct `Reminders feature` {
     @Test func `editing overlays the observed record then saves its final draft`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
-            store.modify { $0.page = .init(.list(personal)) }
-            while store.page?.contents.rows == nil { await Task.yield() }
-            let original = try #require(store.page?.rows.first)
-            store.modify { $0.page?.editing = .init(original) }
-            store.modify { $0.page?.editing?.title = "Edited title" }
-            let overlay = try #require(store.page?.rows.first(where: { $0.id == original.id }))
+            store.modify { $0.read.page = .init(.list(personal)) }
+            while store.read.page?.contents.rows == nil { await Task.yield() }
+            let original = try #require(store.read.page?.rows.first)
+            store.modify { $0.read.page?.editing = .init(original) }
+            store.modify { $0.read.page?.editing?.title = "Edited title" }
+            let overlay = try #require(store.read.page?.rows.first(where: { $0.id == original.id }))
             expectNoDifference(overlay.title, "Edited title")
             expectNoDifference(overlay.created, original.created)
             expectNoDifference(try reminders.read(original.id), original)
-            await store.modify { $0.page?.editing = nil }?.value
+            await store.modify { $0.read.page?.editing = nil }?.value
             let saved = try reminders.read(original.id)
             expectNoDifference(saved.title, "Edited title")
             expectNoDifference(saved.id, original.id)

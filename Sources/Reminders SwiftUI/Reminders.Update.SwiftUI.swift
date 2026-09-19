@@ -1,5 +1,5 @@
 public import ComposableArchitecture2
-public import Interface_ComposableArchitecture
+import Interface_ComposableArchitecture
 import Reminder
 public import Reminders
 public import Reminders_Feature
@@ -8,10 +8,10 @@ import Tagged
 
 extension Reminders.Update {
     public struct SwiftUI {
-        @Bindable private var store: StoreOf<Reminders.Editing>
+        @Bindable private var store: StoreOf<Reminders.Update>
         private var focus: FocusState<Bool>.Binding
 
-        public init(store: StoreOf<Reminders.Editing>, focus: FocusState<Bool>.Binding) {
+        public init(store: StoreOf<Reminders.Update>, focus: FocusState<Bool>.Binding) {
             self.store = store
             self.focus = focus
         }

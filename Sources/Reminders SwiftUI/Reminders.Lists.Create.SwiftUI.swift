@@ -1,5 +1,5 @@
 public import ComposableArchitecture2
-public import Interface_ComposableArchitecture
+import Interface_ComposableArchitecture
 import List
 import Operation
 import Reminder
@@ -10,9 +10,9 @@ public import SwiftUI
 extension Reminders.Lists.Create {
     // The sheet: `lists.create`'s request, composed and sent whole.
     public struct SwiftUI {
-        @Bindable private var store: StoreOf<Requesting<Reminders.Lists.Create.Run>>
+        @Bindable private var store: StoreOf<Reminders.Lists.Create>
 
-        public init(store: StoreOf<Requesting<Reminders.Lists.Create.Run>>) {
+        public init(store: StoreOf<Reminders.Lists.Create>) {
             self.store = store
         }
     }

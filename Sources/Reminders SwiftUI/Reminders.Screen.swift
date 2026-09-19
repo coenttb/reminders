@@ -22,24 +22,26 @@ extension Reminders {
 
 extension Reminders.Screen: SwiftUI::View {
     public var body: some SwiftUI::View {
+        @Bindable var read = store.read
+        @Bindable var lists = store.lists
         NavigationStack {
             SwiftUI::List {
                 Reminders.Read.SwiftUI(store: store)
-                if let error = store.writes.taskError {
+                if let error = store.lists.writes.taskError ?? store.writes.taskError {
                     Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
                 }
             }
             .navigationTitle("Reminders")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Add List", systemImage: "plus") { store.newList = .init(List<Reminder>.Draft()) }
+                    Button("Add List", systemImage: "plus") { store.lists.create = .init(List<Reminder>.Draft()) }
                 }
             }
-            .navigationDestination(item: $store.scope(\.page)) { page in
-                Reminders.Read.Page.SwiftUI(store: page, title: page.list.flatMap { store.summary.lists?.first(id: $0) }?.list.title ?? "All")
+            .navigationDestination(item: $read.scope(\.page)) { page in
+                Reminders.Read.Page.SwiftUI(store: page, title: page.list.flatMap { store.read.lists?.first(id: $0) }?.list.title ?? "All")
             }
         }
-        .sheet(item: $store.scope(\.newList)) { form in
+        .sheet(item: $lists.scope(\.create)) { form in
             NavigationStack { Reminders.Lists.Create.SwiftUI(store: form) }
         }
     }

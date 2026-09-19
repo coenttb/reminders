@@ -4,6 +4,7 @@ import DependenciesTestSupport
 import Foundation
 import Interface_ComposableArchitecture
 import List
+import Operation
 import Reminder
 import Reminders
 import Reminders_Dependency
@@ -23,7 +24,31 @@ struct `Reminders root` {
     @Test func `the screen observes the database through its store`() async throws {
         let store = Store(initialState: Reminders.State()) { reminders }
         _ = Reminders.Screen(store: store)
-        while store.summary.lists == nil { await Task.yield() }
-        #expect(store.summary.lists?.map(\.list.title) == ["Personal", "Family"])
+        while store.read.lists == nil { await Task.yield() }
+        #expect(store.read.lists?.map(\.list.title) == ["Personal", "Family"])
     }
+
+    @Test func `scoped list sending closes the matching nested page`() async throws {
+        let personal = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).lists[0].id
+        let store = Store(initialState: Reminders.State()) { reminders }
+        store.read.page = .init(.list(personal))
+        store.lists.delete(personal)
+        #expect(store.state.read.page == nil)
+        try await store.lists.writes()
+        while store.read.lists?.map(\.list.title) != ["Family"] { await Task.yield() }
+        #expect(store.writes.taskError == nil)
+    }
+
+    @Test func `nested create presentation sends its request and dismisses on success`() async throws {
+        let store = Store(initialState: Reminders.State()) { reminders }
+        store.lists.create = .init(List<Reminder>.Draft())
+        let form = try #require(store.lists.scope(\.create))
+        form.title = "Work"
+        let sending = form.sending
+        form.send()
+        try await sending()
+        #expect(store.state.lists.create == nil)
+        while store.read.lists?.contains(where: { $0.list.title == "Work" }) != true { await Task.yield() }
+    }
+
 }
