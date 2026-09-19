@@ -9,38 +9,24 @@ public import SwiftUI
 import Tagged
 
 extension Reminders.Read.Page {
+    @View(Reminders.Read.Page.self)
     public struct SwiftUI {
-        @Bindable private var store: StoreOf<Reminders.Read.Page>
         private var title: String
-        // The editor is the only text field on the page: focus is on it or nowhere.
-        @FocusState private var focus: Bool
-
-        public init(store: StoreOf<Reminders.Read.Page>, title: String) {
-            self.store = store
-            self.title = title
-        }
     }
 }
 
 extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
     public var body: some SwiftUI::View {
         SwiftUI::List {
-            ForEach(store.rows) { reminder in
-                // The editor is one view that moves between rows; every other row is a plain value.
-                if reminder.id == store.editing?.id, let editor = store.scope(\.editing) {
-                    Reminders.Update.SwiftUI(store: editor, focus: $focus)
-                } else {
-                    Reminder.Row.SwiftUI(
-                        reminder: reminder,
-                        complete: { store.update.complete(reminder.id, !reminder.completed) },
-                        delete: { store.delete(reminder.id) },
-                        edit: { store.editing = .init(reminder) }
-                    )
-                }
-            }
-            // A new row is a draft until its editor leaves.
-            if store.editing?.original == nil, let editor = store.scope(\.editing) {
-                Reminders.Update.SwiftUI(store: editor, focus: $focus)
+            EditingRows(store) { reminder in
+                Reminder.Row.SwiftUI(
+                    reminder: reminder,
+                    complete: { store.update.complete(reminder.id, !reminder.completed) },
+                    delete: { store.delete(reminder.id) },
+                    edit: { store.editing = .init(reminder) }
+                )
+            } editor: { editor in
+                Reminders.Update.SwiftUI(store: editor)
             }
             if let error = store.writes.taskError {
                 Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
@@ -53,7 +39,6 @@ extension Reminders.Read.Page.SwiftUI: SwiftUI::View {
         }
         .listStyle(.plain)
         .navigationTitle(title)
-        .onChange(of: store.editing == nil) { _, ended in focus = !ended }
         .toolbar {
             if store.editing != nil {
                 ToolbarItem(placement: .confirmationAction) {

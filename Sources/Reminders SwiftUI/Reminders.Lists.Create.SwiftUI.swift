@@ -9,12 +9,8 @@ public import SwiftUI
 
 extension Reminders.Lists.Create {
     // The sheet: `lists.create`'s request, composed and sent whole.
+    @View(Reminders.Lists.Create.self)
     public struct SwiftUI {
-        @Bindable private var store: StoreOf<Reminders.Lists.Create>
-
-        public init(store: StoreOf<Reminders.Lists.Create>) {
-            self.store = store
-        }
     }
 }
 

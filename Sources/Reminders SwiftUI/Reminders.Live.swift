@@ -17,6 +17,6 @@ extension StoreOf<Reminders> {
             #endif
         }
         @Dependency(\.reminders) var reminders
-        return Store(initialState: State()) { reminders }
+        return Store(initialState: .init()) { reminders }
     }
 }

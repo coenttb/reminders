@@ -1,3 +1,4 @@
+import Interface_ComposableArchitecture
 public import Reminder
 public import SwiftUI
 
@@ -6,18 +7,13 @@ extension Reminder {
 }
 
 extension Reminder.Row {
+    @View
     public struct SwiftUI {
         private var reminder: Reminder
         private var complete: () -> Void
         private var delete: () -> Void
         private var edit: () -> Void
 
-        public init(reminder: Reminder, complete: @escaping () -> Void, delete: @escaping () -> Void, edit: @escaping () -> Void) {
-            self.reminder = reminder
-            self.complete = complete
-            self.delete = delete
-            self.edit = edit
-        }
     }
 }
 
