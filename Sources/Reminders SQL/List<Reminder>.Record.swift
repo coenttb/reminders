@@ -1,3 +1,4 @@
+public import Interface_Macro
 public import List
 public import Reminder
 public import StructuredQueries
@@ -5,16 +6,11 @@ public import Tagged
 
 extension List<Reminder> {
     @Table("lists")
+    @Memberwise
     public struct Record: Identifiable, Hashable, Sendable {
         public let id: List<Reminder>.ID
         public var title: String = ""
         public var position: Int = 0
-
-        public init(id: List<Reminder>.ID, title: String = "", position: Int = 0) {
-            self.id = id
-            self.title = title
-            self.position = position
-        }
     }
 }
 
@@ -27,14 +23,10 @@ extension List<Reminder>.Record {
 
     // The list with its open count, selected from the join with its reminders.
     @Selection
+    @Memberwise
     public struct Entry: Hashable, Sendable {
         public let list: List<Reminder>.Record
         public let count: Int
-
-        public init(list: List<Reminder>.Record, count: Int) {
-            self.list = list
-            self.count = count
-        }
     }
 }
 

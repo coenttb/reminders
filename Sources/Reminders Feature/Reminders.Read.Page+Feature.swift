@@ -9,9 +9,9 @@ extension Reminders.Read.Page: FeatureProtocol {
         Listing(
             self,
             rows: \.rows,
-            commands: Reminders.self,
-            editing: \.editing,
-            deleting: \.delete?.id
+            editing: \Reminders.editing
         )
+            .editing.commit(on: .dismiss)
+            .editing.discard(on: .delete)
     }
 }

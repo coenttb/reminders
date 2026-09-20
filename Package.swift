@@ -34,12 +34,14 @@ let package = Package(
         .target(
             name: "List",
             dependencies: [
+                .product(name: "Interface Macro", package: "swift-interface"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
         .target(
             name: "Reminder",
             dependencies: [
+                .product(name: "Interface Macro", package: "swift-interface"),
                 "List",
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
@@ -57,6 +59,7 @@ let package = Package(
         .target(
             name: "Reminders Dependency",
             dependencies: [
+                .product(name: "Interface Dependencies", package: "swift-interface"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 "List",
                 "Reminders",
@@ -65,6 +68,7 @@ let package = Package(
         .target(
             name: "Reminders Sample",
             dependencies: [
+                .product(name: "Interface Macro", package: "swift-interface"),
                 "List",
                 "Reminder",
                 "Reminders",
@@ -74,6 +78,7 @@ let package = Package(
         .target(
             name: "Reminders SQL",
             dependencies: [
+                .product(name: "Interface Macro", package: "swift-interface"),
                 "List",
                 "Reminder",
                 "Reminders",
@@ -84,6 +89,7 @@ let package = Package(
         .target(
             name: "Reminders SQLite",
             dependencies: [
+                .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "GRDB", package: "GRDB.swift"),
                 "List",

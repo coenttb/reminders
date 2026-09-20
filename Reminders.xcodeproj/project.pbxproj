@@ -14,7 +14,6 @@
 
 		D20000000000000000000001 /* Dependencies in Frameworks */ = {isa = PBXBuildFile; productRef = D10000000000000000000001 /* Dependencies */; };
 		D20000000000000000000002 /* Reminders Dependency in Frameworks */ = {isa = PBXBuildFile; productRef = D10000000000000000000002 /* Reminders Dependency */; };
-		D20000000000000000000003 /* Reminders Sample in Frameworks */ = {isa = PBXBuildFile; productRef = D10000000000000000000003 /* Reminders Sample */; };
 		D20000000000000000000004 /* Reminders SQLite in Frameworks */ = {isa = PBXBuildFile; productRef = D10000000000000000000004 /* Reminders SQLite */; };
 /* End PBXBuildFile section */
 
@@ -34,7 +33,6 @@
 				06EC28BE851A8FD6B446AA92 /* Reminders in Frameworks */,
 				7596E68F2713AA61C5901E7D /* Reminders Feature in Frameworks */,
 				D20000000000000000000004 /* Reminders SQLite in Frameworks */,
-				D20000000000000000000003 /* Reminders Sample in Frameworks */,
 				D20000000000000000000002 /* Reminders Dependency in Frameworks */,
 				D20000000000000000000001 /* Dependencies in Frameworks */,
 			);
@@ -98,7 +96,6 @@
 				61A54CEFEA9693F97F2D927D /* Reminders */,
 				C046252036DA7C48DB8E0A33 /* Reminders Feature */,
 				D10000000000000000000004 /* Reminders SQLite */,
-				D10000000000000000000003 /* Reminders Sample */,
 				D10000000000000000000002 /* Reminders Dependency */,
 				D10000000000000000000001 /* Dependencies */,
 			);
@@ -311,11 +308,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 01B0D0C6B55C4DC2559769B4;
 			productName = "Reminders Dependency";
-		};
-		D10000000000000000000003 /* Reminders Sample */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 01B0D0C6B55C4DC2559769B4;
-			productName = "Reminders Sample";
 		};
 		D10000000000000000000004 /* Reminders SQLite */ = {
 			isa = XCSwiftPackageProductDependency;

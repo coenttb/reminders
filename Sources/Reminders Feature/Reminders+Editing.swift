@@ -10,8 +10,7 @@ extension Reminders {
             update: update,
             delete: delete,
             draft: \.draft,
-            blank: .discardNewDeleteExisting(\.isBlank),
-            ignoreUpdateFailure: Update.Error.notFound
+            blank: .discardNewDeleteExisting(\.isBlank)
         )
     }
 }

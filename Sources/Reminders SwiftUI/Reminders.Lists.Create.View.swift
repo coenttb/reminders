@@ -14,9 +14,7 @@ extension Reminders.Lists.Create {
         public var body: some SwiftUI::View {
             SwiftUI::Form {
                 TextField("List Name", text: $store.title)
-                if let error = store.sending.taskError {
-                    Section("Not saved") { Text(error.localizedDescription).foregroundStyle(.red) }
-                }
+                TaskFailure("Not saved", store.sending)
             }
             .navigationTitle("New List")
             .toolbar {

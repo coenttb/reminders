@@ -8,10 +8,7 @@ public import Reminders
 @Interface_ComposableArchitecture.Feature
 extension Reminders: FeatureProtocol {
     public var body: some Feature {
-        Features {
-            Child(\.read)
-            Child(\.lists)
-        }
-        .dismiss(\.read.page, matching: \.filter.list, before: \.lists?.delete?.id)
+        Children(\.read, \.lists)
+            .discard(\.read.page, matching: \.filter.list, before: \.lists?.delete?.id)
     }
 }

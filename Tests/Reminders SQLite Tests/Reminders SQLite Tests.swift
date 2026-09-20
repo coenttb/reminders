@@ -19,7 +19,7 @@ struct `Reminders SQLite storage` {
     @Dependency(\.date.now) var now
 
     func makeDatabase() throws -> (reminders: Reminders, sample: Reminders.Sample) {
-        let database = try Reminders.Schema.database()
+        let database = try Reminders.database()
         let sample = Reminders.sample(at: now)
         try database.write { db in try sample.initialize(in: db) }
         return (.sqlite(database), sample)

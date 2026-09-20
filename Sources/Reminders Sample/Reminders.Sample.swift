@@ -1,3 +1,4 @@
+public import Interface_Macro
 public import Foundation
 public import List
 public import Reminder
@@ -5,14 +6,10 @@ public import Reminders
 import Tagged
 
 extension Reminders {
+    @Memberwise
     public struct Sample: Hashable, Sendable {
         public var lists: [List<Reminder>]
-        public var reminders: [Reminder]
-
-        public init(lists: [List<Reminder>], reminders: [Reminder] = []) {
-            self.lists = lists
-            self.reminders = reminders
-        }
+        public var reminders: [Reminder] = []
     }
 
     public static func sample(at now: Date) -> Sample {

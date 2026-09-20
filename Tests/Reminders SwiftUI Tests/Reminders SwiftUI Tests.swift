@@ -24,7 +24,7 @@ struct `Reminders views` {
 
     @Test func `a row is built from a value; the page from a store`() {
         let reminder = Reminder(id: Reminder.ID(UUID()), list: List<Reminder>.ID(UUID()), title: "Milk", created: Date())
-        _ = Reminder.View(reminder: reminder, complete: {}, delete: {}, edit: {})
+        _ = Reminder.View.Row(reminder: reminder, complete: {}, delete: {}, edit: {})
         let store = Store(initialState: Reminders.Read.Page.State(.all)) { reminders.read.page.interface(reminders) }
         _ = Reminders.Read.Page.View(store: store, title: "All")
     }
@@ -41,8 +41,9 @@ struct `Reminders views` {
         _ = Reminders.Read.Page.View(store: page, title: "All")
         let list = List<Reminder>.ID(UUID())
         page.editing = .init(Reminder.Draft(list: list))
-        let editing = try #require(page.scope(\.editing))
-        _ = Reminders.Update.View(store: editing)
+        @Bindable var editing = try #require(page.scope(\.editing))
+        _ = Reminder.View(draft: $editing.draft)
+        _ = Reminder.View.Row.Editor(draft: $editing.draft, submit: editing.dismiss)
         editing.title = "Shared draft"
         #expect(root.state.read.page?.editing?.title == "Shared draft")
         // Clear the draft before ending the test: the empty draft is discarded.

@@ -2,15 +2,8 @@ public import Reminders
 public import SQLiteData
 
 extension Reminders {
-    public enum Schema {}
-}
-
-extension Reminders.Schema {
     public static func migrate(_ database: some DatabaseWriter) throws {
         var migrator = DatabaseMigrator()
-        #if DEBUG
-        migrator.eraseDatabaseOnSchemaChange = true
-        #endif
         migrator.registerMigration("Create the Reminders tables") { db in
             try #sql("""
                 CREATE TABLE "lists" (

@@ -13,19 +13,17 @@ extension Reminders {
     // app composes the same views under its own tree beside this one.
     @View(Reminders.self)
     public struct View {
-        
+
         public var body: some SwiftUI::View {
             NavigationStack {
                 SwiftUI::List {
                     Reminders.Read.View(store: store)
-                    if let error = store.lists.writes.taskError ?? store.writes.taskError {
-                        Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
-                    }
+                    TaskFailure(store.lists.writes, store.writes).font(.footnote)
                 }
                 .navigationTitle("Reminders")
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Add List", systemImage: "plus") { store.lists.create = .init(List<Reminder>.Draft()) }
+                        Button("Add List", systemImage: "plus") { store.lists.create = .init() }
                     }
                 }
                 .navigationDestination(item: $store.read.page) { page in

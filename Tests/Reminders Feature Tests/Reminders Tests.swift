@@ -114,7 +114,7 @@ struct `Reminders feature` {
         }
     }
 
-    @Test func `editing overlays the observed record then saves its final draft`() async throws {
+    @Test func `editing preserves observed rows until its final draft is saved`() async throws {
         try await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
             store.modify { $0.read.page = .init(.list(personal)) }
@@ -122,9 +122,9 @@ struct `Reminders feature` {
             let original = try #require(store.read.page?.rows.first)
             store.modify { $0.read.page?.editing = .init(original) }
             store.modify { $0.read.page?.editing?.title = "Edited title" }
-            let overlay = try #require(store.read.page?.rows.first(where: { $0.id == original.id }))
-            expectNoDifference(overlay.title, "Edited title")
-            expectNoDifference(overlay.created, original.created)
+            let observed = try #require(store.read.page?.rows.first(where: { $0.id == original.id }))
+            expectNoDifference(observed, original)
+            #expect(store.read.page?.editing?.title == "Edited title")
             expectNoDifference(try reminders.read(original.id), original)
             await store.modify { $0.read.page?.editing = nil }?.value
             let saved = try reminders.read(original.id)

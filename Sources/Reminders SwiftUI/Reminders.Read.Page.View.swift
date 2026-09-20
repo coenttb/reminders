@@ -14,21 +14,21 @@ extension Reminders.Read.Page {
 
         public var body: some SwiftUI::View {
             SwiftUI::List {
-                EditingRows(
-                    store,
+                InlineEditing(
+                    store.rows,
+                    editing: $store.editing,
+                    insertion: .afterLast,
                     row: { reminder in
-                        Reminder.View(
+                        Reminder.View.Row(
                             reminder: reminder,
                             complete: { store.update.complete(reminder.id, !reminder.completed) },
                             delete: { store.delete(reminder.id) },
                             edit: { store.editing = .init(reminder) }
                         )
                     },
-                    editor: Reminders.Update.View.init
+                    editor: Reminder.View.Row.Editor.init
                 )
-                if let error = store.writes.taskError {
-                    Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
-                }
+                TaskFailure(store.writes).font(.footnote)
             }
             .listStyle(.plain)
             .navigationTitle(title)
@@ -55,7 +55,7 @@ extension Reminders.Read.Page {
 
         private func startNewReminder() {
             guard let list = store.list else { return }
-            store.editing = .init(Reminder.Draft(list: list))
+            store.editing = .init(.init(list: list))
         }
     }
 }
