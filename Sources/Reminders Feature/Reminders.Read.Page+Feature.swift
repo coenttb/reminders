@@ -11,7 +11,5 @@ extension Reminders.Read.Page: FeatureProtocol {
             rows: \.rows,
             editing: \Reminders.editing
         )
-            .editing.commit(on: .dismiss)
-            .editing.discard(on: .delete)
     }
 }

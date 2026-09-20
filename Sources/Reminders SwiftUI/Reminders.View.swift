@@ -18,12 +18,12 @@ extension Reminders {
             NavigationStack {
                 SwiftUI::List {
                     Reminders.Read.View(store: store)
-                    TaskFailure(store.lists.writes, store.writes).font(.footnote)
+                    Tasks.Failure(store.lists.writes, store.writes).font(.footnote)
                 }
                 .navigationTitle("Reminders")
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Add List", systemImage: "plus") { store.lists.create = .init() }
+                        Button("Add List", systemImage: "plus") { store.lists.create = .init(.init()) }
                     }
                 }
                 .navigationDestination(item: $store.read.page) { page in

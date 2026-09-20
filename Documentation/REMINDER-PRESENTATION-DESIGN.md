@@ -1,5 +1,9 @@
 # Aspirational reminder call sites
 
+> Historical design checkpoint: `bb74c26`. Statements below about unimplemented
+> APIs describe that checkpoint. See [implementation status](REMINDERS-IMPLEMENTATION.md)
+> for the implemented contracts, deviations, and validation.
+
 This is a static source design, not an implemented or validated API. No builds
 or tests have run for this pass. Supporting packages remain unchanged.
 

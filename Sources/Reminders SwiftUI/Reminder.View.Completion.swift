@@ -1,6 +1,6 @@
 import Interface_ComposableArchitecture
 import Reminder
-public import SwiftUI
+import SwiftUI
 
 extension Reminder.View {
     @View

@@ -56,7 +56,7 @@ struct `Reminders root` {
     @Test func `derived navigation bindings share canonical nested presentation state`() async throws {
         let personal = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).lists[0].id
         let store = Store(initialState: Reminders.State()) { reminders }
-        @ViewStore<Reminders> var viewStore = store
+        @Stored<Reminders> var viewStore = store
         let page: Binding<StoreOf<Reminders.Read.Page>?> = $viewStore.read.page
         let create: Binding<StoreOf<Reminders.Lists.Create>?> = $viewStore.lists.create
         #expect(page.wrappedValue == nil)
@@ -65,7 +65,7 @@ struct `Reminders root` {
         #expect(page.wrappedValue?.list == personal)
         store.lists.create = .init(List<Reminder>.Draft())
         let form = try #require(create.wrappedValue)
-        @ViewStore<Reminders.Lists.Create> var formStore = form
+        @Stored<Reminders.Lists.Create> var formStore = form
         $formStore.title.wrappedValue = "Travel"
         #expect(store.state.lists.create?.request.title == "Travel")
         create.wrappedValue = nil

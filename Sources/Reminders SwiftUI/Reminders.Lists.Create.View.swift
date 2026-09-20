@@ -14,7 +14,7 @@ extension Reminders.Lists.Create {
         public var body: some SwiftUI::View {
             SwiftUI::Form {
                 TextField("List Name", text: $store.title)
-                TaskFailure("Not saved", store.sending)
+                Tasks.Failure("Not saved", store.sending)
             }
             .navigationTitle("New List")
             .toolbar {
@@ -22,7 +22,7 @@ extension Reminders.Lists.Create {
                     Button("Cancel") { store.dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    RequestButton("Done", store: store, allowing: !store.isBlank)
+                    Submit("Done", store: store, allowing: !store.isBlank)
                 }
             }
         }

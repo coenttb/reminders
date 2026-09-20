@@ -9,5 +9,5 @@ extension DependencyValues {
     }
 }
 
-@TestDependency(streams: .finished)
+@Unimplemented(streams: .finished)
 extension Reminders: TestDependencyKey {}

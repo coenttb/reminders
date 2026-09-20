@@ -14,7 +14,7 @@ extension Reminders.Read.Page {
 
         public var body: some SwiftUI::View {
             SwiftUI::List {
-                InlineEditing(
+                Editing.Rows(
                     store.rows,
                     editing: $store.editing,
                     insertion: .afterLast,
@@ -28,7 +28,7 @@ extension Reminders.Read.Page {
                     },
                     editor: Reminder.View.Row.Editor.init
                 )
-                TaskFailure(store.writes).font(.footnote)
+                Tasks.Failure(store.writes).font(.footnote)
             }
             .listStyle(.plain)
             .navigationTitle(title)

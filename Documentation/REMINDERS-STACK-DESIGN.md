@@ -1,5 +1,9 @@
 # Minimal Reminders stack: static design pass
 
+> Historical design checkpoint: `bb74c26`. Statements below about unimplemented
+> APIs describe that checkpoint. See [implementation status](REMINDERS-IMPLEMENTATION.md)
+> for the implemented contracts, deviations, and validation.
+
 This pass covers every source module, the app host, package declarations, and
 existing test expectations affected by the source changes. It is aspirational,
 not an implemented or compiling refactor. No build, package resolution, macro

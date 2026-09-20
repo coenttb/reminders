@@ -43,7 +43,7 @@ struct `Reminders views` {
         page.editing = .init(Reminder.Draft(list: list))
         @Bindable var editing = try #require(page.scope(\.editing))
         _ = Reminder.View(draft: $editing.draft)
-        _ = Reminder.View.Row.Editor(draft: $editing.draft, submit: editing.dismiss)
+        _ = Reminder.View.Row.Editor(draft: $editing.draft, submit: { editing.dismiss() })
         editing.title = "Shared draft"
         #expect(root.state.read.page?.editing?.title == "Shared draft")
         // Clear the draft before ending the test: the empty draft is discarded.
