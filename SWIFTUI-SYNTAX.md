@@ -20,7 +20,7 @@ store from lexical nesting: the read summary intentionally requires the root sto
 ```swift
 extension Reminders.Read {
     @View(Reminders.self)
-    public struct View: SwiftUI::View {
+    public struct View {
         public var body: some SwiftUI::View {
             // Render the summary and use the root's canonical list commands.
         }
@@ -156,3 +156,32 @@ xcodebuild -workspace reminders-architecture.xcworkspace \
   validate this refactor rather than relying on the baseline's user device report.
 - **Checkpoint discipline:** changes remain on the existing branches and are
   committed with the configured human identity; nothing is pushed.
+
+## Further derivation reuse
+
+The source Filter now attaches @Prisms and @dynamicMemberLookup; its list projection is no longer handwritten
+in the Feature target. @View supplies SwiftUI.View conformance and construction,
+while private @State and @FocusState remain local storage excluded from inputs.
+EditingRows takes the generated Reminders.Update.View.init directly.
+RequestButton consumes the existing requesting store, keeping blank validation
+explicit and in-flight disabling reusable. Operation actions remain ordinary closures.
+
+The macro supplies main-actor isolation for instance members and construction:
+conformance emitted in an extension alone does not infer isolation for the source
+members. ViewStore construction only retains the existing store reference and is
+nonisolated; access and bindings remain on the main actor. Consumers of the generated
+filter projection explicitly import Optic under MemberImportVisibility.
+
+After the complete static implementation, the macOS workspace suite passed 131 tests
+(132 executions), with no failures, skips or runtime warnings. Result bundle:
+`Test-Reminders Architecture-2026.09.20_04-52-13-+0200.xcresult`.
+The validation table and screenshots above describe the preceding checkpoint.
+
+The follow-up simulator UI run compiled the application but did not start a test
+after roughly two minutes of startup waiting on the booted validation device. The
+task-owned xcodebuild process was stopped; no device resets or service changes were
+made. This follow-up does not claim a passing simulator runtime test.
+
+A separate workspace `Reminders UI Tests` build-for-testing subsequently succeeded
+for the iOS 27 arm64 simulator. Logs: `/tmp/reminders-view-reuse-tests.log`,
+`/tmp/reminders-view-reuse-ios-build.log`, and `/tmp/reminders-view-reuse-ui.log`.

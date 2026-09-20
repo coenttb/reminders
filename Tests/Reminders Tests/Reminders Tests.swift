@@ -1,6 +1,7 @@
 import Foundation
 import List
 import Operation
+import Optic
 import Reminder
 import Reminders
 import Tagged
@@ -62,5 +63,13 @@ import Testing
         #expect(try await reminders.read.page(filter: .list(list)).first(where: { _ in true })?.rows == [reminder])
         #expect(try await reminders.read.page(filter: .list(List<Reminder>.ID(UUID()))).first(where: { _ in true })?.rows.isEmpty == true)
         #expect(throws: Reminders.Read.Error.notFound) { try reminders.read(Reminder.ID(UUID())) }
+    }
+}
+
+@Suite struct FilterProjections {
+    @Test func listProjection() {
+        let id = List<Reminder>.ID(UUID())
+        #expect(Reminders.Read.Filter.list(id).list == id)
+        #expect(Reminders.Read.Filter.all.list == nil)
     }
 }

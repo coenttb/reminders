@@ -7,7 +7,7 @@ public import SwiftUI
 
 extension Reminders.Update {
     @View(Reminders.Update.self)
-    public struct View: SwiftUI::View {
+    public struct View {
 
         public var body: some SwiftUI::View {
             HStack(spacing: 12) {

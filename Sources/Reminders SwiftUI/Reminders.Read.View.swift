@@ -9,7 +9,7 @@ public import SwiftUI
 extension Reminders.Read {
     // The front screen's lists: the observed summary, with the intents that act on lists as a whole.
     @View(Reminders.self)
-    public struct View: SwiftUI::View {
+    public struct View {
 
         public var body: some SwiftUI::View {
             Section("My Lists") {

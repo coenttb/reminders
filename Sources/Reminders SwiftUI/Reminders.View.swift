@@ -1,3 +1,4 @@
+import Optic
 public import ComposableArchitecture2
 import Interface_ComposableArchitecture
 import List
@@ -11,7 +12,7 @@ extension Reminders {
     // The universal screen tree: the front list, the pushed page, the presented sheet. A platform-specific
     // app composes the same views under its own tree beside this one.
     @View(Reminders.self)
-    public struct View: SwiftUI::View {
+    public struct View {
 
         public var body: some SwiftUI::View {
             NavigationStack {

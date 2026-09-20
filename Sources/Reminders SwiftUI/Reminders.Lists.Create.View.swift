@@ -9,7 +9,7 @@ public import SwiftUI
 extension Reminders.Lists.Create {
     // The sheet: `lists.create`'s request, composed and sent whole.
     @View(Reminders.Lists.Create.self)
-    public struct View: SwiftUI::View {
+    public struct View {
 
         public var body: some SwiftUI::View {
             SwiftUI::Form {
@@ -24,8 +24,7 @@ extension Reminders.Lists.Create {
                     Button("Cancel") { store.dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { store.send() }
-                        .disabled(store.isBlank || store.sending.isRunning)
+                    RequestButton("Done", store: store, allowing: !store.isBlank)
                 }
             }
         }

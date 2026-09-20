@@ -4,7 +4,7 @@ public import SwiftUI
 
 extension Reminder {
     @View
-    public struct View: SwiftUI::View {
+    public struct View {
         private var reminder: Reminder
         private var complete: () -> Void
         private var delete: () -> Void

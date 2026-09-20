@@ -1,3 +1,4 @@
+import Optic
 public import ComposableArchitecture2
 import Interface_ComposableArchitecture
 import List
@@ -8,21 +9,22 @@ public import SwiftUI
 
 extension Reminders.Read.Page {
     @View(Reminders.Read.Page.self)
-    public struct View: SwiftUI::View {
+    public struct View {
         private var title: String
 
         public var body: some SwiftUI::View {
             SwiftUI::List {
-                EditingRows(store) { reminder in
-                    Reminder.View(
-                        reminder: reminder,
-                        complete: { store.update.complete(reminder.id, !reminder.completed) },
-                        delete: { store.delete(reminder.id) },
-                        edit: { store.editing = .init(reminder) }
-                    )
-                } editor: { editor in
-                    Reminders.Update.View(store: editor)
-                }
+                EditingRows(
+                    store,
+                    row: { reminder in
+                        Reminder.View(
+                            reminder: reminder,
+                            complete: { store.update.complete(reminder.id, !reminder.completed) },
+                            delete: { store.delete(reminder.id) },
+                            edit: { store.editing = .init(reminder) }
+                        )
+                    },
+                    editor: Reminders.Update.View.init)
                 if let error = store.writes.taskError {
                     Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
                 }
