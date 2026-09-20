@@ -14,7 +14,9 @@ extension Reminders.Read {
         public var body: some SwiftUI::View {
             Section("My Lists") {
                 ForEach(store.read.lists ?? []) { entry in
-                    Button { store.read.page = .init(.list(entry.id)) } label: {
+                    Button {
+                        store.read.page = .init(.list(entry.id))
+                    } label: {
                         HStack {
                             Text(entry.list.title)
                             Spacer()

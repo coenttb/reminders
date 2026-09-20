@@ -1,5 +1,5 @@
-// Bundle configuration shared by Debug and Release. The lifecycle lives in App.swift;
-// everything else is the `Reminders SwiftUI` package product.
+// Bundle configuration shared by Debug and Release. App.swift owns the lifecycle,
+// database bootstrap, dependency configuration, and application store.
 PRODUCT_NAME = Reminders
 PRODUCT_MODULE_NAME = Reminders_Host
 PRODUCT_BUNDLE_IDENTIFIER = com.coenttb.reminders-architecture

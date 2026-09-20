@@ -9,7 +9,7 @@ extension Reminder {
         private var complete: () -> Void
         private var delete: () -> Void
         private var edit: () -> Void
-
+        
         public var body: some SwiftUI::View {
             HStack(spacing: 12) {
                 Button(action: complete) {
@@ -20,6 +20,7 @@ extension Reminder {
                 .buttonStyle(.borderless)
                 .accessibilityLabel(reminder.completed ? "Mark incomplete" : "Mark complete")
                 .accessibilityValue(reminder.title)
+                
                 Button(action: edit) {
                     Text(reminder.title)
                         .foregroundStyle(reminder.completed ? .secondary : .primary)

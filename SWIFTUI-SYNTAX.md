@@ -35,10 +35,10 @@ extension Reminders.Read {
 | `Reminder.View.swift` | Reminder value and completion/deletion/editing closures | Public input initializer | Row layout, completion appearance/accessibility and offered intents |
 | `Reminders.View.swift` | Root store | Store injection and `$store.read.page` / `$store.lists.create` presentation bindings | Navigation versus sheet, titles, initial list draft, error precedence |
 | `Reminders.Read.View.swift` | Read presentation, explicitly supplied root store | Store injection, canonical child projection/sending | Summary section, counts, page selection and list deletion |
-| `Reminders.Read.Page.View.swift` | Page store and title | Store injection; `EditingRows` selects the existing/new editor from canonical listing state | Row renderers, complete/delete/edit commands, new draft's list, blank-space gesture, toolbar and errors |
+| `Reminders.Read.Page.View.swift` | Page store and title | Store injection; `EditingRows` selects the existing/new editor from canonical listing state | Row renderers, complete/delete/edit commands, new draft's list, toolbar and errors |
 | `Reminders.Update.View.swift` | Existing editing store | Store injection, field bindings, local focus implementation | Editable fields, focus on presentation, submit dismisses |
 | `Reminders.Lists.Create.View.swift` | Existing requesting store | Store injection, request bindings and canonical submission | Field label, blank/in-flight validation, cancel/Done and error section |
-| `Reminders.Live.swift` | Actual dependency implementation | Existing store/feature initialization | Database bootstrap, debug seed, initial state, failure policy and root lifetime |
+| `Hosts/Reminders/App.swift` | Actual dependency implementation | Existing store/feature initialization | Database bootstrap, debug seed, initial state, failure policy and root lifetime |
 
 The host, consumer tests and documentation use the same rule. There are no extra
 presentation wrappers or hand-written input initializers. Direct Operation/Tagged
@@ -58,10 +58,15 @@ one substituted editor for an existing row, or one new draft after the rows, wit
 parallel row model. The editor owns focus through the reusable `focusOnPresentation`
 modifier. Dismissal still invokes the existing editing feature's commit policy.
 
+Creation uses a native bottom-trailing toolbar button on iOS and a primary toolbar
+action on macOS. While editing, Done replaces that button. This keeps stock Reminders'
+essential inline creation flow; its secondary blank-space shortcut is intentionally
+omitted. There is no invisible list row or fixed-height tap target.
+
 The remaining intent closures are meaningful: completion chooses the inverse of the
 current completion value; deletion chooses a record identifier; editing chooses an
 existing record. These are different operations, not interchangeable fields that a
-renderer can infer from the product algebra. The blank-space gesture and draft's list
+renderer can infer from the product algebra. The new-reminder button and draft's list
 are also explicit application choices. Replacing them with inferred conventions would
 change semantics or move policy into a generic component.
 
@@ -96,25 +101,11 @@ consumers enforce MemberImportVisibility with warnings treated as errors.
 Consumer coverage exercises all canonical view constructors, including the read view's
 explicit root capability and the editor's shared state. Existing tests retain request
 routing, observation, persistence, failure, ancestor, cancellation and presentation
-lifetime coverage. The existing Reminders UI Tests scheme covers the real UI flow when
-the simulator runtime responds.
+lifetime coverage. All automated tests use Swift Testing; simulator UI interaction is
+validated manually. There is no separate UI automation target.
 
-The current refactor passed macOS tests and iOS simulator compilation and execution.
-The simulator required one normal boot of the existing task-owned device; no service
-restarts, resets, new devices or unrelated environment changes were needed. Baseline
-iPhone validation remains separate from these new results.
-
-| Validation | Current result | Evidence |
-| --- | --- | --- |
-| macOS workspace tests | 129 tests, 130 executions; zero failures/skips/runtime warnings | `Test-Reminders Architecture-2026.09.20_00-33-06-+0200.xcresult` |
-| iOS simulator app and UI-test compilation | Succeeded for arm64 | `/tmp/reminders-canonical-view-ios.log` |
-| iPhone 17 / iOS 27 UI suite | One end-to-end test passed; zero failures/skips/runtime warnings | `Test-Reminders UI Tests-2026.09.20_00-36-13-+0200.xcresult` |
-
-The result bundles reside in `/tmp/institute-reminders-derived/Logs/Test`.
-[Eight screenshots and matching accessibility hierarchies](Documentation/SwiftUI-Validation/README.md)
-record the actual app. The UI test verifies navigation, list cancel/create, reminder
-create/edit/complete, blank discard, single-editor switching, Return submission,
-persistence across relaunch, reminder deletion and list cleanup.
+[Archived screenshots and accessibility hierarchies](Documentation/SwiftUI-Validation/README.md)
+record the earlier simulator validation checkpoint.
 
 Commands, all from this repository:
 
@@ -124,15 +115,8 @@ xcodebuild -workspace reminders-architecture.xcworkspace \
   -derivedDataPath /tmp/institute-reminders-derived -jobs 2 test
 
 xcodebuild -workspace reminders-architecture.xcworkspace \
-  -scheme 'Reminders UI Tests' \
-  -destination 'platform=iOS Simulator,id=1EC882FE-7067-44C2-B068-F52B6790A536' \
-  -derivedDataPath /tmp/institute-reminders-derived -jobs 2 build-for-testing
-
-xcodebuild -workspace reminders-architecture.xcworkspace \
-  -scheme 'Reminders UI Tests' \
-  -destination 'platform=iOS Simulator,id=1EC882FE-7067-44C2-B068-F52B6790A536' \
-  -derivedDataPath /tmp/institute-reminders-derived \
-  -parallel-testing-enabled NO test-without-building
+  -scheme 'Reminders' -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath /tmp/institute-reminders-derived -jobs 2 build
 ```
 
 ### Requirement audit
@@ -175,13 +159,7 @@ filter projection explicitly import Optic under MemberImportVisibility.
 After the complete static implementation, the macOS workspace suite passed 131 tests
 (132 executions), with no failures, skips or runtime warnings. Result bundle:
 `Test-Reminders Architecture-2026.09.20_04-52-13-+0200.xcresult`.
-The validation table and screenshots above describe the preceding checkpoint.
+The archived screenshots describe the preceding checkpoint.
 
-The follow-up simulator UI run compiled the application but did not start a test
-after roughly two minutes of startup waiting on the booted validation device. The
-task-owned xcodebuild process was stopped; no device resets or service changes were
-made. This follow-up does not claim a passing simulator runtime test.
-
-A separate workspace `Reminders UI Tests` build-for-testing subsequently succeeded
-for the iOS 27 arm64 simulator. Logs: `/tmp/reminders-view-reuse-tests.log`,
-`/tmp/reminders-view-reuse-ios-build.log`, and `/tmp/reminders-view-reuse-ui.log`.
+The follow-up iOS simulator compilation succeeded. The UI automation target has
+since been removed; current automated coverage is entirely Swift Testing.

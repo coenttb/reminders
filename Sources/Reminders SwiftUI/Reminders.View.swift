@@ -13,7 +13,7 @@ extension Reminders {
     // app composes the same views under its own tree beside this one.
     @View(Reminders.self)
     public struct View {
-
+        
         public var body: some SwiftUI::View {
             NavigationStack {
                 SwiftUI::List {
@@ -29,7 +29,11 @@ extension Reminders {
                     }
                 }
                 .navigationDestination(item: $store.read.page) { page in
-                    Reminders.Read.Page.View(store: page, title: page.list.flatMap { store.read.lists?.first(id: $0) }?.list.title ?? "All")
+                    Reminders.Read.Page.View(
+                        store: page,
+                        title: page.list.flatMap {
+                            store.read.lists?.first(id: $0)
+                        }?.list.title ?? "All")
                 }
             }
             .sheet(item: $store.lists.create) { form in

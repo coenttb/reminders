@@ -24,15 +24,11 @@ extension Reminders.Read.Page {
                             edit: { store.editing = .init(reminder) }
                         )
                     },
-                    editor: Reminders.Update.View.init)
+                    editor: Reminders.Update.View.init
+                )
                 if let error = store.writes.taskError {
                     Text(error.localizedDescription).foregroundStyle(.red).font(.footnote)
                 }
-                SwiftUI::Color.clear
-                    .frame(height: 200)
-                    .contentShape(.rect)
-                    .onTapGesture { store.editing == nil ? startNewReminder() : (store.editing = nil) }
-                    .listRowSeparator(.hidden)
             }
             .listStyle(.plain)
             .navigationTitle(title)
@@ -41,9 +37,18 @@ extension Reminders.Read.Page {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { store.editing = nil }
                     }
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button("New Reminder", systemImage: "plus") { startNewReminder() }
+                } else {
+                    #if os(iOS)
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Spacer()
+                        Button("New Reminder", systemImage: "plus", action: startNewReminder)
+                            .labelStyle(.iconOnly)
+                    }
+                    #else
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("New Reminder", systemImage: "plus", action: startNewReminder)
+                    }
+                    #endif
                 }
             }
         }

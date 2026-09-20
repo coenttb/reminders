@@ -148,8 +148,8 @@ local to the field. Layout, labels, draft defaults, navigation style, and submis
 policies remain explicit.
 
 See [SWIFTUI-SYNTAX.md](SWIFTUI-SYNTAX.md) for the design checkpoint, implementation
-inventory and validation. The **Reminders UI Tests** scheme in the same workspace runs
-the simulator flow and retains screenshot/accessibility evidence.
+inventory and validation. Automated tests use Swift Testing through the
+**Reminders Architecture** workspace scheme. Simulator UI checks are manual.
 
 ## Validation
 
@@ -157,10 +157,10 @@ Open **reminders-architecture.xcworkspace**. All relevant local packages are inc
 package manifests use URL dependencies and all workspace package minimums are 27.
 MemberImportVisibility is enforced as a hard error for the integration consumers.
 
-The SwiftUI implementation's macOS workspace suite passes 129 tests (130 executions)
-with no failures, skips, or runtime warnings. The iOS 27 simulator UI suite also passes, including editing, persistence after
-relaunch, and deletion. The user’s earlier iPhone validation applies to the preceding
-checkpoint. Current results, the naming rule and screenshots are recorded in
+The macOS workspace suite uses Swift Testing. Build the `Reminders` scheme for
+simulator or device validation; UI interaction is checked manually. Earlier device
+validation and archived screenshots describe their respective checkpoints.
+The naming rule and validation history are recorded in
 [SWIFTUI-SYNTAX.md](SWIFTUI-SYNTAX.md).
 
 The preceding Feature checkpoint's validation—including the focused TCA runtime and
