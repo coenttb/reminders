@@ -16,3 +16,5 @@ extension List.Draft {
 extension List {
     public static func `default`(id: ID) -> Self { Self(id: id, title: "Personal") }
 }
+
+extension List.Draft: Hashable, Sendable {}

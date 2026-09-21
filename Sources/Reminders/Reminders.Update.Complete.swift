@@ -3,8 +3,8 @@ public import Reminder
 
 extension Reminders.Update {
     // Completion is its own write, so no feature reads a row to toggle it.
-    @Interface
-    public struct Complete: Complete.Interface {
+    @Interface(inputConformances: ["Swift.Equatable", "Swift.Sendable"])
+    public struct Complete: Complete.Interface, Sendable {
         public protocol Interface {
             func callAsFunction(_ id: Reminder.ID, _ completed: Bool) async throws
         }

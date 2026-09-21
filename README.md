@@ -15,7 +15,7 @@ One flat package, one host, one workspace. The layers, bottom up:
 | `List` | Tagged | `List<Element>` and its `Entry` (a list with its open count) |
 | `Reminder` | List | the `Reminder` value |
 | `Reminders` | Interface Macro | the domain, declared once as `@Interface` protocols: `create`, `read`, `update`, `delete`, `lists`; the values they exchange, each under its operation (`Read.Filter`, `Read.Value`, `Read.Page.Value`); the typed errors. An operation's `Value` is what it produces, its `Result` is how the arrow returns it: `read()` and `read(page:)` return streams of their `Value` (the UI follows them), `read(id)` returns the `Reminder` itself; `update.complete` is its own write |
-| `Reminders Dependency` | Dependencies | `DependencyValues.reminders`, the `testValue`, and the `Sendable` boundary |
+| `Reminders Dependency` | Dependencies | `DependencyValues.reminders` and the explicit unimplemented `testValue` |
 | `Reminders SQL` | StructuredQueries | the records and the `Filter` predicate |
 | `Reminders SQLite` | SQLiteData, GRDB | the schema, `Reminders.sqlite(database)`, the read requests resolved and tracked (`ValueObservation`), the bootstrap |
 | `Reminders Sample` | — | two lists, three reminders |
@@ -29,7 +29,7 @@ placeholder, all styling and parity chrome, and the evidence.
 
 ## Interface-type reuse
 
-`@Interface` attaches `@Operations`, which derives one symbol per operation (`Reminders.Read.Run`, `Reminders.Read.Page.Run`; each operation is
+`@Interface` composes the Operation derivation, which derives one symbol per operation (`Reminders.Read.Run`, `Reminders.Read.Page.Run`; each operation is
 its own `@Interface`, so its symbol is its `Run`) whose `Input` is the parameters as a value and which knows how its owner runs it. `@Interface` derives
 the `Call` — the coproduct of the operations' inputs and the children's calls, `Hashable` and `Sendable` when the
 inputs are — with its constructors, its builders and `run(owner, call)`. The layers above the domain write
@@ -66,8 +66,7 @@ Open `reminders-architecture.xcworkspace` and select **Reminders Architecture**.
 scheme builds the app, all eight experiment test targets, Interface and Product macro tests,
 and the TCA bridge tests. Institute packages resolve from workspace references; manifests retain URLs.
 
-Declare `@Interface` once on each domain. It attaches `@Operations` to the semantic
-protocol and composes the product, coproduct, structural capabilities, optics, and
+Declare `@Interface` once on each domain. It composes the operation, product, coproduct, optics, and
 elimination macros. Child inclusion maps are properties so both `.update.complete(...)`
 and `store.update.complete(...)` use the canonical Call. Primary implementation closures
 are unlabeled, including when sibling operations or children follow them.
@@ -166,3 +165,19 @@ The naming rule and validation history are recorded in
 The preceding Feature checkpoint's validation—including the focused TCA runtime and
 macro suites and both simulator architectures—is preserved in
 [VALIDATION.md](VALIDATION.md).
+
+## Explicit capabilities
+
+The domain implementations declare `Sendable`; operation inputs explicitly request
+`Equatable` and `Sendable`. The existing generated `Reminder.Draft` and `List.Draft`
+receive their own `Hashable` and `Sendable` conformances. No macro guesses these
+capabilities from a field's spelling or from its containing record.
+
+The dependency integration explicitly constructs its unimplemented test value.
+Unexpected calls report an issue; stream reads finish and writes returning Void
+have a fallback. Calls requiring a record throw instead of inventing domain data.
+Neither the domain macro nor Product generates a test factory.
+
+The central `../workspaces/coenttb.xcworkspace` offers **Reminders Host** for building,
+running on Simulator, and testing all eight Reminders test targets against the local
+refactored packages.

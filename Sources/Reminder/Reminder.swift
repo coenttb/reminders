@@ -16,3 +16,5 @@ public struct Reminder: Identifiable, Hashable, Sendable {
 extension Reminder.Draft {
     public var isBlank: Bool { title.allSatisfy(\.isWhitespace) }
 }
+
+extension Reminder.Draft: Hashable, Sendable {}

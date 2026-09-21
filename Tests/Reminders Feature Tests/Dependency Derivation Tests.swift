@@ -2,7 +2,7 @@ import Reminders
 import Reminders_Dependency
 import Testing
 
-@Test func derivedUnimplementedStreamReportsItsCallAndTerminates() async throws {
+@Test func explicitUnimplementedStreamReportsItsCallAndTerminates() async throws {
     var stream: Reminders.Read.Output?
     withKnownIssue {
         stream = Reminders.testValue.read()
