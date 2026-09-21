@@ -9,7 +9,7 @@ path dependency, or independently maintained domain/session model was introduced
 | Package / target | Responsibility |
 | --- | --- |
 | swift-product / Product Macro | `@Memberwise` derives assigning constructors; `@Draft` selects a product complement, attaches `@Memberwise` to its draft, and derives its writable lens and reconstruction initializer. |
-| swift-interface / Interface Macro | `@Interface(.sendable)` derives checked sending interfaces through the canonical Product macro. Primary `Request` aliases the canonical operation input. Factory construction follows canonical operations and children. |
+| swift-interface / Interface Macro | `@Interface` derives checked sending interfaces through the canonical Product macro. Primary `Request` aliases the canonical operation input. Factory construction follows canonical operations and children. |
 | swift-interface / Interface Dependencies | Optional integration target containing `@Unimplemented(streams: .finished)`. It supplies reporting test implementations without importing Dependencies into the domain target. |
 | swift-operation / Operation Macro Core | Canonical call-to-input extraction and unary field projection let editing consume the selected deletion operation without guessing its spelling. |
 | swift-interface-composable-architecture | `Children`, compact `Listing` policy selection, explicit editing lifecycle, binding-preserving `@View` initializers, `Editing.Rows`, and `Tasks.Failure`. |

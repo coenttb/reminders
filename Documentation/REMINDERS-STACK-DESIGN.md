@@ -96,7 +96,7 @@ Hashable/Sendable behavior must be checked from the field types. Generated neste
 Draft declarations may carry native conformances directly where legal; an
 extension macro placed inside emitted extension output is not a fallback.
 
-### @Interface(.sendable) — swift-interface / Interface Macro
+### @Interface — swift-interface / Interface Macro
 
 Require canonical stored operation closures and child interfaces to be Sendable
 and generate checked conformance on the attached interface. Do not replace the

@@ -2,7 +2,7 @@ public import Interface_Macro
 public import Reminder
 
 extension Reminders {
-    @Interface(.sendable)
+    @Interface
     public struct Create: Create.Interface {
         public protocol Interface {
             // Storage gives the draft its identity and creation time; the created reminder comes back.
