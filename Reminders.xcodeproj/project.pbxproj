@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E20000000000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000001 /* Assets.xcassets */; };
 		06EC28BE851A8FD6B446AA92 /* Reminders in Frameworks */ = {isa = PBXBuildFile; productRef = 61A54CEFEA9693F97F2D927D /* Reminders */; };
 		63F6ADA06A8B161003AA83CF /* Reminders SwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 510C31349B4CE002E782123E /* Reminders SwiftUI */; };
 		7596E68F2713AA61C5901E7D /* Reminders Feature in Frameworks */ = {isa = PBXBuildFile; productRef = C046252036DA7C48DB8E0A33 /* Reminders Feature */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E10000000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2BCDBFE77DB0206AB34B2C1E /* Reminders.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reminders.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		901FF529B589310B0A8B02A8 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		BB9191E745BA2E7C53062DD3 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
@@ -44,6 +46,7 @@
 			children = (
 				BB9191E745BA2E7C53062DD3 /* App.swift */,
 				901FF529B589310B0A8B02A8 /* App.xcconfig */,
+				E10000000000000000000001 /* Assets.xcassets */,
 			);
 			path = Reminders;
 			sourceTree = "<group>";
@@ -137,6 +140,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E20000000000000000000001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
