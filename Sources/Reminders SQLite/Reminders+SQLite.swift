@@ -67,6 +67,11 @@ extension Reminders {
                     }
                     return list
                 },
+                update: .init { request in
+                    try await database.write { db in
+                        try List<Reminder>.Record.find(request.list.id).update { $0.title = request.list.title }.execute(db)
+                    }
+                },
                 delete: .init { request in
                     try await database.write { db in
                         try List<Reminder>.Record.find(request.id).delete().execute(db)

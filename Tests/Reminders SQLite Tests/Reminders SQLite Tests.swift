@@ -64,6 +64,14 @@ struct `Reminders SQLite storage` {
         await #expect(throws: Reminders.Update.Error.notFound) { try await reminders.update.complete(Reminder.ID(UUID()), true) }
     }
 
+    @Test func `a list is renamed in place`() async throws {
+        let (reminders, sample) = try makeDatabase()
+        var personal = sample.lists[0]
+        personal.title = "Home"
+        try await reminders.lists.update(personal)
+        #expect(try await summary(reminders)?.lists.map(\.list) == [personal, sample.lists[1]])
+    }
+
     @Test func `deleting the last list installs the default one`() async throws {
         let (reminders, sample) = try makeDatabase()
         for list in sample.lists { try await reminders.lists.delete(list.id) }

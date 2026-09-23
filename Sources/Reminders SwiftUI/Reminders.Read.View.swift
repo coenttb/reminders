@@ -27,6 +27,7 @@ extension Reminders.Read {
                     .foregroundStyle(.primary)
                     .swipeActions {
                         Button("Delete", systemImage: "trash", role: .destructive) { store.lists.delete(entry.id) }
+                        Button("Info", systemImage: "info.circle") { store.lists.update = .init(entry.list) }
                     }
                 }
             }

@@ -53,6 +53,19 @@ struct `Reminders root` {
         while store.read.lists?.contains(where: { $0.list.title == "Work" }) != true { await Task.yield() }
     }
 
+    @Test func `nested update presentation renames a list in place`() async throws {
+        let store = Store(initialState: Reminders.State()) { reminders }
+        while store.read.lists == nil { await Task.yield() }
+        store.lists.update = .init(try #require(store.read.lists?.first).list)
+        let form = try #require(store.lists.scope(\.update))
+        form.list.title = "Home"
+        let sending = form.sending
+        form.send()
+        try await sending()
+        #expect(store.state.lists.update == nil)
+        while store.read.lists?.map(\.list.title) != ["Home", "Family"] { await Task.yield() }
+    }
+
     @Test func `derived navigation bindings share canonical nested presentation state`() async throws {
         let personal = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).lists[0].id
         let store = Store(initialState: Reminders.State()) { reminders }

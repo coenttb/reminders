@@ -145,7 +145,7 @@ extension `Reminders feature` {
         await TestExhaustivity.$current.withValue(.off) {
             let domain = Reminders(
                 create: reminders.create, read: reminders.read, update: reminders.update, delete: reminders.delete,
-                lists: .init(create: reminders.lists.create, delete: .init { _ in throw DeletionFailure.refused })
+                lists: .init(create: reminders.lists.create, update: reminders.lists.update, delete: .init { _ in throw DeletionFailure.refused })
             )
             let store = TestStore(initialState: Reminders.State()) { domain }
             store.modify { $0.read.page = .init(.list(personal)) }

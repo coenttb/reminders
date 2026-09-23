@@ -39,7 +39,7 @@ import Testing
             ),
             update: .init({ _ in }, complete: .init { _ in }),
             delete: .init { _ in },
-            lists: .init(create: .init { request in List(id: list, request.draft) }, delete: .init { _ in })
+            lists: .init(create: .init { request in List(id: list, request.draft) }, update: .init { _ in }, delete: .init { _ in })
         )
     }
 

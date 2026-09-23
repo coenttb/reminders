@@ -40,6 +40,9 @@ extension Reminders: TestDependencyKey {
             create: .init { _ in
                 try Unimplemented.value(output: Lists.Create.Output.self, failure: Lists.Create.Failure.self, operation: "Reminders.Lists.Create")
             },
+            update: .init { _ in
+                try Unimplemented.value(output: Lists.Update.Output.self, failure: Lists.Update.Failure.self, operation: "Reminders.Lists.Update")
+            },
             delete: .init { _ in
                 try Unimplemented.value(output: Lists.Delete.Output.self, failure: Lists.Delete.Failure.self, operation: "Reminders.Lists.Delete")
             }

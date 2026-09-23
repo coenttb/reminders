@@ -35,7 +35,10 @@ extension Reminders {
                 }
             }
             .sheet(item: $store.lists.create) { form in
-                NavigationStack { Reminders.Lists.Create.View(store: form) }
+                NavigationStack { Reminders.Lists.Form(store: form, draft: \.draft, title: Text("New List")) }
+            }
+            .sheet(item: $store.lists.update) { form in
+                NavigationStack { Reminders.Lists.Form(store: form, draft: \.list.draft, title: Text("List Info")) }
             }
         }
     }
