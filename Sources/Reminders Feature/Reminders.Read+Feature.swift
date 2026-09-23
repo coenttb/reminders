@@ -8,7 +8,8 @@ public import Reminders
 @Interface_ComposableArchitecture.Feature
 extension Reminders.Read: FeatureProtocol {
     public var body: some Feature {
-        Observing(self)
+        // What the read delivers lands animated, as sqlite-data's animated fetches do, whoever wrote it.
+        Observing(self).animation()
         Presenting(\.page)
     }
 }
