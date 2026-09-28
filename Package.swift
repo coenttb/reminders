@@ -19,10 +19,10 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-debug-snapshots", from: "0.4.0"),
         .package(url: "https://github.com/pointfreeco/TCA26.git", branch: "main", traits: ["Dependencies", "Clocks"]),
-        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0", traits: ["Tagged"]),
-        .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.39.1", traits: ["Tagged"]),
+        .package(url: "https://github.com/swift-compositions/swift-sqlite-data.git", branch: "main"),
+        .package(url: "https://github.com/swift-compositions/swift-structured-queries-sqlite.git", branch: "main"),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
-        .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
+        .package(url: "https://github.com/swift-atoms/swift-tagged.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-operation.git", branch: "main"),
         .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "protocol-case-paths"),
         .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main", traits: ["Dependencies"]),
@@ -82,7 +82,7 @@ let package = Package(
                 "List",
                 "Reminder",
                 "Reminders",
-                .product(name: "StructuredQueries", package: "swift-structured-queries"),
+                .product(name: "StructuredQueries", package: "swift-structured-queries-sqlite"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -98,7 +98,7 @@ let package = Package(
                 "Reminders Dependency",
                 "Reminders Sample",
                 "Reminders SQL",
-                .product(name: "SQLiteData", package: "sqlite-data"),
+                .product(name: "SQLiteData", package: "swift-sqlite-data"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -188,7 +188,7 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQL",
                 "Reminders SQLite",
-                .product(name: "SQLiteData", package: "sqlite-data"),
+                .product(name: "SQLiteData", package: "swift-sqlite-data"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
