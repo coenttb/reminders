@@ -25,7 +25,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0"),
         .package(url: "https://github.com/swift-atoms/swift-operation.git", branch: "main"),
         .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "protocol-case-paths"),
-        .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main"),
+        .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main", traits: ["Dependencies"]),
         .package(url: "https://github.com/swift-compositions/swift-interface-composable-architecture.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.6.0"),
