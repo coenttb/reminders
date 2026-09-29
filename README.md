@@ -12,12 +12,12 @@ One flat package, one host, one workspace. The layers, bottom up:
 
 | Target | Depends on | Holds |
 |---|---|---|
-| `List` | Tagged | `List<Element>` and its `Entry` (a list with its open count) |
-| `Reminder` | List | the `Reminder` value |
+| `List` | Tagged, RFC 4122 | `List<Element>` and its `Entry` (a list with its open count) |
+| `Reminder` | List, Time | the `Reminder` value |
 | `Reminders` | Interface Macro | the domain, declared once as `@Interface` protocols: `create`, `read`, `update`, `delete`, `lists`; the values they exchange, each under its operation (`Read.Filter`, `Read.Value`, `Read.Page.Value`); the typed errors. An operation's `Value` is what it produces, its `Result` is how the arrow returns it: `read()` and `read(page:)` return streams of their `Value` (the UI follows them), `read(id)` returns the `Reminder` itself; `update.complete` is its own write |
 | `Reminders Dependency` | Dependencies | `DependencyValues.reminders` and the explicit unimplemented `testValue` |
-| `Reminders SQL` | StructuredQueries | the records and the `Filter` predicate |
-| `Reminders SQLite` | SQLiteData, GRDB | the schema, `Reminders.sqlite(database)`, the read requests resolved and tracked (`ValueObservation`), the bootstrap |
+| `Reminders SQL` | SQL | the records and the `Filter` predicate |
+| `Reminders SQLite` | SQLite, GRDB | the schema, `Reminders.sqlite(database)`, the read requests resolved and tracked (`ValueObservation`), the bootstrap |
 | `Reminders Sample` | — | two lists, three reminders |
 | `Reminders Feature` | TCA26, Interface ComposableArchitecture | the root `Reminders` conformance and relationship declarations for generic `Listing` and `Editing` interpretations. Features observe reads and send calls, no point reads: the front screen and a page's contents are `Observing` `read()` / `read(page:)`; the sheet is `Requesting` `lists.create`; writes (delete, complete, list delete) are `Reminders.Call`s carried by actions. No storage import; failures live on `@StoreTaskID`s |
 | `Reminders SwiftUI` | SwiftUI | one universal view per feature (`Reminders.Read.View`, …), one row view built from a value, `Reminders.View` (the navigation tree) and the live store. A platform-specific app is another target beside this one composing the same views |

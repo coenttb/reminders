@@ -1,8 +1,12 @@
 import Dependencies
+import Foundation
+public import GRDB
 public import List
 public import Reminder
 public import Reminders_SQL
-public import SQLiteData
+import RFC_4122
+import SQL
+import SQLite
 import Tagged
 
 extension List<Reminder>.Record {
@@ -10,6 +14,6 @@ extension List<Reminder>.Record {
     public static func installDefault(in db: Database) throws {
         guard try List<Reminder>.Record.all.fetchCount(db) == 0 else { return }
         @Dependency(\.uuid) var uuid
-        try List<Reminder>.Record.insert { List<Reminder>.Record(.default(id: List<Reminder>.ID(uuid()))) }.execute(db)
+        try List<Reminder>.Record.insert { List<Reminder>.Record(.default(id: List<Reminder>.ID(RFC_4122.UUID(bytes: uuid().uuid)))) }.execute(db)
     }
 }

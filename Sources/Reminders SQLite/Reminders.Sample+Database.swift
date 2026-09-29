@@ -1,9 +1,11 @@
+public import GRDB
 import List
 import Reminder
 public import Reminders
 public import Reminders_Sample
 import Reminders_SQL
-public import SQLiteData
+import SQL
+import SQLite
 
 extension Reminders.Sample {
     public func initialize(in db: Database) throws {

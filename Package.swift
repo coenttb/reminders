@@ -19,15 +19,18 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-debug-snapshots", from: "0.4.0"),
         .package(url: "https://github.com/pointfreeco/TCA26.git", branch: "main", traits: ["Dependencies", "Clocks"]),
-        .package(url: "https://github.com/swift-compositions/swift-sqlite-data.git", branch: "main"),
-        .package(url: "https://github.com/swift-compositions/swift-structured-queries-sqlite.git", branch: "main"),
+        .package(url: "https://github.com/swift-compositions/swift-sql.git", branch: "main", traits: ["Tagged"]),
+        .package(url: "https://github.com/swift-compositions/swift-sqlite.git", branch: "main", traits: ["GRDB", "Observation", "Tagged"]),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
         .package(url: "https://github.com/swift-atoms/swift-tagged.git", branch: "main"),
+        .package(url: "https://github.com/swift-atoms/swift-time.git", branch: "main"),
+        .package(url: "https://github.com/swift-ietf/swift-rfc-4122.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-operation.git", branch: "main"),
         .package(url: "https://github.com/pointfreeco/swift-case-paths", branch: "protocol-case-paths"),
         .package(url: "https://github.com/swift-molecules/swift-interface.git", branch: "main", traits: ["Dependencies"]),
         .package(url: "https://github.com/swift-compositions/swift-interface-composable-architecture.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-standard-library-extensions.git", branch: "main"),
+        .package(url: "https://github.com/swift-atoms/swift-finite.git", branch: "main", traits: ["Tagged", "Algebra", "Iterator"]),
         .package(url: "https://github.com/groue/GRDB.swift", from: "7.6.0"),
     ],
     targets: [
@@ -35,6 +38,7 @@ let package = Package(
             name: "List",
             dependencies: [
                 .product(name: "Interface Macro", package: "swift-interface"),
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -43,7 +47,9 @@ let package = Package(
             dependencies: [
                 .product(name: "Interface Macro", package: "swift-interface"),
                 "List",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ]
         ),
         .target(
@@ -72,7 +78,9 @@ let package = Package(
                 "List",
                 "Reminder",
                 "Reminders",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ]
         ),
         .target(
@@ -82,8 +90,10 @@ let package = Package(
                 "List",
                 "Reminder",
                 "Reminders",
-                .product(name: "StructuredQueries", package: "swift-structured-queries-sqlite"),
+                .product(name: "SQL", package: "swift-sql"),
+                .product(name: "SQL Macros", package: "swift-sql"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ]
         ),
         .target(
@@ -98,8 +108,13 @@ let package = Package(
                 "Reminders Dependency",
                 "Reminders Sample",
                 "Reminders SQL",
-                .product(name: "SQLiteData", package: "swift-sqlite-data"),
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
+                .product(name: "SQL", package: "swift-sql"),
+                .product(name: "SQL Macros", package: "swift-sql"),
+                .product(name: "SQLite", package: "swift-sqlite"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
+                .product(name: "Time Foundation Integration", package: "swift-time"),
             ]
         ),
         .target(
@@ -137,6 +152,7 @@ let package = Package(
             name: "List Tests",
             dependencies: [
                 "List",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
             ]
         ),
@@ -145,7 +161,9 @@ let package = Package(
             dependencies: [
                 "List",
                 "Reminder",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ]
         ),
         .testTarget(
@@ -155,7 +173,9 @@ let package = Package(
                 .product(name: "Operation", package: "swift-operation"),
                 "Reminder",
                 "Reminders",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
@@ -166,6 +186,7 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders Sample",
+                .product(name: "Time", package: "swift-time"),
             ]
         ),
         .testTarget(
@@ -175,7 +196,9 @@ let package = Package(
                 "Reminder",
                 "Reminders",
                 "Reminders SQL",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ]
         ),
         .testTarget(
@@ -188,8 +211,10 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQL",
                 "Reminders SQLite",
-                .product(name: "SQLiteData", package: "swift-sqlite-data"),
+                .product(name: "GRDB", package: "GRDB.swift"),
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ]
         ),
         .testTarget(
@@ -207,8 +232,10 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQL",
                 "Reminders SQLite",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Standard Library Extensions", package: "swift-standard-library-extensions"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ],
             swiftSettings: [.enableExperimentalFeature("Lifetimes")]
         ),
@@ -226,7 +253,9 @@ let package = Package(
                 "Reminders Sample",
                 "Reminders SQLite",
                 "Reminders SwiftUI",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "Tagged", package: "swift-tagged"),
+                .product(name: "Time", package: "swift-time"),
             ],
             swiftSettings: [.defaultIsolation(MainActor.self), .enableExperimentalFeature("Lifetimes")]
         ),

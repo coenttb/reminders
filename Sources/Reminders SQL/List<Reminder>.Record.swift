@@ -1,13 +1,14 @@
 public import Interface_Macro
 public import List
 public import Reminder
-public import StructuredQueries
+public import SQL
+import SQL_Macros
 public import Tagged
 
 extension List<Reminder> {
     @Table("lists")
     @Memberwise
-    public struct Record: Identifiable, Hashable, Sendable {
+    public struct Record: SQL::Table, Identifiable, Hashable, Sendable {
         public let id: List<Reminder>.ID
         public var title: String = ""
         public var position: Int = 0

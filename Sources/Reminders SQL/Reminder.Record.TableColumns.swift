@@ -1,6 +1,6 @@
 public import Reminder
 public import Reminders
-public import StructuredQueries
+public import SQL
 
 extension Reminder.Record.TableColumns {
     // A filter is a predicate over the rows.

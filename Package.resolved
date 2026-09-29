@@ -1,0 +1,681 @@
+{
+  "originHash" : "e47afe2d6d83acabcf6848edc2a0d49a68f05cea633d524f67a169cdf86b5470",
+  "pins" : [
+    {
+      "identity" : "combine-schedulers",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/combine-schedulers",
+      "state" : {
+        "revision" : "114354e8c1667a2edc4993700fb9fa4f90157b56",
+        "version" : "1.2.2"
+      }
+    },
+    {
+      "identity" : "grdb.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/groue/GRDB.swift.git",
+      "state" : {
+        "revision" : "b83108d10f42680d78f23fe4d4d80fc88dab3212",
+        "version" : "7.11.1"
+      }
+    },
+    {
+      "identity" : "swift-addition",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-addition.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a51adf2ac25f28b14b8a853c186ebf5c574853ed"
+      }
+    },
+    {
+      "identity" : "swift-advancement",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-advancement.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b6940083902d463f7520bb2656c0a606c9fce36a"
+      }
+    },
+    {
+      "identity" : "swift-algebra",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-algebra.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b575256a28f885a3a177112fd8667e3e5c34b601"
+      }
+    },
+    {
+      "identity" : "swift-append",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-append.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5e06cf651fbad77448257a57be2b2a1fd4803003"
+      }
+    },
+    {
+      "identity" : "swift-ascii",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-ascii.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "c79b26e8945039ec7c153ea1d31f8a2bf4d89a5f"
+      }
+    },
+    {
+      "identity" : "swift-bifunctor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-bifunctor.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "107cd94f36f8dc8493d3bd35fef064e1ac0f0f65"
+      }
+    },
+    {
+      "identity" : "swift-bit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-bit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "4ab56d5643a30cc23586675ad11df7c9ac81d5ff"
+      }
+    },
+    {
+      "identity" : "swift-byte",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-byte.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "21c702a8595b45e7f1921b2c6cd89c24173902f6"
+      }
+    },
+    {
+      "identity" : "swift-cardinal",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-cardinal.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "27e2edad473abb2c515c91a6a8c2c290579b3c3e"
+      }
+    },
+    {
+      "identity" : "swift-carrier",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-carrier.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "20c2fa431c4c25e8795cd9fa4536120317adad97"
+      }
+    },
+    {
+      "identity" : "swift-case-paths",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-case-paths",
+      "state" : {
+        "branch" : "protocol-case-paths",
+        "revision" : "f59f046b554f5346255d74dd8a2fe1959e9f3264"
+      }
+    },
+    {
+      "identity" : "swift-checkpoint",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-checkpoint.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "256faa8136b4c860f53765666c9e379f4d4b9ae6"
+      }
+    },
+    {
+      "identity" : "swift-clocks",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-clocks",
+      "state" : {
+        "branch" : "clocks-2",
+        "revision" : "77abbdd51dc05c719d5a758572e18f3643f546b7"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections.git",
+      "state" : {
+        "revision" : "98ef3c98609a1e31b7e157b5b619579001a789d6",
+        "version" : "1.7.1"
+      }
+    },
+    {
+      "identity" : "swift-concurrency-extras",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
+      "state" : {
+        "revision" : "5fa253428866f2360c3754e88537f700ed2656b5",
+        "version" : "1.4.1"
+      }
+    },
+    {
+      "identity" : "swift-coordinate",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-coordinate.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "47798b89508b14fb3a1effeb4fb33da15a4b762c"
+      }
+    },
+    {
+      "identity" : "swift-coproduct",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-coproduct.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "bbc66bffd0aee294859441d0ced0d7817d0bd2ee"
+      }
+    },
+    {
+      "identity" : "swift-cursor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-cursor.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "895735ad5316d6f2724225aab4bc32ed2e8d9ff8"
+      }
+    },
+    {
+      "identity" : "swift-custom-dump",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-custom-dump",
+      "state" : {
+        "revision" : "4fb9e7cbb4b8f5a7354005db39447f570d6b3e19",
+        "version" : "1.7.3"
+      }
+    },
+    {
+      "identity" : "swift-debug-snapshots",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-debug-snapshots",
+      "state" : {
+        "revision" : "083c2aa4d1edf6e98bb20670cfddc04ac45ad8a4",
+        "version" : "0.5.1"
+      }
+    },
+    {
+      "identity" : "swift-dependencies",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-dependencies",
+      "state" : {
+        "revision" : "b476cc5761057d8d857de063fe7ac8daecf5c06b",
+        "version" : "1.17.1"
+      }
+    },
+    {
+      "identity" : "swift-dependency",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-molecules/swift-dependency.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "9bfea909e633fb63320c6237978c7fa5ce85b695"
+      }
+    },
+    {
+      "identity" : "swift-difference",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-difference.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "ac1b402019aa96b4c4d8e13c0622e7f750c157b9"
+      }
+    },
+    {
+      "identity" : "swift-distance",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-distance.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "4b3f6ebb692aecbf54f2d56210eff956894c324b"
+      }
+    },
+    {
+      "identity" : "swift-division",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-division.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "6bd4ae628903d6d71cf2dd2f88209c5c0f693cdb"
+      }
+    },
+    {
+      "identity" : "swift-either",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-either.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "53a67b78ed9897b3e33a7840c1c1a80c609e3b12"
+      }
+    },
+    {
+      "identity" : "swift-finite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-finite.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "12238a087466b0729d182ce9f4d0c6aa79ef58c9"
+      }
+    },
+    {
+      "identity" : "swift-functor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-functor.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3018c0b35f7555a398a107adb22acd56d77386ea"
+      }
+    },
+    {
+      "identity" : "swift-identified-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-identified-collections",
+      "state" : {
+        "revision" : "322d9ffeeba85c9f7c4984b39422ec7cc3c56597",
+        "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "swift-index",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-index.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "d81dededf90254a9fb93b37488fa4803fca3e723"
+      }
+    },
+    {
+      "identity" : "swift-integer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-integer.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "59c02aeefed23df3245fbfff6c51bf1193a8a194"
+      }
+    },
+    {
+      "identity" : "swift-interface",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-molecules/swift-interface.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b3019d0bdc2fecafb8e9002f7b241d86813caf44"
+      }
+    },
+    {
+      "identity" : "swift-interface-composable-architecture",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-compositions/swift-interface-composable-architecture.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "35cd66f048c19a19c45688958eae766d3d66f822"
+      }
+    },
+    {
+      "identity" : "swift-iso-8601",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-iso/swift-iso-8601.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "7e68a2f24c54b18bdb94cc1aeb999df06add4ae8"
+      }
+    },
+    {
+      "identity" : "swift-iso-9075",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-iso/swift-iso-9075.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "6d8a379ca41c1d09d5387e98cfcc3ab63e5a3e79"
+      }
+    },
+    {
+      "identity" : "swift-issue-reporting",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-issue-reporting",
+      "state" : {
+        "revision" : "75b000cea2ca6d7527a57e1b9cc0bdf21a9abe9f",
+        "version" : "2.1.1"
+      }
+    },
+    {
+      "identity" : "swift-iterator",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-iterator.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "6ab82867e74e1f4fdc3c82e89f427a903af0f522"
+      }
+    },
+    {
+      "identity" : "swift-magnitude",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-magnitude.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2173eaa9084498fc7cb76e8dbd4eb393340a1d58"
+      }
+    },
+    {
+      "identity" : "swift-map",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-map.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "10e3ae222ad68660500be330349e84cdb8c12c61"
+      }
+    },
+    {
+      "identity" : "swift-multiplication",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-multiplication.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "644cc474541bc666d97c8c7258172174220e2645"
+      }
+    },
+    {
+      "identity" : "swift-navigation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-navigation",
+      "state" : {
+        "branch" : "case-paths-2",
+        "revision" : "c4344194c0f9abace6782c349bab48f513ade8e4"
+      }
+    },
+    {
+      "identity" : "swift-operation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-operation.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "93e335de4c71c1210a6f533fab97d12bec38deb1"
+      }
+    },
+    {
+      "identity" : "swift-optic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-optic.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b66203dbf32a5994f6f67b041bc7bba584a9bf75"
+      }
+    },
+    {
+      "identity" : "swift-order",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-order.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "68f82184589a69ad145e0252b3b5b3dd7edd7fb7"
+      }
+    },
+    {
+      "identity" : "swift-ordinal",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-ordinal.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "fbf92a148431cc0b3dc07fa6ff7146d2b03e08ef"
+      }
+    },
+    {
+      "identity" : "swift-ownership",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-ownership.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "8149470322398995265d16281c361187a8313f9a"
+      }
+    },
+    {
+      "identity" : "swift-pair",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-pair.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "55b6f44899f8739e27d51b7845a28ffc596b1cc4"
+      }
+    },
+    {
+      "identity" : "swift-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-parser.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "f3b2e9e69a68baa5ad712461450ef2239dc95a47"
+      }
+    },
+    {
+      "identity" : "swift-perception",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-perception",
+      "state" : {
+        "revision" : "597afd46249f4a71885b95d26b26cc5b893daf32",
+        "version" : "2.0.12"
+      }
+    },
+    {
+      "identity" : "swift-polarity",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-polarity.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "efc9373e8f9b151648cb26a09b186256e3ba95cb"
+      }
+    },
+    {
+      "identity" : "swift-predecessor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-predecessor.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3ccf13819b9517fb030a1833c954061dc1333ce0"
+      }
+    },
+    {
+      "identity" : "swift-product",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-product.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a1d4179486eb7d9fb8f8488f9fe04f76aad14f0c"
+      }
+    },
+    {
+      "identity" : "swift-property",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-property.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "389cf755e5261a397fd89beffdaacb430331a457"
+      }
+    },
+    {
+      "identity" : "swift-ratio",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-ratio.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "eb75fa7abb0a0395b9ba4b3b84540edb862b7cce"
+      }
+    },
+    {
+      "identity" : "swift-rational",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-rational.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5afe699805ad3195121344d0058ca2df6c722999"
+      }
+    },
+    {
+      "identity" : "swift-retreat",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-retreat.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "434c5fdac114a2fc61298dbaffed368f8bcf7d6a"
+      }
+    },
+    {
+      "identity" : "swift-rfc-4122",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-ietf/swift-rfc-4122.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "afd0539eca2f0fa73d3bc06535cec84be43a48c3"
+      }
+    },
+    {
+      "identity" : "swift-rounding",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-rounding.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b70cf328cd5b78169500ebf2c50583279e002943"
+      }
+    },
+    {
+      "identity" : "swift-sharing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-sharing",
+      "state" : {
+        "revision" : "3552faf8a6c18ce896ec5a72bd8c34755f0f03e0",
+        "version" : "2.10.1"
+      }
+    },
+    {
+      "identity" : "swift-skip",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-skip.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "782bb5e8420d8bbfd1fded31239a55ade2c1a3e7"
+      }
+    },
+    {
+      "identity" : "swift-snapshot-testing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-snapshot-testing.git",
+      "state" : {
+        "revision" : "28e5de025e3fd98991791bfbf83023ab3708da03",
+        "version" : "1.19.6"
+      }
+    },
+    {
+      "identity" : "swift-sql",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-compositions/swift-sql.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "d6e0c78af63965dfb4b75306943ac23815cdc6d5"
+      }
+    },
+    {
+      "identity" : "swift-sqlite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-compositions/swift-sqlite.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b31b5a5573457d78d43ba952c5a2db02b5cd19e3"
+      }
+    },
+    {
+      "identity" : "swift-standard-library-extensions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-standard-library-extensions.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "332869d9f5e01fc8f37058b4b95b30c37dab7b52"
+      }
+    },
+    {
+      "identity" : "swift-subtraction",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-subtraction.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "dea61f059b6ca3521f7fa2485f05e5df876efc80"
+      }
+    },
+    {
+      "identity" : "swift-successor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-successor.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "d401cef2c3dc6cd8da60ee3e2d9a804605621fd2"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax.git",
+      "state" : {
+        "revision" : "79e4b74a295b6eb74a8b585e3a39d29e70c1dbd1",
+        "version" : "603.0.2"
+      }
+    },
+    {
+      "identity" : "swift-tagged",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-tagged.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "ad70ff0e820641787f0e42aa6c9091ae34252ef0"
+      }
+    },
+    {
+      "identity" : "swift-time",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-time.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1e2a1321ad02240034ff2729176b2f45dad3b0e2"
+      }
+    },
+    {
+      "identity" : "swift-translation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-translation.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "61f45b5893014f70ea051dc25c2102b56068490f"
+      }
+    },
+    {
+      "identity" : "swift-vector",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-vector.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "087044690a463bb5e64dfc01c0e2375cbc025e4e"
+      }
+    },
+    {
+      "identity" : "swift-witness",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-atoms/swift-witness.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "6edf80864dff61e98c9ea2f8cf40e4a63bfaaa03"
+      }
+    },
+    {
+      "identity" : "tca26",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/TCA26.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "eadc60805c92a71d679205ea0e5c62e8a4134d73"
+      }
+    }
+  ],
+  "version" : 3
+}

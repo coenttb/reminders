@@ -1,19 +1,26 @@
-import Foundation
 import List
 import Operation
 import Optic
 import Reminder
 import Reminders
+import RFC_4122
 import Tagged
 import Testing
+import Time
 
 // The interface is a value built from closures and called as methods, with the labels of the declaration.
 @Suite struct `Reminders call sites` {
-    let list = List<Reminder>.ID(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+    let list: List<Reminder>.ID
     let reminder: Reminder
+    let unknown: Reminder.ID
 
-    init() {
-        reminder = Reminder(id: Reminder.ID(UUID(uuidString: "00000000-0000-0000-0000-000000000001")!), list: list, title: "Milk", created: Date(timeIntervalSince1970: 0))
+    init() throws {
+        list = List<Reminder>.ID(try RFC_4122.UUID("00000000-0000-0000-0000-000000000000"))
+        reminder = Reminder(
+            id: Reminder.ID(try RFC_4122.UUID("00000000-0000-0000-0000-000000000001")),
+            list: list, title: "Milk", created: Time.Instant(secondsSinceUnixEpoch: 0)
+        )
+        unknown = Reminder.ID(try RFC_4122.UUID("00000000-0000-0000-0000-0000000000ff"))
     }
 
     func reminders() -> Reminders {
@@ -49,11 +56,11 @@ import Testing
         try await reminders(.lists.delete(list))
         try await reminders(.read(.page(filter: .all)))
         #expect(Reminders.Lists.Call.delete(list) == .delete(list))
-        #expect(Reminders.Call.delete(reminder.id) != .delete(Reminder.ID(UUID())))
+        #expect(Reminders.Call.delete(reminder.id) != .delete(unknown))
         #expect(Reminders.Read.Page.Input(filter: .all).filter == .all)
         #expect(Reminders.Read.Output.self == AsyncThrowingStream<Reminders.Read.Value, any Error>.self)
         try await reminders(.update.complete(reminder.id, true))
-        await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(Reminder.ID(UUID()))) }
+        await #expect(throws: Reminders.Read.Error.notFound) { try await reminders(.read(unknown)) }
     }
 
     @Test func `reads are called with the declared labels`() async throws {
@@ -61,14 +68,14 @@ import Testing
         #expect(try await reminders.read().first(where: { _ in true })?.lists.map(\.count) == [1])
         #expect(try reminders.read(reminder.id) == reminder)
         #expect(try await reminders.read.page(filter: .list(list)).first(where: { _ in true })?.rows == [reminder])
-        #expect(try await reminders.read.page(filter: .list(List<Reminder>.ID(UUID()))).first(where: { _ in true })?.rows.isEmpty == true)
-        #expect(throws: Reminders.Read.Error.notFound) { try reminders.read(Reminder.ID(UUID())) }
+        #expect(try await reminders.read.page(filter: .list(List<Reminder>.ID(try RFC_4122.UUID("00000000-0000-0000-0000-0000000000fe")))).first(where: { _ in true })?.rows.isEmpty == true)
+        #expect(throws: Reminders.Read.Error.notFound) { try reminders.read(unknown) }
     }
 }
 
 @Suite struct FilterProjections {
-    @Test func listProjection() {
-        let id = List<Reminder>.ID(UUID())
+    @Test func listProjection() throws {
+        let id = List<Reminder>.ID(try RFC_4122.UUID("00000000-0000-0000-0000-000000000001"))
         #expect(Reminders.Read.Filter.list(id).list == id)
         #expect(Reminders.Read.Filter.all.list == nil)
     }

@@ -1,25 +1,28 @@
 import Dependencies
 import DependenciesTestSupport
 import Foundation
+import GRDB
 import List
 import Reminder
 import Reminders
 import Reminders_Sample
 import Reminders_SQL
 import Reminders_SQLite
-import SQLiteData
+import RFC_4122
 import Tagged
 import Testing
+import Time
 
 @Suite(.dependencies {
     $0.date.now = Date(timeIntervalSince1970: 1_234_567_890)
     $0.uuid = .incrementing
 })
 struct `Reminders SQLite storage` {
-    @Dependency(\.date.now) var now
+    let now = Time.Instant(secondsSinceUnixEpoch: 1_234_567_890)
 
     func makeDatabase() throws -> (reminders: Reminders, sample: Reminders.Sample) {
-        let database = try Reminders.database()
+        let database = try DatabaseQueue()
+        try Reminders.migrate(database)
         let sample = Reminders.sample(at: now)
         try database.write { db in try sample.initialize(in: db) }
         return (.sqlite(database), sample)
@@ -61,7 +64,7 @@ struct `Reminders SQLite storage` {
         #expect(try reminders.read(groceries).completed)
         try await reminders.update.complete(groceries, false)
         #expect(try !reminders.read(groceries).completed)
-        await #expect(throws: Reminders.Update.Error.notFound) { try await reminders.update.complete(Reminder.ID(UUID()), true) }
+        await #expect(throws: Reminders.Update.Error.notFound) { try await reminders.update.complete(Reminder.ID(try RFC_4122.UUID("00000000-0000-0000-0000-0000000000ff")), true) }
     }
 
     @Test func `a list is renamed in place`() async throws {

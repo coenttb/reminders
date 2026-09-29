@@ -1,20 +1,21 @@
 public import Interface_Macro
-public import Foundation
 public import List
 public import Reminder
-public import StructuredQueries
+public import SQL
+import SQL_Macros
 public import Tagged
+public import Time
 
 extension Reminder {
     @Table("reminders")
     @Memberwise
-    public struct Record: Identifiable, Hashable, Sendable {
+    public struct Record: SQL::Table, Identifiable, Hashable, Sendable {
         public let id: Reminder.ID
         public var listID: List<Reminder>.ID
         public var title: String = ""
         public var completed: Bool = false
         public var position: Int = 0
-        public var created: Date
+        public var created: Time.Instant
     }
 }
 

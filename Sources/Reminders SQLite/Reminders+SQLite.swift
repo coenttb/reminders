@@ -1,11 +1,16 @@
-public import Dependencies
+import Dependencies
+import Foundation
+public import GRDB
 import List
 import Reminder
 public import Reminders
-public import Reminders_Dependency
 import Reminders_SQL
-public import SQLiteData
+import RFC_4122
+import SQL
+import SQLite
 import Tagged
+import Time
+import Time_Foundation_Integration
 
 extension Reminders {
     // The domain over one SQLite database: reads on the caller's thread, each write one transaction.
@@ -14,7 +19,11 @@ extension Reminders {
             create: .init { request in
                 @Dependency(\.uuid) var uuid
                 @Dependency(\.date.now) var now
-                let reminder = Reminder(id: Reminder.ID(uuid()), request.draft, created: now)
+                let reminder = Reminder(
+                    id: Reminder.ID(RFC_4122.UUID(bytes: uuid().uuid)),
+                    request.draft,
+                    created: try Time.Instant(now)
+                )
                 try await database.write { db in
                     try Reminder.Record.insert { Reminder.Record.Draft(reminder) }.execute(db)
                     try Reminder.Record.find(reminder.id)
@@ -58,7 +67,7 @@ extension Reminders {
             lists: .init(
                 create: .init { request in
                     @Dependency(\.uuid) var uuid
-                    let list = List<Reminder>(id: List<Reminder>.ID(uuid()), request.draft)
+                    let list = List<Reminder>(id: List<Reminder>.ID(RFC_4122.UUID(bytes: uuid().uuid)), request.draft)
                     try await database.write { db in
                         try List<Reminder>.Record.insert { List<Reminder>.Record(list) }.execute(db)
                         try List<Reminder>.Record.find(list.id)
@@ -80,12 +89,5 @@ extension Reminders {
                 }
             )
         )
-    }
-}
-
-extension Reminders: DependencyKey {
-    public static var liveValue: Reminders {
-        @Dependency(\.defaultDatabase) var database
-        return .sqlite(database)
     }
 }

@@ -15,19 +15,21 @@ import Reminders_Feature
 import Reminders_Sample
 import Reminders_SQL
 import Reminders_SQLite
+import RFC_4122
 import Tagged
 import Testing
+import Time
 
 @Suite(.dependencies {
     $0.date.now = Date(timeIntervalSince1970: 1_234_567_890)
     $0.uuid = .incrementing
-    try $0.bootstrapDatabase(seeding: Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)))
+    try $0.bootstrapDatabase(seeding: Reminders.sample(at: Time.Instant(secondsSinceUnixEpoch: 1_234_567_890)))
 })
 @MainActor
 struct `Reminders feature` {
     @Dependency(\.reminders) var reminders
 
-    let sample = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890))
+    let sample = Reminders.sample(at: Time.Instant(secondsSinceUnixEpoch: 1_234_567_890))
     var personal: List<Reminder>.ID { sample.lists[0].id }
 
     // Opening a page starts its observation, which never ends; a test awaits the page's writes, not the action.
@@ -70,7 +72,7 @@ struct `Reminders feature` {
         await TestExhaustivity.$current.withValue(.off) {
             let store = TestStore(initialState: Reminders.State()) { reminders }
             store.modify { $0.read.page = .init(.list(personal)) }
-            store.send(.read(.page(.update.complete(Reminder.ID(UUID()), true))))
+            store.send(.read(.page(.update.complete(Reminder.ID(RFC_4122.UUID(bytes: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF))), true))))
             await #expect(throws: Reminders.Update.Error.notFound) { try await page(store).writes() }
             #expect(store.read.page?.writes.taskError is Reminders.Update.Error)
             await store.dismount()

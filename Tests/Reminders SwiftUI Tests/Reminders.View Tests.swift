@@ -2,7 +2,6 @@ import Optic
 import ComposableArchitecture2
 import Dependencies
 import DependenciesTestSupport
-import Foundation
 import Interface_ComposableArchitecture
 import List
 import Operation
@@ -14,11 +13,12 @@ import Reminders_Feature
 import Reminders_Sample
 import Reminders_SQLite
 import Testing
+import Time
 import SwiftUI
 
 @Suite(.dependencies {
     $0.uuid = .incrementing
-    try $0.bootstrapDatabase(seeding: Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)))
+    try $0.bootstrapDatabase(seeding: Reminders.sample(at: Time.Instant(secondsSinceUnixEpoch: 1_234_567_890)))
 })
 struct `Reminders root` {
     @Dependency(\.reminders) var reminders
@@ -31,7 +31,7 @@ struct `Reminders root` {
     }
 
     @Test func `scoped list sending closes the matching nested page`() async throws {
-        let personal = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).lists[0].id
+        let personal = Reminders.sample(at: Time.Instant(secondsSinceUnixEpoch: 1_234_567_890)).lists[0].id
         let store = Store(initialState: Reminders.State()) { reminders }
         store.read.page = .init(.list(personal))
         store.lists.delete(personal)
@@ -67,7 +67,7 @@ struct `Reminders root` {
     }
 
     @Test func `derived navigation bindings share canonical nested presentation state`() async throws {
-        let personal = Reminders.sample(at: Date(timeIntervalSince1970: 1_234_567_890)).lists[0].id
+        let personal = Reminders.sample(at: Time.Instant(secondsSinceUnixEpoch: 1_234_567_890)).lists[0].id
         let store = Store(initialState: Reminders.State()) { reminders }
         @Stored<Reminders> var viewStore = store
         let page: Binding<StoreOf<Reminders.Read.Page>?> = $viewStore.read.page

@@ -1,11 +1,11 @@
-public import Foundation
 public import Interface_Macro
+public import RFC_4122
 public import Tagged
 
 @Memberwise
 @Draft(excluding: "id")
 public struct List<Element>: Identifiable, Hashable, Sendable {
-    public var id: Tagged<List, UUID>
+    public var id: Tagged<List, RFC_4122.UUID>
     public var title: String = ""
 }
 
