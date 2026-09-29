@@ -90,6 +90,7 @@ let package = Package(
                 "List",
                 "Reminder",
                 "Reminders",
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "SQL", package: "swift-sql"),
                 .product(name: "SQL Macros", package: "swift-sql"),
                 .product(name: "Tagged", package: "swift-tagged"),

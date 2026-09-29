@@ -1,6 +1,7 @@
 public import Interface_Macro
 public import List
 public import Reminder
+public import RFC_4122
 public import SQL
 import SQL_Macros
 public import Tagged
